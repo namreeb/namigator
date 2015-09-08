@@ -1,0 +1,3 @@
+[submodule "stormlib"]
+	path = stormlib
+	url = git@github.com:namreeb/StormLib.git

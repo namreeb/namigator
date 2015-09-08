@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{374E3660-9432-4306-8550-F76030FFC8E8}</ProjectGuid>
+    <RootNamespace>parser</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>Include;..\utility\Include;..\stormlib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Debug</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>Include;..\utility\Include;;..\stormlib\src</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>utility.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Input\Adt\AdtChunk.cpp" />
+    <ClCompile Include="Source\Input\Adt\AdtFile.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MCNK.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MDDF.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MH2O.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MHDR.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MMDX.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MODF.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\MWMO.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRD.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRW.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCVT.cpp" />
+    <ClCompile Include="Source\Input\M2\DoodadFile.cpp" />
+    <ClCompile Include="Source\Input\Wdt\WdtFile.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MLIQ.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MOPY.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MOVI.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MOVT.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Group File\WmoGroupChunk.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Group File\WmoGroupFile.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Root File\Chunks\MODD.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Root File\Chunks\MODN.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Root File\Chunks\MODS.cpp" />
+    <ClCompile Include="Source\Input\Wmo\Root File\WmoRootFile.cpp" />
+    <ClCompile Include="Source\Input\Wmo\WmoDoodad.cpp" />
+    <ClCompile Include="Source\Input\WowFile.cpp" />
+    <ClCompile Include="Source\parser.cpp" />
+    <ClCompile Include="Source\Output\Adt.cpp" />
+    <ClCompile Include="Source\Output\Continent.cpp" />
+    <ClCompile Include="Source\Output\Doodad.cpp" />
+    <ClCompile Include="Source\Output\MpqManager.cpp" />
+    <ClCompile Include="Source\Output\Wmo.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Input\Adt\AdtChunk.hpp" />
+    <ClInclude Include="Include\Input\Adt\AdtFile.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MCNK.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MDDF.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MH2O.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MHDR.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MMDX.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MODF.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\MWMO.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRD.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRW.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCVT.hpp" />
+    <ClInclude Include="Include\Input\M2\DoodadFile.hpp" />
+    <ClInclude Include="Include\Input\Mpq\MpqFileReader.hpp" />
+    <ClInclude Include="Include\Input\Wdt\WdtFile.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MLIQ.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOPY.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOVI.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOVT.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Group File\WmoGroupChunk.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Group File\WmoGroupFile.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MODD.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MODN.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MODS.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MOHD.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Root File\WmoRootChunk.hpp" />
+    <ClInclude Include="Include\Input\Wmo\Root File\WmoRootFile.hpp" />
+    <ClInclude Include="Include\Input\Wmo\WmoChunkHeader.hpp" />
+    <ClInclude Include="Include\Input\Wmo\WmoDoodad.hpp" />
+    <ClInclude Include="Include\Input\Wmo\WmoParserInfo.hpp" />
+    <ClInclude Include="Include\Input\WowFile.hpp" />
+    <ClInclude Include="include\parser.hpp" />
+    <ClInclude Include="Include\Output\Adt.hpp" />
+    <ClInclude Include="Include\Output\Continent.hpp" />
+    <ClInclude Include="Include\Output\Doodad.hpp" />
+    <ClInclude Include="Include\Output\MpqManager.hpp" />
+    <ClInclude Include="Include\Output\Wmo.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\stormlib\StormLib.vcxproj">
+      <Project>{78424708-1f6e-4d4b-920c-fb6d26847055}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\utility\utility.vcxproj">
+      <Project>{5a918b0c-418f-42f3-ba09-987891a1696d}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,296 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Source\Input\WowFile.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\AdtFile.cpp">
+      <Filter>Source\Input\Adt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\AdtChunk.cpp">
+      <Filter>Source\Input\Adt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MCNK.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MDDF.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MH2O.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MHDR.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MMDX.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MODF.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\MWMO.cpp">
+      <Filter>Source\Input\Adt\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCVT.cpp">
+      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\M2\DoodadFile.cpp">
+      <Filter>Source\Input\M2</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wdt\WdtFile.cpp">
+      <Filter>Source\Input\Wdt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\WmoDoodad.cpp">
+      <Filter>Source\Input\Wmo</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Group File\WmoGroupChunk.cpp">
+      <Filter>Source\Input\Wmo\Group File</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Group File\WmoGroupFile.cpp">
+      <Filter>Source\Input\Wmo\Group File</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MLIQ.cpp">
+      <Filter>Source\Input\Wmo\Group File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MOPY.cpp">
+      <Filter>Source\Input\Wmo\Group File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MOVI.cpp">
+      <Filter>Source\Input\Wmo\Group File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Group File\Chunks\MOVT.cpp">
+      <Filter>Source\Input\Wmo\Group File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Root File\WmoRootFile.cpp">
+      <Filter>Source\Input\Wmo\Root File</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Root File\Chunks\MODD.cpp">
+      <Filter>Source\Input\Wmo\Root File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Root File\Chunks\MODN.cpp">
+      <Filter>Source\Input\Wmo\Root File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Wmo\Root File\Chunks\MODS.cpp">
+      <Filter>Source\Input\Wmo\Root File\Chunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Output\Adt.cpp">
+      <Filter>Source\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Output\Continent.cpp">
+      <Filter>Source\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Output\Doodad.cpp">
+      <Filter>Source\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Output\MpqManager.cpp">
+      <Filter>Source\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Output\Wmo.cpp">
+      <Filter>Source\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRD.cpp">
+      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRW.cpp">
+      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\parser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Input\Adt\AdtFile.hpp">
+      <Filter>Include\Input\Adt</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\AdtChunk.hpp">
+      <Filter>Include\Input\Adt</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MCNK.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MDDF.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MH2O.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MHDR.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MMDX.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MODF.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\MWMO.hpp">
+      <Filter>Include\Input\Adt\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCVT.hpp">
+      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\M2\DoodadFile.hpp">
+      <Filter>Include\Input\M2</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Mpq\MpqFileReader.hpp">
+      <Filter>Include\Input\Mpq</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wdt\WdtFile.hpp">
+      <Filter>Include\Input\Wdt</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\WmoChunkHeader.hpp">
+      <Filter>Include\Input\Wmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\WmoDoodad.hpp">
+      <Filter>Include\Input\Wmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\WmoParserInfo.hpp">
+      <Filter>Include\Input\Wmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Group File\WmoGroupChunk.hpp">
+      <Filter>Include\Input\Wmo\Group File</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Group File\WmoGroupFile.hpp">
+      <Filter>Include\Input\Wmo\Group File</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MLIQ.hpp">
+      <Filter>Include\Input\Wmo\Group File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOPY.hpp">
+      <Filter>Include\Input\Wmo\Group File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOVI.hpp">
+      <Filter>Include\Input\Wmo\Group File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOVT.hpp">
+      <Filter>Include\Input\Wmo\Group File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Root File\WmoRootChunk.hpp">
+      <Filter>Include\Input\Wmo\Root File</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Root File\WmoRootFile.hpp">
+      <Filter>Include\Input\Wmo\Root File</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MODD.hpp">
+      <Filter>Include\Input\Wmo\Root File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MODN.hpp">
+      <Filter>Include\Input\Wmo\Root File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MODS.hpp">
+      <Filter>Include\Input\Wmo\Root File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\Root File\Chunks\MOHD.hpp">
+      <Filter>Include\Input\Wmo\Root File\Chunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\WowFile.hpp">
+      <Filter>Include\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Output\Adt.hpp">
+      <Filter>Include\Output</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Output\Continent.hpp">
+      <Filter>Include\Output</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Output\Doodad.hpp">
+      <Filter>Include\Output</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Output\MpqManager.hpp">
+      <Filter>Include\Output</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Output\Wmo.hpp">
+      <Filter>Include\Output</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRD.hpp">
+      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRW.hpp">
+      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
+    </ClInclude>
+    <ClInclude Include="include\parser.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{cc06565a-6cf5-46b9-a56e-42cf5c879b7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{96235149-f800-4c19-8269-8026d7b2a1d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input">
+      <UniqueIdentifier>{90073869-6306-433a-a7d1-98e6e6bd8b30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Output">
+      <UniqueIdentifier>{7b5cb2ba-fb82-4971-b6d0-dce68ef44192}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Adt">
+      <UniqueIdentifier>{7da459af-56ca-4165-8f7a-b756351a7f5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Adt\Chunks">
+      <UniqueIdentifier>{d8378eb7-d6fb-4d9f-bb99-eea55f67cbd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Adt\Chunks\Subchunks">
+      <UniqueIdentifier>{4b5b3d57-18e5-4057-878c-179648d3b7f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\M2">
+      <UniqueIdentifier>{79df1c2e-c1ae-44e2-a19e-bc605161c998}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Mpq">
+      <UniqueIdentifier>{bcb91cef-b9a0-4b0e-bce2-4922f1a32b8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Wdt">
+      <UniqueIdentifier>{4ba948a2-4332-4f0a-85af-708f5cf9e958}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Wmo">
+      <UniqueIdentifier>{eacd0ef2-b2a6-4682-adea-b1e1cd4887cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Wmo\Group File">
+      <UniqueIdentifier>{ac6d4cdd-381c-4883-8071-e8d3792f4b9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Wmo\Root File">
+      <UniqueIdentifier>{64c885aa-1415-4811-afcd-c5829577db21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Wmo\Group File\Chunks">
+      <UniqueIdentifier>{d1073aae-2b68-47ed-8bc9-d53e89f2726a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Input\Wmo\Root File\Chunks">
+      <UniqueIdentifier>{d21888bb-12ca-4253-a131-d574669f8d41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input">
+      <UniqueIdentifier>{b9177733-c713-4c8c-b891-4fc5e1812723}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Output">
+      <UniqueIdentifier>{2d6f689e-b49a-4a7f-88ca-2247c9ea7ffb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Adt">
+      <UniqueIdentifier>{5e675f24-b056-4d54-a128-0d9c8a7f872a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Adt\Chunks">
+      <UniqueIdentifier>{9bae63cf-04e6-4f0d-9b87-51b3558f6c8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Adt\Chunks\Subchunks">
+      <UniqueIdentifier>{9e29c300-7c4d-4d4d-a06c-f50fb74f6c06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\M2">
+      <UniqueIdentifier>{007818db-7a7e-4eab-b83c-235198ca9c9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Mpq">
+      <UniqueIdentifier>{55f7be17-5c98-4208-9062-5b3bc18cded4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Wdt">
+      <UniqueIdentifier>{1561bcab-650d-4b98-9808-add4bef606bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Wmo">
+      <UniqueIdentifier>{7f7c75dd-cf5f-4524-be5e-a0255cfbd1b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Wmo\Group File">
+      <UniqueIdentifier>{4a54bb70-f195-4f5e-8cc3-33ede7622784}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Wmo\Root File">
+      <UniqueIdentifier>{00b55d68-28f2-405a-9063-9a1105e8f7a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Wmo\Group File\Chunks">
+      <UniqueIdentifier>{0c99f66b-6872-48f8-a60c-79c353634b68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input\Wmo\Root File\Chunks">
+      <UniqueIdentifier>{ea66b7d2-8c92-4d6e-866f-2a7efcc8528d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
