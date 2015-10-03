@@ -19,7 +19,7 @@
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 
-#define WIREFRAME
+//#define WIREFRAME
 
 Renderer::Renderer(HWND window) : m_window(window)
 {
@@ -68,6 +68,23 @@ Renderer::Renderer(HWND window) : m_window(window)
     // set the render target as the back buffer
     m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, NULL);
 
+    InitializePipeline(window);
+}
+
+Renderer::~Renderer()
+{
+    m_swapChain->Release();
+    m_backBuffer->Release();
+    m_device->Release();
+    m_deviceContext->Release();
+    m_cbPerObjectBuffer->Release();
+    m_rasterizerState->Release();
+    m_depthStencilView->Release();
+    m_depthStencilBuffer->Release();
+}
+
+void Renderer::InitializePipeline(HWND window)
+{
     // Set the viewport
     D3D11_VIEWPORT viewport;
     ZERO(viewport);
@@ -82,7 +99,20 @@ Renderer::Renderer(HWND window) : m_window(window)
 
     m_deviceContext->RSSetViewports(1, &viewport);
 
-    InitializePipeline();
+    m_device->CreateVertexShader(g_VShader, sizeof(g_VShader), nullptr, &m_vertexShader);
+    m_device->CreatePixelShader(g_PShader, sizeof(g_PShader), nullptr, &m_pixelShader);
+
+    m_deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
+    m_deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
+
+    D3D11_INPUT_ELEMENT_DESC ied[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+
+    m_device->CreateInputLayout(ied, 2, g_VShader, sizeof(g_VShader), &m_inputLayout);
+    m_deviceContext->IASetInputLayout(m_inputLayout);
 
     D3D11_BUFFER_DESC cbbd;
     ZERO(cbbd);
@@ -100,61 +130,57 @@ Renderer::Renderer(HWND window) : m_window(window)
 
 #ifdef WIREFRAME
     rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+    rasterizerDesc.CullMode = D3D11_CULL_NONE;
 #else
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    rasterizerDesc.CullMode = D3D11_CULL_FRONT;
 #endif
-
-    rasterizerDesc.CullMode = D3D11_CULL_NONE;
 
     m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState);
     m_deviceContext->RSSetState(m_rasterizerState);
+
+    D3D11_TEXTURE2D_DESC depthStencilDesc;
+    ZERO(depthStencilDesc);
+
+    depthStencilDesc.Width = wr.right - wr.left;
+    depthStencilDesc.Height = wr.bottom - wr.top;
+    depthStencilDesc.MipLevels = 1;
+    depthStencilDesc.ArraySize = 1;
+    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilDesc.SampleDesc.Count = 1;
+    depthStencilDesc.SampleDesc.Quality = 0;
+    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthStencilDesc.CPUAccessFlags = 0;
+    depthStencilDesc.MiscFlags = 0;
+
+    m_device->CreateTexture2D(&depthStencilDesc, nullptr, &m_depthStencilBuffer);
+    m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr, &m_depthStencilView);
+
+    m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, m_depthStencilView);
 }
 
-Renderer::~Renderer()
-{
-    m_swapChain->Release();
-    m_backBuffer->Release();
-    m_device->Release();
-    m_deviceContext->Release();
-    m_cbPerObjectBuffer->Release();
-    m_rasterizerState->Release();
-}
-
-void Renderer::InitializePipeline()
-{
-    m_device->CreateVertexShader(g_VShader, sizeof(g_VShader), nullptr, &m_vertexShader);
-    m_device->CreatePixelShader(g_PShader, sizeof(g_PShader), nullptr, &m_pixelShader);
-
-    m_deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
-    m_deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
-
-    D3D11_INPUT_ELEMENT_DESC ied[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-
-    m_device->CreateInputLayout(ied, 2, g_VShader, sizeof(g_VShader), &m_inputLayout);
-    m_deviceContext->IASetInputLayout(m_inputLayout);
-}
-
-void Renderer::InitializeVertexBuffer(const std::vector<VERTEX> &vertices, const std::vector<int> &indices)
+void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices)
 {
     D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
     
     ZERO(vertexBufferDesc);
 
     vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    vertexBufferDesc.ByteWidth = sizeof(VERTEX) * vertices.size();
+    vertexBufferDesc.ByteWidth = sizeof(ColoredVertex) * vertices.size();
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    m_device->CreateBuffer(&vertexBufferDesc, nullptr, &m_vertexBuffer);
+    m_vertexBuffers.push_back(nullptr);
+
+    auto vertexBuffer = &m_vertexBuffers[m_vertexBuffers.size() - 1];
+
+    m_device->CreateBuffer(&vertexBufferDesc, nullptr, vertexBuffer);
 
     D3D11_MAPPED_SUBRESOURCE ms;
-    m_deviceContext->Map(m_vertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
-    memcpy(ms.pData, &vertices[0], sizeof(VERTEX)*vertices.size());
-    m_deviceContext->Unmap(m_vertexBuffer, NULL);
+    m_deviceContext->Map(*vertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+    memcpy(ms.pData, &vertices[0], sizeof(ColoredVertex)*vertices.size());
+    m_deviceContext->Unmap(*vertexBuffer, NULL);
 
     ZERO(indexBufferDesc);
 
@@ -163,69 +189,79 @@ void Renderer::InitializeVertexBuffer(const std::vector<VERTEX> &vertices, const
     indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    m_device->CreateBuffer(&indexBufferDesc, nullptr, &m_indexBuffer);
+    m_indexBuffers.push_back(nullptr);
 
-    m_deviceContext->Map(m_indexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+    auto indexBuffer = &m_indexBuffers[m_indexBuffers.size() - 1];
+
+    m_device->CreateBuffer(&indexBufferDesc, nullptr, indexBuffer);
+
+    m_deviceContext->Map(*indexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
     memcpy(ms.pData, &indices[0], sizeof(int)*indices.size());
-    m_deviceContext->Unmap(m_indexBuffer, NULL);
+    m_deviceContext->Unmap(*indexBuffer, NULL);
 
-    float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::lowest(),
-          minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::lowest(),
-          minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
+    m_indexCounts.push_back(indices.size());
 
-    for (unsigned int i = 0; i < vertices.size(); ++i)
+    // if this is the first loaded set of geometry, center the camera around it
+    if (m_vertexBuffers.size() == 1)
     {
-        if (vertices[i].x < minX)
-            minX = vertices[i].x;
-        if (vertices[i].x > maxX)
-            maxX = vertices[i].x;
+        float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::lowest(),
+            minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::lowest(),
+            minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
 
-        if (vertices[i].y < minY)
-            minY = vertices[i].y;
-        if (vertices[i].y > maxY)
-            maxY = vertices[i].y;
+        for (unsigned int i = 0; i < vertices.size(); ++i)
+        {
+            if (vertices[i].x < minX)
+                minX = vertices[i].x;
+            if (vertices[i].x > maxX)
+                maxX = vertices[i].x;
 
-        if (vertices[i].z < minZ)
-            minZ = vertices[i].z;
-        if (vertices[i].z > maxZ)
-            maxZ = vertices[i].z;
+            if (vertices[i].y < minY)
+                minY = vertices[i].y;
+            if (vertices[i].y > maxY)
+                maxY = vertices[i].y;
+
+            if (vertices[i].z < minZ)
+                minZ = vertices[i].z;
+            if (vertices[i].z > maxZ)
+                maxZ = vertices[i].z;
+        }
+
+        const float averageX = (minX + maxX) / 2.f;
+        const float averageY = (minY + maxY) / 2.f;
+        const float aspect = 1200.f / 800.f;
+
+        const utility::Vertex up(0.f, 1.f, 0.f);
+
+        auto view = utility::Matrix<float>::CreateViewMatrix({ averageX, averageY, maxZ + 100.f }, { averageX, averageY, maxZ }, up);
+        auto projection = utility::Matrix<float>::CreateProjectionMatrix(PI / 4.f, aspect, 0.1f, 10000.f);
+        auto viewProjection = view*projection;
+
+        viewProjection.PopulateArray(m_viewProjectionMatrix);
     }
-
-    const float averageX = (minX + maxX) / 2.f;
-    const float averageY = (minY + maxY) / 2.f;
-    const float aspect = 1200.f / 800.f;
-
-    const utility::Vertex up(0.f, 1.f, 0.f);
-
-    auto view = utility::Matrix<float>::CreateViewMatrix({ averageX, averageY, maxZ + 100.f }, { averageX, averageY, maxZ}, up);
-    auto projection = utility::Matrix<float>::CreateProjectionMatrix(PI/4.f, aspect, 0.1f, 10000.f);
-    auto viewProjection = view*projection;
-
-    viewProjection.PopulateArray(m_viewProjectionMatrix);
-
-    m_vertexCount = vertices.size();
-    m_indexCount = indices.size();
 }
 
-void Renderer::Render()
+void Renderer::Render() const
 {
     const float blue[4] = { 0.f, 0.2f, 0.4f, 1.f };
 
     // clear the back buffer to a deep blue
     m_deviceContext->ClearRenderTargetView(m_backBuffer, blue);
+    m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
     m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &m_viewProjectionMatrix, 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
 
-    unsigned int stride = sizeof(VERTEX);
+    unsigned int stride = sizeof(ColoredVertex);
     unsigned int offset = 0;
 
-    m_deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
-    m_deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-    m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    for (unsigned int i = 0; i < m_vertexBuffers.size(); ++i)
+    {
+        m_deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffers[i], &stride, &offset);
+        m_deviceContext->IASetIndexBuffer(m_indexBuffers[i], DXGI_FORMAT_R32_UINT, 0);
+        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    m_deviceContext->DrawIndexed(m_indexCount, 0, 0);
-    //m_deviceContext->Draw(m_vertexCount, 0);
+        m_deviceContext->DrawIndexed(m_indexCounts[i], 0, 0);
+    }
 
     // switch the back buffer and the front buffer
     m_swapChain->Present(0, 0);

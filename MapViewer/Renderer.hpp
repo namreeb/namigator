@@ -5,7 +5,7 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 
-struct VERTEX
+struct ColoredVertex
 {
     float x, y, z;
     float color[4];
@@ -25,20 +25,21 @@ class Renderer
         ID3D11PixelShader *m_pixelShader;
         ID3D11Buffer *m_cbPerObjectBuffer;
         ID3D11RasterizerState *m_rasterizerState;
+        ID3D11DepthStencilView *m_depthStencilView;
+        ID3D11Texture2D *m_depthStencilBuffer;
 
         float m_viewProjectionMatrix[16];
 
-        ID3D11Buffer *m_vertexBuffer;
-        ID3D11Buffer *m_indexBuffer;
-        unsigned int m_vertexCount;
-        unsigned int m_indexCount;
+        std::vector<ID3D11Buffer *> m_vertexBuffers;
+        std::vector<ID3D11Buffer *> m_indexBuffers;
+        std::vector<unsigned int> m_indexCounts;
 
-        void InitializePipeline();
+        void InitializePipeline(HWND window);
 
     public:
         Renderer(HWND window);
         ~Renderer();
 
-        void InitializeVertexBuffer(const std::vector<VERTEX> &vertices, const std::vector<int> &indices);
-        void Render();
+        void AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices);
+        void Render() const;
 };

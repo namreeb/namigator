@@ -17,3 +17,8 @@
 /MapViewer/*.aps
 /MapViewer/pixelShader.hpp
 /MapViewer/vertexShader.hpp
+/MapViewer/*.user
+/MapViewer/Release
+/parser/Release
+/utility/Release
+/Release
