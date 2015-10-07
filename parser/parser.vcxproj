@@ -149,7 +149,7 @@
     <ClInclude Include="Include\Output\Wmo.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\stormlib\StormLib.vcxproj">
+    <ProjectReference Include="..\stormlib\StormLib_v15.vcxproj">
       <Project>{78424708-1f6e-4d4b-920c-fb6d26847055}</Project>
     </ProjectReference>
     <ProjectReference Include="..\utility\utility.vcxproj">
