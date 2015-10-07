@@ -21,7 +21,7 @@
 
 #define WIREFRAME
 
-Renderer::Renderer(HWND window) : m_window(window)
+Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
 {
     // create a struct to hold information about the swap chain
     DXGI_SWAP_CHAIN_DESC scd;
@@ -118,7 +118,7 @@ void Renderer::InitializePipeline(HWND window)
     ZERO(cbbd);
 
     cbbd.Usage = D3D11_USAGE_DEFAULT;
-    cbbd.ByteWidth = sizeof(m_viewProjectionMatrix);
+    cbbd.ByteWidth = 16*sizeof(float);
     cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbbd.CPUAccessFlags = 0;
     cbbd.MiscFlags = 0;
@@ -208,8 +208,8 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
     if (m_vertexBuffers.size() == 1)
     {
         float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::lowest(),
-            minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::lowest(),
-            minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
+              minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::lowest(),
+              minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
 
         for (unsigned int i = 0; i < vertices.size(); ++i)
         {
@@ -231,15 +231,9 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
 
         const float averageX = (minX + maxX) / 2.f;
         const float averageY = (minY + maxY) / 2.f;
-        const float aspect = 1200.f / 800.f;
 
-        const utility::Vertex up(0.f, 1.f, 0.f);
-
-        auto view = utility::Matrix<float>::CreateViewMatrix({ averageX, averageY, maxZ + 300.f }, { averageX, averageY, maxZ }, up);
-        auto projection = utility::Matrix<float>::CreateProjectionMatrix(PI / 4.f, aspect, 0.1f, 10000.f);
-        auto viewProjection = view*projection;
-
-        viewProjection.PopulateArray(m_viewProjectionMatrix);
+        m_camera->Move(averageX, averageY, maxZ + 300.f);
+        m_camera->LookAt(averageX, averageY, maxZ);
     }
 }
 
@@ -251,7 +245,7 @@ void Renderer::Render() const
     m_deviceContext->ClearRenderTargetView(m_backBuffer, blue);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
-    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &m_viewProjectionMatrix, 0, 0);
+    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, m_camera->GetProjectionMatrix(), 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
 
     unsigned int stride = sizeof(ColoredVertex);

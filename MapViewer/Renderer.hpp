@@ -1,9 +1,12 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Windows.h>
 #include <d3d11.h>
 #include <d3dx11.h>
+
+#include "Camera.hpp"
 
 struct ColoredVertex
 {
@@ -28,11 +31,11 @@ class Renderer
         ID3D11DepthStencilView *m_depthStencilView;
         ID3D11Texture2D *m_depthStencilBuffer;
 
-        float m_viewProjectionMatrix[16];
-
         std::vector<ID3D11Buffer *> m_vertexBuffers;
         std::vector<ID3D11Buffer *> m_indexBuffers;
         std::vector<unsigned int> m_indexCounts;
+
+        std::unique_ptr<Camera> m_camera;
 
         void InitializePipeline(HWND window);
 
@@ -42,4 +45,6 @@ class Renderer
 
         void AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices);
         void Render() const;
+
+        inline Camera *GetCamera() { return m_camera.get(); }
 };

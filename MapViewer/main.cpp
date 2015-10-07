@@ -18,6 +18,8 @@
 #define CONTROL_WIDTH       300
 #define CONTROL_HEIGHT      250
 
+#define CAMERA_STEP         2.f
+
 // FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
 #define MAGIC_LEFT_SHIFT    15
 
@@ -57,6 +59,53 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             }
 
             break;
+        }
+
+        case WM_KEYDOWN:
+        {
+            switch ((char)wParam)
+            {
+                case ' ':
+                    gRenderer->GetCamera()->MoveVertical(CAMERA_STEP);
+                    return TRUE;
+                case 'Z':
+                    gRenderer->GetCamera()->MoveVertical(-CAMERA_STEP);
+                    return TRUE;
+                case 'A':
+                    gRenderer->GetCamera()->LookAtLeftRight(-CAMERA_STEP);
+                    return TRUE;
+                case 'D':
+                    gRenderer->GetCamera()->LookAtLeftRight(CAMERA_STEP);
+                    return TRUE;
+                case 'W':
+                    gRenderer->GetCamera()->LookAtFrontBack(-CAMERA_STEP);
+                    return TRUE;
+                case 'X':
+                    gRenderer->GetCamera()->LookAtFrontBack(CAMERA_STEP);
+                    return TRUE;
+                case 'Q':
+                    gRenderer->GetCamera()->LookAtUpDown(-CAMERA_STEP);
+                    return TRUE;
+                case 'E':
+                    gRenderer->GetCamera()->LookAtUpDown(CAMERA_STEP);
+                    return TRUE;
+            }
+                
+            break;
+        }
+
+        case WM_MOUSEWHEEL:
+        {
+            short distance = (short)(wParam >> 16);
+            auto key = wParam & 0xFFFF;
+
+            std::wstringstream str;
+
+            str << L"Key: 0x" << std::hex << key << L" pressed.  Distance: " << std::dec << distance;
+
+            MessageBox(hWnd, str.str().c_str(), L"DEBUG", 0);
+
+            return TRUE;
         }
     }
 
