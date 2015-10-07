@@ -16,14 +16,15 @@
 #define START_HEIGHT        800
 
 #define CONTROL_WIDTH       300
-#define CONTROL_HEIGHT      300
+#define CONTROL_HEIGHT      250
 
 // FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
 #define MAGIC_LEFT_SHIFT    15
 
 HWND gGuiWindow, gControlWindow;
 
-Renderer *gRenderer;
+std::unique_ptr<Renderer> gRenderer;
+std::unique_ptr<::parser::Continent> gContinent;
 
 // this is the main message handler for the program
 LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -41,7 +42,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
         {
             const RECT *rect = (const RECT *)lParam;
 
-            MoveWindow(gControlWindow, rect->right - MAGIC_LEFT_SHIFT, rect->top, 300, 300, FALSE);
+            MoveWindow(gControlWindow, rect->right - MAGIC_LEFT_SHIFT, rect->top, CONTROL_WIDTH, CONTROL_HEIGHT, FALSE);
 
             return TRUE;
         }
@@ -53,51 +54,6 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 case ID_FILE_EXIT:
                     PostQuitMessage(0);
                     return TRUE;
-
-                case ID_LOADCONTINENT_AZEROTH:
-                {
-                    ::parser::Continent azeroth("Azeroth");
-
-                    auto adt = azeroth.LoadAdt(32, 48);
-                    auto chunk0 = adt->GetChunk(0, 0);
-
-                    std::vector<ColoredVertex> vertices;
-                    vertices.reserve(chunk0->m_terrainVertices.size());
-
-                    for (unsigned int i = 0; i < chunk0->m_terrainVertices.size(); ++i)
-                        vertices.push_back({ chunk0->m_terrainVertices[i].X , chunk0->m_terrainVertices[i].Y, chunk0->m_terrainVertices[i].Z, { 0.f, 1.f, 0.f, 1.f } });
-
-                    gRenderer->AddGeometry(vertices, chunk0->m_terrainIndices);
-
-                    break;
-                }
-
-                case ID_LOADCONTINENT_KALIMDOR:
-                {
-                    RECT guiRect, controlRect;
-
-                    if (!GetWindowRect(gGuiWindow, &guiRect) || !GetWindowRect(gControlWindow, &controlRect))
-                    {
-                        MessageBox(NULL, L"FOOBAR!", L"DEBUG", 0);
-                        PostQuitMessage(0);
-                        
-                        return TRUE;
-                    }
-
-                    std::wstringstream str;
-
-                    str << "GUI Window:" << std::endl;
-                    str << "    Left:" << guiRect.left << std::endl;
-                    str << "   Right:" << guiRect.right << std::endl;
-
-                    str << "Control Window:" << std::endl;
-                    str << "    Left:" << controlRect.left << std::endl;
-                    str << "   Right:" << controlRect.right << std::endl;
-
-                    MessageBox(gGuiWindow, str.str().c_str(), L"DEBUG", 0);
-
-                    break;
-                }
             }
 
             break;
@@ -107,8 +63,61 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
+enum Buttons : int
+{
+    LoadPosition,
+    LoadADT
+};
+
 LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    switch (message)
+    {
+        case WM_COMMAND:
+        {
+            switch (wParam)
+            {
+                case Buttons::LoadPosition:
+                {
+                    MessageBox(hWnd, L"Not implemented yet.", L"DEBUG", 0);
+                    
+                    return TRUE;
+                }
+
+                case Buttons::LoadADT:
+                {
+                    gContinent.reset(new ::parser::Continent("Azeroth"));
+
+                    auto adt = gContinent->LoadAdt(32, 48);
+                    
+                    for (int x = 0; x < 16; ++x)
+                        for (int y = 0; y < 16; ++y)
+                        {
+                            auto chunk = adt->GetChunk(x, y);
+
+                            std::vector<ColoredVertex> vertices;
+                            vertices.reserve(chunk->m_terrainVertices.size());
+
+                            for (unsigned int i = 0; i < chunk->m_terrainVertices.size(); ++i)
+                                vertices.push_back({ chunk->m_terrainVertices[i].X, chunk->m_terrainVertices[i].Y, chunk->m_terrainVertices[i].Z, {0.f, 1.f, 0.f, 1.f} });
+
+                            gRenderer->AddGeometry(vertices, chunk->m_terrainIndices);
+
+                            vertices.clear();
+                            vertices.reserve(chunk->m_liquidVertices.size());
+
+                            for (unsigned int i = 0; i < chunk->m_liquidVertices.size(); ++i)
+                                vertices.push_back({ chunk->m_liquidVertices[i].X, chunk->m_liquidVertices[i].Y, chunk->m_liquidVertices[i].Z,{ 0.f, 0.f, 1.f, 1.f } });
+
+                            gRenderer->AddGeometry(vertices, chunk->m_terrainIndices);
+                        }
+
+                    return TRUE;
+                }
+            }
+        }
+    }
+
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
@@ -187,13 +196,53 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // set up and initialize Direct3D
     
-    gRenderer = new Renderer(gGuiWindow);
+    gRenderer.reset(new Renderer(gGuiWindow));
 
     // set up and initialize our Windows common control API for the control window
-    CommonControl controls(hInstance, gControlWindow);
+    CommonControl controls(gControlWindow);
 
-    controls.AddLabel(L"Label1", L"Label1Text", 20, 20, 115, 20);
-    controls.AddLabel(L"Label2", L"Label2Text", 20, 40, 115, 20);
+    controls.AddLabel(L"Select Continent:", 10, 12, 100, 20);
+
+    std::vector<std::wstring> continents;
+    continents.push_back(L"000 Azeroth");
+    continents.push_back(L"001 Kalimdor");
+    continents.push_back(L"013 Test");
+    continents.push_back(L"025 Scott test");
+    continents.push_back(L"029 Test");
+    continents.push_back(L"030 PVPzone01 (Alterac Valley)");
+    continents.push_back(L"033 Shadowfang");
+    continents.push_back(L"034 stormwindjail");
+    continents.push_back(L"035 stormwindprison");
+    continents.push_back(L"036 deadminesInstance");
+    continents.push_back(L"037 PVPZone02 (Azshara Crater)");
+    continents.push_back(L"043 WailingCaverns");
+    continents.push_back(L"489 PVPzone03 (Warsong Gulch)");
+    continents.push_back(L"529 PVPzone04 (Arathi Basin)");
+    continents.push_back(L"530 expansion01 (Outland");
+    continents.push_back(L"571 Northrend");
+
+    controls.AddComboBox(L"Continent", continents, 115, 10, 155, 150);
+
+    controls.AddLabel(L"Position:", 10, 10, 300, 20);
+
+    controls.AddLabel(L"X:", 10, 47, 20, 20);
+    controls.AddTextBox(L"X", L"", 25, 45, 75, 20);
+
+    controls.AddLabel(L"Y:", 10, 72, 20, 20);
+    controls.AddTextBox(L"Y", L"", 25, 70, 75, 20);
+
+    controls.AddLabel(L"Z:", 10, 97, 20, 20);
+    controls.AddTextBox(L"Z", L"", 25, 95, 75, 20);
+
+    controls.AddButton(L"Load Position", Buttons::LoadPosition, 115, 92, 100, 25);
+
+    controls.AddLabel(L"X:", 10, 147, 20, 20);
+    controls.AddTextBox(L"ADT_X", L"32", 25, 145, 75, 20);
+
+    controls.AddLabel(L"Y:", 10, 172, 20, 20);
+    controls.AddTextBox(L"ADT_Y", L"32", 25, 170, 75, 20);
+
+    controls.AddButton(L"Load ADT", Buttons::LoadADT, 115, 167, 100, 25);
 
     // enter the main loop:
 
@@ -212,8 +261,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 break;
         }
     };
-
-    delete gRenderer;
 
     return msg.wParam;
 }

@@ -19,7 +19,7 @@
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 
-//#define WIREFRAME
+#define WIREFRAME
 
 Renderer::Renderer(HWND window) : m_window(window)
 {
@@ -162,6 +162,9 @@ void Renderer::InitializePipeline(HWND window)
 
 void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices)
 {
+    if (!vertices.size() || !indices.size())
+        return;
+
     D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
     
     ZERO(vertexBufferDesc);
@@ -232,7 +235,7 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
 
         const utility::Vertex up(0.f, 1.f, 0.f);
 
-        auto view = utility::Matrix<float>::CreateViewMatrix({ averageX, averageY, maxZ + 100.f }, { averageX, averageY, maxZ }, up);
+        auto view = utility::Matrix<float>::CreateViewMatrix({ averageX, averageY, maxZ + 300.f }, { averageX, averageY, maxZ }, up);
         auto projection = utility::Matrix<float>::CreateProjectionMatrix(PI / 4.f, aspect, 0.1f, 10000.f);
         auto viewProjection = view*projection;
 
