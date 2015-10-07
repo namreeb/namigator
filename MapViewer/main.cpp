@@ -1,6 +1,7 @@
 #include <memory>
 #include <windows.h>
 #include <windowsx.h>
+#include <sstream>
 
 #include "resource.h"
 
@@ -9,10 +10,23 @@
 #include "parser.hpp"
 #include "Output/Continent.hpp"
 
+#define START_X             100
+#define START_Y             100
+#define START_WIDTH         1200
+#define START_HEIGHT        800
+
+#define CONTROL_WIDTH       300
+#define CONTROL_HEIGHT      300
+
+// FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
+#define MAGIC_LEFT_SHIFT    15
+
+HWND gGuiWindow, gControlWindow;
+
 Renderer *gRenderer;
 
 // this is the main message handler for the program
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -20,8 +34,17 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
         case WM_DESTROY:
         {
             PostQuitMessage(0);
-            return 0;
-        } break;
+            return TRUE;
+        }
+
+        case WM_MOVING:
+        {
+            const RECT *rect = (const RECT *)lParam;
+
+            MoveWindow(gControlWindow, rect->right - MAGIC_LEFT_SHIFT, rect->top, 300, 300, FALSE);
+
+            return TRUE;
+        }
 
         case WM_COMMAND:
         {
@@ -29,7 +52,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             {
                 case ID_FILE_EXIT:
                     PostQuitMessage(0);
-                    return 0;
+                    return TRUE;
 
                 case ID_LOADCONTINENT_AZEROTH:
                 {
@@ -50,14 +73,42 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
                 }
 
                 case ID_LOADCONTINENT_KALIMDOR:
-                    MessageBox(NULL, L"Load Kalimdor", L"Load Kalimdor", 0);
+                {
+                    RECT guiRect, controlRect;
+
+                    if (!GetWindowRect(gGuiWindow, &guiRect) || !GetWindowRect(gControlWindow, &controlRect))
+                    {
+                        MessageBox(NULL, L"FOOBAR!", L"DEBUG", 0);
+                        PostQuitMessage(0);
+                        
+                        return TRUE;
+                    }
+
+                    std::wstringstream str;
+
+                    str << "GUI Window:" << std::endl;
+                    str << "    Left:" << guiRect.left << std::endl;
+                    str << "   Right:" << guiRect.right << std::endl;
+
+                    str << "Control Window:" << std::endl;
+                    str << "    Left:" << controlRect.left << std::endl;
+                    str << "   Right:" << controlRect.right << std::endl;
+
+                    MessageBox(gGuiWindow, str.str().c_str(), L"DEBUG", 0);
+
                     break;
+                }
             }
 
             break;
         }
     }
 
+    return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
@@ -69,7 +120,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
 
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowProc;
+    wc.lpfnWndProc = GuiWindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
@@ -80,15 +131,15 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
 
     RegisterClassEx(&wc);
 
-    RECT wr = { 0, 0, 1200, 800 };
+    RECT wr = { START_X, START_Y, START_X + START_WIDTH, START_Y + START_HEIGHT };
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, true);
 
     guiWindow = CreateWindowEx(NULL,
         L"DXWindow",
         L"CMaNGOS Map Debugging Interface",
         WS_OVERLAPPEDWINDOW,
-        100,
-        100,
+        wr.left,
+        wr.top,
         wr.right - wr.left,
         wr.bottom - wr.top,
         NULL,
@@ -100,7 +151,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
 
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowProc;
+    wc.lpfnWndProc = ControlWindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
@@ -113,11 +164,11 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     controlWindow = CreateWindowEx(NULL,
         L"ControlWindow",
         L"Control",
-        WS_OVERLAPPEDWINDOW,
-        1300,
-        100,
-        300,
-        300,
+        (WS_BORDER | WS_CAPTION) & (~WS_ICONIC),
+        wr.right - MAGIC_LEFT_SHIFT,
+        wr.top,
+        CONTROL_WIDTH,
+        CONTROL_HEIGHT,
         NULL,
         NULL,
         hInstance,
@@ -129,18 +180,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
     ::parser::Parser::Initialize();
 
-    HWND guiWindow, controlWindow;
-    InitializeWindows(hInstance, guiWindow, controlWindow);
+    InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 
-    ShowWindow(guiWindow, nCmdShow);
-    ShowWindow(controlWindow, nCmdShow);
+    ShowWindow(gGuiWindow, nCmdShow);
+    ShowWindow(gControlWindow, nCmdShow);
 
     // set up and initialize Direct3D
     
-    gRenderer = new Renderer(guiWindow);
+    gRenderer = new Renderer(gGuiWindow);
 
     // set up and initialize our Windows common control API for the control window
-    CommonControl controls(hInstance, controlWindow);
+    CommonControl controls(hInstance, gControlWindow);
 
     controls.AddLabel(L"Label1", L"Label1Text", 20, 20, 115, 20);
     controls.AddLabel(L"Label2", L"Label2Text", 20, 40, 115, 20);
@@ -158,11 +208,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             TranslateMessage(&msg);
             DispatchMessage(&msg);
 
-            switch (msg.message)
-            {
-                case WM_QUIT:
-                    break;
-            }
+            if (msg.message == WM_QUIT)
+                break;
         }
     };
 
