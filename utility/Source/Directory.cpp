@@ -34,7 +34,7 @@ namespace utility
 
     void Directory::Create(const char *path)
     {
-        CreateDirectory(path, NULL);
+        CreateDirectory(path, nullptr);
     }
 
     std::string Directory::Current()

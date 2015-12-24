@@ -12,8 +12,8 @@ namespace parser_input
         {
             unsigned char nextByte;
 
-            while ((nextByte = reader->Read<unsigned char>()) == 0)
-                currOffset++;
+            while (!(nextByte = reader->Read<unsigned char>()))
+                ++currOffset;
 
             std::string currFileName = reader->ReadCString();
             currFileName.insert(0, 1, nextByte);
@@ -22,10 +22,5 @@ namespace parser_input
 
             currOffset += (unsigned int)currFileName.length() + 1;
         }
-    }
-
-    MODN::~MODN()
-    {
-
     }
 }

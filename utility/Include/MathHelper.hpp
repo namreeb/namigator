@@ -42,7 +42,7 @@ namespace utility
             Vertex MaxCorner;
 
             BoundingBox();
-            BoundingBox(Vertex &minCorner, Vertex &maxCorner, bool includeZ = true);
+            BoundingBox(const Vertex &minCorner, const Vertex &maxCorner, bool includeZ = true);
             BoundingBox(Vertex &a, Vertex &b, Vertex &c, bool includeZ = true);
             BoundingBox(float minX, float minY, float maxX, float maxY);
             BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ, bool includeZ = true);

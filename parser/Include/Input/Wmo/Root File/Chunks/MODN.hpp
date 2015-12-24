@@ -13,6 +13,5 @@ namespace parser_input
             std::map<unsigned int, std::string> Names;
 
             MODN(unsigned int doodadNamesCount, long position, utility::BinaryStream *reader);
-            ~MODN();
     };
 }

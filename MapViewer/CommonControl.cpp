@@ -12,7 +12,7 @@ CommonControl::CommonControl(HWND window)
 
 void CommonControl::AddLabel(const std::wstring &text, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"STATIC", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, width, height, m_window, NULL, m_instance, NULL);
+    auto control = CreateWindow(L"STATIC", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
     SetWindowText(control, text.c_str());
@@ -20,7 +20,7 @@ void CommonControl::AddLabel(const std::wstring &text, int x, int y, int width, 
 
 void CommonControl::AddTextBox(const std::wstring &name, const std::wstring &text, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"EDIT", name.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER, x, y, width, height, m_window, NULL, m_instance, NULL);
+    auto control = CreateWindow(L"EDIT", name.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER, x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
     SetWindowText(control, text.c_str());
@@ -29,7 +29,7 @@ void CommonControl::AddTextBox(const std::wstring &name, const std::wstring &tex
 void CommonControl::AddComboBox(const std::wstring &name, const std::vector<std::wstring> &items, int x, int y, int width, int height)
 {
     auto control = CreateWindow(L"COMBOBOX", name.c_str(), CBS_DROPDOWN | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
-                                x, y, width, height, m_window, NULL, m_instance, NULL);
+                                x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
     
@@ -41,7 +41,7 @@ void CommonControl::AddComboBox(const std::wstring &name, const std::vector<std:
 
 void CommonControl::AddButton(const std::wstring &text, int id, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD, x, y, width, height, m_window, (HMENU)id, m_instance, NULL);
+    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD, x, y, width, height, m_window, (HMENU)id, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
     SetWindowText(control, text.c_str());

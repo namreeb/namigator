@@ -123,7 +123,6 @@
     <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRW.hpp" />
     <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCVT.hpp" />
     <ClInclude Include="Include\Input\M2\DoodadFile.hpp" />
-    <ClInclude Include="Include\Input\Mpq\MpqFileReader.hpp" />
     <ClInclude Include="Include\Input\Wdt\WdtFile.hpp" />
     <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MLIQ.hpp" />
     <ClInclude Include="Include\Input\Wmo\Group File\Chunks\MOPY.hpp" />

@@ -3,14 +3,12 @@
 
 namespace parser_input
 {
-    AdtChunk::AdtChunk(long position, utility::BinaryStream *reader)
+    AdtChunk::AdtChunk(long position, utility::BinaryStream *reader) : Position(position)
     {
 #ifdef DEBUG
         if (Position < 0)
             THROW("ADT chunk initialized with negative position");
 #endif
-
-        Position = position;
 
         reader->SetPosition(position);
 

@@ -71,24 +71,24 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 case 'Z':
                     gRenderer->GetCamera()->MoveVertical(-CAMERA_STEP);
                     return TRUE;
-                case 'A':
-                    gRenderer->GetCamera()->LookAtLeftRight(-CAMERA_STEP);
-                    return TRUE;
-                case 'D':
-                    gRenderer->GetCamera()->LookAtLeftRight(CAMERA_STEP);
-                    return TRUE;
-                case 'W':
-                    gRenderer->GetCamera()->LookAtFrontBack(-CAMERA_STEP);
-                    return TRUE;
-                case 'X':
-                    gRenderer->GetCamera()->LookAtFrontBack(CAMERA_STEP);
-                    return TRUE;
-                case 'Q':
-                    gRenderer->GetCamera()->LookAtUpDown(-CAMERA_STEP);
-                    return TRUE;
-                case 'E':
-                    gRenderer->GetCamera()->LookAtUpDown(CAMERA_STEP);
-                    return TRUE;
+                //case 'A':
+                //    gRenderer->GetCamera()->LookAtLeftRight(-CAMERA_STEP);
+                //    return TRUE;
+                //case 'D':
+                //    gRenderer->GetCamera()->LookAtLeftRight(CAMERA_STEP);
+                //    return TRUE;
+                //case 'W':
+                //    gRenderer->GetCamera()->LookAtFrontBack(-CAMERA_STEP);
+                //    return TRUE;
+                //case 'X':
+                //    gRenderer->GetCamera()->LookAtFrontBack(CAMERA_STEP);
+                //    return TRUE;
+                //case 'Q':
+                //    gRenderer->GetCamera()->LookAtUpDown(-CAMERA_STEP);
+                //    return TRUE;
+                //case 'E':
+                //    gRenderer->GetCamera()->LookAtUpDown(CAMERA_STEP);
+                //    return TRUE;
             }
                 
             break;
@@ -180,11 +180,11 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = GuiWindowProc;
     wc.hInstance = hInstance;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.lpszClassName = L"DXWindow";
-    wc.hIconSm = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
-    wc.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
+    wc.hIconSm = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
+    wc.hIcon = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
     wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
 
     RegisterClassEx(&wc);
@@ -192,7 +192,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     RECT wr = { START_X, START_Y, START_X + START_WIDTH, START_Y + START_HEIGHT };
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, true);
 
-    guiWindow = CreateWindowEx(NULL,
+    guiWindow = CreateWindowEx(WS_EX_RIGHTSCROLLBAR,
         L"DXWindow",
         L"CMaNGOS Map Debugging Interface",
         WS_OVERLAPPEDWINDOW,
@@ -200,10 +200,10 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
         wr.top,
         wr.right - wr.left,
         wr.bottom - wr.top,
-        NULL,
-        NULL,
+        HWND_DESKTOP,
+        nullptr,
         hInstance,
-        NULL);
+        nullptr);
 
     ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
@@ -211,15 +211,15 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = ControlWindowProc;
     wc.hInstance = hInstance;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.lpszClassName = L"ControlWindow";
-    wc.hIconSm = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
-    wc.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
+    wc.hIconSm = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
+    wc.hIcon = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
 
     RegisterClassEx(&wc);
 
-    controlWindow = CreateWindowEx(NULL,
+    controlWindow = CreateWindowEx(WS_EX_RIGHTSCROLLBAR,
         L"ControlWindow",
         L"Control",
         (WS_BORDER | WS_CAPTION) & (~WS_ICONIC),
@@ -227,10 +227,10 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
         wr.top,
         CONTROL_WIDTH,
         CONTROL_HEIGHT,
-        NULL,
-        NULL,
+        HWND_DESKTOP,
+        nullptr,
         hInstance,
-        NULL);
+        nullptr);
 }
 
 // the entry point for any Windows program
@@ -301,7 +301,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         gRenderer->Render();
 
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);

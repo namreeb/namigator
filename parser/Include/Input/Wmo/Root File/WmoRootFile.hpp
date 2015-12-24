@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "LinearAlgebra.hpp"
 #include "MathHelper.hpp"
@@ -24,7 +25,7 @@ namespace parser_input
             BoundingBox Bounds;
 
             std::string Name;
-            std::string FullName;
+            const std::string FullName;
 
             WmoRootFile(const std::string &path, const WmoParserInfo *info);
     };

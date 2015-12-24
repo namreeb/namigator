@@ -6,7 +6,7 @@ using namespace utility;
 
 namespace parser_input
 {
-    WdtFile::WdtFile(std::string path) : WowFile(path)
+    WdtFile::WdtFile(const std::string &path) : WowFile(path)
     {
         Reader->SetPosition(GetChunkLocation("MPHD", 0) + 8);
 

@@ -68,10 +68,11 @@ namespace parser_input
             unsigned int WaterType;
             unsigned int AreaId;
 
+            float Height;
+
             bool HoleMap[8][8];
             std::vector<Vertex> Positions;
 
-            std::unique_ptr<MCNKInfo> Information;
             std::unique_ptr<MCVT> HeightChunk;
 
             //std::vector<unsigned int> DoodadIndices;

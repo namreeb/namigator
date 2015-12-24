@@ -19,22 +19,23 @@ using namespace utility;
 
 namespace parser_input
 {
-    WmoRootFile::WmoRootFile(const std::string &path, const WmoParserInfo *info) : WowFile(path)
+    WmoRootFile::WmoRootFile(const std::string &path, const WmoParserInfo *info) : WowFile(path), FullName(path)
     {
-        FullName = path;
         Name = path.substr(path.rfind('\\')+1);
         Name = Name.substr(0, Name.rfind('.'));
 
-        long mohdPosition = GetChunkLocation("MOHD", 0);
+        const long mohdPosition = GetChunkLocation("MOHD", 0);
 
         Reader->SetPosition(mohdPosition + 8);
-        std::unique_ptr<MOHD> information(Reader->AllocateAndReadStruct<MOHD>());
+
+        MOHD information;
+        Reader->ReadStruct(&information);
 
         std::vector<std::unique_ptr<WmoGroupFile>> groupFiles;
-        groupFiles.reserve(information->WMOGroupFilesCount);
+        groupFiles.reserve(information.WMOGroupFilesCount);
 
         std::string dirName = path.substr(0, path.rfind('\\'));
-        for (int i = 0; i < information->WMOGroupFilesCount; ++i)
+        for (int i = 0; i < information.WMOGroupFilesCount; ++i)
         {
             std::stringstream ss;
 
@@ -44,15 +45,9 @@ namespace parser_input
 
         // XXX - Check all GetChunkLocation() calls to see if we can replace these 0s with something smarter!
 
-        long modsLoc = GetChunkLocation("MODS");
-        std::unique_ptr<MODS> doodadSetsChunk(modsLoc > 0 ? new MODS(information->DoodadSetsCount, modsLoc, Reader) : nullptr);
-
-        long modnLoc = GetChunkLocation("MODN");
-        std::unique_ptr<MODN> doodadNamesChunk(modnLoc > 0 ? new MODN(information->DoodadNamesCount, modnLoc, Reader) : nullptr);
-
-        long moddLoc = GetChunkLocation("MODD");
-        std::unique_ptr<MODD> doodadChunk(moddLoc > 0 ? new MODD(moddLoc, Reader) : nullptr);
-
+        const long modsLoc = GetChunkLocation("MODS");
+        const long modnLoc = GetChunkLocation("MODN");
+        const long moddLoc = GetChunkLocation("MODD");
 
         // PROCESSING...
 
@@ -60,33 +55,33 @@ namespace parser_input
         float xPos = -(info->BasePosition.Z - mid);
         float yPos = -(info->BasePosition.X - mid);
         float zPos = info->BasePosition.Y;
-        Vertex origin(xPos, yPos, zPos);
+        const Vertex origin(xPos, yPos, zPos);
 
         xPos = -(info->MaxCorner.Z - mid);
         yPos = -(info->MaxCorner.X - mid);
         zPos = info->MaxCorner.Y;
 
-        Vertex maxCorner = Vertex(xPos, yPos, zPos);
+        const Vertex maxCorner = Vertex(xPos, yPos, zPos);
         
         xPos = -(info->MinCorner.Z - mid);
         yPos = -(info->MinCorner.X - mid);
         zPos = info->MinCorner.Y;
 
-        Vertex minCorner = Vertex(xPos, yPos, zPos);
+        const Vertex minCorner = Vertex(xPos, yPos, zPos);
 
         Bounds = BoundingBox(minCorner, maxCorner);
 
-        float rotX = MathHelper::ToRadians(info->OrientationC);
-        float rotY = MathHelper::ToRadians(info->OrientationA);
-        float rotZ = MathHelper::ToRadians(info->OrientationB + 180.f);    // XXX - other people use -90?
-        Matrix<float> transformMatrix = Matrix<float>::CreateRotationX(rotX) * Matrix<float>::CreateRotationY(rotY) * Matrix<float>::CreateRotationZ(rotZ);
+        const float rotX = MathHelper::ToRadians(info->OrientationC);
+        const float rotY = MathHelper::ToRadians(info->OrientationA);
+        const float rotZ = MathHelper::ToRadians(info->OrientationB + 180.f);    // XXX - other people use -90?
+        const Matrix transformMatrix = Matrix::CreateRotationX(rotX) * Matrix::CreateRotationY(rotY) * Matrix::CreateRotationZ(rotZ);
 
         bool minMaxStarted = false;
 
         // XXX - analyze wow files to check if the map reduction is needed
 
         // for each group file
-        for (int g = 0; g < information->WMOGroupFilesCount; ++g)
+        for (int g = 0; g < information.WMOGroupFilesCount; ++g)
         {
             Vertices.reserve(Vertices.capacity() + groupFiles[g]->VerticesChunk->Vertices.size());
             Indices.reserve(Indices.capacity() + groupFiles[g]->IndicesChunk->Indices.size());
@@ -122,7 +117,7 @@ namespace parser_input
                     // this vertex has not yet been added
 
                     // transform into world space
-                    Vertex rotatedVertex = origin + Vertex::Transform(groupFiles[g]->VerticesChunk->Vertices[vertexIndex], transformMatrix);
+                    const Vertex rotatedVertex = origin + Vertex::Transform(groupFiles[g]->VerticesChunk->Vertices[vertexIndex], transformMatrix);
 
                     // add a mapping for the vertex's old index to its position in the new vertex list (aka its new index)
                     indexMap[vertexIndex] = Vertices.size();
@@ -150,7 +145,7 @@ namespace parser_input
 
             // process MLIQ data
 
-            if (groupFiles[g]->LiquidChunk == nullptr)
+            if (!groupFiles[g]->LiquidChunk)
                 continue;
 
             const float tileSize = (float)((533.f + (1.f / 3.f)) / 128.f);
@@ -159,12 +154,9 @@ namespace parser_input
             for (unsigned int y = 0; y < groupFiles[g]->LiquidChunk->Height; ++y)
                 for (unsigned int x = 0; x < groupFiles[g]->LiquidChunk->Width; ++x)
                 {
-                    if (groupFiles[g]->LiquidChunk->RenderMap->Get(y, x) == 0xF)
-                        continue;
-
-                    Vertex baseVertex(groupFiles[g]->LiquidChunk->Base[0],
-                                      groupFiles[g]->LiquidChunk->Base[1],
-                                      groupFiles[g]->LiquidChunk->Base[2]);
+                    const Vertex baseVertex(groupFiles[g]->LiquidChunk->Base[0],
+                                            groupFiles[g]->LiquidChunk->Base[1],
+                                            groupFiles[g]->LiquidChunk->Base[2]);
 
                     // XXX - for some reason, this works best when you ignore the height map and use only the base height
 
@@ -212,33 +204,40 @@ namespace parser_input
 
         // Doodads...
 
-        std::vector<WmoDoodad *> finalDoodads;
-        finalDoodads.reserve(doodadChunk->Count);
+        std::unique_ptr<MODS> doodadSetsChunk(modsLoc > 0 ? new MODS(information.DoodadSetsCount, modsLoc, Reader) : nullptr);
+        std::unique_ptr<MODN> doodadNamesChunk(modnLoc > 0 ? new MODN(information.DoodadNamesCount, modnLoc, Reader) : nullptr);
+        std::unique_ptr<MODD> doodadChunk(moddLoc > 0 ? new MODD(moddLoc, Reader) : nullptr);
+
+        std::vector<std::unique_ptr<WmoDoodad>> finalDoodads;
+        finalDoodads.resize(doodadChunk->Count);
 
         for (int i = 0; i < doodadChunk->Count; ++i)
         {
-            unsigned int nameIndex = doodadChunk->Doodads[i].DoodadInfo->NameIndex;
-            unsigned int index = doodadChunk->Doodads[i].Index;
+            const unsigned int nameIndex = doodadChunk->Doodads[i].DoodadInfo.NameIndex;
+            const unsigned int index = doodadChunk->Doodads[i].Index;
 
-            if (doodadSetsChunk.get() && doodadSetsChunk->Count)
+            if (!!doodadSetsChunk && doodadSetsChunk->Count)
             {
-                DoodadSetInfo *set = &doodadSetsChunk->DoodadSets[info->DoodadSet];
+                const DoodadSetInfo *set = &doodadSetsChunk->DoodadSets[info->DoodadSet];
 
                 if (index < set->FirstDoodadIndex || index > (set->FirstDoodadIndex + set->DoodadCount - 1))
                     continue;
             }
 
-            finalDoodads.push_back(new WmoDoodad(info, doodadChunk->Doodads[i].DoodadInfo.get(), doodadNamesChunk->Names[nameIndex]));
+            finalDoodads[i].reset(new WmoDoodad(info, &doodadChunk->Doodads[i].DoodadInfo, doodadNamesChunk->Names[nameIndex]));
         }
 
         for (unsigned int i = 0; i < finalDoodads.size(); ++i)
         {
-            std::unique_ptr<WmoDoodad> doodad(finalDoodads[i]);
+            const WmoDoodad *doodad = finalDoodads[i].get();
+
+            if (!doodad)
+                continue;
 
             if (!doodad->Vertices.size())
                 continue;
 
-            unsigned int oldSize = DoodadVertices.size();
+            const unsigned int oldSize = DoodadVertices.size();
             DoodadVertices.resize(oldSize + doodad->Vertices.size());
 
             for (unsigned int j = 0; j < doodad->Indices.size(); ++j)

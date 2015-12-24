@@ -1,29 +1,19 @@
 #include <string>
 #include <vector>
+#include <algorithm>
+
 #include "BinaryStream.hpp"
 #include "Misc.hpp"
 
 namespace utility
 {
-    BinaryStream::BinaryStream(std::vector<char> &buffer, unsigned long bufferLength)
+    BinaryStream::BinaryStream(std::vector<char> &buffer, unsigned long bufferLength) : _buffer(std::move(buffer)), _position(0L)
     {
         if (!bufferLength)
             throw "Empty utility::BinaryStream";
-
-        _buffer = std::move(buffer);
-        _position = 0L;
     }
 
-    BinaryStream::BinaryStream(unsigned long bufferLength)
-    {
-        _buffer = std::vector<char>(bufferLength);
-        _position = 0L;
-    }
-
-    BinaryStream::~BinaryStream()
-    {
-        _position = 0L;
-    }
+    BinaryStream::BinaryStream(unsigned long bufferLength) : _buffer(bufferLength), _position(0L) {}
 
     void utility::BinaryStream::Write(char *data, int length)
     {
@@ -46,7 +36,7 @@ namespace utility
 
     void utility::BinaryStream::ReadBytes(void *dest, unsigned long length)
     {
-        memcpy(dest, (const char *)(&_buffer[0] + _position), length);
+        std::copy(&_buffer[_position], &_buffer[_position + length], static_cast<char *>(dest));
 
         _position += length;
     }

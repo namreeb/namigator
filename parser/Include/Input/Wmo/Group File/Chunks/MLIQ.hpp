@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Input/Wmo/Group File/WmoGroupChunk.hpp"
 #include "Array2d.hpp"
 
@@ -12,10 +14,8 @@ namespace parser_input
             unsigned int Height;
 
             float Base[3];
-            Array2d<float> *Heights;
-            Array2d<unsigned char> *RenderMap;
+            std::unique_ptr<Array2d<float>> Heights;
 
             MLIQ(long position, utility::BinaryStream *groupFileStream);
-            ~MLIQ();
     };
 }

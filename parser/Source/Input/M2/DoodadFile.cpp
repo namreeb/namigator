@@ -39,18 +39,18 @@ namespace parser_input
     Doodad::Doodad(const std::string &path, DoodadInfo doodadInfo) : DoodadFile(path)
     {
         const float mid = (float)((533.0 + (1.0/3.0)) * 32.0);
-        float xPos = -(doodadInfo.BasePosition.Z - mid);
-        float yPos = -(doodadInfo.BasePosition.X - mid);
-        float zPos = doodadInfo.BasePosition.Y;
-        Vertex origin(xPos, yPos, zPos);
+        const float xPos = -(doodadInfo.BasePosition.Z - mid);
+        const float yPos = -(doodadInfo.BasePosition.X - mid);
+        const float zPos = doodadInfo.BasePosition.Y;
+        const Vertex origin(xPos, yPos, zPos);
 
-        float rotX = MathHelper::ToRadians(doodadInfo.OrientationC);
-        float rotY = MathHelper::ToRadians(doodadInfo.OrientationA);
-        float rotZ = MathHelper::ToRadians(doodadInfo.OrientationB + 180.f);
-        Matrix<float> transformMatrix = Matrix<float>::CreateScalingMatrix(doodadInfo.Scale / 1024.f) *
-                                        Matrix<float>::CreateRotationX(rotX) *
-                                        Matrix<float>::CreateRotationY(rotY) *
-                                        Matrix<float>::CreateRotationZ(rotZ);
+        const float rotX = MathHelper::ToRadians(doodadInfo.OrientationC);
+        const float rotY = MathHelper::ToRadians(doodadInfo.OrientationA);
+        const float rotZ = MathHelper::ToRadians(doodadInfo.OrientationB + 180.f);
+        const Matrix transformMatrix = Matrix::CreateScalingMatrix(doodadInfo.Scale / 1024.f) *
+                                              Matrix::CreateRotationX(rotX) *
+                                              Matrix::CreateRotationY(rotY) *
+                                              Matrix::CreateRotationZ(rotZ);
 
         for (unsigned int i = 0; i < Vertices.size(); ++i)
         {

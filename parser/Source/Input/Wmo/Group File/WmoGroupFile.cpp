@@ -6,8 +6,6 @@ namespace parser_input
 {
     WmoGroupFile::WmoGroupFile(const std::string &path) : WowFile(path)
     {
-        std::string num = path.substr(path.rfind('_') + 1, 3);
-        
         char *cPath = new char[path.length()+1], *p;
 
         memcpy(cPath, path.c_str(), path.length() + 1);
@@ -23,7 +21,7 @@ namespace parser_input
 
         // MOGP
 
-        long mogpOffset = GetChunkLocation("MOGP", 0xC);
+        const long mogpOffset = GetChunkLocation("MOGP", 0xC);
 
         if (mogpOffset < 0)
             throw "No MOGP chunk";
@@ -37,44 +35,36 @@ namespace parser_input
 
         // MOPY
 
-        long mopyOffset = GetChunkLocation("MOPY", 0x58);
+        const long mopyOffset = GetChunkLocation("MOPY", 0x58);
 
         if (mopyOffset < 0)
             throw "No MOPY chunk";
 
-        MaterialsChunk = new MOPY(mopyOffset, Reader);
+        MaterialsChunk.reset(new MOPY(mopyOffset, Reader));
 
         // MOVI
 
-        long moviOffset = GetChunkLocation("MOVI", (int)mopyOffset + 4 + (int)MaterialsChunk->Size);
+        const long moviOffset = GetChunkLocation("MOVI", (int)mopyOffset + 4 + (int)MaterialsChunk->Size);
 
         if (moviOffset < 0)
             throw "No MOVI chunk";
 
-        IndicesChunk = new MOVI(moviOffset, Reader);
+        IndicesChunk.reset(new MOVI(moviOffset, Reader));
 
         // MOVT
 
-        long movtOffset = GetChunkLocation("MOVT", (int)moviOffset + 4 + (int)IndicesChunk->Size);
+        const long movtOffset = GetChunkLocation("MOVT", (int)moviOffset + 4 + (int)IndicesChunk->Size);
 
         if (movtOffset < 0)
             throw "No MOVT chunk";
 
-        VerticesChunk = new MOVT(movtOffset, Reader);
+        VerticesChunk.reset(new MOVT(movtOffset, Reader));
 
         // MLIQ
 
-        long mliqOffset = GetChunkLocation("MLIQ", 0x58);
+        const long mliqOffset = GetChunkLocation("MLIQ", 0x58);
 
         // not guarunteed to be present
-        LiquidChunk = (mliqOffset >= 0 ? new MLIQ(mliqOffset, Reader) : nullptr);
-    }
-
-    WmoGroupFile::~WmoGroupFile()
-    {
-        delete MaterialsChunk;
-        delete IndicesChunk;
-        delete VerticesChunk;
-        delete LiquidChunk;
+        LiquidChunk.reset((mliqOffset >= 0 ? new MLIQ(mliqOffset, Reader) : nullptr));
     }
 }

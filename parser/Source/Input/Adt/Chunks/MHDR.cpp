@@ -13,6 +13,6 @@ namespace parser_input
             THROW("MHDR chunk of incorrect size");
 #endif
 
-        Offsets.reset(reader->AllocateAndReadStruct<MHDRInfo>());
+        reader->ReadStruct(&Offsets);
     }
 }

@@ -4,15 +4,14 @@
 
 namespace parser_input
 {
-    WmoGroupChunk::WmoGroupChunk(long position, utility::BinaryStream *groupFileStream)
+    WmoGroupChunk::WmoGroupChunk(long position, utility::BinaryStream *groupFileStream) : Position(position)
     {
-        Position = position;
-
         groupFileStream->SetPosition(position);
 
-        std::unique_ptr<WmoChunkHeader> header(groupFileStream->AllocateAndReadStruct<WmoChunkHeader>());
+        WmoChunkHeader header;
+        groupFileStream->ReadStruct(&header);
 
-        Type = header->Type;
-        Size = header->Size;
+        Type = header.Type;
+        Size = header.Size;
     }
 }

@@ -36,7 +36,7 @@ namespace utility
     {
     }
 
-    BoundingBox::BoundingBox(Vertex &minCorner, Vertex &maxCorner, bool includeZ)
+    BoundingBox::BoundingBox(const Vertex &minCorner, const Vertex &maxCorner, bool includeZ)
     {
         MinCorner = minCorner;
         MaxCorner = maxCorner;

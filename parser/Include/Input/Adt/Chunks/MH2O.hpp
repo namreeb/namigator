@@ -31,8 +31,8 @@ namespace parser_input
 
     struct MH2OBlock
     {
-        std::unique_ptr<MH2OData> Data;
-        std::unique_ptr<MH2OHeader> Header;
+        MH2OData Data;
+        MH2OHeader Header;
 
         // quad heights
         float Heights[8][8];

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "Input/WowFile.hpp"
 #include "Input/Wmo/Group File/Chunks/MOPY.hpp"
@@ -16,16 +17,15 @@ namespace parser_input
             int Index;
             unsigned int Flags;
 
-            MOPY *MaterialsChunk;
-            MOVI *IndicesChunk;
-            MOVT *VerticesChunk;
-            MLIQ *LiquidChunk;
+            std::unique_ptr<MOPY> MaterialsChunk;
+            std::unique_ptr<MOVI> IndicesChunk;
+            std::unique_ptr<MOVT> VerticesChunk;
+            std::unique_ptr<MLIQ> LiquidChunk;
 
             // bounding box.  XXX - do we actually need this?
             float Min[3];
             float Max[3];
 
             WmoGroupFile(const std::string &path);
-            ~WmoGroupFile();
     };
 }

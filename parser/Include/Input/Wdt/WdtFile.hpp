@@ -14,6 +14,6 @@ namespace parser_input
 
             std::unique_ptr<WmoRootFile> Wmo;
 
-            WdtFile(std::string path);
+            WdtFile(const std::string &path);
     };
 }

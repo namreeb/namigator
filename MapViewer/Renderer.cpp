@@ -1,6 +1,7 @@
 #include <vector>
 #include <limits>
 #include <sstream>
+#include <cassert>
 
 #define NOMINMAX    // for some reason, these macros interfere with numerical_limits?
 
@@ -19,7 +20,7 @@
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 
-#define WIREFRAME
+//#define WIREFRAME
 
 Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
 {
@@ -39,16 +40,17 @@ Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
 
     // create a device, device context and swap chain using the information in the scd struct
-    D3D11CreateDeviceAndSwapChain(NULL,
+    auto const result = D3D11CreateDeviceAndSwapChain(nullptr,
         D3D_DRIVER_TYPE_HARDWARE,
-        NULL,
+        nullptr,
 #ifdef _DEBUG
-        D3D11_CREATE_DEVICE_DEBUG,
+        //D3D11_CREATE_DEVICE_DEBUG,
+        0,
 #else
-        NULL,
+        nullptr,
 #endif
         nullptr,
-        NULL,
+        0,
         D3D11_SDK_VERSION,
         &scd,
         &m_swapChain,
@@ -56,17 +58,18 @@ Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
         nullptr,
         &m_deviceContext);
 
+    assert(m_swapChain);
 
     // get the address of the back buffer
     ID3D11Texture2D *backBuffer;
     m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID *>(&backBuffer));
 
     // use the back buffer address to create the render target
-    m_device->CreateRenderTargetView(backBuffer, NULL, &m_backBuffer);
+    m_device->CreateRenderTargetView(backBuffer, nullptr, &m_backBuffer);
     backBuffer->Release();
 
     // set the render target as the back buffer
-    m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, NULL);
+    m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, nullptr);
 
     InitializePipeline(window);
 }
@@ -181,9 +184,9 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
     m_device->CreateBuffer(&vertexBufferDesc, nullptr, vertexBuffer);
 
     D3D11_MAPPED_SUBRESOURCE ms;
-    m_deviceContext->Map(*vertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+    m_deviceContext->Map(*vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
     memcpy(ms.pData, &vertices[0], sizeof(ColoredVertex)*vertices.size());
-    m_deviceContext->Unmap(*vertexBuffer, NULL);
+    m_deviceContext->Unmap(*vertexBuffer, 0);
 
     ZERO(indexBufferDesc);
 
@@ -198,9 +201,9 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
 
     m_device->CreateBuffer(&indexBufferDesc, nullptr, indexBuffer);
 
-    m_deviceContext->Map(*indexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+    m_deviceContext->Map(*indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
     memcpy(ms.pData, &indices[0], sizeof(int)*indices.size());
-    m_deviceContext->Unmap(*indexBuffer, NULL);
+    m_deviceContext->Unmap(*indexBuffer, 0);
 
     m_indexCounts.push_back(indices.size());
 
@@ -233,7 +236,7 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
         const float averageY = (minY + maxY) / 2.f;
 
         m_camera->Move(averageX, averageY, maxZ + 300.f);
-        m_camera->LookAt(averageX, averageY, maxZ);
+        //m_camera->LookAt(averageX, averageY, maxZ);
     }
 }
 
@@ -248,7 +251,7 @@ void Renderer::Render() const
     m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, m_camera->GetProjectionMatrix(), 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
 
-    unsigned int stride = sizeof(ColoredVertex);
+    const unsigned int stride = sizeof(ColoredVertex);
     unsigned int offset = 0;
 
     for (unsigned int i = 0; i < m_vertexBuffers.size(); ++i)

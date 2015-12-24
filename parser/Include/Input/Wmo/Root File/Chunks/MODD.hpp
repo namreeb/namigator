@@ -12,7 +12,7 @@ namespace parser_input
     class MODD : WmoRootChunk
     {
         public:
-            int Count;
+            const int Count;
             std::vector<WmoDoodadIndexedInfo> Doodads;
 
             MODD(long position, utility::BinaryStream *reader);

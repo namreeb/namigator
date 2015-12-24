@@ -36,8 +36,8 @@ namespace parser_input
 
         MHDR header(GetChunkLocation("MHDR", Reader->GetPosition()), Reader);
 
-        if (m_hasMH2O = !!header.Offsets->Mh2oOffset)
-            m_liquidChunk = std::unique_ptr<MH2O>(new MH2O(header.Offsets->Mh2oOffset + 0x14, Reader));
+        if (m_hasMH2O = !!header.Offsets.Mh2oOffset)
+            m_liquidChunk = std::unique_ptr<MH2O>(new MH2O(header.Offsets.Mh2oOffset + 0x14, Reader));
 
         long currMcnk = GetChunkLocation("MCNK");
 
@@ -49,7 +49,7 @@ namespace parser_input
             }
 
         // MMDX
-        const long mmdxLocation = GetChunkLocation("MMDX", header.Offsets->MmdxOffset + 0x14);
+        const long mmdxLocation = GetChunkLocation("MMDX", header.Offsets.MmdxOffset + 0x14);
 
         if (mmdxLocation >= 0)
         {
@@ -60,7 +60,7 @@ namespace parser_input
         // MMID: XXX - other people read in the MMID chunk here.  do we actually need it?
 
         // MWMO
-        const long mwmoLocation = GetChunkLocation("MWMO", header.Offsets->MwmoOffset + 0x14);
+        const long mwmoLocation = GetChunkLocation("MWMO", header.Offsets.MwmoOffset + 0x14);
 
         if (mwmoLocation >= 0)
         {
@@ -71,11 +71,11 @@ namespace parser_input
         // MWID: XXX - other people read in the MWID chunk here.  do we actually need it?
 
         // MDDF
-        const long mddfLocation = GetChunkLocation("MDDF", header.Offsets->MddfOffset + 0x14);
+        const long mddfLocation = GetChunkLocation("MDDF", header.Offsets.MddfOffset + 0x14);
         m_doodadChunk = mddfLocation < 0 ? nullptr : std::unique_ptr<MDDF>(new MDDF(mddfLocation, Reader));
 
         // MODF
-        const long modfLocation = GetChunkLocation("MODF", header.Offsets->ModfOffset + 0x14);
+        const long modfLocation = GetChunkLocation("MODF", header.Offsets.ModfOffset + 0x14);
         m_wmoChunk = modfLocation < 0 ? nullptr : std::unique_ptr<MODF>(new MODF(modfLocation, Reader));
     }
 }

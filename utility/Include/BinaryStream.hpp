@@ -16,7 +16,6 @@ namespace utility
         public:
             BinaryStream(std::vector<char> &buffer, unsigned long bufferLength);
             BinaryStream(unsigned long bufferLength = 4096);
-            ~BinaryStream();
 
             template <typename T> T Read()
             {
@@ -46,12 +45,19 @@ namespace utility
             template <typename T>
             T *AllocateAndReadStruct()
             {
-                T *ret(new T);
+                T *ret = new T;
 
-                memcpy(ret, (char *)&_buffer[0] + _position, sizeof(T));
+                memcpy(ret, &_buffer[_position], sizeof(T));
                 _position += sizeof(T);
 
                 return ret;
+            }
+
+            template <typename T>
+            void ReadStruct(T *output)
+            {
+                memcpy(output, &_buffer[_position], sizeof(T));
+                _position += sizeof(T);
             }
 
             inline unsigned long Length() { return _buffer.size(); }

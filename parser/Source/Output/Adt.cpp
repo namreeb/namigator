@@ -49,7 +49,7 @@ namespace parser
                 chunk->m_terrainVertices = std::move(mapChunk->Positions);
 
                 for (int i = 0; i < 145; ++i)
-                    chunk->m_terrainHeights[i] = mapChunk->HeightChunk->Heights[i] + mapChunk->Information->Position[2];
+                    chunk->m_terrainHeights[i] = mapChunk->HeightChunk->Heights[i] + mapChunk->Height;
 
                 memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(bool)*8*8);
 
@@ -106,13 +106,13 @@ namespace parser
                     if (liquidBlock)
                     {
                         // expand LiquidVertices.  4 verts per square.
-                        chunk->m_liquidVertices.reserve(chunk->m_liquidVertices.size() + 4 * liquidBlock->Data->Width * liquidBlock->Data->Height);
+                        chunk->m_liquidVertices.reserve(chunk->m_liquidVertices.size() + 4 * liquidBlock->Data.Width * liquidBlock->Data.Height);
 
                         // expand LiquidIndices.  6 indices per square (two triangles, three indices per triangle)
-                        chunk->m_liquidIndices.reserve(chunk->m_liquidIndices.size() + 6 * liquidBlock->Data->Width * liquidBlock->Data->Height);
+                        chunk->m_liquidIndices.reserve(chunk->m_liquidIndices.size() + 6 * liquidBlock->Data.Width * liquidBlock->Data.Height);
 
-                        for (int y = liquidBlock->Data->YOffset; y < liquidBlock->Data->YOffset + liquidBlock->Data->Height; ++y)
-                             for (int x = liquidBlock->Data->XOffset; x < liquidBlock->Data->XOffset + liquidBlock->Data->Width; ++x)
+                        for (int y = liquidBlock->Data.YOffset; y < liquidBlock->Data.YOffset + liquidBlock->Data.Height; ++y)
+                             for (int x = liquidBlock->Data.XOffset; x < liquidBlock->Data.XOffset + liquidBlock->Data.Width; ++x)
                              {
                                  if (!IsRendered(liquidBlock->RenderMask, x, y))
                                      continue;
@@ -162,8 +162,8 @@ namespace parser
 
             for (unsigned int wmoFile = 0; wmoFile < adt.m_wmoChunk->Wmos.size(); ++wmoFile)
             {
-                std::string wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[wmoFile]->NameId];
-                wmoFiles.push_back(std::unique_ptr<parser_input::WmoRootFile>(new parser_input::WmoRootFile(wmoName, adt.m_wmoChunk->Wmos[wmoFile].get())));
+                std::string wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[wmoFile].NameId];
+                wmoFiles.push_back(std::unique_ptr<parser_input::WmoRootFile>(new parser_input::WmoRootFile(wmoName, &adt.m_wmoChunk->Wmos[wmoFile])));
             }
 
             for (int chunkY = 0; chunkY < 16; ++chunkY)
@@ -178,7 +178,7 @@ namespace parser
                     // iterate over each wmo referenced in the adt.  see if it belongs in this chunk and has not been placed yet
                     for (unsigned int w = 0; w < adt.m_wmoChunk->Wmos.size(); ++w)
                     {
-                        const unsigned int uniqueId = adt.m_wmoChunk->Wmos[w]->UniqueId;
+                        const unsigned int uniqueId = adt.m_wmoChunk->Wmos[w].UniqueId;
                         bool landsOnChunk = false;
 
                         // save time by checking overlap with the boundary of the wmo

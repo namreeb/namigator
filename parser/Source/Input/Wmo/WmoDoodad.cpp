@@ -20,14 +20,14 @@ namespace parser_input
         // according to MaiN, from Greyman:
         Quaternion q = Quaternion(wmoDoodadInfo->RotX, wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, wmoDoodadInfo->RotZ);
 
-        Matrix<float> transformMatrix = Matrix<float>::CreateScalingMatrix(wmoDoodadInfo->Scale) *
-                                        Matrix<float>::CreateRotationY(PI) *
-                                        Matrix<float>::CreateFromQuaternion(q) *
-                                        Matrix<float>::CreateTranslationMatrix(origin) *
-                                        Matrix<float>::CreateRotationX(parRotX) *
-                                        Matrix<float>::CreateRotationY(parRotY) *
-                                        Matrix<float>::CreateRotationZ(parRotZ) *
-                                        Matrix<float>::CreateTranslationMatrix(parentOrigin);
+        Matrix transformMatrix = Matrix::CreateScalingMatrix(wmoDoodadInfo->Scale) *
+                                        Matrix::CreateRotationY(PI) *
+                                        Matrix::CreateFromQuaternion(q) *
+                                        Matrix::CreateTranslationMatrix(origin) *
+                                        Matrix::CreateRotationX(parRotX) *
+                                        Matrix::CreateRotationY(parRotY) *
+                                        Matrix::CreateRotationZ(parRotZ) *
+                                        Matrix::CreateTranslationMatrix(parentOrigin);
 
         for (unsigned int i = 0; i < Vertices.size(); ++i)
         {

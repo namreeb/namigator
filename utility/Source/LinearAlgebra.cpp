@@ -138,20 +138,18 @@ namespace utility
         return *this;
     }
 
-    template <typename T>
-    Matrix<T>::Matrix(int rows, int columns)
+    Matrix::Matrix(int rows, int columns)
     {
         Rows = rows;
         Columns = columns;
 
-        matrix = (rows > 0 && columns > 0 ? new Row<T>[rows] : NULL);
+        matrix = (rows > 0 && columns > 0 ? new Row<float>[rows] : nullptr);
 
         for (int i = 0; i < rows; ++i)
             matrix[i].SetColumnSize(columns);
     }
 
-    template <typename T>
-    Row<T>& Matrix<T>::operator [](int index) const
+    Row<float>& Matrix::operator [](int index) const
     {
         if (index >= Rows)
             throw "Bad row index";
@@ -159,26 +157,25 @@ namespace utility
         return matrix[index];
     }
 
-    template <typename T>
-    Matrix<T>& Matrix<T>::operator =(Matrix<T> &m)
+    //Matrix& Matrix::operator =(Matrix &m)
+    //{
+    //    Rows = m.Rows;
+    //    Columns = m.Columns;
+
+    //    if (matrix)
+    //        delete[] matrix;
+
+    //    matrix = (M.Rows > 0 && M.columns > 0 ? new Row<float>[rows](columns) : nullptr);
+
+    //    for (int r = 0; r < Rows; ++r)
+    //        matrix[r] = Row<float>(m[r]);
+
+    //    return *this;
+    //}
+
+    Matrix Matrix::CreateRotationX(float radians)
     {
-        Rows = rows;
-        Columns = columns;
-
-        if (matrix)
-            delete[] matrix;
-
-        matrix = (rows > 0 && columns > 0 ? new Row<T>[rows](columns) : NULL);
-
-        for (int r = 0; r < Rows; ++r)
-            matrix[r] = Row(m[r]);
-
-        return *this;
-    }
-
-    Matrix<float> Matrix<float>::CreateRotationX(float radians)
-    {
-        Matrix<float> ret(4,4);
+        Matrix ret(4,4);
 
         ret[0][0] = 1.f;
         ret[0][1] = 0.f;
@@ -193,17 +190,17 @@ namespace utility
         ret[1][3] = 0.f;
         ret[2][3] = 0.f;
 
-        ret[1][1] =  cos(radians);
-        ret[1][2] = -sin(radians);
-        ret[2][1] =  sin(radians);
-        ret[2][2] =  cos(radians);
+        ret[1][1] =  cosf(radians);
+        ret[1][2] = -sinf(radians);
+        ret[2][1] =  sinf(radians);
+        ret[2][2] =  cosf(radians);
 
         return ret;
     }
 
-    Matrix<float> Matrix<float>::CreateRotationY(float radians)
+    Matrix Matrix::CreateRotationY(float radians)
     {
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         ret[1][1] = 1.f;
         ret[0][1] = 0.f;
@@ -218,17 +215,17 @@ namespace utility
         ret[1][3] = 0.f;
         ret[2][3] = 0.f;
 
-        ret[0][0] =  cos(radians);
-        ret[0][2] =  sin(radians);
-        ret[2][0] = -sin(radians);
-        ret[2][2] =  cos(radians);
+        ret[0][0] =  cosf(radians);
+        ret[0][2] =  sinf(radians);
+        ret[2][0] = -sinf(radians);
+        ret[2][2] =  cosf(radians);
 
         return ret;
     }
 
-    Matrix<float> Matrix<float>::CreateRotationZ(float radians)
+    Matrix Matrix::CreateRotationZ(float radians)
     {
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         ret[2][2] = 1.f;
         ret[0][2] = 0.f;
@@ -243,17 +240,17 @@ namespace utility
         ret[1][3] = 0.f;
         ret[2][3] = 0.f;
 
-        ret[0][0] =  cos(radians);
-        ret[0][1] = -sin(radians);
-        ret[1][0] =  sin(radians);
-        ret[1][1] =  cos(radians);
+        ret[0][0] =  cosf(radians);
+        ret[0][1] = -sinf(radians);
+        ret[1][0] =  sinf(radians);
+        ret[1][1] =  cosf(radians);
 
         return ret;
     }
 
-    Matrix<float> Matrix<float>::CreateScalingMatrix(float scale)
+    Matrix Matrix::CreateScalingMatrix(float scale)
     {
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         for (int y = 0; y < 4; ++y)
             for (int x = 0; x < 4; ++x)
@@ -266,9 +263,9 @@ namespace utility
     }
 
     // taken from: http://www.flipcode.com/documents/matrfaq.html#Q54
-    Matrix<float> Matrix<float>::CreateFromQuaternion(const Quaternion &q)
+    Matrix Matrix::CreateFromQuaternion(const Quaternion &q)
     {
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         const float xx = q.X * q.X;
         const float xy = q.X * q.Y;
@@ -301,9 +298,9 @@ namespace utility
     }
 
     // taken from MaiN's XNA Math lib
-    Matrix<float> Matrix<float>::CreateTranslationMatrix(const Vector3<float> &position)
+    Matrix Matrix::CreateTranslationMatrix(const Vector3<float> &position)
     {
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         for (int y = 0; y < 4; ++y)
             for (int x = 0; x < 4; ++x)
@@ -317,9 +314,14 @@ namespace utility
         return ret;
     }
 
-    Matrix<float> Matrix<float>::CreateViewMatrix(const Vector3<float> &eye, const Vector3<float> &target, const Vector3<float> &up)
+    Matrix Matrix::CreateViewMatrix(const Vector3<float> &eye, const Vector3<float> &target, const Vector3<float> &up)
     {
-        const Vertex v_z = Vertex::Normalize(eye - target);
+        return CreateViewMatrixFromLookNormal(eye, Vertex::Normalize(eye - target), up);
+    }
+
+    Matrix Matrix::CreateViewMatrixFromLookNormal(const Vector3<float> &eye, const Vector3<float> &directionNormal, const Vector3<float> &up)
+    {
+        const Vertex v_z = Vertex::Normalize(directionNormal);
         const Vertex v_x = Vertex::Normalize(Vertex::CrossProduct(up, v_z));
         const Vertex v_y = Vertex::CrossProduct(v_z, v_x);
 
@@ -327,7 +329,7 @@ namespace utility
         const float yDotEye = Vertex::DotProduct(v_y, eye);
         const float zDotEye = Vertex::DotProduct(v_z, eye);
 
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         ret[0][0] = v_x.X;    ret[0][1] = v_y.X;    ret[0][2] = v_z.X;    ret[0][3] = 0.f;
         ret[1][0] = v_x.Y;    ret[1][1] = v_y.Y;    ret[1][2] = v_z.Y;    ret[1][3] = 0.f;
@@ -337,9 +339,9 @@ namespace utility
         return ret;
     }
 
-    Matrix<float> Matrix<float>::CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar)
+    Matrix Matrix::CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar)
     {
-        Matrix<float> ret(4, 4);
+        Matrix ret(4, 4);
 
         for (int y = 0; y < 4; ++y)
             for (int x = 0; x < 4; ++x)
@@ -357,13 +359,32 @@ namespace utility
         return ret;
     }
 
-    Matrix<float> Matrix<float>::Transpose(const Matrix<float> &in)
+    Matrix Matrix::Transpose(const Matrix &in)
     {
-        Matrix<float> ret(in.Columns, in.Rows);
+        Matrix ret(in.Columns, in.Rows);
 
         for (int r = 0; r < in.Rows; ++r)
             for (int c = 0; c < in.Columns; ++c)
                 ret[c][r] = in[r][c];
+
+        return ret;
+    }
+
+    Matrix operator *(const Matrix &a, const Matrix &b)
+    {
+        if (a.Columns != b.Rows)
+            throw "Invalid matrix multiplication";
+
+        Matrix ret(a.Rows, b.Columns);
+
+        for (int r = 0; r < a.Rows; ++r)
+            for (int c = 0; c < b.Columns; ++c)
+            {
+                ret[r][c] = 0.f;
+
+                for (int i = 0; i < a.Columns; ++i)
+                    ret[r][c] += a.matrix[r][i] * b[i][c];
+            }
 
         return ret;
     }

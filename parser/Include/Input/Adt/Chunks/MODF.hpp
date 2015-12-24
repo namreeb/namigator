@@ -12,7 +12,7 @@ namespace parser_input
             static const int WmoSize = 0x40;
 
         public:
-            std::vector<std::unique_ptr<WmoParserInfo>> Wmos;
+            std::vector<WmoParserInfo> Wmos;
 
             MODF(long position, utility::BinaryStream *reader);
     };

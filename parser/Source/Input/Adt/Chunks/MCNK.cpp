@@ -4,7 +4,7 @@
 
 namespace parser_input
 {
-    MCNK::MCNK(long position, utility::BinaryStream *reader, bool findHeader) : AdtChunk(position, reader)
+    MCNK::MCNK(long position, utility::BinaryStream *reader, bool findHeader) : AdtChunk(position, reader), Height(0.f)
     {
 #ifdef DEBUG
         if (Type != AdtChunkType::MCNK)
@@ -18,21 +18,23 @@ namespace parser_input
         // if this MCNK is expected to have a header block with it
         if (findHeader)
         {
-            Information.reset(reader->AllocateAndReadStruct<MCNKInfo>());
+            MCNKInfo information;
 
-            long mcvtPos = Position + Information->HeightOffset;
+            reader->ReadStruct(&information);
 
-            HeightChunk = std::unique_ptr<MCVT>(new MCVT(mcvtPos, reader));
+            Height = information.Position[2];
+
+            HeightChunk.reset(new MCVT(Position + information.HeightOffset, reader));
 
             memset(HoleMap, 0, sizeof(bool)*8*8);
 
             // holes
-            if (HasHoles = Information->Holes > 0)
+            if (HasHoles = information.Holes > 0)
             {
                 for (int y = 0; y < 4; ++y)
                     for (int x = 0; x < 4; ++x)
                     {
-                        if (!(Information->Holes & HoleFlags[y][x]))
+                        if (!(information.Holes & HoleFlags[y][x]))
                             continue;
 
                         const int curRow = 1 + (y * 2);
@@ -69,9 +71,9 @@ namespace parser_input
                 const int y = i / 17;
                 const float innerOffset = (i % 17 > 8 ? quadSize / 2.f : 0.f);
 
-                Positions.push_back(Vertex(Information->Position[0] - (y*quadSize) - innerOffset,
-                                           Information->Position[1] - (x*quadSize) - innerOffset,
-                                           Information->Position[2] + HeightChunk->Heights[i]));
+                Positions.push_back(Vertex(information.Position[0] - (y*quadSize) - innerOffset,
+                                           information.Position[1] - (x*quadSize) - innerOffset,
+                                           information.Position[2] + HeightChunk->Heights[i]));
             }
 
             HasWater = true;

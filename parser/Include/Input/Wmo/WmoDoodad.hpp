@@ -18,7 +18,7 @@ namespace parser_input
     struct WmoDoodadIndexedInfo
     {
         int Index;
-        std::unique_ptr<WmoDoodadInfo> DoodadInfo;
+        WmoDoodadInfo DoodadInfo;
     };
 
     class WmoDoodad : public DoodadFile

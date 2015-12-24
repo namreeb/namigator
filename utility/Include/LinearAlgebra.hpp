@@ -56,13 +56,12 @@ namespace utility
 
     template <typename T> class Vector3;
 
-    template <typename T>
     class Matrix
     {
         private:
             int Rows;
             int Columns;
-            Row<T> *matrix;
+            Row<float> *matrix;
 
         public:
             Matrix(int rows = 0, int columns = 0);
@@ -81,49 +80,29 @@ namespace utility
                 }
             }
 
-            Row<T>& operator [](int index) const;
-            Matrix<T>& operator =(Matrix<T> &m);
+            Row<float>& operator [](int index) const;
+            //Matrix& operator =(Matrix &m);
 
-            static Matrix<float> CreateRotationX(float radians);
-            static Matrix<float> CreateRotationY(float radians);
-            static Matrix<float> CreateRotationZ(float radians);
-            static Matrix<float> CreateScalingMatrix(float scale);
-            static Matrix<float> CreateFromQuaternion(const Quaternion &quaternion);
-            static Matrix<float> CreateTranslationMatrix(const Vector3<float> &position);
-            static Matrix<float> CreateViewMatrix(const Vector3<float> &eye, const Vector3<float> &target, const Vector3<float> &up);
-            static Matrix<float> CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
-            static Matrix<float> Transpose(const Matrix<float> &in);
+            static Matrix CreateRotationX(float radians);
+            static Matrix CreateRotationY(float radians);
+            static Matrix CreateRotationZ(float radians);
+            static Matrix CreateScalingMatrix(float scale);
+            static Matrix CreateFromQuaternion(const Quaternion &quaternion);
+            static Matrix CreateTranslationMatrix(const Vector3<float> &position);
+            static Matrix CreateViewMatrix(const Vector3<float> &eye, const Vector3<float> &target, const Vector3<float> &up);
+            static Matrix CreateViewMatrixFromLookNormal(const Vector3<float> &eye, const Vector3<float> &directionNormal, const Vector3<float> &up);
+            static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
+            static Matrix Transpose(const Matrix &in);
 
-            template <typename T>
-            friend Matrix<T> operator * (const Matrix<T> &a, const Matrix<T> &b);
+            friend Matrix operator * (const Matrix &a, const Matrix &b);
 
-            void PopulateArray(T *out) const
+            void PopulateArray(float *out) const
             {
                 for (int r = 0; r < Rows; ++r)
                     for (int c = 0; c < Columns; ++c)
                         out[r*Columns + c] = matrix[r][c];
             }
     };
-
-    template <typename T>
-    Matrix<T> operator *(const Matrix<T> &a, const Matrix<T> &b)
-    {
-        if (a.Columns != b.Rows)
-            throw "Invalid matrix multiplication";
-
-        Matrix<T> ret(a.Rows, b.Columns);
-
-        for (int r = 0; r < a.Rows; ++r)
-            for (int c = 0; c < b.Columns; ++c)
-            {
-                ret[r][c] = (T)0;
-
-                for (int i = 0; i < a.Columns; ++i)
-                    ret[r][c] += a.matrix[r][i] * b[i][c];
-            }
-
-        return ret;
-    }
 
     template <typename T>
     class Vector2
@@ -216,14 +195,14 @@ namespace utility
                 return Vector3<T>(a.X * d, a.Y * d, a.Z * d);
             }    
 
-            static Vector3<T> Transform(T *position, Matrix<T> matrix)
+            static Vector3<T> Transform(T *position, Matrix matrix)
             {
                 return Transform(*(Vertex *)position, matrix);
             }
 
-            static Vector3<T> Transform(const Vector3<T> &position, const Matrix<T> &matrix)
+            static Vector3<T> Transform(const Vector3<T> &position, const Matrix &matrix)
             {
-                Matrix<T> vertexVector(4, 1);
+                Matrix vertexVector(4, 1);
 
                 vertexVector[0][0] = position.X;
                 vertexVector[1][0] = position.Y;
@@ -231,7 +210,7 @@ namespace utility
                 vertexVector[3][0] = 1.f;
 
                 // multiply matrix by column std::vector matrix
-                Matrix<T> newVector = matrix * (const Matrix<T>)vertexVector;
+                const Matrix newVector = matrix * vertexVector;
 
                 return Vertex(newVector[0][0], newVector[1][0], newVector[2][0]);
             }

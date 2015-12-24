@@ -2,27 +2,19 @@
 
 namespace parser_input
 {
-    MOPY::MOPY(long position, utility::BinaryStream *groupFileStream) : WmoGroupChunk(position, groupFileStream)
+    MOPY::MOPY(long position, utility::BinaryStream *groupFileStream) : WmoGroupChunk(position, groupFileStream), TriangleCount(Size/2)
     {
         groupFileStream->SetPosition(position + 8);
 
         Type = WmoGroupChunkType::MOPY;
 
-        TriangleCount = (int)Size / 2;
-
-        Flags = new unsigned char[TriangleCount];
-        MaterialId = new unsigned char[TriangleCount];
+        Flags.reserve(TriangleCount);
+        MaterialId.reserve(TriangleCount);
 
         for (int i = 0; i < TriangleCount; ++i)
         {
-            Flags[i] = groupFileStream->Read<unsigned char>();
-            MaterialId[i] = groupFileStream->Read<unsigned char>();
+            Flags.push_back(groupFileStream->Read<unsigned char>());
+            MaterialId.push_back(groupFileStream->Read<unsigned char>());
         }
-    }
-
-    MOPY::~MOPY()
-    {
-        delete Flags;
-        delete MaterialId;
     }
 }

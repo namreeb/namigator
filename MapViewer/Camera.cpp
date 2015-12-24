@@ -2,13 +2,13 @@
 #include "Camera.hpp"
 
 Camera::Camera()
-    : m_projectionMatrix(utility::Matrix<float>::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 0.1f, 10000.f)),
-      m_position({0.f, 0.f, 0.f}), m_lookAt({0.f, 0.f, 0.f})
+    : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 0.1f, 10000.f)),
+      m_position({0.f, 0.f, 0.f}), m_lookNormal({0.f, 0.f, -1.f})
 {}
 
 void Camera::UpdateViewProjectionMatrix()
 {
-    auto view = utility::Matrix<float>::CreateViewMatrix(m_position, m_lookAt, m_up);
+    auto view = utility::Matrix::CreateViewMatrixFromLookNormal(m_position, m_lookNormal, m_up);
     auto viewProjection = view*m_projectionMatrix;
 
     viewProjection.PopulateArray(m_viewProjectionMatrix);
@@ -28,28 +28,8 @@ void Camera::MoveVertical(float delta)
     UpdateViewProjectionMatrix();
 }
 
-void Camera::LookAt(float x, float y, float z)
+void Camera::RotateAroundZ(float delta)
 {
-    m_lookAt = { x, y, z };
+    auto r = utility::Matrix::CreateViewMatrixFromLookNormal(m_position, m_lookNormal, m_up) * utility::Matrix::CreateRotationX(delta);
 
-    UpdateViewProjectionMatrix();
-}
-
-void Camera::LookAtLeftRight(float delta)
-{
-    m_lookAt.X += delta;
-
-    UpdateViewProjectionMatrix();
-}
-
-void Camera::LookAtFrontBack(float delta)
-{
-    m_lookAt.Y += delta;
-
-    UpdateViewProjectionMatrix();
-}
-
-void Camera::LookAtUpDown(float delta)
-{
-    m_lookAt.Z += delta;
 }

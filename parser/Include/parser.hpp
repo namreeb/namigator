@@ -1,7 +1,7 @@
 #include <string>
 #include "Log.hpp"
 
-#define VERSION "NAMNAV03"
+#define VERSION "MAPS001"
 
 namespace parser
 {

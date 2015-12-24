@@ -6,10 +6,10 @@ class Camera
 {
     private:
         const utility::Vertex m_up = { 0.f, 1.f, 0.f };
-        const utility::Matrix<float> m_projectionMatrix;
+        const utility::Matrix m_projectionMatrix;
 
         utility::Vertex m_position;
-        utility::Vertex m_lookAt;
+        utility::Vertex m_lookNormal;
 
         float m_viewProjectionMatrix[16];
 
@@ -21,12 +21,7 @@ class Camera
         void Move(float x, float y, float z);
         void MoveVertical(float delta);
 
-        void LookAt(float x, float y, float z);
-
-        // FIXME: These will be removed once I figure out how I want the camera to work
-        void LookAtLeftRight(float delta);
-        void LookAtFrontBack(float delta);
-        void LookAtUpDown(float delta);
+        void RotateAroundZ(float delta);
 
         inline const float *GetProjectionMatrix() const { return m_viewProjectionMatrix; }
 };

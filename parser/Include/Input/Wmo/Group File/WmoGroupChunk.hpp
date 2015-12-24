@@ -10,7 +10,7 @@ namespace parser_input
     class WmoGroupChunk
     {
         public:
-            long Position;
+            const long Position;
 
             unsigned int Size;
             unsigned int Type;

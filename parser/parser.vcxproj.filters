@@ -130,9 +130,6 @@
     <ClInclude Include="Include\Input\M2\DoodadFile.hpp">
       <Filter>Include\Input\M2</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Input\Mpq\MpqFileReader.hpp">
-      <Filter>Include\Input\Mpq</Filter>
-    </ClInclude>
     <ClInclude Include="Include\Input\Wdt\WdtFile.hpp">
       <Filter>Include\Input\Wdt</Filter>
     </ClInclude>
@@ -232,9 +229,6 @@
     <Filter Include="Include\Input\M2">
       <UniqueIdentifier>{79df1c2e-c1ae-44e2-a19e-bc605161c998}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Include\Input\Mpq">
-      <UniqueIdentifier>{bcb91cef-b9a0-4b0e-bce2-4922f1a32b8d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Include\Input\Wdt">
       <UniqueIdentifier>{4ba948a2-4332-4f0a-85af-708f5cf9e958}</UniqueIdentifier>
     </Filter>
@@ -270,9 +264,6 @@
     </Filter>
     <Filter Include="Source\Input\M2">
       <UniqueIdentifier>{007818db-7a7e-4eab-b83c-235198ca9c9d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Input\Mpq">
-      <UniqueIdentifier>{55f7be17-5c98-4208-9062-5b3bc18cded4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Input\Wdt">
       <UniqueIdentifier>{1561bcab-650d-4b98-9808-add4bef606bc}</UniqueIdentifier>

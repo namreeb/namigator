@@ -12,25 +12,16 @@ namespace parser_input
         groupFileStream->Read<unsigned int>();
         groupFileStream->Read<unsigned int>();
         
-        groupFileStream->ReadBytes((void *)&Base, sizeof(float)*3);
+        groupFileStream->ReadStruct(&Base);
 
         groupFileStream->Read<unsigned short>();
 
-        Heights = new Array2d<float>(Height, Width);
+        Heights.reset(new Array2d<float>(Height, Width));
         for (unsigned int y = 0; y < Height; ++y)
             for (unsigned int x = 0; x < Width; ++x)
             {
+                groupFileStream->Read<unsigned int>();  // unknown
                 Heights->Set(y, x, groupFileStream->Read<float>());
-                groupFileStream->Read<float>();    // unknown
             }
-
-        RenderMap = new Array2d<unsigned char>(Height, Width);
-        groupFileStream->ReadBytes((void *)RenderMap->Data, Height * Width);
-    }
-
-    MLIQ::~MLIQ()
-    {
-        delete Heights;
-        delete RenderMap;
     }
 }
