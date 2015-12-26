@@ -298,7 +298,7 @@ namespace utility
     }
 
     // taken from MaiN's XNA Math lib
-    Matrix Matrix::CreateTranslationMatrix(const Vector3<float> &position)
+    Matrix Matrix::CreateTranslationMatrix(const Vector3 &position)
     {
         Matrix ret(4, 4);
 
@@ -314,12 +314,12 @@ namespace utility
         return ret;
     }
 
-    Matrix Matrix::CreateViewMatrix(const Vector3<float> &eye, const Vector3<float> &target, const Vector3<float> &up)
+    Matrix Matrix::CreateViewMatrix(const Vector3 &eye, const Vector3 &target, const Vector3 &up)
     {
         return CreateViewMatrixFromLookNormal(eye, Vertex::Normalize(eye - target), up);
     }
 
-    Matrix Matrix::CreateViewMatrixFromLookNormal(const Vector3<float> &eye, const Vector3<float> &directionNormal, const Vector3<float> &up)
+    Matrix Matrix::CreateViewMatrixFromLookNormal(const Vector3 &eye, const Vector3 &directionNormal, const Vector3 &up)
     {
         const Vertex v_z = Vertex::Normalize(directionNormal);
         const Vertex v_x = Vertex::Normalize(Vertex::CrossProduct(up, v_z));
@@ -389,9 +389,13 @@ namespace utility
         return ret;
     }
 
-    template <typename T>
-    bool operator < (const Vector3<T> &a, const Vector3<T> &b)
+    Vector3 operator + (const Vector3 &a, const Vector3 &b)
     {
-        return a.X < b.X || a.Y < b.Y || a.Z < b.Z;
+        return Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+    }
+
+    Vector3 operator - (const Vector3 &a, const Vector3 &b)
+    {
+        return Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
     }
 }

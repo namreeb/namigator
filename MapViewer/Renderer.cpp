@@ -47,7 +47,7 @@ Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
         //D3D11_CREATE_DEVICE_DEBUG,
         0,
 #else
-        nullptr,
+        0,
 #endif
         nullptr,
         0,
@@ -236,7 +236,7 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
         const float averageY = (minY + maxY) / 2.f;
 
         m_camera->Move(averageX, averageY, maxZ + 300.f);
-        //m_camera->LookAt(averageX, averageY, maxZ);
+        m_camera->LookAt(averageX, averageY, maxZ);
     }
 }
 

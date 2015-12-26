@@ -38,7 +38,7 @@ namespace parser_input
 
     Doodad::Doodad(const std::string &path, DoodadInfo doodadInfo) : DoodadFile(path)
     {
-        const float mid = (float)((533.0 + (1.0/3.0)) * 32.0);
+        const float mid = (533.f + (1.f/3.f)) * 32.f;
         const float xPos = -(doodadInfo.BasePosition.Z - mid);
         const float yPos = -(doodadInfo.BasePosition.X - mid);
         const float zPos = doodadInfo.BasePosition.Y;
@@ -48,9 +48,9 @@ namespace parser_input
         const float rotY = MathHelper::ToRadians(doodadInfo.OrientationA);
         const float rotZ = MathHelper::ToRadians(doodadInfo.OrientationB + 180.f);
         const Matrix transformMatrix = Matrix::CreateScalingMatrix(doodadInfo.Scale / 1024.f) *
-                                              Matrix::CreateRotationX(rotX) *
-                                              Matrix::CreateRotationY(rotY) *
-                                              Matrix::CreateRotationZ(rotZ);
+                                       Matrix::CreateRotationX(rotX) *
+                                       Matrix::CreateRotationY(rotY) *
+                                       Matrix::CreateRotationZ(rotZ);
 
         for (unsigned int i = 0; i < Vertices.size(); ++i)
         {

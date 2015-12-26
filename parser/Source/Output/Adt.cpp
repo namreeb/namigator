@@ -238,16 +238,12 @@ namespace parser
                     //MCNK *mapChunk = adt.m_chunks[chunkY][chunkX].get();
                     auto chunk = m_chunks[chunkY][chunkX].get();
 
-                    Vector2<float> upperLeftCorner, lowerRightCorner;
-
-                    upperLeftCorner.X = chunk->m_terrainVertices[0].X;
-                    upperLeftCorner.Y = chunk->m_terrainVertices[0].Y;
-                    lowerRightCorner.X = chunk->m_terrainVertices[144].X;
-                    lowerRightCorner.Y = chunk->m_terrainVertices[144].Y;
+                    const Vector2 upperLeftCorner(chunk->m_terrainVertices[0].X, chunk->m_terrainVertices[0].Y),
+                                  lowerRightCorner(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y);
 
                     for (unsigned int d = 0; d < adt.m_doodadChunk->Doodads.size(); ++d)
                     {
-                        unsigned int uniqueId = adt.m_doodadChunk->Doodads[d].UniqueId;
+                        const unsigned int uniqueId = adt.m_doodadChunk->Doodads[d].UniqueId;
 
                         bool landsOnChunk = false;
 

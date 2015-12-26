@@ -54,7 +54,7 @@ namespace utility
             Row& operator =(const Row &r);
     };
 
-    template <typename T> class Vector3;
+    class Vector3;
 
     class Matrix
     {
@@ -88,9 +88,9 @@ namespace utility
             static Matrix CreateRotationZ(float radians);
             static Matrix CreateScalingMatrix(float scale);
             static Matrix CreateFromQuaternion(const Quaternion &quaternion);
-            static Matrix CreateTranslationMatrix(const Vector3<float> &position);
-            static Matrix CreateViewMatrix(const Vector3<float> &eye, const Vector3<float> &target, const Vector3<float> &up);
-            static Matrix CreateViewMatrixFromLookNormal(const Vector3<float> &eye, const Vector3<float> &directionNormal, const Vector3<float> &up);
+            static Matrix CreateTranslationMatrix(const Vector3 &position);
+            static Matrix CreateViewMatrix(const Vector3 &eye, const Vector3 &target, const Vector3 &up);
+            static Matrix CreateViewMatrixFromLookNormal(const Vector3 &eye, const Vector3 &directionNormal, const Vector3 &up);
             static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
             static Matrix Transpose(const Matrix &in);
 
@@ -104,103 +104,40 @@ namespace utility
             }
     };
 
-    template <typename T>
     class Vector2
     {
         public:
-            T X;
-            T Y;
+            const float X;
+            const float Y;
 
-            Vector2() : X((T)0), Y((T)0) {}
-            Vector2(T x, T y) : X(x), Y(y) {}
-
-            static inline T AreaSquared(const Vector2<T> &a, const Vector2<T> &b, const Vector2<T> &c)
-            {
-                return (b.X - a.X) * (c.Y - a.Y) - (c.X - a.X) * (b.Y - a.Y);
-            }
-
-            static inline bool IsLeft(const Vector2<T> &a, const Vector2<T> &b, const Vector2<T> &c)
-            {
-                return AreaSquared(a, b, c) < 0;
-            }
-
-            static void SaveToDisk(const Vector2<T> &a, const Vector2<T> &b, const Vector2<T> &c)
-            {
-                int minX, minY, maxX, maxY;
-
-                minX = maxX = a.X;
-                minY = maxY = a.Y;
-
-                if (b.X > maxX)
-                    maxX = b.X;
-                if (b.X < minX)
-                    minX = b.X;
-                if (b.Y > maxY)
-                    maxY = b.Y;
-                if (b.Y < minY)
-                    minY = b.Y;
-                if (c.X > maxX)
-                    maxX = c.X;
-                if (c.X < minX)
-                    minX = c.X;
-                if (c.Y > maxY)
-                    maxY = c.Y;
-                if (c.Y < minY)
-                    minY = c.Y;
-
-                std::ofstream out("d:\\poly.gnuplot");
-                std::ofstream data("d:\\poly.dat");
-
-                out << "reset" << std::endl;
-                out << "set term windows" << std::endl;
-                out << "unset key" << std::endl;
-                out << "set xrange [" << (minY - 5) << ":" << (maxY + 5) << "] reverse" << std::endl;
-                out << "set xlabel 'Y'" << std::endl;
-                out << "set yrange [" << (minX - 5) << ":" << (maxX + 5) << "]" << std::endl;
-                out << "set ylabel 'X'" << std::endl;
-
-                out << "set label \"0: (" << a.Y << ", " << a.X << ")\" at " << a.Y + 1 << ", " << a.X + 1 << std::endl;
-                out << "set label \"1: (" << b.Y << ", " << b.X << ")\" at " << b.Y + 1 << ", " << b.X + 1 << std::endl;
-                out << "set label \"2: (" << c.Y << ", " << c.X << ")\" at " << c.Y + 1 << ", " << c.X + 1 << std::endl;
-
-                data << a.Y << " " << a.X << std::endl;
-                data << b.Y << " " << b.X << std::endl;
-                data << c.Y << " " << c.X << std::endl;
-                data << a.Y << " " << a.X << std::endl;
-            }
+            Vector2(float x, float y) : X(x), Y(y) {}
     };
 
-    template <typename T>
-    class Vector3 : public Vector2<T>
+    class Vector3
     {
         public:
-            T Z;
-
-            Vector3<T>() : Vector2<T>(), Z((T)0) {}
-            Vector3<T>(T x, T y, T z) : Vector2<T>(x, y), Z(z) {}
-
-            static T DotProduct(const Vector3<T> &a, const Vector3<T> &b)
+            static float DotProduct(const Vector3 &a, const Vector3 &b)
             {
                 return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
             }
 
-            static Vector3<T> CrossProduct(const Vector3<T> &a, const Vector3<T> &b)
+            static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b)
             {
-                return Vector3<T>(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
+                return Vector3(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
             }
 
-            static Vector3<T> Normalize(const Vector3<T> &a)
+            static Vector3 Normalize(const Vector3 &a)
             {
                 const float d = 1.f / sqrt(a.X * a.X + a.Y * a.Y + a.Z * a.Z);
-                return Vector3<T>(a.X * d, a.Y * d, a.Z * d);
-            }    
-
-            static Vector3<T> Transform(T *position, Matrix matrix)
-            {
-                return Transform(*(Vertex *)position, matrix);
+                return Vector3(a.X * d, a.Y * d, a.Z * d);
             }
 
-            static Vector3<T> Transform(const Vector3<T> &position, const Matrix &matrix)
+            static Vector3 Transform(float *position, Matrix matrix)
+            {
+                return Transform(*reinterpret_cast<Vector3 *>(position), matrix);
+            }
+
+            static Vector3 Transform(const Vector3 &position, const Matrix &matrix)
             {
                 Matrix vertexVector(4, 1);
 
@@ -212,21 +149,19 @@ namespace utility
                 // multiply matrix by column std::vector matrix
                 const Matrix newVector = matrix * vertexVector;
 
-                return Vertex(newVector[0][0], newVector[1][0], newVector[2][0]);
+                return Vector3(newVector[0][0], newVector[1][0], newVector[2][0]);
             }
+
+            float X;
+            float Y;
+            float Z;
+
+            Vector3() : X(0.f), Y(0.f), Z(0.f) {}
+            Vector3(float x, float y, float z) : X(x), Y(y), Z(z) {}
     };
 
-    typedef Vector3<float> Vertex;
+    Vector3 operator + (const Vector3 &a, const Vector3 &b);
+    Vector3 operator - (const Vector3 &a, const Vector3 &b);
 
-    template <typename T>
-    Vector3<T> operator + (const Vector3<T> &a, const Vector3<T> &b)
-    {
-        return Vector3<T>(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
-    }
-
-    template <typename T>
-    Vector3<T> operator - (const Vector3<T> &a, const Vector3<T> &b)
-    {
-        return Vector3<T>(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
-    }
+    typedef Vector3 Vertex;
 }
