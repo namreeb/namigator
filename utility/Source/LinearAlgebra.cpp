@@ -298,7 +298,7 @@ namespace utility
     }
 
     // taken from MaiN's XNA Math lib
-    Matrix Matrix::CreateTranslationMatrix(const Vector3 &position)
+    Matrix Matrix::CreateTranslationMatrix(const Vertex &position)
     {
         Matrix ret(4, 4);
 
@@ -314,20 +314,15 @@ namespace utility
         return ret;
     }
 
-    Matrix Matrix::CreateViewMatrix(const Vector3 &eye, const Vector3 &target, const Vector3 &up)
+    Matrix Matrix::CreateViewMatrix(const Vertex &eye, const Vertex &target, const Vector3 &up)
     {
-        return CreateViewMatrixFromLookNormal(eye, Vertex::Normalize(eye - target), up);
-    }
+        const Vector3 v_z = Vector3::Normalize(eye - target);
+        const Vector3 v_x = Vector3::Normalize(Vector3::CrossProduct(up, v_z));
+        const Vector3 v_y = Vector3::CrossProduct(v_z, v_x);
 
-    Matrix Matrix::CreateViewMatrixFromLookNormal(const Vector3 &eye, const Vector3 &directionNormal, const Vector3 &up)
-    {
-        const Vertex v_z = Vertex::Normalize(directionNormal);
-        const Vertex v_x = Vertex::Normalize(Vertex::CrossProduct(up, v_z));
-        const Vertex v_y = Vertex::CrossProduct(v_z, v_x);
-
-        const float xDotEye = Vertex::DotProduct(v_x, eye);
-        const float yDotEye = Vertex::DotProduct(v_y, eye);
-        const float zDotEye = Vertex::DotProduct(v_z, eye);
+        const float xDotEye = Vector3::DotProduct(v_x, eye);
+        const float yDotEye = Vector3::DotProduct(v_y, eye);
+        const float zDotEye = Vector3::DotProduct(v_z, eye);
 
         Matrix ret(4, 4);
 

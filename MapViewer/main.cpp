@@ -71,12 +71,12 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 case 'Z':
                     gRenderer->GetCamera()->MoveVertical(-CAMERA_STEP);
                     return TRUE;
-                //case 'A':
-                //    gRenderer->GetCamera()->LookAtLeftRight(-CAMERA_STEP);
-                //    return TRUE;
-                //case 'D':
-                //    gRenderer->GetCamera()->LookAtLeftRight(CAMERA_STEP);
-                //    return TRUE;
+                case 'A':
+                    gRenderer->GetCamera()->Yaw(0.01f);
+                    return TRUE;
+                case 'D':
+                    gRenderer->GetCamera()->Yaw(-0.01f);
+                    return TRUE;
                 //case 'W':
                 //    gRenderer->GetCamera()->LookAtFrontBack(-CAMERA_STEP);
                 //    return TRUE;
@@ -148,7 +148,7 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             vertices.reserve(chunk->m_terrainVertices.size());
 
                             for (unsigned int i = 0; i < chunk->m_terrainVertices.size(); ++i)
-                                vertices.push_back({ chunk->m_terrainVertices[i].X, chunk->m_terrainVertices[i].Y, chunk->m_terrainVertices[i].Z, {0.f, 1.f, 0.f, 1.f} });
+                                vertices.push_back({ chunk->m_terrainVertices[i].X, chunk->m_terrainVertices[i].Y, chunk->m_terrainVertices[i].Z, {0.1334f, 0.69412f, 0.298f, 1.f} });
 
                             gRenderer->AddGeometry(vertices, chunk->m_terrainIndices);
 
@@ -156,9 +156,9 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             vertices.reserve(chunk->m_liquidVertices.size());
 
                             for (unsigned int i = 0; i < chunk->m_liquidVertices.size(); ++i)
-                                vertices.push_back({ chunk->m_liquidVertices[i].X, chunk->m_liquidVertices[i].Y, chunk->m_liquidVertices[i].Z,{ 0.f, 0.f, 1.f, 1.f } });
+                                vertices.push_back({ chunk->m_liquidVertices[i].X, chunk->m_liquidVertices[i].Y, chunk->m_liquidVertices[i].Z, { 0.24706f, 0.28235f, 0.8f, 1.f } });
 
-                            gRenderer->AddGeometry(vertices, chunk->m_terrainIndices);
+                            gRenderer->AddGeometry(vertices, chunk->m_liquidIndices);
                         }
 
                     return TRUE;

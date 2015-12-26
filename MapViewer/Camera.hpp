@@ -5,11 +5,12 @@
 class Camera
 {
     private:
-        const utility::Vertex m_up = { 0.f, 1.f, 0.f };
         const utility::Matrix m_projectionMatrix;
 
         utility::Vertex m_position;
-        utility::Vertex m_lookNormal;
+        utility::Vertex m_target;
+
+        utility::Vector3 m_up;
 
         float m_viewProjectionMatrix[16];
 
@@ -19,9 +20,13 @@ class Camera
         Camera();
 
         void Move(float x, float y, float z);
+
+        void LookAt(float x, float y, float z) { LookAt(utility::Vertex(x, y, z)); }
+        void LookAt(const utility::Vertex &target);
+
         void MoveVertical(float delta);
 
-        void RotateAroundZ(float delta);
+        void Yaw(float delta);
 
         inline const float *GetProjectionMatrix() const { return m_viewProjectionMatrix; }
 };

@@ -9,6 +9,7 @@
 
 namespace utility
 {
+    // XXX maybe we don't really need quaternions \o/
     class Quaternion
     {
         public:
@@ -55,6 +56,7 @@ namespace utility
     };
 
     class Vector3;
+    typedef Vector3 Vertex;
 
     class Matrix
     {
@@ -81,16 +83,14 @@ namespace utility
             }
 
             Row<float>& operator [](int index) const;
-            //Matrix& operator =(Matrix &m);
 
             static Matrix CreateRotationX(float radians);
             static Matrix CreateRotationY(float radians);
             static Matrix CreateRotationZ(float radians);
             static Matrix CreateScalingMatrix(float scale);
             static Matrix CreateFromQuaternion(const Quaternion &quaternion);
-            static Matrix CreateTranslationMatrix(const Vector3 &position);
-            static Matrix CreateViewMatrix(const Vector3 &eye, const Vector3 &target, const Vector3 &up);
-            static Matrix CreateViewMatrixFromLookNormal(const Vector3 &eye, const Vector3 &directionNormal, const Vector3 &up);
+            static Matrix CreateTranslationMatrix(const Vertex &position);
+            static Matrix CreateViewMatrix(const Vertex &eye, const Vertex &target, const Vector3 &up);
             static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
             static Matrix Transpose(const Matrix &in);
 
@@ -132,11 +132,6 @@ namespace utility
                 return Vector3(a.X * d, a.Y * d, a.Z * d);
             }
 
-            static Vector3 Transform(float *position, Matrix matrix)
-            {
-                return Transform(*reinterpret_cast<Vector3 *>(position), matrix);
-            }
-
             static Vector3 Transform(const Vector3 &position, const Matrix &matrix)
             {
                 Matrix vertexVector(4, 1);
@@ -162,6 +157,4 @@ namespace utility
 
     Vector3 operator + (const Vector3 &a, const Vector3 &b);
     Vector3 operator - (const Vector3 &a, const Vector3 &b);
-
-    typedef Vector3 Vertex;
 }
