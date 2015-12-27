@@ -1,8 +1,6 @@
 #include "LinearAlgebra.hpp"
 #include "Camera.hpp"
 
-#include <cassert>
-
 Camera::Camera()
     : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 0.1f, 10000.f)),
       m_position({0.f, 0.f, 0.f}), m_target({0.f, 0.f, -1.f}), m_up({ -1.f, 0.f, 0.f })
@@ -40,9 +38,12 @@ void Camera::Yaw(float delta)
     UpdateViewProjectionMatrix();
 }
 
+// not working yet
 void Camera::Pitch(float delta)
 {
+    m_target.Z += delta;
 
+    UpdateViewProjectionMatrix();
 }
 
 void Camera::LookAt(const utility::Vertex &target)
