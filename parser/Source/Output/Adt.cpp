@@ -21,8 +21,8 @@ namespace parser
 
     Adt::Adt(Continent *continent, int x, int y)
         : X(x), Y(y),
-          MaxX((16.f-(float)x)*(533.f+(1.f/3.f))), MinX(MaxX - (533.f + (1.f/3.f))),
-          MaxY((16.f-(float)y)*(533.f+(1.f/3.f))), MinY(MaxY - (533.f + (1.f/3.f))), m_continent(continent)
+          MaxX((32.f-(float)y)*(533.f+(1.f/3.f))), MinX(MaxX - (533.f + (1.f/3.f))),
+          MaxY((32.f-(float)x)*(533.f+(1.f/3.f))), MinY(MaxY - (533.f + (1.f/3.f))), m_continent(continent)
     {
         std::stringstream ss;
 
