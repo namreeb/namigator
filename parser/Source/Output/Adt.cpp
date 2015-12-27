@@ -19,7 +19,10 @@ namespace parser
         return (mask[y] >> x & 1) != 0;
     }
 
-    Adt::Adt(Continent *continent, int x, int y) : X(x), Y(y), m_continent(continent)
+    Adt::Adt(Continent *continent, int x, int y)
+        : X(x), Y(y),
+          MaxX((16.f-(float)x)*(533.f+(1.f/3.f))), MinX(MaxX - (533.f + (1.f/3.f))),
+          MaxY((16.f-(float)y)*(533.f+(1.f/3.f))), MinY(MaxY - (533.f + (1.f/3.f))), m_continent(continent)
     {
         std::stringstream ss;
 
@@ -273,7 +276,7 @@ namespace parser
         }
     }
 
-    void Adt::WriteObjFile()
+    void Adt::WriteObjFile() const
     {
         std::stringstream ss;
 
@@ -400,7 +403,7 @@ namespace parser
         out.close();
     }
 
-    void Adt::SaveToDisk()
+    void Adt::SaveToDisk() const
     {
         const char zero = 0;
         std::stringstream ss;

@@ -4,7 +4,7 @@ namespace parser_input
 {
     WmoDoodad::WmoDoodad(const WmoParserInfo *parentInfo, const WmoDoodadInfo *wmoDoodadInfo, const std::string &path) : DoodadFile(path)
     {
-        const float mid = (float)((533.0 + (1.0/3.0)) * 32.0);
+        const float mid = (533.f + (1.f / 3.f)) * 32.f;
         const float xPos = -(parentInfo->BasePosition.Z - mid);
         const float yPos = -(parentInfo->BasePosition.X - mid);
         const float zPos = parentInfo->BasePosition.Y;

@@ -46,10 +46,16 @@ namespace parser
             const int X;
             const int Y;
 
+            const float MaxX;
+            const float MinX;
+
+            const float MaxY;
+            const float MinY;
+
             Adt(Continent *continent, int x, int y);
 
-            void WriteObjFile();
-            void SaveToDisk();
+            void WriteObjFile() const;
+            void SaveToDisk() const;
 
             const AdtChunk *GetChunk(int chunkX, int chunkY) const;
     };

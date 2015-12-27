@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include <memory>
 #include <windows.h>
 #include <windowsx.h>
@@ -9,6 +11,8 @@
 #include "CommonControl.hpp"
 #include "parser.hpp"
 #include "Output/Continent.hpp"
+
+#include <limits>
 
 #define START_X             100
 #define START_Y             100
@@ -78,10 +82,10 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     gRenderer->GetCamera()->Yaw(-0.1f);
                     return TRUE;
                 case 'W':
-                    gRenderer->GetCamera()->Pitch(0.1f);
+                    gRenderer->GetCamera()->Pitch(5.f);
                     return TRUE;
                 case 'X':
-                    gRenderer->GetCamera()->Pitch(-0.1f);
+                    gRenderer->GetCamera()->Pitch(-5.f);
                     return TRUE;
                 //case 'Q':
                 //    gRenderer->GetCamera()->LookAtUpDown(-CAMERA_STEP);
@@ -137,8 +141,10 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                 {
                     gContinent.reset(new ::parser::Continent("Azeroth"));
 
-                    auto adt = gContinent->LoadAdt(32, 48);
+                    auto const adt = gContinent->LoadAdt(32, 48);
                     
+                    float minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
+
                     for (int x = 0; x < 16; ++x)
                         for (int y = 0; y < 16; ++y)
                         {
@@ -148,7 +154,14 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             vertices.reserve(chunk->m_terrainVertices.size());
 
                             for (unsigned int i = 0; i < chunk->m_terrainVertices.size(); ++i)
+                            {
+                                if (chunk->m_terrainVertices[i].Z < minZ)
+                                    minZ = chunk->m_terrainVertices[i].Z;
+                                if (chunk->m_terrainVertices[i].Z > maxZ)
+                                    maxZ = chunk->m_terrainVertices[i].Z;
+
                                 vertices.push_back({ chunk->m_terrainVertices[i].X, chunk->m_terrainVertices[i].Y, chunk->m_terrainVertices[i].Z, {0.1334f, 0.69412f, 0.298f, 1.f} });
+                            }
 
                             gRenderer->AddGeometry(vertices, chunk->m_terrainIndices);
 
@@ -160,6 +173,9 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                             gRenderer->AddGeometry(vertices, chunk->m_liquidIndices);
                         }
+
+                    gRenderer->GetCamera()->Move(adt->MaxX, adt->MaxY, maxZ + 1.1f*(maxZ - minZ));
+                    gRenderer->GetCamera()->LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (maxZ + minZ) / 2.f);
 
                     return TRUE;
                 }

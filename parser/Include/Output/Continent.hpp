@@ -57,7 +57,7 @@ namespace parser
             Continent(const std::string &continentName);
             Continent(const char *continentName);
 
-            Adt *LoadAdt(int x, int y);
+            const Adt *LoadAdt(int x, int y);
 
             bool HasWmo(unsigned int uniqueId) const;
             bool HasDoodad(unsigned int uniqueId) const;

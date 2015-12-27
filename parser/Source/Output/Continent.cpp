@@ -41,7 +41,7 @@ namespace parser
         Load();
     }
 
-    Adt *Continent::LoadAdt(int x, int y)
+    const Adt *Continent::LoadAdt(int x, int y)
     {
         if (m_adts.find(CONV(x, y)) == m_adts.end())
             m_adts[CONV(x, y)] = std::unique_ptr<Adt>(new Adt(this, x, y));

@@ -1,9 +1,5 @@
 #include <vector>
-#include <limits>
-#include <sstream>
 #include <cassert>
-
-#define NOMINMAX    // for some reason, these macros interfere with numerical_limits?
 
 #include <d3d11.h>
 #include <d3dx11.h>
@@ -206,38 +202,6 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
     m_deviceContext->Unmap(*indexBuffer, 0);
 
     m_indexCounts.push_back(indices.size());
-
-    // if this is the first loaded set of geometry, center the camera around it
-    if (m_vertexBuffers.size() == 1)
-    {
-        float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::lowest(),
-              minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::lowest(),
-              minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
-
-        for (unsigned int i = 0; i < vertices.size(); ++i)
-        {
-            if (vertices[i].x < minX)
-                minX = vertices[i].x;
-            if (vertices[i].x > maxX)
-                maxX = vertices[i].x;
-
-            if (vertices[i].y < minY)
-                minY = vertices[i].y;
-            if (vertices[i].y > maxY)
-                maxY = vertices[i].y;
-
-            if (vertices[i].z < minZ)
-                minZ = vertices[i].z;
-            if (vertices[i].z > maxZ)
-                maxZ = vertices[i].z;
-        }
-
-        const float averageX = (minX + maxX) / 2.f;
-        const float averageY = (minY + maxY) / 2.f;
-
-        m_camera->Move(averageX, averageY, maxZ + 300.f);
-        m_camera->LookAt(averageX, averageY, maxZ);
-    }
 }
 
 void Renderer::Render() const

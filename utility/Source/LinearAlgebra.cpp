@@ -8,24 +8,22 @@ namespace utility
 
     Quaternion operator * (const Quaternion &a, const Quaternion &b)
     {
-        float x, y, z, w;
+        const float w = a.W*b.W - (a.X*b.X + a.Y*b.Y + a.Z*b.Z);
 
-        w = a.W*b.W - (a.X*b.X + a.Y*b.Y + a.Z*b.Z);
-
-        x = a.W*b.X + b.W*a.X + a.Y*b.Z - a.Z*b.Y;
-        y = a.W*b.Y + b.W*a.Y + a.Z*b.X - a.X*b.Z;
-        z = a.W*b.Z + b.W*a.Z + a.X*b.Y - a.Y*b.X;
+        const float x = a.W*b.X + b.W*a.X + a.Y*b.Z - a.Z*b.Y;
+        const float y = a.W*b.Y + b.W*a.Y + a.Z*b.X - a.X*b.Z;
+        const float z = a.W*b.Z + b.W*a.Z + a.X*b.Y - a.Y*b.X;
 
         return Quaternion(w,x,y,z);
     }
 
     const Quaternion& Quaternion::operator *= (const Quaternion &q)
     {
-        float w = W*q.W - (X*q.X + Y*q.Y + Z*q.Z);
+        const float w = W*q.W - (X*q.X + Y*q.Y + Z*q.Z);
 
-        float x = W*q.X + q.W*X + Y*q.Z - Z*q.Y;
-        float y = W*q.Y + q.W*Y + Z*q.X - X*q.Z;
-        float z = W*q.Z + q.W*Z + X*q.Y - Y*q.X;
+        const float x = W*q.X + q.W*X + Y*q.Z - Z*q.Y;
+        const float y = W*q.Y + q.W*Y + Z*q.X - X*q.Z;
+        const float z = W*q.Z + q.W*Z + X*q.Y - Y*q.X;
 
         W = w;
         X = x;
@@ -44,7 +42,7 @@ namespace utility
 
     const Quaternion& Quaternion::operator - ()
     {
-        float norme = sqrt(W*W + X*X + Y*Y + Z*Z);
+        float norme = sqrtf(W*W + X*X + Y*Y + Z*Z);
         if (norme == 0.0)
             norme = 1.0;
 
@@ -156,22 +154,6 @@ namespace utility
 
         return matrix[index];
     }
-
-    //Matrix& Matrix::operator =(Matrix &m)
-    //{
-    //    Rows = m.Rows;
-    //    Columns = m.Columns;
-
-    //    if (matrix)
-    //        delete[] matrix;
-
-    //    matrix = (M.Rows > 0 && M.columns > 0 ? new Row<float>[rows](columns) : nullptr);
-
-    //    for (int r = 0; r < Rows; ++r)
-    //        matrix[r] = Row<float>(m[r]);
-
-    //    return *this;
-    //}
 
     Matrix Matrix::CreateRotationX(float radians)
     {
@@ -384,6 +366,42 @@ namespace utility
         return ret;
     }
 
+    float Vector3::DotProduct(const Vector3 &a, const Vector3 &b)
+    {
+        return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+    }
+
+    Vector3 Vector3::CrossProduct(const Vector3 &a, const Vector3 &b)
+    {
+        return Vector3(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
+    }
+
+    Vector3 Vector3::Normalize(const Vector3 &a)
+    {
+        const float d = 1.f / sqrt(a.X * a.X + a.Y * a.Y + a.Z * a.Z);
+        return Vector3(a.X * d, a.Y * d, a.Z * d);
+    }
+
+    Vector3 Vector3::Transform(const Vector3 &position, const Matrix &matrix)
+    {
+        Matrix vertexVector(4, 1);
+
+        vertexVector[0][0] = position.X;
+        vertexVector[1][0] = position.Y;
+        vertexVector[2][0] = position.Z;
+        vertexVector[3][0] = 1.f;
+
+        // multiply matrix by column std::vector matrix
+        const Matrix newVector = matrix * vertexVector;
+
+        return Vector3(newVector[0][0], newVector[1][0], newVector[2][0]);
+    }
+
+    float Vector3::Length() const
+    {
+        return sqrtf(X*X + Y*Y + Z*Z);
+    }
+
     Vector3 operator + (const Vector3 &a, const Vector3 &b)
     {
         return Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
@@ -392,10 +410,5 @@ namespace utility
     Vector3 operator - (const Vector3 &a, const Vector3 &b)
     {
         return Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
-    }
-
-    float Vector3::Length() const
-    {
-        return sqrtf(X*X + Y*Y + Z*Z);
     }
 }

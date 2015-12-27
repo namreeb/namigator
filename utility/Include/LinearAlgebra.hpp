@@ -10,31 +10,30 @@
 namespace utility
 {
     // XXX maybe we don't really need quaternions \o/
-    class Quaternion
+    struct Quaternion
     {
-        public:
-            float W;
-            float X;
-            float Y;
-            float Z;
+        float W;
+        float X;
+        float Y;
+        float Z;
 
-            Quaternion(float x = 0.0, float y = 0.0, float z = 0.0, float w = 0.0);
+        Quaternion(float x = 0.0, float y = 0.0, float z = 0.0, float w = 0.0);
 
-            // printing
-            void Print(std::ostream & = std::cout);
+        // printing
+        void Print(std::ostream & = std::cout);
 
-            // quaternion multiplication
-            friend Quaternion operator * (const Quaternion &a, const Quaternion &b);
-            const Quaternion& operator *= (const Quaternion &a);
+        // quaternion multiplication
+        friend Quaternion operator * (const Quaternion &a, const Quaternion &b);
+        const Quaternion& operator *= (const Quaternion &a);
 
-            // conjugate
-            const Quaternion& operator ~();
+        // conjugate
+        const Quaternion& operator ~();
 
-            // invert
-            const Quaternion& operator -();
+        // invert
+        const Quaternion& operator -();
 
-            // normalize
-            const Quaternion& Normalize();
+        // normalize
+        const Quaternion& Normalize();
     };
 
     template <typename T>
@@ -55,7 +54,7 @@ namespace utility
             Row& operator =(const Row &r);
     };
 
-    class Vector3;
+    struct Vector3;
     typedef Vector3 Vertex;
 
     class Matrix
@@ -104,57 +103,29 @@ namespace utility
             }
     };
 
-    class Vector2
+    struct Vector2
     {
-        public:
-            const float X;
-            const float Y;
+        const float X;
+        const float Y;
 
-            Vector2(float x, float y) : X(x), Y(y) {}
+        Vector2(float x, float y) : X(x), Y(y) {}
     };
 
-    class Vector3
+    struct Vector3
     {
-        public:
-            static float DotProduct(const Vector3 &a, const Vector3 &b)
-            {
-                return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
-            }
+        static float DotProduct(const Vector3 &a, const Vector3 &b);
+        static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b);
+        static Vector3 Normalize(const Vector3 &a);
+        static Vector3 Transform(const Vector3 &position, const Matrix &matrix);
 
-            static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b)
-            {
-                return Vector3(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
-            }
+        float X;
+        float Y;
+        float Z;
 
-            static Vector3 Normalize(const Vector3 &a)
-            {
-                const float d = 1.f / sqrt(a.X * a.X + a.Y * a.Y + a.Z * a.Z);
-                return Vector3(a.X * d, a.Y * d, a.Z * d);
-            }
+        Vector3() : X(0.f), Y(0.f), Z(0.f) {}
+        Vector3(float x, float y, float z) : X(x), Y(y), Z(z) {}
 
-            static Vector3 Transform(const Vector3 &position, const Matrix &matrix)
-            {
-                Matrix vertexVector(4, 1);
-
-                vertexVector[0][0] = position.X;
-                vertexVector[1][0] = position.Y;
-                vertexVector[2][0] = position.Z;
-                vertexVector[3][0] = 1.f;
-
-                // multiply matrix by column std::vector matrix
-                const Matrix newVector = matrix * vertexVector;
-
-                return Vector3(newVector[0][0], newVector[1][0], newVector[2][0]);
-            }
-
-            float X;
-            float Y;
-            float Z;
-
-            Vector3() : X(0.f), Y(0.f), Z(0.f) {}
-            Vector3(float x, float y, float z) : X(x), Y(y), Z(z) {}
-
-            float Length() const;
+        float Length() const;
     };
 
     Vector3 operator + (const Vector3 &a, const Vector3 &b);
