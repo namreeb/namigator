@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
+#include <vector>
 
 #ifndef PI
 #define PI 3.14159264f
@@ -9,7 +9,7 @@
 
 namespace utility
 {
-    // XXX maybe we don't really need quaternions \o/
+    // FIXME XXX maybe we don't really need quaternions \o/
     struct Quaternion
     {
         float W;
@@ -36,71 +36,21 @@ namespace utility
         const Quaternion& Normalize();
     };
 
-    template <typename T>
     class Row
     {
         private:
             int Columns;
-            T *row;
+            std::vector<float> row;
 
         public:
             Row(int columns = 0);
             Row(const Row &r);
-            ~Row() { delete[] row; }
 
             void SetColumnSize(const int columns);
 
-            T& operator [](int column);
+            float& operator [](int column);
+            const float & operator [](int column) const;
             Row& operator =(const Row &r);
-    };
-
-    struct Vector3;
-    typedef Vector3 Vertex;
-
-    class Matrix
-    {
-        private:
-            int Rows;
-            int Columns;
-            Row<float> *matrix;
-
-        public:
-            Matrix(int rows = 0, int columns = 0);
-
-            // printing
-            void Print(std::ostream &s = std::cout) const
-            {
-                s << Rows << " x " << Columns << std::endl;
-
-                for (int r = 0; r < Rows; ++r)
-                {
-                    for (int c = 0; c < Columns; ++c)
-                        s << matrix[r][c] << " ";
-
-                    s << std::endl;
-                }
-            }
-
-            Row<float>& operator [](int index) const;
-
-            static Matrix CreateRotationX(float radians);
-            static Matrix CreateRotationY(float radians);
-            static Matrix CreateRotationZ(float radians);
-            static Matrix CreateScalingMatrix(float scale);
-            static Matrix CreateFromQuaternion(const Quaternion &quaternion);
-            static Matrix CreateTranslationMatrix(const Vertex &position);
-            static Matrix CreateViewMatrix(const Vertex &eye, const Vertex &target, const Vector3 &up);
-            static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
-            static Matrix Transpose(const Matrix &in);
-
-            friend Matrix operator * (const Matrix &a, const Matrix &b);
-
-            void PopulateArray(float *out) const
-            {
-                for (int r = 0; r < Rows; ++r)
-                    for (int c = 0; c < Columns; ++c)
-                        out[r*Columns + c] = matrix[r][c];
-            }
     };
 
     struct Vector2
@@ -110,6 +60,8 @@ namespace utility
 
         Vector2(float x, float y) : X(x), Y(y) {}
     };
+
+    class Matrix;
 
     struct Vector3
     {
@@ -130,4 +82,53 @@ namespace utility
 
     Vector3 operator + (const Vector3 &a, const Vector3 &b);
     Vector3 operator - (const Vector3 &a, const Vector3 &b);
+
+    typedef Vector3 Vertex;
+
+    class Matrix
+    {
+        private:
+            int Rows;
+            int Columns;
+            Row *matrix;
+
+        public:
+            Matrix(int rows = 0, int columns = 0);
+
+            // printing
+            void Print(std::ostream &s = std::cout) const
+            {
+                s << Rows << " x " << Columns << std::endl;
+
+                for (int r = 0; r < Rows; ++r)
+                {
+                    for (int c = 0; c < Columns; ++c)
+                        s << matrix[r][c] << " ";
+
+                    s << std::endl;
+                }
+            }
+
+            Row& operator [](int index) const;
+
+            static Matrix CreateRotationX(float radians) { return CreateRotation(Vector3(1.f, 0.f, 0.f), radians); }
+            static Matrix CreateRotationY(float radians) { return CreateRotation(Vector3(0.f, 1.f, 0.f), radians); }
+            static Matrix CreateRotationZ(float radians) { return CreateRotation(Vector3(0.f, 0.f, 1.f), radians); }
+            static Matrix CreateRotation(Vector3 direction, float radians);
+            static Matrix CreateScalingMatrix(float scale);
+            static Matrix CreateFromQuaternion(const Quaternion &quaternion);
+            static Matrix CreateTranslationMatrix(const Vertex &position);
+            static Matrix CreateViewMatrix(const Vertex &eye, const Vertex &target, const Vector3 &up);
+            static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
+            static Matrix Transpose(const Matrix &in);
+
+            friend Matrix operator * (const Matrix &a, const Matrix &b);
+
+            void PopulateArray(float *out) const
+            {
+                for (int r = 0; r < Rows; ++r)
+                    for (int c = 0; c < Columns; ++c)
+                        out[r*Columns + c] = matrix[r][c];
+            }
+    };
 }

@@ -145,10 +145,11 @@ namespace parser_input
 
             // process MLIQ data
 
-            if (!groupFiles[g]->LiquidChunk)
+            // FIXME XXX wmo liquid is disabled for now until the renderer is working well enough to debug it!
+            //if (!groupFiles[g]->LiquidChunk)
                 continue;
 
-            const float tileSize = (float)((533.f + (1.f / 3.f)) / 128.f);
+            const float tileSize = (533.f + (1.f / 3.f)) / 128.f;
 
             // process liquid chunk for the current group file
             for (unsigned int y = 0; y < groupFiles[g]->LiquidChunk->Height; ++y)

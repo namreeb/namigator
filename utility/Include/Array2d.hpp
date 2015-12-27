@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 // XXX - rework this to use Matrix type
 
 namespace utility
@@ -26,6 +28,8 @@ namespace utility
 
             inline T Get(int row, int column) const
             {
+                assert(row < Rows && column < Width);
+
                 return *(Data + Width * row + column);
             }
     };

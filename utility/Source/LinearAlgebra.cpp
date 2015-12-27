@@ -83,36 +83,28 @@ namespace utility
         s << "X: " << X << " Y: " << Y << " Z: " << Z << " W: " << W << std::endl;
     }
 
-    template <typename T>
-    Row<T>::Row(int columns)
+    Row::Row(int columns)
     {
         Columns = columns;
-        row = new T[Columns];
+        row.resize(columns);
     }
 
-    template <typename T>
-    Row<T>::Row(const Row &r)
+    Row::Row(const Row &r)
     {
         Columns = r.Columns;
-        row = new T[Columns];
+        row.resize(Columns);
 
         for (int i = 0; i < Columns; ++i)
             row[i] = r[i];
     }
 
-    template <typename T>
-    void Row<T>::SetColumnSize(const int columns)
+    void Row::SetColumnSize(const int columns)
     {
-        if (row)
-            delete[] row;
-
         Columns = columns;
-
-        row = new T[Columns];
+        row.resize(columns);
     }
 
-    template <typename T>
-    T &Row<T>::operator [](int column)
+    float &Row::operator [](int column)
     {
         if (column >= Columns)
             throw "Bad column index";
@@ -120,15 +112,17 @@ namespace utility
         return row[column];
     }
 
-    template <typename T>
-    Row<T> & Row<T>::operator =(const Row<T> &r)
+    const float & Row::operator [](int column) const
     {
-        if (row)
-            delete[] row;
+        if (column >= Columns)
+            throw "Bad column index";
 
-        Columns = r.Columns;
+        return row[column];
+    }
 
-        row = new T[Columns];
+    Row &Row::operator =(const Row &r)
+    {
+        SetColumnSize(r.Columns);
 
         for (int i = 0; i < Columns; ++i)
             row[i] = r[i];
@@ -141,13 +135,13 @@ namespace utility
         Rows = rows;
         Columns = columns;
 
-        matrix = (rows > 0 && columns > 0 ? new Row<float>[rows] : nullptr);
+        matrix = (rows > 0 && columns > 0 ? new Row[rows] : nullptr);
 
         for (int i = 0; i < rows; ++i)
             matrix[i].SetColumnSize(columns);
     }
 
-    Row<float>& Matrix::operator [](int index) const
+    Row& Matrix::operator [](int index) const
     {
         if (index >= Rows)
             throw "Bad row index";
@@ -155,77 +149,26 @@ namespace utility
         return matrix[index];
     }
 
-    Matrix Matrix::CreateRotationX(float radians)
-    {
-        Matrix ret(4,4);
-
-        ret[0][0] = 1.f;
-        ret[0][1] = 0.f;
-        ret[0][2] = 0.f;
-        ret[1][0] = 0.f;
-        ret[2][0] = 0.f;
-        ret[3][0] = 0.f;
-        ret[3][1] = 0.f;
-        ret[3][2] = 0.f;
-        ret[3][3] = 1.f;
-        ret[0][3] = 0.f;
-        ret[1][3] = 0.f;
-        ret[2][3] = 0.f;
-
-        ret[1][1] =  cosf(radians);
-        ret[1][2] = -sinf(radians);
-        ret[2][1] =  sinf(radians);
-        ret[2][2] =  cosf(radians);
-
-        return ret;
-    }
-
-    Matrix Matrix::CreateRotationY(float radians)
+    // taken from: https://github.com/radekp/qt/blob/master/src/gui/math3d/qmatrix4x4.cpp#L1066
+    Matrix Matrix::CreateRotation(Vector3 direction, float radians)
     {
         Matrix ret(4, 4);
 
-        ret[1][1] = 1.f;
-        ret[0][1] = 0.f;
-        ret[1][2] = 0.f;
-        ret[1][0] = 0.f;
-        ret[2][1] = 0.f;
-        ret[3][0] = 0.f;
-        ret[3][1] = 0.f;
-        ret[3][2] = 0.f;
+        const float c = cosf(radians);
+        const float ic = 1.f - c;
+        const float s = sinf(radians);
+
+        ret[0][3] = ret[1][3] = ret[2][3] = ret[3][0] = ret[3][1] = ret[3][2] = 0.f;
         ret[3][3] = 1.f;
-        ret[0][3] = 0.f;
-        ret[1][3] = 0.f;
-        ret[2][3] = 0.f;
-
-        ret[0][0] =  cosf(radians);
-        ret[0][2] =  sinf(radians);
-        ret[2][0] = -sinf(radians);
-        ret[2][2] =  cosf(radians);
-
-        return ret;
-    }
-
-    Matrix Matrix::CreateRotationZ(float radians)
-    {
-        Matrix ret(4, 4);
-
-        ret[2][2] = 1.f;
-        ret[0][2] = 0.f;
-        ret[1][2] = 0.f;
-        ret[2][0] = 0.f;
-        ret[2][1] = 0.f;
-        ret[3][0] = 0.f;
-        ret[3][1] = 0.f;
-        ret[3][2] = 0.f;
-        ret[3][3] = 1.f;
-        ret[0][3] = 0.f;
-        ret[1][3] = 0.f;
-        ret[2][3] = 0.f;
-
-        ret[0][0] =  cosf(radians);
-        ret[0][1] = -sinf(radians);
-        ret[1][0] =  sinf(radians);
-        ret[1][1] =  cosf(radians);
+        ret[0][0] = direction.X * direction.X * ic + c;
+        ret[0][1] = direction.X * direction.Y * ic - direction.Z * s;
+        ret[0][2] = direction.X * direction.Z * ic + direction.Y * s;
+        ret[1][0] = direction.Y * direction.X * ic + direction.Z * s;
+        ret[1][1] = direction.Y * direction.Y * ic + c;
+        ret[1][2] = direction.Y * direction.Z * ic - direction.X * s;
+        ret[2][0] = direction.X * direction.Z * ic - direction.Y * s;
+        ret[2][1] = direction.Y * direction.Z * ic + direction.X * s;
+        ret[2][2] = direction.Z * direction.Z * ic + c;
 
         return ret;
     }
