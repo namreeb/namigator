@@ -340,6 +340,15 @@ namespace utility
         return Vector3(newVector[0][0], newVector[1][0], newVector[2][0]);
     }
 
+    Vector3 &Vector3::operator +=(const Vector3 & other)
+    {
+        X += other.X;
+        Y += other.Y;
+        Z += other.Z;
+
+        return *this;
+    }
+
     float Vector3::Length() const
     {
         return sqrtf(X*X + Y*Y + Z*Z);
@@ -353,5 +362,10 @@ namespace utility
     Vector3 operator - (const Vector3 &a, const Vector3 &b)
     {
         return Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+    }
+
+    Vector3 operator * (float multiplier, const Vector3 &vector)
+    {
+        return Vector3(vector.X*multiplier, vector.Y*multiplier, vector.Z*multiplier);
     }
 }

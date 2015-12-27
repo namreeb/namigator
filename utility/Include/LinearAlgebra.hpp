@@ -77,11 +77,14 @@ namespace utility
         Vector3() : X(0.f), Y(0.f), Z(0.f) {}
         Vector3(float x, float y, float z) : X(x), Y(y), Z(z) {}
 
+        Vector3& operator += (const Vector3 &other);
+
         float Length() const;
     };
 
     Vector3 operator + (const Vector3 &a, const Vector3 &b);
     Vector3 operator - (const Vector3 &a, const Vector3 &b);
+    Vector3 operator * (float multiplier, const Vector3 &vector);
 
     typedef Vector3 Vertex;
 
