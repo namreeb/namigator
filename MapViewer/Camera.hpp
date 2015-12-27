@@ -16,6 +16,9 @@ class Camera
         // camera view up direction in world coordinate system
         utility::Vector3 m_up;
 
+        // camera view right direction in world coordinate system
+        utility::Vector3 m_right;
+
         float m_viewProjectionMatrix[16];
 
         void UpdateViewProjectionMatrix();

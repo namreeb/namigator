@@ -3,7 +3,10 @@
 
 Camera::Camera()
     : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 0.1f, 10000.f)),
-      m_position({0.f, 0.f, 0.f}), m_target({0.f, 0.f, -1.f}), m_up({ -1.f, 0.f, 0.f })
+      m_position({ 0.f,  0.f,  0.f }),
+      m_target(  { 0.f,  0.f, -1.f }),
+      m_up(      { -1.f, 0.f,  0.f }),
+      m_right(   { 0.f,  1.f,  0.f })
 {}
 
 void Camera::UpdateViewProjectionMatrix()
@@ -23,6 +26,7 @@ void Camera::Move(float x, float y, float z)
 void Camera::MoveVertical(float delta)
 {
     m_position.Z += delta;
+    m_target.Z += delta;
 
     UpdateViewProjectionMatrix();
 }
@@ -33,6 +37,7 @@ void Camera::Yaw(float delta)
     auto const lookAtTarget = utility::Vector3::Transform(m_target - m_position, rotate);
 
     m_up = utility::Vector3::Normalize(utility::Vector3::Transform(m_up, rotate));
+    m_right = utility::Vector3::Normalize(utility::Vector3::Transform(m_right, rotate));
     m_target = m_position + lookAtTarget;
 
     UpdateViewProjectionMatrix();
@@ -41,7 +46,11 @@ void Camera::Yaw(float delta)
 // not working yet
 void Camera::Pitch(float delta)
 {
-    m_target.Z += delta;
+    auto const rotate = utility::Matrix::CreateRotation(m_right, delta);
+    auto const lookAtTarget = utility::Vector3::Transform(m_target - m_position, rotate);
+
+    m_up = utility::Vector3::Normalize(utility::Vector3::Transform(m_up, rotate));
+    m_target = m_position + lookAtTarget;
 
     UpdateViewProjectionMatrix();
 }
@@ -49,6 +58,11 @@ void Camera::Pitch(float delta)
 void Camera::LookAt(const utility::Vertex &target)
 {
     m_target = target;
+
+    auto const forward = utility::Vector3::Normalize(m_target - m_position);
+
+    m_right = utility::Vector3::Normalize(utility::Vector3::CrossProduct(forward, { 0.f, 0.f, 1.f }));
+    m_up = utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_right, forward));
 
     UpdateViewProjectionMatrix();
 }
