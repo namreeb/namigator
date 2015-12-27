@@ -23,6 +23,10 @@ class Camera
 
         void UpdateViewProjectionMatrix();
 
+        bool m_mousePanning;
+        int m_mousePanX;
+        int m_mousePanY;
+
     public:
         Camera();
 
@@ -32,9 +36,17 @@ class Camera
         void LookAt(const utility::Vertex &target);
 
         void MoveVertical(float delta);
+        void MoveIn(float delta);
 
         void Yaw(float delta);
         void Pitch(float delta);
 
-        inline const float *GetProjectionMatrix() const { return m_viewProjectionMatrix; }
+        bool IsMousePanning() const { return m_mousePanning; }
+
+        void BeginMousePan(int screenX, int screenY);
+        void EndMousePan();
+        void UpdateMousePan(int newX, int newY);
+        void GetMousePanStart(int &x, int &y) const;
+
+        const float *GetProjectionMatrix() const { return m_viewProjectionMatrix; }
 };

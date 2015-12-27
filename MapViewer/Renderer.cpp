@@ -18,7 +18,7 @@
 
 #define WIREFRAME
 
-Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
+Renderer::Renderer(HWND window) : m_window(window)
 {
     // create a struct to hold information about the swap chain
     DXGI_SWAP_CHAIN_DESC scd;
@@ -212,7 +212,7 @@ void Renderer::Render() const
     m_deviceContext->ClearRenderTargetView(m_backBuffer, blue);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
-    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, m_camera->GetProjectionMatrix(), 0, 0);
+    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, m_camera.GetProjectionMatrix(), 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
 
     const unsigned int stride = sizeof(ColoredVertex);

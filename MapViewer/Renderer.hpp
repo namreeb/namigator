@@ -35,8 +35,6 @@ class Renderer
         std::vector<ID3D11Buffer *> m_indexBuffers;
         std::vector<unsigned int> m_indexCounts;
 
-        std::unique_ptr<Camera> m_camera;
-
         void InitializePipeline(HWND window);
 
     public:
@@ -46,5 +44,5 @@ class Renderer
         void AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices);
         void Render() const;
 
-        inline Camera *GetCamera() { return m_camera.get(); }
+        Camera m_camera;
 };

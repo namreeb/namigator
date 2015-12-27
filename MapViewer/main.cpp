@@ -67,32 +67,26 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_KEYDOWN:
         {
-            switch ((char)wParam)
+            switch (static_cast<char>(wParam))
             {
                 case ' ':
-                    gRenderer->GetCamera()->MoveVertical(CAMERA_STEP);
+                    gRenderer->m_camera.MoveVertical(CAMERA_STEP);
                     return TRUE;
                 case 'Z':
-                    gRenderer->GetCamera()->MoveVertical(-CAMERA_STEP);
+                    gRenderer->m_camera.MoveVertical(-CAMERA_STEP);
                     return TRUE;
                 case 'A':
-                    gRenderer->GetCamera()->Yaw(0.1f);
+                    gRenderer->m_camera.Yaw(0.1f);
                     return TRUE;
                 case 'D':
-                    gRenderer->GetCamera()->Yaw(-0.1f);
+                    gRenderer->m_camera.Yaw(-0.1f);
                     return TRUE;
                 case 'W':
-                    gRenderer->GetCamera()->Pitch(0.1f);
+                    gRenderer->m_camera.MoveIn(CAMERA_STEP);
                     return TRUE;
                 case 'X':
-                    gRenderer->GetCamera()->Pitch(-0.1f);
+                    gRenderer->m_camera.MoveIn(-CAMERA_STEP);
                     return TRUE;
-                //case 'Q':
-                //    gRenderer->GetCamera()->LookAtUpDown(-CAMERA_STEP);
-                //    return TRUE;
-                //case 'E':
-                //    gRenderer->GetCamera()->LookAtUpDown(CAMERA_STEP);
-                //    return TRUE;
             }
                 
             break;
@@ -100,16 +94,60 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_MOUSEWHEEL:
         {
-            short distance = (short)(wParam >> 16);
-            auto key = wParam & 0xFFFF;
+            const short distance = static_cast<short>(wParam >> 16);
 
-            std::wstringstream str;
-
-            str << L"Key: 0x" << std::hex << key << L" pressed.  Distance: " << std::dec << distance;
-
-            MessageBox(hWnd, str.str().c_str(), L"DEBUG", 0);
+            gRenderer->m_camera.MoveIn(0.1f * distance);
 
             return TRUE;
+        }
+
+        case WM_LBUTTONDOWN:
+        {
+            POINT point;
+            GetCursorPos(&point);
+
+            gRenderer->m_camera.BeginMousePan(point.x, point.y);
+            ShowCursor(FALSE);
+
+            return TRUE;
+        }
+
+        case WM_MOUSEMOVE:
+        {
+            if (!!(wParam & MK_LBUTTON) && gRenderer->m_camera.IsMousePanning())
+            {
+                POINT point;
+                GetCursorPos(&point);
+
+                int x, y;
+                gRenderer->m_camera.GetMousePanStart(x, y);
+
+                // only if there is movement to avoid an infinite loop of window messages
+                if (x != point.x || y != point.y)
+                {
+                    gRenderer->m_camera.UpdateMousePan(point.x, point.y);
+
+                    SetCursorPos(x, y);
+                }
+
+                return TRUE;
+            }
+
+            break;
+        }
+
+        case WM_LBUTTONUP:
+        {
+            if (gRenderer->m_camera.IsMousePanning())
+            {
+                gRenderer->m_camera.EndMousePan();
+                
+                ShowCursor(TRUE);
+
+                return TRUE;
+            }
+
+            break;
         }
     }
 
@@ -174,8 +212,8 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             gRenderer->AddGeometry(vertices, chunk->m_liquidIndices);
                         }
 
-                    gRenderer->GetCamera()->Move(adt->MaxX, adt->MaxY, maxZ + 1.1f*(maxZ - minZ));
-                    gRenderer->GetCamera()->LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (maxZ + minZ) / 2.f);
+                    gRenderer->m_camera.Move(adt->MaxX, adt->MaxY, maxZ + 1.1f*(maxZ - minZ));
+                    gRenderer->m_camera.LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (maxZ + minZ) / 2.f);
 
                     return TRUE;
                 }
