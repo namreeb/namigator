@@ -393,4 +393,9 @@ namespace utility
     {
         return Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
     }
+
+    float Vector3::Length() const
+    {
+        return sqrtf(X*X + Y*Y + Z*Z);
+    }
 }

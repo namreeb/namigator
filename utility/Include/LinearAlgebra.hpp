@@ -153,6 +153,8 @@ namespace utility
 
             Vector3() : X(0.f), Y(0.f), Z(0.f) {}
             Vector3(float x, float y, float z) : X(x), Y(y), Z(z) {}
+
+            float Length() const;
     };
 
     Vector3 operator + (const Vector3 &a, const Vector3 &b);

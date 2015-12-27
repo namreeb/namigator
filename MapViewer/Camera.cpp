@@ -1,9 +1,11 @@
 #include "LinearAlgebra.hpp"
 #include "Camera.hpp"
 
+#include <cassert>
+
 Camera::Camera()
     : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 0.1f, 10000.f)),
-      m_position({0.f, 0.f, 0.f}), m_target({0.f, 0.f, -1.f}), m_up({ 0.f, 1.f, 0.f })
+      m_position({0.f, 0.f, 0.f}), m_target({0.f, 0.f, -1.f}), m_up({ -1.f, 0.f, 0.f })
 {}
 
 void Camera::UpdateViewProjectionMatrix()
@@ -29,12 +31,18 @@ void Camera::MoveVertical(float delta)
 
 void Camera::Yaw(float delta)
 {
-    auto const rotate = utility::Matrix::CreateRotationZ(delta) * utility::Matrix::CreateTranslationMatrix(m_position);
+    auto const rotate = utility::Matrix::CreateRotationZ(delta);
+    auto const lookAtTarget = utility::Vector3::Transform(m_target - m_position, rotate);
 
-    m_target = utility::Vertex::Transform(m_target, rotate);
     m_up = utility::Vector3::Normalize(utility::Vector3::Transform(m_up, rotate));
+    m_target = m_position + lookAtTarget;
 
     UpdateViewProjectionMatrix();
+}
+
+void Camera::Pitch(float delta)
+{
+
 }
 
 void Camera::LookAt(const utility::Vertex &target)

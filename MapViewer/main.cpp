@@ -72,17 +72,17 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     gRenderer->GetCamera()->MoveVertical(-CAMERA_STEP);
                     return TRUE;
                 case 'A':
-                    gRenderer->GetCamera()->Yaw(0.01f);
+                    gRenderer->GetCamera()->Yaw(0.1f);
                     return TRUE;
                 case 'D':
-                    gRenderer->GetCamera()->Yaw(-0.01f);
+                    gRenderer->GetCamera()->Yaw(-0.1f);
                     return TRUE;
-                //case 'W':
-                //    gRenderer->GetCamera()->LookAtFrontBack(-CAMERA_STEP);
-                //    return TRUE;
-                //case 'X':
-                //    gRenderer->GetCamera()->LookAtFrontBack(CAMERA_STEP);
-                //    return TRUE;
+                case 'W':
+                    gRenderer->GetCamera()->Pitch(0.1f);
+                    return TRUE;
+                case 'X':
+                    gRenderer->GetCamera()->Pitch(-0.1f);
+                    return TRUE;
                 //case 'Q':
                 //    gRenderer->GetCamera()->LookAtUpDown(-CAMERA_STEP);
                 //    return TRUE;

@@ -20,7 +20,7 @@
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 
-//#define WIREFRAME
+#define WIREFRAME
 
 Renderer::Renderer(HWND window) : m_window(window), m_camera(new Camera)
 {
