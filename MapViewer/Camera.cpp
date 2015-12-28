@@ -53,6 +53,14 @@ void Camera::MoveIn(float delta)
     UpdateViewProjectionMatrix();
 }
 
+void Camera::MoveRight(float delta)
+{
+    m_position += delta*m_right;
+    m_target += delta*m_right;
+
+    UpdateViewProjectionMatrix();
+}
+
 void Camera::Yaw(float delta)
 {
     auto const rotate = utility::Matrix::CreateRotationZ(delta);

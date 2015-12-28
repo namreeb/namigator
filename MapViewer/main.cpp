@@ -75,11 +75,11 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 case 'Z':
                     gRenderer->m_camera.MoveVertical(-CAMERA_STEP);
                     return TRUE;
-                case 'A':
-                    gRenderer->m_camera.Yaw(0.1f);
-                    return TRUE;
                 case 'D':
-                    gRenderer->m_camera.Yaw(-0.1f);
+                    gRenderer->m_camera.MoveRight(CAMERA_STEP);
+                    return TRUE;
+                case 'A':
+                    gRenderer->m_camera.MoveRight(-CAMERA_STEP);
                     return TRUE;
                 case 'W':
                     gRenderer->m_camera.MoveIn(CAMERA_STEP);

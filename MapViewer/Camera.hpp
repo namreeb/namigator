@@ -37,6 +37,7 @@ class Camera
 
         void MoveVertical(float delta);
         void MoveIn(float delta);
+        void MoveRight(float delta);
 
         void Yaw(float delta);
         void Pitch(float delta);
