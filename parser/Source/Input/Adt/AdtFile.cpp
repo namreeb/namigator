@@ -4,7 +4,7 @@
 
 namespace parser_input
 {
-    AdtFile::AdtFile(const std::string &path) : WowFile(path)
+    AdtFile::AdtFile(const std::string &path) : WowFile(path), m_hasMCLQ(false)
     {
         // parse path "World\Maps\zone\zone_X_Y...."
         char *cPath = new char[path.length()+1], *zone, *x, *y, *p;
@@ -46,6 +46,9 @@ namespace parser_input
             {
                 m_chunks[y][x].reset(new MCNK(currMcnk, Reader));
                 currMcnk += 8 + m_chunks[y][x]->Size;
+
+                if (m_chunks[y][x]->HasWater)
+                    m_hasMCLQ = true;
             }
 
         // MMDX

@@ -5,7 +5,7 @@
 
 #include "Input/Adt/AdtChunk.hpp"
 #include "Input/Adt/Chunks/Subchunks/MCVT.hpp"
-#include "Input/Adt/Chunks/MH2O.hpp"
+#include "Input/Adt/Chunks/Subchunks/MCLQ.hpp"
 
 #include "LinearAlgebra.hpp"
 
@@ -74,10 +74,11 @@ namespace parser_input
             std::vector<Vertex> Positions;
 
             std::unique_ptr<MCVT> HeightChunk;
+            std::unique_ptr<MCLQ> LiquidChunk;
 
             //std::vector<unsigned int> DoodadIndices;
             //std::vector<unsigned int> WmoIndices;
 
-            MCNK(long position, utility::BinaryStream *reader, bool findHeader = true);
+            MCNK(long position, utility::BinaryStream *reader);
     };
 }

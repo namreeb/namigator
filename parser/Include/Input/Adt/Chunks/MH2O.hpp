@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include "BinaryStream.hpp"
 #include "Input/Adt/AdtChunk.hpp"
 
@@ -42,9 +43,8 @@ namespace parser_input
     class MH2O : AdtChunk
     {
         public:
-            MH2OBlock *Blocks[16][16];
+            std::unique_ptr<MH2OBlock> Blocks[16][16];
 
             MH2O(long position, utility::BinaryStream *reader);
-            ~MH2O();
     };
 }

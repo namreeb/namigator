@@ -343,7 +343,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     controls.AddTextBox(L"ADT_X", L"32", 25, 145, 75, 20);
 
     controls.AddLabel(L"Y:", 10, 172, 20, 20);
-    controls.AddTextBox(L"ADT_Y", L"32", 25, 170, 75, 20);
+    controls.AddTextBox(L"ADT_Y", L"48", 25, 170, 75, 20);
 
     controls.AddButton(L"Load ADT", Buttons::LoadADT, 115, 167, 100, 25);
 

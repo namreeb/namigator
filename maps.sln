@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MapViewer", "MapViewer\MapViewer.vcxproj", "{0750169E-3B24-4DFB-AC5C-E0330912CF43}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5A918B0C-418F-42F3-BA09-987891A1696D} = {5A918B0C-418F-42F3-BA09-987891A1696D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "parser", "parser\parser.vcxproj", "{374E3660-9432-4306-8550-F76030FFC8E8}"
 	ProjectSection(ProjectDependencies) = postProject

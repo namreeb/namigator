@@ -31,6 +31,7 @@ namespace parser_input
             std::unique_ptr<MCNK> m_chunks[16][16];
 
             bool m_hasMH2O;
+            bool m_hasMCLQ;
 
             std::unique_ptr<MH2O> m_liquidChunk;
 

@@ -95,6 +95,9 @@
       <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
     </ClCompile>
     <ClCompile Include="Source\parser.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCLQ.cpp">
+      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Input\Adt\AdtFile.hpp">
@@ -203,6 +206,9 @@
       <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
     </ClInclude>
     <ClInclude Include="include\parser.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCLQ.hpp">
+      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">

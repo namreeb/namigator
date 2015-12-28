@@ -11,14 +11,13 @@ namespace parser_input
         for (int y = 0; y < 16; ++y)
             for (int x = 0; x < 16; ++x)
             {
-                Blocks[y][x] = new MH2OBlock;
+                Blocks[y][x].reset(new MH2OBlock);
 
                 reader->ReadStruct(&Blocks[y][x]->Header);
 
                 if (Blocks[y][x]->Header.LayerCount <= 0)
                 {
-                    delete Blocks[y][x];
-                    Blocks[y][x] = nullptr;
+                    Blocks[y][x].reset(nullptr);
                     continue;
                 }
 
@@ -85,13 +84,5 @@ namespace parser_input
                 // this calculates where we need to be for the next header
                 reader->SetPosition(offsetFrom + (y * 16 + x + 1) * 12);
             }
-    }
-
-    MH2O::~MH2O()
-    {
-        for (int y = 0; y < 16; ++y)
-            for (int x = 0; x < 16; ++x)
-                if (Blocks[y][x])
-                    delete Blocks[y][x];
     }
 }
