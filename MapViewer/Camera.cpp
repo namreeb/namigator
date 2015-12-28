@@ -6,8 +6,8 @@ Camera::Camera()
       m_mousePanning(false), m_mousePanX(0), m_mousePanY(0),
       m_position({ 0.f,  0.f,  0.f }),
       m_target(  { 0.f,  0.f, -1.f }),
-      m_up(      { -1.f, 0.f,  0.f }),
-      m_right(   { 0.f,  1.f,  0.f })
+      m_up(      { 1.f,  0.f,  0.f }),
+      m_right(   { 0.f, -1.f,  0.f })
 {}
 
 void Camera::UpdateViewProjectionMatrix()
@@ -68,7 +68,6 @@ void Camera::Yaw(float delta)
 void Camera::Pitch(float delta)
 {
     auto const rotate = utility::Matrix::CreateRotation(m_right, delta);
-    auto const lookAtTarget = utility::Vector3::Transform(m_target - m_position, rotate);
 
     auto newUp = utility::Vector3::Transform(m_up, rotate);
 
@@ -76,7 +75,9 @@ void Camera::Pitch(float delta)
         newUp.Z = 0.3f;
 
     m_up = utility::Vector3::Normalize(newUp);
-    m_target = m_position + lookAtTarget;
+
+    auto const lookAtLength = (m_target - m_position).Length();
+    m_target = m_position + lookAtLength * utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_up, m_right));
 
     UpdateViewProjectionMatrix();
 }
@@ -107,5 +108,6 @@ void Camera::UpdateMousePan(int newX, int newY)
 
 void Camera::GetMousePanStart(int &x, int &y) const
 {
-    x = m_mousePanX; y = m_mousePanY;
+    x = m_mousePanX;
+    y = m_mousePanY;
 }
