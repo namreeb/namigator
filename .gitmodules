@@ -1,6 +1,6 @@
 [submodule "recastnavigation"]
 	path = recastnavigation
-	url = git@github.com:memononen/recastnavigation.git
+	url = https://github.com/recastnavigation/recastnavigation.git
 [submodule "stormlib"]
 	path = stormlib
-	url = git@github.com:ladislav-zezula/StormLib.git
+	url = https://github.com/ladislav-zezula/StormLib.git
