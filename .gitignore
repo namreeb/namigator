@@ -22,3 +22,6 @@
 /parser/Release
 /utility/Release
 /Release
+/RecastDetourBuild/Recast/Debug
+/MapBuilder/Debug
+/MapBuilder/*.user
