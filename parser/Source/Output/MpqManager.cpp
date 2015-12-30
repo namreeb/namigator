@@ -43,7 +43,7 @@ namespace parser
         std::string ret = ".";
 #endif
 #else
-        std::string ret = "f:\\wow 1.12.1\\";
+        std::string ret = "D:\\Games\\World of Warcraft 1.12.1\\";
 #endif
 
         return ret;

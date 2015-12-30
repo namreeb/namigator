@@ -65,23 +65,23 @@ namespace parser
 
                         // Upper triangle
                         chunk->m_terrainIndices.push_back(currIndex);
-                        chunk->m_terrainIndices.push_back(currIndex + 9);
                         chunk->m_terrainIndices.push_back(currIndex + 1);
+                        chunk->m_terrainIndices.push_back(currIndex + 9);
 
                         // Left triangle
                         chunk->m_terrainIndices.push_back(currIndex);
-                        chunk->m_terrainIndices.push_back(currIndex + 17);
                         chunk->m_terrainIndices.push_back(currIndex + 9);
+                        chunk->m_terrainIndices.push_back(currIndex + 17);
 
                         // Lower triangle
                         chunk->m_terrainIndices.push_back(currIndex + 9);
-                        chunk->m_terrainIndices.push_back(currIndex + 17);
                         chunk->m_terrainIndices.push_back(currIndex + 18);
+                        chunk->m_terrainIndices.push_back(currIndex + 17);
 
                         // Right triangle
                         chunk->m_terrainIndices.push_back(currIndex + 1);
-                        chunk->m_terrainIndices.push_back(currIndex + 9);
                         chunk->m_terrainIndices.push_back(currIndex + 18);
+                        chunk->m_terrainIndices.push_back(currIndex + 9);
                     }
                 }
 

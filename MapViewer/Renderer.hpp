@@ -4,13 +4,13 @@
 #include <memory>
 #include <Windows.h>
 #include <d3d11.h>
-#include <d3dx11.h>
 
 #include "Camera.hpp"
 
 struct ColoredVertex
 {
     float x, y, z;
+    float nx, ny, nz;
     float color[4];
 };
 

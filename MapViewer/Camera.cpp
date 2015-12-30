@@ -79,8 +79,8 @@ void Camera::Pitch(float delta)
 
     auto newUp = utility::Vector3::Transform(m_up, rotate);
 
-    if (newUp.Z < 0.3f)
-        newUp.Z = 0.3f;
+    if (newUp.Z < 0.0f)
+        newUp.Z = 0.0f;
 
     m_up = utility::Vector3::Normalize(newUp);
 

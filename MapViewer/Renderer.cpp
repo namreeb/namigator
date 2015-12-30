@@ -2,21 +2,19 @@
 #include <cassert>
 
 #include <d3d11.h>
-#include <d3dx11.h>
 
 #include "Renderer.hpp"
 #include "LinearAlgebra.hpp"
 
 // include the Direct3D Library file
 #pragma comment (lib, "d3d11.lib")
-#pragma comment (lib, "d3dx11.lib")
 
 #include "pixelShader.hpp"
 #include "vertexShader.hpp"
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 
-#define WIREFRAME
+// #define WIREFRAME
 
 Renderer::Renderer(HWND window) : m_window(window)
 {
@@ -107,10 +105,11 @@ void Renderer::InitializePipeline(HWND window)
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-    m_device->CreateInputLayout(ied, 2, g_VShader, sizeof(g_VShader), &m_inputLayout);
+    m_device->CreateInputLayout(ied, _countof(ied), g_VShader, sizeof(g_VShader), &m_inputLayout);
     m_deviceContext->IASetInputLayout(m_inputLayout);
 
     D3D11_BUFFER_DESC cbbd;
@@ -132,7 +131,7 @@ void Renderer::InitializePipeline(HWND window)
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
 #else
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.CullMode = D3D11_CULL_FRONT;
+    rasterizerDesc.CullMode = D3D11_CULL_BACK;
 #endif
 
     m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState);
