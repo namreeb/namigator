@@ -12,8 +12,6 @@
 #include "parser.hpp"
 #include "Output/Continent.hpp"
 
-#include <limits>
-
 #define START_X             100
 #define START_Y             100
 #define START_WIDTH         1200
@@ -181,97 +179,17 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                     auto const adt = gContinent->LoadAdt(32, 48);
                     
-                    float minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
-
                     for (int x = 0; x < 16; ++x)
                         for (int y = 0; y < 16; ++y)
                         {
                             auto chunk = adt->GetChunk(x, y);
 
-                            std::vector<utility::Vector3> normals;
-                            normals.resize(chunk->m_terrainVertices.size());
-
-                            for (size_t i = 0; i < chunk->m_terrainIndices.size() / 3; ++i) {
-                                auto& v0 = chunk->m_terrainVertices[chunk->m_terrainIndices[i*3 + 0]];
-                                auto& v1 = chunk->m_terrainVertices[chunk->m_terrainIndices[i*3 + 1]];
-                                auto& v2 = chunk->m_terrainVertices[chunk->m_terrainIndices[i*3 + 2]];
-
-                                auto n = utility::Vector3::CrossProduct(v1 - v0, v2 - v0);
-                                n = utility::Vector3::Normalize(n);
-
-                                normals[chunk->m_terrainIndices[i*3 + 0]] += n;
-                                normals[chunk->m_terrainIndices[i*3 + 1]] += n;
-                                normals[chunk->m_terrainIndices[i*3 + 2]] += n;
-                            }
-
-                            std::vector<ColoredVertex> vertices;
-                            vertices.reserve(chunk->m_terrainVertices.size());
-
-                            for (size_t i = 0; i < chunk->m_terrainVertices.size(); ++i) {
-                                if (chunk->m_terrainVertices[i].Z < minZ)
-                                    minZ = chunk->m_terrainVertices[i].Z;
-                                if (chunk->m_terrainVertices[i].Z > maxZ)
-                                    maxZ = chunk->m_terrainVertices[i].Z;
-
-                                ColoredVertex vertex;
-                                vertex.x = chunk->m_terrainVertices[i].X;
-                                vertex.y = chunk->m_terrainVertices[i].Y;
-                                vertex.z = chunk->m_terrainVertices[i].Z;
-
-                                float color[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-                                std::memcpy(vertex.color, color, sizeof(color));
-
-                                auto n = utility::Vector3::Normalize(normals[i]);
-                                vertex.nx = n.X;
-                                vertex.ny = n.Y;
-                                vertex.nz = n.Z;
-
-                                vertices.emplace_back(vertex);
-                            }
-
-                            gRenderer->AddGeometry(vertices, chunk->m_terrainIndices);
-
-                            normals.clear();
-                            normals.resize(chunk->m_liquidVertices.size());
-
-                            for (size_t i = 0; i < chunk->m_liquidIndices.size() / 3; ++i) {
-                                auto& v0 = chunk->m_liquidVertices[chunk->m_liquidIndices[i*3 + 0]];
-                                auto& v1 = chunk->m_liquidVertices[chunk->m_liquidIndices[i*3 + 1]];
-                                auto& v2 = chunk->m_liquidVertices[chunk->m_liquidIndices[i*3 + 2]];
-
-                                auto n = utility::Vector3::CrossProduct(v1 - v0, v2 - v0);
-                                n = utility::Vector3::Normalize(n);
-
-                                normals[chunk->m_liquidIndices[i*3 + 0]] += n;
-                                normals[chunk->m_liquidIndices[i*3 + 1]] += n;
-                                normals[chunk->m_liquidIndices[i*3 + 2]] += n;
-                            }
-
-                            vertices.clear();
-                            vertices.reserve(chunk->m_liquidVertices.size());
-
-                            for (unsigned int i = 0; i < chunk->m_liquidVertices.size(); ++i) {
-                                ColoredVertex vertex;
-                                vertex.x = chunk->m_liquidVertices[i].X;
-                                vertex.y = chunk->m_liquidVertices[i].Y;
-                                vertex.z = chunk->m_liquidVertices[i].Z;
-
-                                float color[] = { 0.2f, 0.2f, 0.8f, 1.0f };
-                                std::memcpy(vertex.color, color, sizeof(color));
-
-                                auto n = utility::Vector3::Normalize(normals[i]);
-                                vertex.nx = n.X;
-                                vertex.ny = n.Y;
-                                vertex.nz = n.Z;
-
-                                vertices.emplace_back(vertex);
-                            }
-
-                            gRenderer->AddGeometry(vertices, chunk->m_liquidIndices);
+                            gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
+                            gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
                         }
 
-                    gRenderer->m_camera.Move(adt->MaxX, adt->MaxY, maxZ + 1.1f*(maxZ - minZ));
-                    gRenderer->m_camera.LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (maxZ + minZ) / 2.f);
+                    gRenderer->m_camera.Move(adt->MaxX, adt->MaxY, adt->MaxZ + 1.5f*(adt->MaxZ - adt->MinZ));
+                    gRenderer->m_camera.LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (adt->MaxZ + adt->MinZ) / 2.f);
 
                     return TRUE;
                 }

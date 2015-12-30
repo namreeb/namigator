@@ -1,10 +1,4 @@
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <iomanip>
-#include <set>
-#include <memory>
-#include <cassert>
+#define NOMINMAX
 
 #include "Input/Adt/AdtFile.hpp"
 #include "Output/Adt.hpp"
@@ -12,6 +6,15 @@
 #include "LinearAlgebra.hpp"
 #include "parser.hpp"
 #include "Directory.hpp"
+
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <iomanip>
+#include <set>
+#include <memory>
+#include <cassert>
+#include <limits>
 
 namespace parser
 {
@@ -23,7 +26,8 @@ namespace parser
     Adt::Adt(Continent *continent, int x, int y)
         : X(x), Y(y),
           MaxX((32.f-(float)y)*(533.f+(1.f/3.f))), MinX(MaxX - (533.f + (1.f/3.f))),
-          MaxY((32.f-(float)x)*(533.f+(1.f/3.f))), MinY(MaxY - (533.f + (1.f/3.f))), m_continent(continent)
+          MaxY((32.f-(float)x)*(533.f+(1.f/3.f))), MinY(MaxY - (533.f + (1.f/3.f))), m_continent(continent),
+          MaxZ(std::numeric_limits<float>::lowest()), MinZ(std::numeric_limits<float>::max())
     {
         std::stringstream ss;
 
@@ -47,6 +51,11 @@ namespace parser
 
                 chunk->m_terrainVertices = std::move(mapChunk->Positions);
                 chunk->m_surfaceNormals = std::move(mapChunk->Normals);
+
+                if (mapChunk->MaxZ > MaxZ)
+                    MaxZ = mapChunk->MaxZ;
+                if (mapChunk->MinZ < MinZ)
+                    MinZ = mapChunk->MinZ;
 
                 memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(bool)*8*8);
 
@@ -142,12 +151,12 @@ namespace parser
                                                                           mh2oBlock->Heights[y][x]));
 
                                  chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
                                  chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
 
                                  chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
                                  chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
                              }
                     }
 
@@ -181,12 +190,12 @@ namespace parser
                                 chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
 
                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
 
                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
                             }
                     }
                 }
@@ -194,6 +203,7 @@ namespace parser
 
         // WMOs
 
+#if 0
         if (adt.m_wmoChunk)
         {
             std::vector<std::unique_ptr<parser_input::WmoRootFile>> wmoFiles;
@@ -309,6 +319,7 @@ namespace parser
                     }
                 }
         }
+#endif
     }
 
     void Adt::WriteObjFile() const
@@ -440,6 +451,6 @@ namespace parser
 
     const AdtChunk *Adt::GetChunk(const int chunkX, const int chunkY) const
     {
-        return m_chunks[chunkX][chunkY].get();
+        return m_chunks[chunkY][chunkX].get();
     }
 }

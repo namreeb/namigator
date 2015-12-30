@@ -31,7 +31,7 @@ static const float3 lightDir = normalize(float3(-1.0f, -1.0f, -1.0f));
 
 float3 getLightColor(float3 normal, float3 worldPos) {
     float ndl = dot(normalize(normal), -lightDir);
-    float diffuse = max(ndl * 0.5f + 0.5f, 0);
+    float diffuse = max(ndl * 0.35f + 0.5f, 0);
 
     float3 lightColor = ambientLight;
     lightColor.rgb += diffuseLight * diffuse;

@@ -50,6 +50,9 @@ namespace parser
             const float MaxY;
             const float MinY;
 
+            float MaxZ;
+            float MinZ;
+
             Adt(Continent *continent, int x, int y);
 
             void WriteObjFile() const;

@@ -1,9 +1,15 @@
+#define NOMINMAX
+
 #include "Input/ADT/Chunks/MCNK.hpp"
 #include "Input/ADT/Chunks/Subchunks/MCLQ.hpp"
 
+#include <limits>
+
 namespace parser_input
 {
-    MCNK::MCNK(long position, utility::BinaryStream *reader) : AdtChunk(position, reader), Height(0.f), HasHoles(false), HasWater(false)
+    MCNK::MCNK(long position, utility::BinaryStream *reader)
+        : AdtChunk(position, reader), Height(0.f), HasHoles(false), HasWater(false),
+          MaxZ(std::numeric_limits<float>::lowest()), MinZ(std::numeric_limits<float>::max())
     {
 #ifdef DEBUG
         if (Type != AdtChunkType::MCNK)
@@ -68,6 +74,11 @@ namespace parser_input
             const int x = (i % 17 > 8 ? (i - 9) % 17 : i % 17);
             const int y = i / 17;
             const float innerOffset = (i % 17 > 8 ? quadSize / 2.f : 0.f);
+
+            if (heightChunk.Heights[i] > MaxZ)
+                MaxZ = heightChunk.Heights[i];
+            if (heightChunk.Heights[i] < MinZ)
+                MinZ = heightChunk.Heights[i];
 
             Positions.push_back({ information.Position[0] - (y*quadSize) - innerOffset,
                                   information.Position[1] - (x*quadSize) - innerOffset,

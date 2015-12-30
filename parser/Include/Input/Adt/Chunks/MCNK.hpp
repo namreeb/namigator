@@ -70,6 +70,8 @@ namespace parser_input
             unsigned int AreaId;
 
             float Height;
+            float MinZ;
+            float MaxZ;
 
             bool HoleMap[8][8];
             std::vector<Vertex> Positions;

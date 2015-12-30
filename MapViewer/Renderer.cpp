@@ -17,6 +17,10 @@
 
 //#define WIREFRAME
 
+const float Renderer::TerrainColor[4] = { 0.1f, 0.8f, 0.3f, 1.f };
+const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.1f };
+const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
+
 Renderer::Renderer(HWND window) : m_window(window)
 {
     // create a struct to hold information about the swap chain
@@ -149,7 +153,17 @@ Renderer::~Renderer()
     m_depthStencilBuffer->Release();
 }
 
-void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices)
+void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    InsertBuffer(m_terrainBuffers, TerrainColor, vertices, indices);
+}
+
+void Renderer::AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    InsertBuffer(m_liquidBuffers, LiquidColor, vertices, indices);
+}
+
+void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
     if (!vertices.size() || !indices.size())
         return;
@@ -163,16 +177,53 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    m_vertexBuffers.push_back(nullptr);
+    ID3D11Buffer *vertexBuffer;
 
-    auto vertexBuffer = &m_vertexBuffers[m_vertexBuffers.size() - 1];
-
-    ThrowIfFail(m_device->CreateBuffer(&vertexBufferDesc, nullptr, vertexBuffer));
+    ThrowIfFail(m_device->CreateBuffer(&vertexBufferDesc, nullptr, &vertexBuffer));
 
     D3D11_MAPPED_SUBRESOURCE ms;
-    m_deviceContext->Map(*vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
-    memcpy(ms.pData, &vertices[0], sizeof(ColoredVertex)*vertices.size());
-    m_deviceContext->Unmap(*vertexBuffer, 0);
+    ThrowIfFail(m_deviceContext->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
+
+    {
+        std::vector<utility::Vector3> normals;
+        normals.resize(vertices.size());
+
+        for (size_t i = 0; i < indices.size() / 3; ++i)
+        {
+            auto const& v0 = vertices[indices[i * 3 + 0]];
+            auto const& v1 = vertices[indices[i * 3 + 1]];
+            auto const& v2 = vertices[indices[i * 3 + 2]];
+
+            auto n = utility::Vector3::CrossProduct(v1 - v0, v2 - v0);
+            n = utility::Vector3::Normalize(n);
+
+            normals[indices[i * 3 + 0]] += n;
+            normals[indices[i * 3 + 1]] += n;
+            normals[indices[i * 3 + 2]] += n;
+        }
+
+        std::vector<ColoredVertex> coloredVertices;
+        coloredVertices.reserve(vertices.size());
+
+        for (size_t i = 0; i < vertices.size(); ++i)
+        {
+            ColoredVertex vertex;
+            vertex.vertex = vertices[i];
+
+            std::memcpy(vertex.color, color, sizeof(vertex.color));
+
+            auto n = utility::Vector3::Normalize(normals[i]);
+            vertex.nx = n.X;
+            vertex.ny = n.Y;
+            vertex.nz = n.Z;
+
+            coloredVertices.emplace_back(vertex);
+        }
+
+        memcpy(ms.pData, &coloredVertices[0], sizeof(ColoredVertex)*coloredVertices.size());
+    }
+
+    m_deviceContext->Unmap(vertexBuffer, 0);
 
     ZERO(indexBufferDesc);
 
@@ -181,25 +232,21 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
     indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    m_indexBuffers.push_back(nullptr);
+    ID3D11Buffer *indexBuffer;
 
-    auto indexBuffer = &m_indexBuffers[m_indexBuffers.size() - 1];
+    ThrowIfFail(m_device->CreateBuffer(&indexBufferDesc, nullptr, &indexBuffer));
 
-    ThrowIfFail(m_device->CreateBuffer(&indexBufferDesc, nullptr, indexBuffer));
-
-    ThrowIfFail(m_deviceContext->Map(*indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
+    ThrowIfFail(m_deviceContext->Map(indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
     memcpy(ms.pData, &indices[0], sizeof(int)*indices.size());
-    m_deviceContext->Unmap(*indexBuffer, 0);
+    m_deviceContext->Unmap(indexBuffer, 0);
 
-    m_indexCounts.push_back(indices.size());
+    buffer.push_back({ vertexBuffer, indexBuffer, indices.size() });
 }
 
 void Renderer::Render() const
 {
-    const float blue[4] = { 0.f, 0.2f, 0.4f, 1.f };
-
     // clear the back buffer to a deep blue
-    m_deviceContext->ClearRenderTargetView(m_backBuffer, blue);
+    m_deviceContext->ClearRenderTargetView(m_backBuffer, BackgroundColor);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
     m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, m_camera.GetProjectionMatrix(), 0, 0);
@@ -208,13 +255,24 @@ void Renderer::Render() const
     const unsigned int stride = sizeof(ColoredVertex);
     unsigned int offset = 0;
 
-    for (unsigned int i = 0; i < m_vertexBuffers.size(); ++i)
+    // draw terrain
+    for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
     {
-        m_deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffers[i], &stride, &offset);
-        m_deviceContext->IASetIndexBuffer(m_indexBuffers[i], DXGI_FORMAT_R32_UINT, 0);
+        m_deviceContext->IASetVertexBuffers(0, 1, &m_terrainBuffers[i].VertexBuffer, &stride, &offset);
+        m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
         m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        m_deviceContext->DrawIndexed(m_indexCounts[i], 0, 0);
+        m_deviceContext->DrawIndexed(m_terrainBuffers[i].IndexCount, 0, 0);
+    }
+
+    // draw liquid
+    for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
+    {
+        m_deviceContext->IASetVertexBuffers(0, 1, &m_liquidBuffers[i].VertexBuffer, &stride, &offset);
+        m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        m_deviceContext->DrawIndexed(m_liquidBuffers[i].IndexCount, 0, 0);
     }
 
     // switch the back buffer and the front buffer
