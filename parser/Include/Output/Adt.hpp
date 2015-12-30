@@ -11,30 +11,28 @@
 
 namespace parser
 {
-    class AdtChunk
+    struct AdtChunk
     {
-        public:
-            float m_terrainHeights[145];
-            bool m_holeMap[8][8];
+        bool m_holeMap[8][8];
 
-            std::vector<Vertex> m_terrainVertices;
-            std::vector<int> m_terrainIndices;
+        std::vector<Vertex> m_terrainVertices;
+        std::vector<int> m_terrainIndices;
 
-            std::vector<Vertex> m_liquidVertices;
-            std::vector<int> m_liquidIndices;
+        std::vector<Vector3> m_surfaceNormals;
 
-            // set of unique wmo identifiers present in this chunk
-            std::set<unsigned int> m_wmos;
+        std::vector<Vertex> m_liquidVertices;
+        std::vector<int> m_liquidIndices;
 
-            // set of unique doodad identifiers present in this chunk
-            std::set<unsigned int> m_doodads;
+        // set of unique wmo identifiers present in this chunk
+        std::set<unsigned int> m_wmos;
 
-            unsigned int m_areaId;
+        // set of unique doodad identifiers present in this chunk
+        std::set<unsigned int> m_doodads;
     };
 
     class Continent;
 
-    class Adt : std::enable_shared_from_this<Adt>
+    class Adt
     {
         private:
             static inline bool IsRendered(unsigned char mask[], int x, int y);
@@ -55,7 +53,6 @@ namespace parser
             Adt(Continent *continent, int x, int y);
 
             void WriteObjFile() const;
-            void SaveToDisk() const;
 
             const AdtChunk *GetChunk(int chunkX, int chunkY) const;
     };

@@ -88,14 +88,11 @@
     <ClCompile Include="Source\Output\Wmo.cpp">
       <Filter>Source\Output</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRD.cpp">
-      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRW.cpp">
-      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
-    </ClCompile>
     <ClCompile Include="Source\parser.cpp" />
     <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCLQ.cpp">
+      <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCNR.cpp">
       <Filter>Source\Input\Adt\Chunks\Subchunks</Filter>
     </ClCompile>
   </ItemGroup>
@@ -199,14 +196,11 @@
     <ClInclude Include="Include\Output\Wmo.hpp">
       <Filter>Include\Output</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRD.hpp">
-      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRW.hpp">
-      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
-    </ClInclude>
     <ClInclude Include="include\parser.hpp" />
     <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCLQ.hpp">
+      <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCNR.hpp">
       <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
     </ClInclude>
   </ItemGroup>

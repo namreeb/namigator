@@ -25,8 +25,7 @@ namespace parser_input
             static const unsigned int MFBO = 'MFBO';
             static const unsigned int MCCV = 'MCCV';
             static const unsigned int MCVT = 'MCVT';
-            static const unsigned int MCRW = 'MCRW';
-            static const unsigned int MCRD = 'MCRD';
+            static const unsigned int MCNR = 'MCNR';
     };
 
     class WaterChunkType

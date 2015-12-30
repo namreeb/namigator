@@ -6,6 +6,7 @@
 #include "Input/Adt/AdtChunk.hpp"
 #include "Input/Adt/Chunks/Subchunks/MCVT.hpp"
 #include "Input/Adt/Chunks/Subchunks/MCLQ.hpp"
+#include "Input/Adt/Chunks/Subchunks/MCNR.hpp"
 
 #include "LinearAlgebra.hpp"
 
@@ -72,12 +73,9 @@ namespace parser_input
 
             bool HoleMap[8][8];
             std::vector<Vertex> Positions;
+            std::vector<Vector3> Normals;
 
-            std::unique_ptr<MCVT> HeightChunk;
             std::unique_ptr<MCLQ> LiquidChunk;
-
-            //std::vector<unsigned int> DoodadIndices;
-            //std::vector<unsigned int> WmoIndices;
 
             MCNK(long position, utility::BinaryStream *reader);
     };

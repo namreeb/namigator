@@ -39,17 +39,14 @@ namespace parser
         {
             for (int chunkX = 0; chunkX < 16; ++chunkX)
             {
-                const parser_input::MCNK *mapChunk = adt.m_chunks[chunkY][chunkX].get();
+                auto const mapChunk = adt.m_chunks[chunkY][chunkX].get();
 
                 AdtChunk *const chunk = new AdtChunk();
 
                 int vertCount = 0;
 
-                chunk->m_areaId = mapChunk->AreaId;
                 chunk->m_terrainVertices = std::move(mapChunk->Positions);
-
-                for (int i = 0; i < 145; ++i)
-                    chunk->m_terrainHeights[i] = mapChunk->HeightChunk->Heights[i] + mapChunk->Height;
+                chunk->m_surfaceNormals = std::move(mapChunk->Normals);
 
                 memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(bool)*8*8);
 
@@ -435,116 +432,6 @@ namespace parser
                                     << indexOffset + doodad->Indices[i+2] << std::endl;
 
                     indexOffset += doodad->Vertices.size();
-                }
-            }
-
-        out.close();
-    }
-
-    void Adt::SaveToDisk() const
-    {
-        const char zero = 0;
-        std::stringstream ss;
-
-        if (!Directory::Exists("Data"))
-            Directory::Create("Data");
-
-        if (!Directory::Exists(std::string("Data\\") + m_continent->Name))
-            Directory::Create(std::string("Data\\") + m_continent->Name);
-
-        if (!Directory::Exists(std::string("Data\\") + m_continent->Name + "\\ADTs"))
-            Directory::Create(std::string("Data\\") + m_continent->Name + "\\ADTs");
-
-        ss << "Data\\" << m_continent->Name << "\\ADTs\\" << X << "_" << Y << ".nadt";
-
-        std::ofstream out(ss.str(), std::ios::out | std::ios::binary);
-
-        out.write(VERSION, strlen(VERSION));
-        out.write(&zero, 1);
-        out.write("ADT", 3);
-
-        char reservedSpaceForChunkOffsets[sizeof(unsigned int)*16*16];
-        memset(reservedSpaceForChunkOffsets, 0, sizeof(int)*16*16);
-        out.write(reservedSpaceForChunkOffsets, sizeof(int)*16*16);
-
-        int indexOffset = 0;
-
-        for (int y = 0; y < 16; ++y)
-            for (int x = 0; x < 16; ++x)
-            {
-                unsigned int pos = (unsigned int)out.tellp();
-
-                // move to chunk offset storage location for this chunk, and save it
-
-                out.seekp(8+1+3+(y*16+x)*sizeof(unsigned int));
-                out.write((const char *)&pos, sizeof(unsigned int));
-                out.seekp(pos);
-
-                AdtChunk *chunk = m_chunks[y][x].get();
-
-                // label start of chunk
-                out.write("CHUNK", 5);
-
-                // write terrain vertex count
-                const unsigned int terrainVertexCount = chunk->m_terrainVertices.size();
-                out.write((const char *)&terrainVertexCount, sizeof(unsigned int));
-
-                // write terrain index count
-                const unsigned int terrainIndexCount = chunk->m_terrainIndices.size();
-                out.write((const char *)&terrainIndexCount, sizeof(unsigned int));
-
-                // write liquid vertex count
-                const unsigned int liquidVertexCount = chunk->m_liquidVertices.size();
-                out.write((const char *)&liquidVertexCount, sizeof(unsigned int));
-
-                // write liquid index count
-                const unsigned int liquidIndexCount = chunk->m_liquidIndices.size();
-                out.write((const char *)&liquidIndexCount, sizeof(unsigned int));
-
-                // write wmo unique id count
-                const unsigned int wmoIdCount = chunk->m_wmos.size();
-                out.write((const char *)&wmoIdCount, sizeof(unsigned int));
-
-                // write doodad unique id count
-                const unsigned int doodadIdCount = chunk->m_doodads.size();
-                out.write((const char *)&doodadIdCount, sizeof(unsigned int));
-
-                // write terrain heights
-                out.write((const char *)&chunk->m_terrainHeights[0], sizeof(float)*145);
-
-                // write hole map
-                out.write((const char *)&chunk->m_holeMap[0], sizeof(bool)*8*8);
-
-                if (terrainVertexCount && terrainIndexCount)
-                {
-                    // write terrain vertices
-                    out.write((const char *)&chunk->m_terrainVertices[0], sizeof(Vertex)*terrainVertexCount);
-
-                    // write terrain indices
-                    out.write((const char *)&chunk->m_terrainIndices[0], sizeof(int)*terrainIndexCount);
-                }
-
-                if (liquidVertexCount && liquidIndexCount)
-                {
-                    // write liquid vertices
-                    out.write((const char *)&chunk->m_liquidVertices[0], sizeof(Vertex)*liquidVertexCount);
-
-                    // write liquid indices
-                    out.write((const char *)&chunk->m_liquidIndices[0], sizeof(int)*liquidIndexCount);
-                }
-
-                // write wmo unique ids for this chunk
-                for (auto i = chunk->m_wmos.begin(); i != chunk->m_wmos.end(); ++i)
-                {
-                    const unsigned int id = *i;
-                    out.write((const char *)&id, sizeof(unsigned int));
-                }
-
-                // write doodad unique ids for this chunk
-                for (auto i = chunk->m_doodads.begin(); i != chunk->m_doodads.end(); ++i)
-                {
-                    const unsigned int id = *i;
-                    out.write((const char *)&id, sizeof(unsigned int));
                 }
             }
 

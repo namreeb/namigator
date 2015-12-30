@@ -1,6 +1,4 @@
 #include "Input/ADT/Chunks/MCNK.hpp"
-#include "Input/ADT/Chunks/Subchunks/MCRD.hpp"
-#include "Input/ADT/Chunks/Subchunks/MCRW.hpp"
 #include "Input/ADT/Chunks/Subchunks/MCLQ.hpp"
 
 namespace parser_input
@@ -21,8 +19,6 @@ namespace parser_input
         reader->ReadStruct(&information);
 
         Height = information.Position[2];
-
-        HeightChunk.reset(new MCVT(Position + information.HeightOffset, reader));
 
         memset(HoleMap, 0, sizeof(bool)*8*8);
 
@@ -60,7 +56,11 @@ namespace parser_input
         // Information.Position specifies the top left corner of the current chunk (using in-game coords)
         // these x and y correspond to rows and columns (respectively) of the current chunk
 
+        MCVT heightChunk(Position + information.HeightOffset, reader);
+        MCNR normalChunk(Position + information.NormalOffset, reader);
+
         Positions.reserve(VertexCount);
+        Normals.reserve(VertexCount);
 
         for (int i = 0; i < VertexCount; ++i)
         {
@@ -71,7 +71,11 @@ namespace parser_input
 
             Positions.push_back({ information.Position[0] - (y*quadSize) - innerOffset,
                                   information.Position[1] - (x*quadSize) - innerOffset,
-                                  information.Position[2] + HeightChunk->Heights[i] });
+                                  information.Position[2] + heightChunk.Heights[i] });
+
+            Normals.push_back({ normalChunk.Entries[i].Normal[0] / 127.f,
+                                normalChunk.Entries[i].Normal[1] / 127.f,
+                                normalChunk.Entries[i].Normal[2] / 127.f });
         }
 
         if (HasWater = information.LiquidSize > 8)

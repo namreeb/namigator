@@ -86,8 +86,7 @@
     <ClCompile Include="Source\Input\Adt\Chunks\MODF.cpp" />
     <ClCompile Include="Source\Input\Adt\Chunks\MWMO.cpp" />
     <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCLQ.cpp" />
-    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRD.cpp" />
-    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCRW.cpp" />
+    <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCNR.cpp" />
     <ClCompile Include="Source\Input\Adt\Chunks\Subchunks\MCVT.cpp" />
     <ClCompile Include="Source\Input\M2\DoodadFile.cpp" />
     <ClCompile Include="Source\Input\Wdt\WdtFile.cpp" />
@@ -121,8 +120,7 @@
     <ClInclude Include="Include\Input\Adt\Chunks\MODF.hpp" />
     <ClInclude Include="Include\Input\Adt\Chunks\MWMO.hpp" />
     <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCLQ.hpp" />
-    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRD.hpp" />
-    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCRW.hpp" />
+    <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCNR.hpp" />
     <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCVT.hpp" />
     <ClInclude Include="Include\Input\M2\DoodadFile.hpp" />
     <ClInclude Include="Include\Input\Wdt\WdtFile.hpp" />

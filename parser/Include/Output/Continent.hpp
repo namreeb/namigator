@@ -73,7 +73,5 @@ namespace parser
 
             Wmo *GetWmo(unsigned int uniqueId) const;
             Doodad *GetDoodad(unsigned int uniqueId) const;
-
-            void SaveToDisk(bool writeAdts = true);
     };
 }
