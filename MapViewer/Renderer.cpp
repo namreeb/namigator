@@ -13,8 +13,9 @@
 #include "vertexShader.hpp"
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
+#define ThrowIfFail(x) if (FAILED(x)) throw "Renderer initialization error"
 
-// #define WIREFRAME
+//#define WIREFRAME
 
 Renderer::Renderer(HWND window) : m_window(window)
 {
@@ -34,15 +35,10 @@ Renderer::Renderer(HWND window) : m_window(window)
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
 
     // create a device, device context and swap chain using the information in the scd struct
-    auto const result = D3D11CreateDeviceAndSwapChain(nullptr,
+    ThrowIfFail(D3D11CreateDeviceAndSwapChain(nullptr,
         D3D_DRIVER_TYPE_HARDWARE,
         nullptr,
-#ifdef _DEBUG
-        //D3D11_CREATE_DEVICE_DEBUG,
         0,
-#else
-        0,
-#endif
         nullptr,
         0,
         D3D11_SDK_VERSION,
@@ -50,38 +46,18 @@ Renderer::Renderer(HWND window) : m_window(window)
         &m_swapChain,
         &m_device,
         nullptr,
-        &m_deviceContext);
+        &m_deviceContext));
 
     assert(m_swapChain);
 
     // get the address of the back buffer
     ID3D11Texture2D *backBuffer;
-    m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID *>(&backBuffer));
+    ThrowIfFail(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID *>(&backBuffer)));
 
     // use the back buffer address to create the render target
-    m_device->CreateRenderTargetView(backBuffer, nullptr, &m_backBuffer);
+    ThrowIfFail(m_device->CreateRenderTargetView(backBuffer, nullptr, &m_backBuffer));
     backBuffer->Release();
 
-    // set the render target as the back buffer
-    m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, nullptr);
-
-    InitializePipeline(window);
-}
-
-Renderer::~Renderer()
-{
-    m_swapChain->Release();
-    m_backBuffer->Release();
-    m_device->Release();
-    m_deviceContext->Release();
-    m_cbPerObjectBuffer->Release();
-    m_rasterizerState->Release();
-    m_depthStencilView->Release();
-    m_depthStencilBuffer->Release();
-}
-
-void Renderer::InitializePipeline(HWND window)
-{
     // Set the viewport
     D3D11_VIEWPORT viewport;
     ZERO(viewport);
@@ -91,13 +67,15 @@ void Renderer::InitializePipeline(HWND window)
 
     viewport.TopLeftX = 0.f;
     viewport.TopLeftY = 0.f;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.f;
     viewport.Width = static_cast<float>(wr.right - wr.left);
     viewport.Height = static_cast<float>(wr.bottom - wr.top);
 
     m_deviceContext->RSSetViewports(1, &viewport);
 
-    m_device->CreateVertexShader(g_VShader, sizeof(g_VShader), nullptr, &m_vertexShader);
-    m_device->CreatePixelShader(g_PShader, sizeof(g_PShader), nullptr, &m_pixelShader);
+    ThrowIfFail(m_device->CreateVertexShader(g_VShader, sizeof(g_VShader), nullptr, &m_vertexShader));
+    ThrowIfFail(m_device->CreatePixelShader(g_PShader, sizeof(g_PShader), nullptr, &m_pixelShader));
 
     m_deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
     m_deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
@@ -109,19 +87,19 @@ void Renderer::InitializePipeline(HWND window)
         { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-    m_device->CreateInputLayout(ied, _countof(ied), g_VShader, sizeof(g_VShader), &m_inputLayout);
+    ThrowIfFail(m_device->CreateInputLayout(ied, _countof(ied), g_VShader, sizeof(g_VShader), &m_inputLayout));
     m_deviceContext->IASetInputLayout(m_inputLayout);
 
     D3D11_BUFFER_DESC cbbd;
     ZERO(cbbd);
 
     cbbd.Usage = D3D11_USAGE_DEFAULT;
-    cbbd.ByteWidth = 16*sizeof(float);
+    cbbd.ByteWidth = 16 * sizeof(float);
     cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbbd.CPUAccessFlags = 0;
     cbbd.MiscFlags = 0;
 
-    m_device->CreateBuffer(&cbbd, nullptr, &m_cbPerObjectBuffer);
+    ThrowIfFail(m_device->CreateBuffer(&cbbd, nullptr, &m_cbPerObjectBuffer));
 
     D3D11_RASTERIZER_DESC rasterizerDesc;
     ZERO(rasterizerDesc);
@@ -132,9 +110,10 @@ void Renderer::InitializePipeline(HWND window)
 #else
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_BACK;
+    rasterizerDesc.DepthBias = 2000;
 #endif
 
-    m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState);
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
     m_deviceContext->RSSetState(m_rasterizerState);
 
     D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -152,10 +131,22 @@ void Renderer::InitializePipeline(HWND window)
     depthStencilDesc.CPUAccessFlags = 0;
     depthStencilDesc.MiscFlags = 0;
 
-    m_device->CreateTexture2D(&depthStencilDesc, nullptr, &m_depthStencilBuffer);
-    m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr, &m_depthStencilView);
+    ThrowIfFail(m_device->CreateTexture2D(&depthStencilDesc, nullptr, &m_depthStencilBuffer));
+    ThrowIfFail(m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr, &m_depthStencilView));
 
     m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, m_depthStencilView);
+}
+
+Renderer::~Renderer()
+{
+    m_swapChain->Release();
+    m_backBuffer->Release();
+    m_device->Release();
+    m_deviceContext->Release();
+    m_cbPerObjectBuffer->Release();
+    m_rasterizerState->Release();
+    m_depthStencilView->Release();
+    m_depthStencilBuffer->Release();
 }
 
 void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std::vector<int> &indices)
@@ -176,7 +167,7 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
 
     auto vertexBuffer = &m_vertexBuffers[m_vertexBuffers.size() - 1];
 
-    m_device->CreateBuffer(&vertexBufferDesc, nullptr, vertexBuffer);
+    ThrowIfFail(m_device->CreateBuffer(&vertexBufferDesc, nullptr, vertexBuffer));
 
     D3D11_MAPPED_SUBRESOURCE ms;
     m_deviceContext->Map(*vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
@@ -194,9 +185,9 @@ void Renderer::AddGeometry(const std::vector<ColoredVertex> &vertices, const std
 
     auto indexBuffer = &m_indexBuffers[m_indexBuffers.size() - 1];
 
-    m_device->CreateBuffer(&indexBufferDesc, nullptr, indexBuffer);
+    ThrowIfFail(m_device->CreateBuffer(&indexBufferDesc, nullptr, indexBuffer));
 
-    m_deviceContext->Map(*indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+    ThrowIfFail(m_deviceContext->Map(*indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
     memcpy(ms.pData, &indices[0], sizeof(int)*indices.size());
     m_deviceContext->Unmap(*indexBuffer, 0);
 

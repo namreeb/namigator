@@ -30,7 +30,8 @@ class Camera
     public:
         Camera();
 
-        void Move(float x, float y, float z);
+        void Move(float x, float y, float z) { Move({ x, y, z }); }
+        void Move(const utility::Vertex &position);
 
         void LookAt(float x, float y, float z) { LookAt(utility::Vertex(x, y, z)); }
         void LookAt(const utility::Vertex &target);

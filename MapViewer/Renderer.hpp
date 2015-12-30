@@ -35,8 +35,6 @@ class Renderer
         std::vector<ID3D11Buffer *> m_indexBuffers;
         std::vector<unsigned int> m_indexCounts;
 
-        void InitializePipeline(HWND window);
-
     public:
         Renderer(HWND window);
         ~Renderer();
