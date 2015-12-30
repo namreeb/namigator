@@ -188,7 +188,7 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
                         }
 
-                    gRenderer->m_camera.Move(adt->MaxX, adt->MaxY, adt->MaxZ + 1.5f*(adt->MaxZ - adt->MinZ));
+                    gRenderer->m_camera.Move(adt->MaxX+350.f, adt->MaxY+350.f, adt->MaxZ + 1150.f);
                     gRenderer->m_camera.LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (adt->MaxZ + adt->MinZ) / 2.f);
 
                     return TRUE;
