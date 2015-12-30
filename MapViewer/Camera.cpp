@@ -2,7 +2,7 @@
 #include "Camera.hpp"
 
 Camera::Camera()
-    : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 1.f, 10000.f)),
+    : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 2.f, 10000.f)),
       m_mousePanning(false), m_mousePanX(0), m_mousePanY(0),
       m_position({ 0.f,  0.f,  0.f }),
       m_target(  { 0.f,  0.f, -1.f }),
