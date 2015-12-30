@@ -181,13 +181,13 @@ namespace parser
                                 chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
 
                                 terrainVert = y * 17 + (x + 1);
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
+                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x+1] });
 
                                 terrainVert = (y + 1) * 17 + x;
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
+                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y+1][x] });
 
                                 terrainVert = (y + 1) * 17 + (x + 1);
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
+                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y+1][x+1] });
 
                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
