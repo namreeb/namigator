@@ -19,36 +19,6 @@ namespace parser
     std::list<HANDLE> MpqManager::MpqHandles;
     std::string MpqManager::WowDir;
 
-    std::string MpqManager::WowRegDir()
-    {
-#if 0
-#ifdef WIN32
-        std::vector<char> path(1024);
-        DWORD size = path.size();
-        HKEY key;
-        std::string ret;
-
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Blizzard Entertainment\\World of Warcraft"), 0, KEY_READ, &key) == ERROR_SUCCESS)
-        {
-            if (RegQueryValueExA(key, "InstallPath", nullptr, nullptr, (LPBYTE)&path[0], (LPDWORD)&size))
-                THROW("Cannot find InstallPath key value");
-
-            ret = std::string(&path[0]);
-        }
-        // if WoW is not installed
-        else
-            ret = std::string("H:\\World of Warcraft\\");
-
-#else
-        std::string ret = ".";
-#endif
-#else
-        std::string ret = "D:\\Games\\World of Warcraft 1.12.1\\";
-#endif
-
-        return ret;
-    }
-
     void MpqManager::LoadMpq(const std::string &filePath)
     {
         HANDLE archive;
@@ -65,7 +35,7 @@ namespace parser
 
     void MpqManager::Initialize()
     {
-        Initialize(WowRegDir());
+        Initialize(".");
     }
 
     void MpqManager::Initialize(const std::string &wowDir)
@@ -75,7 +45,7 @@ namespace parser
 #ifdef WIN32
         WIN32_FIND_DATA FindFileData;
 
-        std::string dir = wowDir + "Data\\*.MPQ";
+        std::string dir = wowDir + "\\*.MPQ";
 
         HANDLE hFind = FindFirstFile(dir.c_str(), &FindFileData);
 
@@ -87,7 +57,7 @@ namespace parser
 
         do
         {
-            std::string file = wowDir + "Data\\" + FindFileData.cFileName;
+            std::string file = wowDir + "\\" + FindFileData.cFileName;
 
             if (file.find("wow-update") == file.npos)
                 LoadMpq(file);
