@@ -102,108 +102,99 @@ namespace parser
 
         if (adt.m_hasMH2O || adt.m_hasMCLQ)
         {
+            auto const mh2oBlock = adt.m_liquidChunk.get();
+
+            if (mh2oBlock)
+            {
+                for (size_t i = 0; i < mh2oBlock->Layers.size(); ++i)
+                {
+                    auto const layer = mh2oBlock->Layers[i].get();
+                    auto const chunk = m_chunks[layer->Y][layer->X].get();
+
+                    adt.m_chunks[layer->Y][layer->X]->HasWater = true;
+
+                    for (int y = 0; y < 8; ++y)
+                        for (int x = 0; x < 8; ++x)
+                        {
+                            if (!layer->Render[y][x])
+                                continue;
+
+                            int terrainVert = y * 17 + x;
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y][x] });
+
+                            terrainVert = y * 17 + (x + 1);
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y][x + 1] });
+
+                            terrainVert = (y + 1) * 17 + x;
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x] });
+
+                            terrainVert = (y + 1) * 17 + (x + 1);
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x + 1] });
+
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
+
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
+                        }
+                }
+            }
+
             for (int chunkY = 0; chunkY < 16; ++chunkY)
                 for (int chunkX = 0; chunkX < 16; ++chunkX)
                 {
-                    auto const chunk = m_chunks[chunkY][chunkX].get();
-                    auto const mh2oBlock = adt.m_liquidChunk ? adt.m_liquidChunk->Blocks[chunkY][chunkX].get() : nullptr;
                     auto const mclqBlock = adt.m_chunks[chunkY][chunkX]->LiquidChunk.get();
 
+                    if (!mclqBlock)
+                        continue;
+
+                    auto const chunk = m_chunks[chunkY][chunkX].get();
+
                     // i dont think this is possible.  its only here because im curious if it happens anywhere.
-                    assert(!(mh2oBlock && mclqBlock));
+                    assert(!mh2oBlock);
 
-                    if (mh2oBlock)
-                    {
-                        // expand LiquidVertices.  4 verts per square.
-                        chunk->m_liquidVertices.reserve(chunk->m_liquidVertices.size() + 4 * mh2oBlock->Data.Width * mh2oBlock->Data.Height);
+                    // four vertices per square, 8x8 squares (max)
+                    chunk->m_liquidVertices.reserve(chunk->m_liquidVertices.size() + 4 * 8 * 8);
 
-                        // expand LiquidIndices.  6 indices per square (two triangles, three indices per triangle)
-                        chunk->m_liquidIndices.reserve(chunk->m_liquidIndices.size() + 6 * mh2oBlock->Data.Width * mh2oBlock->Data.Height);
+                    // six indices (two triangles) per square
+                    chunk->m_liquidIndices.reserve(chunk->m_liquidIndices.size() + 6 * 8 * 8);
 
-                        for (int y = mh2oBlock->Data.YOffset; y < mh2oBlock->Data.YOffset + mh2oBlock->Data.Height; ++y)
-                             for (int x = mh2oBlock->Data.XOffset; x < mh2oBlock->Data.XOffset + mh2oBlock->Data.Width; ++x)
-                             {
-                                 if (!IsRendered(mh2oBlock->RenderMask, x, y))
-                                     continue;
+                    for (int y = 0; y < 8; ++y)
+                        for (int x = 0; x < 8; ++x)
+                        {
+                            if (mclqBlock->RenderMap[y][x] == 0xF)
+                                continue;
 
-                                 int terrainVert = y * 17 + x;
+                            // XXX FIXME - this is here because it may be that this bit is what actually controls rendering.  trap with assert to debug
+                            assert(mclqBlock->RenderMap[y][x] != 8);
 
-                                 chunk->m_liquidVertices.push_back(Vertex(chunk->m_terrainVertices[terrainVert].X,
-                                                                          chunk->m_terrainVertices[terrainVert].Y,
-                                                                          mh2oBlock->Heights[y][x]));
+                            int terrainVert = y * 17 + x;
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
 
-                                 terrainVert = y * 17 + (x + 1);
+                            terrainVert = y * 17 + (x + 1);
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x + 1] });
 
-                                 chunk->m_liquidVertices.push_back(Vertex(chunk->m_terrainVertices[terrainVert].X,
-                                                                          chunk->m_terrainVertices[terrainVert].Y,
-                                                                          mh2oBlock->Heights[y][x]));
+                            terrainVert = (y + 1) * 17 + x;
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y + 1][x] });
 
-                                 terrainVert = (y + 1) * 17 + x;
+                            terrainVert = (y + 1) * 17 + (x + 1);
+                            chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y + 1][x + 1] });
 
-                                 chunk->m_liquidVertices.push_back(Vertex(chunk->m_terrainVertices[terrainVert].X,
-                                                                          chunk->m_terrainVertices[terrainVert].Y,
-                                                                          mh2oBlock->Heights[y][x]));
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
 
-                                 terrainVert = (y + 1) * 17 + (x + 1);
-
-                                 chunk->m_liquidVertices.push_back(Vertex(chunk->m_terrainVertices[terrainVert].X,
-                                                                          chunk->m_terrainVertices[terrainVert].Y,
-                                                                          mh2oBlock->Heights[y][x]));
-
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
-                                 chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
-                             }
-                    }
-
-                    if (mclqBlock)
-                    {
-                        // four vertices per square, 8x8 squares (max)
-                        chunk->m_liquidVertices.reserve(chunk->m_liquidVertices.size() + 4 * 8 * 8);
-
-                        // six indices (two triangles) per square
-                        chunk->m_liquidIndices.reserve(chunk->m_liquidIndices.size() + 6 * 8 * 8);
-
-                        for (int y = 0; y < 8; ++y)
-                            for (int x = 0; x < 8; ++x)
-                            {
-                                if (mclqBlock->RenderMap[y][x] == 0xF)
-                                    continue;
-
-                                // XXX FIXME - this is here because it may be that this bit is what actually controls rendering.  trap with assert to debug
-                                assert(mclqBlock->RenderMap[y][x] != 8);
-
-                                int terrainVert = y * 17 + x;
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x] });
-
-                                terrainVert = y * 17 + (x + 1);
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y][x+1] });
-
-                                terrainVert = (y + 1) * 17 + x;
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y+1][x] });
-
-                                terrainVert = (y + 1) * 17 + (x + 1);
-                                chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y+1][x+1] });
-
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
-                                chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
-                            }
-                    }
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
+                        }
                 }
         }
 
         // WMOs
 
-#if 0
         if (adt.m_wmoChunk)
         {
             std::vector<std::unique_ptr<parser_input::WmoRootFile>> wmoFiles;
@@ -220,11 +211,11 @@ namespace parser
                 {
                     AdtChunk *chunk = m_chunks[chunkY][chunkX].get();
 
-                    BoundingBox chunkBox(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y,
-                        chunk->m_terrainVertices[0].X, chunk->m_terrainVertices[0].Y);
+                    const BoundingBox chunkBox(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y,
+                                               chunk->m_terrainVertices[0].X,   chunk->m_terrainVertices[0].Y);
 
                     // iterate over each wmo referenced in the adt.  see if it belongs in this chunk and has not been placed yet
-                    for (unsigned int w = 0; w < adt.m_wmoChunk->Wmos.size(); ++w)
+                    for (size_t w = 0; w < adt.m_wmoChunk->Wmos.size(); ++w)
                     {
                         const unsigned int uniqueId = adt.m_wmoChunk->Wmos[w].UniqueId;
                         bool landsOnChunk = false;
@@ -297,9 +288,9 @@ namespace parser
 
                         for (unsigned int i = 0; i < doodads[d]->Vertices.size(); ++i)
                         {
-                            if (doodads[d]->Vertices[i].X > upperLeftCorner.X ||
+                            if (doodads[d]->Vertices[i].X > upperLeftCorner.X  ||
                                 doodads[d]->Vertices[i].X < lowerRightCorner.X ||
-                                doodads[d]->Vertices[i].Y > upperLeftCorner.Y ||
+                                doodads[d]->Vertices[i].Y > upperLeftCorner.Y  ||
                                 doodads[d]->Vertices[i].Y < lowerRightCorner.Y)
                                 continue;
 
@@ -319,7 +310,6 @@ namespace parser
                     }
                 }
         }
-#endif
     }
 
     void Adt::WriteObjFile() const

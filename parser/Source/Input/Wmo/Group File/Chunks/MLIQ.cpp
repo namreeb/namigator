@@ -12,7 +12,7 @@ namespace parser_input
         groupFileStream->Read<unsigned int>();
         groupFileStream->Read<unsigned int>();
         
-        groupFileStream->ReadStruct(&Base);
+        groupFileStream->ReadBytes(&Base, sizeof(Base));
 
         groupFileStream->Read<unsigned short>();
 

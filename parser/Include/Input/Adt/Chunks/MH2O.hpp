@@ -1,49 +1,50 @@
 #pragma once
 
-#include <memory>
-
 #include "BinaryStream.hpp"
 #include "Input/Adt/AdtChunk.hpp"
 
+#include <memory>
+
 namespace parser_input
 {
-    struct MH2OData
+    struct LiquidLayer
     {
-        unsigned short Type;
-        unsigned short Flags;
+        int X;
+        int Y;
 
-        float HeightLevels[2];
-
-        unsigned char XOffset;
-        unsigned char YOffset;
-        unsigned char Width;
-        unsigned char Height;
-
-        int MaskOffset;
-        int HeightmapOffset;
-    };
-
-    struct MH2OHeader
-    {
-        int DataOffset;
-        int LayerCount;
-        int RenderOffset;
-    };
-
-    struct MH2OBlock
-    {
-        MH2OData Data;
-        MH2OHeader Header;
-
-        // quad heights
-        float Heights[8][8];
-        unsigned char RenderMask[8];
+        bool Render[8][8];
+        float Heights[9][9];
     };
 
     class MH2O : AdtChunk
     {
+        private:
+            struct MH2OHeader
+            {
+                int InstancesOffset;
+                int LayerCount;
+                int AttributesOffset;
+            };
+
+            struct LiquidInstance
+            {
+                unsigned short Type;
+                unsigned short Flags;
+
+                float MinHeight;
+                float MaxHeight;
+
+                unsigned __int8 XOffset;
+                unsigned __int8 YOffset;
+                unsigned __int8 Width;
+                unsigned __int8 Height;
+
+                unsigned int OffsetExistsBitmap;
+                unsigned int OffsetVertexData;
+            };
+
         public:
-            std::unique_ptr<MH2OBlock> Blocks[16][16];
+            std::vector<std::unique_ptr<LiquidLayer>> Layers;
 
             MH2O(long position, utility::BinaryStream *reader);
     };

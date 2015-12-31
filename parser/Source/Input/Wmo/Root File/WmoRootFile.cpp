@@ -29,7 +29,7 @@ namespace parser_input
         Reader->SetPosition(mohdPosition + 8);
 
         MOHD information;
-        Reader->ReadStruct(&information);
+        Reader->ReadBytes(&information, sizeof(information));
 
         std::vector<std::unique_ptr<WmoGroupFile>> groupFiles;
         groupFiles.reserve(information.WMOGroupFilesCount);

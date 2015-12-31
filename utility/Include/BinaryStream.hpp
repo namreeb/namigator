@@ -53,13 +53,6 @@ namespace utility
                 return ret;
             }
 
-            template <typename T>
-            void ReadStruct(T *output)
-            {
-                memcpy(output, &_buffer[_position], sizeof(T));
-                _position += sizeof(T);
-            }
-
             inline unsigned long Length() { return _buffer.size(); }
             inline void SetPosition(unsigned long position) { _position = position; }
             inline unsigned long GetPosition() { return _position; }

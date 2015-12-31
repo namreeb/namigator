@@ -9,7 +9,7 @@ namespace parser_input
         groupFileStream->SetPosition(position);
 
         WmoChunkHeader header;
-        groupFileStream->ReadStruct(&header);
+        groupFileStream->ReadBytes(&header, sizeof(header));
 
         Type = header.Type;
         Size = header.Size;

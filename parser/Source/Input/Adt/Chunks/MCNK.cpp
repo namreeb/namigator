@@ -22,7 +22,7 @@ namespace parser_input
 
         MCNKInfo information;
 
-        reader->ReadStruct(&information);
+        reader->ReadBytes(&information, sizeof(information));
 
         Height = information.Position[2];
 

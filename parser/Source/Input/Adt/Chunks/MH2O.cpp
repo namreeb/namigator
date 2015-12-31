@@ -1,88 +1,89 @@
-#include <memory>
 #include "BinaryStream.hpp"
 #include "Input/ADT/Chunks/MH2O.hpp"
+
+#include <memory>
+#include <cassert>
+#include <vector>
 
 namespace parser_input
 {
     MH2O::MH2O(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
     {
-        long offsetFrom = Position + 8;
+        const long offsetFrom = Position + 8;
 
         for (int y = 0; y < 16; ++y)
             for (int x = 0; x < 16; ++x)
             {
-                Blocks[y][x].reset(new MH2OBlock);
+                reader->SetPosition(offsetFrom + sizeof(MH2OHeader)*(y * 16 + x));
+                
+                MH2OHeader header;
 
-                reader->ReadStruct(&Blocks[y][x]->Header);
+                reader->ReadBytes(&header, sizeof(header));
 
-                if (Blocks[y][x]->Header.LayerCount <= 0)
-                {
-                    Blocks[y][x].reset(nullptr);
+                if (header.LayerCount <= 0)
                     continue;
-                }
 
-                // jump to (and read) the data struct
-                reader->SetPosition(offsetFrom + Blocks[y][x]->Header.DataOffset);
-                reader->ReadStruct(&Blocks[y][x]->Data);
+                // XXX FIXME this isn't actually always true, but i am leaving it here to help us know when we run into a case of it
+                assert(header.LayerCount == 1);
 
-                // height data
+                reader->SetPosition(offsetFrom + header.InstancesOffset);
 
-                // ocean (type 2) has no rendermask, so mark everything as rendered
-                if (Blocks[y][x]->Data.Type == 2)
+                for (int layer = 0; layer < header.LayerCount; ++layer)
                 {
-                    for (int i = 0; i < 8; ++i)
-                        Blocks[y][x]->RenderMask[i] = 0xFF;
+                    LiquidInstance instance;
+                    reader->ReadBytes(&instance, sizeof(instance));
 
-                    for (int heightY = Blocks[y][x]->Data.YOffset; heightY < Blocks[y][x]->Data.YOffset + Blocks[y][x]->Data.Height; ++heightY)
-                        for (int heightX = Blocks[y][x]->Data.XOffset; heightX < Blocks[y][x]->Data.XOffset + Blocks[y][x]->Data.Width; ++heightX)
-                            Blocks[y][x]->Heights[heightY][heightX] = Blocks[y][x]->Data.HeightLevels[0];
-                }
-                else
-                {
-                    // render mask data
+                    assert(!!instance.Width && !!instance.Height);
 
-                    // jump to (and read) the render mask
-                    reader->SetPosition(offsetFrom + Blocks[y][x]->Header.RenderOffset);
+                    auto newLayer = new LiquidLayer();
 
-                    bool maskEmpty = true;
+                    newLayer->X = x;
+                    newLayer->Y = y;
 
-                    reader->ReadBytes((void *)&Blocks[y][x]->RenderMask, 8);
-                    for (int i = 0; i < 8; ++i)
-                        if (Blocks[y][x]->RenderMask[i] > 0)
+                    memset(newLayer->Render, 0, sizeof(newLayer->Render));
+                    memset(newLayer->Heights, 0, sizeof(newLayer->Heights));
+
+                    std::vector<unsigned char> exists(instance.OffsetVertexData - instance.OffsetExistsBitmap);
+
+                    if (header.AttributesOffset && instance.OffsetExistsBitmap)
+                    {
+                        reader->SetPosition(offsetFrom + instance.OffsetExistsBitmap);
+                        reader->ReadBytes(&exists[0], exists.size());
+                    }
+                    else
+                        memset(&exists[0], 0xFF, exists.size());
+
+                    std::vector<float> heightMap((instance.Width + 1)*(instance.Height + 1));
+                    reader->SetPosition(offsetFrom + instance.OffsetVertexData);
+                    reader->ReadBytes(&heightMap[0], sizeof(float)*heightMap.size());
+
+                    // the depth map can be skipped.  it functions only to assist in shading.
+                    reader->Slide(heightMap.size());
+
+                    int currentByte = 0;
+                    int currentBit = 0;
+                    for (int squareY = 0; squareY < instance.Height; ++squareY)
+                        for (int squareX = 0; squareX < instance.Width; ++squareX)
                         {
-                            maskEmpty = false;
-                            break;
+                            if (currentBit == 8)
+                            {
+                                currentByte++;
+                                currentBit = 0;
+                            }
+
+                            if (!((exists[currentByte] >> currentBit++) & 0x01))
+                                continue;
+
+                            newLayer->Render[squareY + instance.YOffset][squareX + instance.XOffset] = true;
+
+                            newLayer->Heights[squareY + instance.YOffset + 0][squareX + instance.XOffset + 0] = heightMap[(squareY + 0)*(instance.Width + 1) + squareX + 0];
+                            newLayer->Heights[squareY + instance.YOffset + 0][squareX + instance.XOffset + 1] = heightMap[(squareY + 0)*(instance.Width + 1) + squareX + 1];
+                            newLayer->Heights[squareY + instance.YOffset + 1][squareX + instance.XOffset + 0] = heightMap[(squareY + 1)*(instance.Width + 1) + squareX + 0];
+                            newLayer->Heights[squareY + instance.YOffset + 1][squareX + instance.XOffset + 1] = heightMap[(squareY + 1)*(instance.Width + 1) + squareX + 1];
                         }
 
-                    if ((maskEmpty || (Blocks[y][x]->Data.Width == 8 && Blocks[y][x]->Data.Height == 8)) && Blocks[y][x]->Data.MaskOffset)
-                    {
-                        // try using this other mask (INSTEAD when chunk is 8x8)
-                        reader->SetPosition(offsetFrom + Blocks[y][x]->Data.MaskOffset);
-
-                        int maskLength = ((Blocks[y][x]->Data.Height * Blocks[y][x]->Data.Width) % 8 ?
-                                            (1 + (Blocks[y][x]->Data.Height * Blocks[y][x]->Data.Width) / 8) :
-                                            ((Blocks[y][x]->Data.Height * Blocks[y][x]->Data.Width) / 8));
-
-                        unsigned char *mask = new unsigned char[maskLength];
-                        reader->ReadBytes(mask, maskLength);
-
-                        for (int i = 0; i < maskLength; ++i)
-                            Blocks[y][x]->RenderMask[i + Blocks[y][x]->Data.YOffset] |= mask[i];
-                    }
-
-                    // jump to (and read) the heightmap
-                    reader->SetPosition(offsetFrom + Blocks[y][x]->Data.HeightmapOffset);
-
-                    // note that we cannot read these values in at once, as though the values
-                    // are sequential in the file, they are not always sequential in memory
-
-                    for (int heightY = Blocks[y][x]->Data.YOffset; heightY < Blocks[y][x]->Data.YOffset + Blocks[y][x]->Data.Height; ++heightY)
-                        for (int heightX = Blocks[y][x]->Data.XOffset; heightX < Blocks[y][x]->Data.XOffset + Blocks[y][x]->Data.Width; ++heightX)
-                            Blocks[y][x]->Heights[heightY][heightX] = reader->Read<float>();
+                    Layers.push_back(std::unique_ptr<LiquidLayer>(newLayer));
                 }
-
-                // this calculates where we need to be for the next header
-                reader->SetPosition(offsetFrom + (y * 16 + x + 1) * 12);
             }
     }
 }

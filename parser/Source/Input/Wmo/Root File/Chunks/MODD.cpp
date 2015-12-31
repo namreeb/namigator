@@ -11,7 +11,7 @@ namespace parser_input
         for (int i = 0; i < Count; ++i)
         {
             Doodads[i].Index = i;
-            reader->ReadStruct(&Doodads[i].DoodadInfo);
+            reader->ReadBytes(&Doodads[i].DoodadInfo, sizeof(Doodads[i].DoodadInfo));
         }
     }
 }

@@ -24,7 +24,7 @@ namespace parser_input
                 Reader->SetPosition(position);
 
                 WmoChunkHeader header;
-                reader->ReadStruct(&header);
+                reader->ReadBytes(&header, sizeof(header));
 
                 Size = header.Size;
                 Type = header.Type;
