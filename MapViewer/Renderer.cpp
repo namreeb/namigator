@@ -114,7 +114,6 @@ Renderer::Renderer(HWND window) : m_window(window)
 #else
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_BACK;
-    rasterizerDesc.DepthBias = 2000;
 #endif
 
     ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
