@@ -12,7 +12,31 @@ namespace parser_input
 
     DoodadFile::DoodadFile(const std::string &path) : WowFile(GetRealModelPath(path))
     {
-        Reader->SetPosition(0xEC);
+        if (Reader->Read<unsigned int>() != Magic)
+            throw "Invalid doodad file";
+
+        const unsigned int version = Reader->Read<unsigned int>();
+
+        switch (version)
+        {
+            // Classic
+            case 256:
+                Reader->SetPosition(0xEC);
+                break;
+
+            // TBC
+            case 260:
+                Reader->SetPosition(0xEC);
+                break;
+
+            // WOTLK
+            case 264:
+                Reader->SetPosition(0xD8);
+                break;
+
+            default:
+                throw "Unsupported doodad format";
+        }
 
         const int indexCount = Reader->Read<int>();
         const int indicesPosition = Reader->Read<int>();
@@ -36,7 +60,7 @@ namespace parser_input
         Reader->ReadBytes(&Indices[0], indexCount * sizeof(unsigned short));
     }
 
-    Doodad::Doodad(const std::string &path, DoodadInfo doodadInfo) : DoodadFile(path)
+    Doodad::Doodad(const std::string &path, const DoodadInfo &doodadInfo) : DoodadFile(path)
     {
         const float mid = (533.f + (1.f/3.f)) * 32.f;
         const float xPos = -(doodadInfo.BasePosition.Z - mid);

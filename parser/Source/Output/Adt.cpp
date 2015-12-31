@@ -194,7 +194,7 @@ namespace parser
         }
 
         // WMOs
-
+#if 0
         if (adt.m_wmoChunk)
         {
             std::vector<std::unique_ptr<parser_input::WmoRootFile>> wmoFiles;
@@ -222,13 +222,7 @@ namespace parser
 
                         // save time by checking overlap with the boundary of the wmo
                         if (!chunkBox.Intersects(wmoFiles[w]->Bounds))
-                        {
-#ifdef DEBUG
-                            if (landsOnChunk)
-                                THROW("ADT object file says WMO lands on this chunk, but bounding box disagrees");
-#endif
                             continue;
-                        }
 
                         // XXX - this can be made faster by flagging which chunks are hit as the vertices are transformed
                         for (unsigned int i = 0; i < wmoFiles[w]->Vertices.size(); ++i)
@@ -257,41 +251,50 @@ namespace parser
                     }
                 }
         }
-
+#endif
         // Doodads
 
         if (adt.m_doodadChunk)
         {
-            std::vector<std::unique_ptr<parser_input::Doodad>> doodads;
-            doodads.reserve(adt.m_doodadChunk->Doodads.size());
+            std::map<unsigned int, std::unique_ptr<parser_input::Doodad>> doodads;
 
-            for (unsigned int doodadFile = 0; doodadFile < adt.m_doodadChunk->Doodads.size(); ++doodadFile)
+            for (unsigned int i = 0; i < adt.m_doodadChunk->Doodads.size(); ++i)
             {
-                std::string modelName = adt.m_doodadNames[adt.m_doodadChunk->Doodads[doodadFile].NameId];
-                doodads.push_back(std::unique_ptr<parser_input::Doodad>(new parser_input::Doodad(modelName, adt.m_doodadChunk->Doodads[doodadFile])));
+                auto const &modelName = adt.m_doodadNames[adt.m_doodadChunk->Doodads[i].NameId];
+                auto const &doodad = adt.m_doodadChunk->Doodads[i];
+
+                auto const newDoodad = new parser_input::Doodad(modelName, doodad);
+
+                if (!newDoodad->Vertices.size() || !newDoodad->Indices.size())
+                {
+                    delete newDoodad;
+                    continue;
+                }
+
+                doodads[doodad.UniqueId] = std::unique_ptr<parser_input::Doodad>(newDoodad);
             }
 
             for (int chunkY = 0; chunkY < 16; ++chunkY)
                 for (int chunkX = 0; chunkX < 16; ++chunkX)
                 {
-                    //MCNK *mapChunk = adt.m_chunks[chunkY][chunkX].get();
-                    auto chunk = m_chunks[chunkY][chunkX].get();
+                    auto const chunk = m_chunks[chunkY][chunkX].get();
 
                     const Vector2 upperLeftCorner(chunk->m_terrainVertices[0].X, chunk->m_terrainVertices[0].Y),
                                   lowerRightCorner(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y);
 
-                    for (unsigned int d = 0; d < adt.m_doodadChunk->Doodads.size(); ++d)
+                    for (auto const &d : doodads)
                     {
-                        const unsigned int uniqueId = adt.m_doodadChunk->Doodads[d].UniqueId;
+                        auto const uniqueId = d.first;
+                        auto const doodad = d.second.get();
 
                         bool landsOnChunk = false;
 
-                        for (unsigned int i = 0; i < doodads[d]->Vertices.size(); ++i)
+                        for (size_t i = 0; i < doodad->Vertices.size(); ++i)
                         {
-                            if (doodads[d]->Vertices[i].X > upperLeftCorner.X  ||
-                                doodads[d]->Vertices[i].X < lowerRightCorner.X ||
-                                doodads[d]->Vertices[i].Y > upperLeftCorner.Y  ||
-                                doodads[d]->Vertices[i].Y < lowerRightCorner.Y)
+                            if (doodad->Vertices[i].X >  upperLeftCorner.X ||
+                                doodad->Vertices[i].X < lowerRightCorner.X ||
+                                doodad->Vertices[i].Y >  upperLeftCorner.Y ||
+                                doodad->Vertices[i].Y < lowerRightCorner.Y)
                                 continue;
 
                             landsOnChunk = true;
@@ -306,7 +309,7 @@ namespace parser
                         if (continent->HasDoodad(uniqueId))
                             continue;
 
-                        continent->InsertDoodad(uniqueId, new Doodad(doodads[d]->Vertices, doodads[d]->Indices, doodads[d]->MinZ, doodads[d]->MaxZ));
+                        continent->InsertDoodad(uniqueId, new Doodad(doodad->Vertices, doodad->Indices, doodad->MinZ, doodad->MaxZ));
                     }
                 }
         }
@@ -371,7 +374,7 @@ namespace parser
 
                     dumpedWmos.insert(*id);
 
-                    Wmo *wmo = m_continent->GetWmo(*id);
+                    const Wmo *wmo = m_continent->GetWmo(*id);
 
                     for (unsigned int i = 0; i < wmo->Vertices.size(); ++i)
                         out << "v " << -wmo->Vertices[i].Y
@@ -420,7 +423,7 @@ namespace parser
 
                     dumpedDoodads.insert(*id);
 
-                    Doodad *doodad = m_continent->GetDoodad(*id);
+                    const Doodad *doodad = m_continent->GetDoodad(*id);
 
                     for (unsigned int i = 0; i < doodad->Vertices.size(); ++i)
                         out << "v " << -doodad->Vertices[i].Y

@@ -71,7 +71,7 @@ namespace parser
             void InsertWmo(unsigned int uniqueId, Wmo *wmo);
             void InsertDoodad(unsigned int uniqueId, Doodad *doodad);
 
-            Wmo *GetWmo(unsigned int uniqueId) const;
-            Doodad *GetDoodad(unsigned int uniqueId) const;
+            const Wmo *GetWmo(unsigned int uniqueId) const;
+            const Doodad *GetDoodad(unsigned int uniqueId) const;
     };
 }

@@ -26,6 +26,9 @@ namespace parser_input
 
     class DoodadFile : WowFile
     {
+        private:
+            static const unsigned int Magic = '02DM';
+
         public:
             std::vector<Vertex> Vertices;
             std::vector<unsigned short> Indices;
@@ -41,7 +44,7 @@ namespace parser_input
             float MinZ;
             float MaxZ;
 
-            Doodad(const std::string &path, DoodadInfo doodadInfo);
+            Doodad(const std::string &path, const DoodadInfo &doodadInfo);
     };
 
 }

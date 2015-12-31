@@ -95,12 +95,12 @@ namespace parser
         m_loadedDoodads[uniqueId].reset(doodad);
     }
 
-    Wmo *Continent::GetWmo(unsigned int uniqueId) const
+    const Wmo *Continent::GetWmo(unsigned int uniqueId) const
     {
         return HasWmoLoaded(uniqueId) ? m_loadedWmos.at(uniqueId).get() : nullptr;
     }
 
-    Doodad *Continent::GetDoodad(unsigned int uniqueId) const
+    const Doodad *Continent::GetDoodad(unsigned int uniqueId) const
     {
         return HasDoodadLoaded(uniqueId) ? m_loadedDoodads.at(uniqueId).get() : nullptr;
     }
