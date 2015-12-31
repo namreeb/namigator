@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <sstream>
+#include <cassert>
 
 #include "resource.h"
 
@@ -182,10 +183,28 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                     for (int x = 0; x < 16; ++x)
                         for (int y = 0; y < 16; ++y)
                         {
-                            auto chunk = adt->GetChunk(x, y);
+                            auto const chunk = adt->GetChunk(x, y);
 
                             gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
                             gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
+
+                            for (auto &d : chunk->m_doodads)
+                            {
+                                auto const doodad = gContinent->GetDoodad(d);
+
+                                assert(doodad);
+
+                                gRenderer->AddDoodad(d, doodad->Vertices, doodad->Indices);
+                            }
+
+                            for (auto &w : chunk->m_wmos)
+                            {
+                                auto const wmo = gContinent->GetWmo(w);
+
+                                assert(wmo);
+
+                                gRenderer->AddWmo(w, wmo->Vertices, wmo->Indices);
+                            }
                         }
 
                     gRenderer->m_camera.Move(adt->MaxX+350.f, adt->MaxY+350.f, adt->MaxZ + 1150.f);

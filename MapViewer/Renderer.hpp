@@ -7,12 +7,15 @@
 #include <memory>
 #include <Windows.h>
 #include <d3d11.h>
+#include <set>
 
 class Renderer
 {
     private:
         static const float TerrainColor[4];
         static const float LiquidColor[4];
+        static const float WmoColor[4];
+        static const float DoodadColor[4];
         static const float BackgroundColor[4];
 
         struct ColoredVertex
@@ -45,6 +48,11 @@ class Renderer
 
         std::vector<GeometryBuffer> m_terrainBuffers;
         std::vector<GeometryBuffer> m_liquidBuffers;
+        std::vector<GeometryBuffer> m_wmoBuffers;
+        std::vector<GeometryBuffer> m_doodadBuffers;
+
+        std::set<unsigned int> m_wmos;
+        std::set<unsigned int> m_doodads;
 
         void InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
@@ -54,6 +62,8 @@ class Renderer
 
         void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
         void Render() const;
 

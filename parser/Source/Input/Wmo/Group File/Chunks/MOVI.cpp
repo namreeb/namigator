@@ -6,7 +6,6 @@ namespace parser_input
     {
         Type = WmoGroupChunkType::MOVI;
 
-        // XXX - does sizeof(short) == 4 on x64?
         Indices.resize(Size / sizeof(unsigned short));
 
         fileStream->SetPosition(position + 8);

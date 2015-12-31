@@ -105,7 +105,7 @@ namespace parser_input
                 // note: we need to check if this vertex has already been added as part of another triangle
                 for (int j = 0; j < 3; ++j)
                 {
-                    unsigned short vertexIndex = groupFiles[g]->IndicesChunk->Indices[i*3 + j];
+                    const unsigned short vertexIndex = groupFiles[g]->IndicesChunk->Indices[i*3 + j];
 
                     // this vertex has already been added.  add it's index to this triangle also
                     if (indexMap.find(vertexIndex) != indexMap.end())

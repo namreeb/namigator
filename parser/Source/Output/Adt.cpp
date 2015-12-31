@@ -74,23 +74,23 @@ namespace parser
 
                         // Upper triangle
                         chunk->m_terrainIndices.push_back(currIndex);
-                        chunk->m_terrainIndices.push_back(currIndex + 1);
                         chunk->m_terrainIndices.push_back(currIndex + 9);
+                        chunk->m_terrainIndices.push_back(currIndex + 1);
 
                         // Left triangle
                         chunk->m_terrainIndices.push_back(currIndex);
-                        chunk->m_terrainIndices.push_back(currIndex + 9);
                         chunk->m_terrainIndices.push_back(currIndex + 17);
+                        chunk->m_terrainIndices.push_back(currIndex + 9);
 
                         // Lower triangle
                         chunk->m_terrainIndices.push_back(currIndex + 9);
-                        chunk->m_terrainIndices.push_back(currIndex + 18);
                         chunk->m_terrainIndices.push_back(currIndex + 17);
+                        chunk->m_terrainIndices.push_back(currIndex + 18);
 
                         // Right triangle
                         chunk->m_terrainIndices.push_back(currIndex + 1);
-                        chunk->m_terrainIndices.push_back(currIndex + 18);
                         chunk->m_terrainIndices.push_back(currIndex + 9);
+                        chunk->m_terrainIndices.push_back(currIndex + 18);
                     }
                 }
 
@@ -132,12 +132,12 @@ namespace parser
                             chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x + 1] });
 
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
 
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
                         }
                 }
             }
@@ -183,12 +183,12 @@ namespace parser
                             chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y + 1][x + 1] });
 
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
 
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
                             chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
+                            chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
                         }
                 }
         }
@@ -197,57 +197,63 @@ namespace parser
 #if 0
         if (adt.m_wmoChunk)
         {
-            std::vector<std::unique_ptr<parser_input::WmoRootFile>> wmoFiles;
-            wmoFiles.reserve(adt.m_wmoChunk->Wmos.size());
+            std::map<unsigned int, std::unique_ptr<parser_input::WmoRootFile>> wmos;
 
-            for (unsigned int wmoFile = 0; wmoFile < adt.m_wmoChunk->Wmos.size(); ++wmoFile)
+            for (unsigned int i = 0; i < adt.m_wmoChunk->Wmos.size(); ++i)
             {
-                std::string wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[wmoFile].NameId];
-                wmoFiles.push_back(std::unique_ptr<parser_input::WmoRootFile>(new parser_input::WmoRootFile(wmoName, &adt.m_wmoChunk->Wmos[wmoFile])));
+                auto const &wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId];
+                auto const &wmo = adt.m_wmoChunk->Wmos[i];
+
+                auto const newWmo = new parser_input::WmoRootFile(wmoName, &adt.m_wmoChunk->Wmos[i]);
+
+                if (!newWmo->Vertices.size() || !newWmo->Indices.size())
+                {
+                    delete newWmo;
+                    continue;
+                }
+
+                wmos[wmo.UniqueId] = std::unique_ptr<parser_input::WmoRootFile>(newWmo);
             }
 
             for (int chunkY = 0; chunkY < 16; ++chunkY)
                 for (int chunkX = 0; chunkX < 16; ++chunkX)
                 {
-                    AdtChunk *chunk = m_chunks[chunkY][chunkX].get();
+                    auto const chunk = m_chunks[chunkY][chunkX].get();
 
-                    const BoundingBox chunkBox(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y,
-                                               chunk->m_terrainVertices[0].X,   chunk->m_terrainVertices[0].Y);
+                    const Vector2 upperLeftCorner(chunk->m_terrainVertices[0].X, chunk->m_terrainVertices[0].Y),
+                                  lowerRightCorner(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y);
 
-                    // iterate over each wmo referenced in the adt.  see if it belongs in this chunk and has not been placed yet
-                    for (size_t w = 0; w < adt.m_wmoChunk->Wmos.size(); ++w)
+                    for (auto const &w : wmos)
                     {
-                        const unsigned int uniqueId = adt.m_wmoChunk->Wmos[w].UniqueId;
+                        auto const uniqueId = w.first;
+                        auto const wmo = w.second.get();
+
                         bool landsOnChunk = false;
 
-                        // save time by checking overlap with the boundary of the wmo
-                        if (!chunkBox.Intersects(wmoFiles[w]->Bounds))
-                            continue;
-
-                        // XXX - this can be made faster by flagging which chunks are hit as the vertices are transformed
-                        for (unsigned int i = 0; i < wmoFiles[w]->Vertices.size(); ++i)
+                        for (size_t i = 0; i < wmo->Vertices.size(); ++i)
                         {
-                            if (chunkBox.Contains(wmoFiles[w]->Vertices[i]))
-                            {
-                                landsOnChunk = true;
-                                break;
-                            }
+                            if (wmo->Vertices[i].X >  upperLeftCorner.X ||
+                                wmo->Vertices[i].X < lowerRightCorner.X ||
+                                wmo->Vertices[i].Y >  upperLeftCorner.Y ||
+                                wmo->Vertices[i].Y < lowerRightCorner.Y)
+                                continue;
+
+                            landsOnChunk = true;
+                            break;
                         }
 
                         if (!landsOnChunk)
                             continue;
 
-                        // this wmo lands on the current chunk.  add it to the chunk's list of unique wmo ids.
                         chunk->m_wmos.insert(uniqueId);
 
-                        // if this is the first time loading this wmo instance for this continent, update the continent
                         if (continent->HasWmo(uniqueId))
                             continue;
 
-                        continent->InsertWmo(uniqueId, new Wmo(wmoFiles[w]->Vertices, wmoFiles[w]->Indices,
-                            wmoFiles[w]->LiquidVertices, wmoFiles[w]->LiquidIndices,
-                            wmoFiles[w]->DoodadVertices, wmoFiles[w]->DoodadIndices,
-                            wmoFiles[w]->Bounds.MinCorner.Z, wmoFiles[w]->Bounds.MaxCorner.Z));
+                        continent->InsertWmo(uniqueId, new Wmo(wmo->Vertices, wmo->Indices,
+                                                               wmo->LiquidVertices, wmo->LiquidIndices,
+                                                               wmo->DoodadVertices, wmo->DoodadIndices,
+                                                               wmo->Bounds.MinCorner.Z, wmo->Bounds.MaxCorner.Z));
                     }
                 }
         }

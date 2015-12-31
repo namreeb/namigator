@@ -1,5 +1,6 @@
 #include <vector>
 #include <cassert>
+#include <set>
 
 #include <d3d11.h>
 
@@ -19,6 +20,8 @@
 
 const float Renderer::TerrainColor[4] = { 0.1f, 0.8f, 0.3f, 1.f };
 const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.1f };
+const float Renderer::WmoColor[4] = { 1.f, 0.95f, 0.f, 1.f };
+const float Renderer::DoodadColor[4] = { 1.0f, 0.f, 0.f, 1.f };
 const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
 
 Renderer::Renderer(HWND window) : m_window(window)
@@ -108,6 +111,8 @@ Renderer::Renderer(HWND window) : m_window(window)
     D3D11_RASTERIZER_DESC rasterizerDesc;
     ZERO(rasterizerDesc);
 
+    rasterizerDesc.FrontCounterClockwise = true;
+
 #ifdef WIREFRAME
     rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
@@ -160,6 +165,28 @@ void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const st
 void Renderer::AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
     InsertBuffer(m_liquidBuffers, LiquidColor, vertices, indices);
+}
+
+void Renderer::AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    // if we are already rendering this wmo, do nothing
+    if (m_wmos.find(id) != m_wmos.end())
+        return;
+
+    m_wmos.insert(id);
+
+    InsertBuffer(m_wmoBuffers, WmoColor, vertices, indices);
+}
+
+void Renderer::AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    // if we are already rendering this doodad, do nothing
+    if (m_doodads.find(id) != m_doodads.end())
+        return;
+
+    m_doodads.insert(id);
+
+    InsertBuffer(m_doodadBuffers, DoodadColor, vertices, indices);
 }
 
 void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -262,6 +289,26 @@ void Renderer::Render() const
         m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         m_deviceContext->DrawIndexed(m_terrainBuffers[i].IndexCount, 0, 0);
+    }
+
+    // draw wmos
+    for (size_t i = 0; i < m_wmoBuffers.size(); ++i)
+    {
+        m_deviceContext->IASetVertexBuffers(0, 1, &m_wmoBuffers[i].VertexBuffer, &stride, &offset);
+        m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        m_deviceContext->DrawIndexed(m_wmoBuffers[i].IndexCount, 0, 0);
+    }
+
+    // draw doodads
+    for (size_t i = 0; i < m_doodadBuffers.size(); ++i)
+    {
+        m_deviceContext->IASetVertexBuffers(0, 1, &m_doodadBuffers[i].VertexBuffer, &stride, &offset);
+        m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        m_deviceContext->DrawIndexed(m_doodadBuffers[i].IndexCount, 0, 0);
     }
 
     // draw liquid
