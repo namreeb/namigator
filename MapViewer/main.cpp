@@ -21,7 +21,7 @@
 #define CONTROL_WIDTH       300
 #define CONTROL_HEIGHT      250
 
-#define CAMERA_STEP         0.2f
+#define CAMERA_STEP         0.15f
 
 // FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
 #define MAGIC_LEFT_SHIFT    15

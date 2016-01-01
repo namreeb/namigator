@@ -97,10 +97,10 @@ void Camera::UpdateMousePan(int newX, int newY)
     const int deltaY = newY - m_mousePanY;
 
     if (abs(deltaX) > 1)
-        Yaw(-0.002f * static_cast<float>(deltaX));
+        Yaw(-0.003f * static_cast<float>(deltaX));
 
     if (abs(deltaY) > 1)
-        Pitch(-0.002f * static_cast<float>(deltaY));
+        Pitch(-0.003f * static_cast<float>(deltaY));
 }
 
 void Camera::GetMousePanStart(int &x, int &y) const

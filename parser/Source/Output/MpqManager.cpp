@@ -35,7 +35,7 @@ namespace parser
 
     void MpqManager::Initialize()
     {
-        Initialize("D:\\Games\\World of Warcraft 1.12.1\\Data");
+        Initialize(".");
     }
 
     void MpqManager::Initialize(const std::string &wowDir)
