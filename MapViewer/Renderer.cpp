@@ -365,5 +365,8 @@ void Renderer::Render() const
     }
 
     // switch the back buffer and the front buffer
-    m_swapChain->Present(0, 0);
+    DXGI_PRESENT_PARAMETERS presentParams;
+    ZERO(presentParams);
+
+    m_swapChain->Present1(0, 0, &presentParams);
 }

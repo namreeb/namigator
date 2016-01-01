@@ -21,7 +21,7 @@
 #define CONTROL_WIDTH       300
 #define CONTROL_HEIGHT      250
 
-#define CAMERA_STEP         0.15f
+#define CAMERA_STEP         2.f
 
 // FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
 #define MAGIC_LEFT_SHIFT    15
@@ -396,8 +396,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         if (gMovingVertical)
             gRenderer->m_camera.MoveVertical(CAMERA_STEP * gMovingVertical);
 
-        gRenderer->Render();
-
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
@@ -406,6 +404,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (msg.message == WM_QUIT)
                 break;
         }
+
+        gRenderer->Render();
+        Sleep(5);
     };
 
     return msg.wParam;

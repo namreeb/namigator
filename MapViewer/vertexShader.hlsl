@@ -1,6 +1,6 @@
 cbuffer cbPerObject {
-    row_major float4x4 viewMatrix;
-    row_major float4x4 projMatrix;
+    float4x4 viewMatrix;
+    float4x4 projMatrix;
 };
 
 struct VSInput {
@@ -19,7 +19,7 @@ struct VSOutput {
 VSOutput VShader(VSInput input)
 {
     float4 position = float4(input.position, 1.0f);
-    position = mul(position, viewMatrix);
+    position = mul(viewMatrix, position);
     position = mul(projMatrix, position);
 
     VSOutput output = (VSOutput)0;
