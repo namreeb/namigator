@@ -16,6 +16,15 @@
     <ClCompile Include="Source\Directory.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Ray.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\BoundingBox.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\AABBTree.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Array2d.hpp">
@@ -40,6 +49,15 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Directory.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Ray.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\AABBTree.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\BoundingBox.hpp">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

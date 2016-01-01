@@ -27,21 +27,21 @@ namespace utility
             }
     };
 
-    class BoundingBox
-    {
-        public:
-            Vertex MinCorner;
-            Vertex MaxCorner;
+    //class BoundingBox
+    //{
+    //    public:
+    //        Vertex MinCorner;
+    //        Vertex MaxCorner;
 
-            BoundingBox();
-            BoundingBox(const Vertex &minCorner, const Vertex &maxCorner);
-            BoundingBox(const Vertex &a, const Vertex &b, const Vertex &c);
-            BoundingBox(float minX, float minY, float maxX, float maxY);
-            BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ);
+    //        BoundingBox();
+    //        BoundingBox(const Vertex &minCorner, const Vertex &maxCorner);
+    //        BoundingBox(const Vertex &a, const Vertex &b, const Vertex &c);
+    //        BoundingBox(float minX, float minY, float maxX, float maxY);
+    //        BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ);
 
-            bool Intersects(const BoundingBox &other) const;
-            bool Contains(const Vertex &vertex) const;
-    };
+    //        bool Intersects(const BoundingBox &other) const;
+    //        bool Contains(const Vertex &vertex) const;
+    //};
 
     class Convert
     {

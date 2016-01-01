@@ -370,4 +370,9 @@ namespace utility
     {
         return Vector3(vector.X*multiplier, vector.Y*multiplier, vector.Z*multiplier);
     }
+
+    Vector3 operator * (const Vector3 &vector, float multiplier)
+    {
+        return Vector3(vector.X*multiplier, vector.Y*multiplier, vector.Z*multiplier);
+    }
 }
