@@ -30,7 +30,5 @@ namespace parser
             Wmo(std::vector<Vertex> &vertices, std::vector<int> &indices, std::vector<Vertex> &liquidVertices,
                 std::vector<int> &liquidIndices, std::vector<Vertex> &doodadVertices, std::vector<int> &doodadIndices,
                 const float minZ, const float maxZ);
-
-            void SaveToDisk(const std::string &path);
     };
 }

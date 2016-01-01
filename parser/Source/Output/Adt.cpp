@@ -194,130 +194,94 @@ namespace parser
         }
 
         // WMOs
-#if 0
+
         if (adt.m_wmoChunk)
         {
-            std::map<unsigned int, std::unique_ptr<parser_input::WmoRootFile>> wmos;
-
-            for (unsigned int i = 0; i < adt.m_wmoChunk->Wmos.size(); ++i)
+            for (size_t i = 0; i < adt.m_wmoChunk->Wmos.size(); ++i)
             {
-                auto const &wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId];
-                auto const &wmo = adt.m_wmoChunk->Wmos[i];
+                auto const &wmoDefinition = adt.m_wmoChunk->Wmos[i];
 
-                auto const newWmo = new parser_input::WmoRootFile(wmoName, &adt.m_wmoChunk->Wmos[i]);
+                // if it has already been loaded, skip parsing it again
+                if (continent->IsWmoLoaded(wmoDefinition.UniqueId))
+                    continue;
+
+                auto const &wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId];
+
+                std::unique_ptr<parser_input::WmoRootFile> newWmo(new parser_input::WmoRootFile(wmoName, &adt.m_wmoChunk->Wmos[i]));
 
                 if (!newWmo->Vertices.size() || !newWmo->Indices.size())
-                {
-                    delete newWmo;
                     continue;
-                }
 
-                wmos[wmo.UniqueId] = std::unique_ptr<parser_input::WmoRootFile>(newWmo);
-            }
+                auto const wmo = new Wmo(newWmo->Vertices, newWmo->Indices,
+                                         newWmo->LiquidVertices, newWmo->LiquidIndices,
+                                         newWmo->DoodadVertices, newWmo->DoodadIndices,
+                                         newWmo->Bounds.MinCorner.Z, newWmo->Bounds.MaxCorner.Z);
 
-            for (int chunkY = 0; chunkY < 16; ++chunkY)
-                for (int chunkX = 0; chunkX < 16; ++chunkX)
+                continent->InsertWmo(wmoDefinition.UniqueId, wmo);
+
+                // iterate over all vertices to determine which chunks have the wmo
+                for (size_t v = 0; v < wmo->Vertices.size(); ++v)
                 {
-                    auto const chunk = m_chunks[chunkY][chunkX].get();
+                    auto const &vertex = wmo->Vertices[v];
 
-                    const Vector2 upperLeftCorner(chunk->m_terrainVertices[0].X, chunk->m_terrainVertices[0].Y),
-                                  lowerRightCorner(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y);
+                    // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
+                    if (vertex.X > MaxX || vertex.X < MinX || vertex.Y > MaxY || vertex.Y < MinY)
+                        continue;
 
-                    for (auto const &w : wmos)
-                    {
-                        auto const uniqueId = w.first;
-                        auto const wmo = w.second.get();
+                    const float chunkSize = 33.f + (1.f / 3.f);
 
-                        bool landsOnChunk = false;
+                    const int chunkX = static_cast<int>((MaxY - vertex.Y) / chunkSize);
+                    const int chunkY = static_cast<int>((MaxX - vertex.X) / chunkSize);
 
-                        for (size_t i = 0; i < wmo->Vertices.size(); ++i)
-                        {
-                            if (wmo->Vertices[i].X >  upperLeftCorner.X ||
-                                wmo->Vertices[i].X < lowerRightCorner.X ||
-                                wmo->Vertices[i].Y >  upperLeftCorner.Y ||
-                                wmo->Vertices[i].Y < lowerRightCorner.Y)
-                                continue;
+                    assert(chunkX < 16 && chunkY < 16);
 
-                            landsOnChunk = true;
-                            break;
-                        }
-
-                        if (!landsOnChunk)
-                            continue;
-
-                        chunk->m_wmos.insert(uniqueId);
-
-                        if (continent->HasWmo(uniqueId))
-                            continue;
-
-                        continent->InsertWmo(uniqueId, new Wmo(wmo->Vertices, wmo->Indices,
-                                                               wmo->LiquidVertices, wmo->LiquidIndices,
-                                                               wmo->DoodadVertices, wmo->DoodadIndices,
-                                                               wmo->Bounds.MinCorner.Z, wmo->Bounds.MaxCorner.Z));
-                    }
+                    m_chunks[chunkY][chunkX]->m_wmos.insert(wmoDefinition.UniqueId);
                 }
+            }
         }
-#endif
+
         // Doodads
 
         if (adt.m_doodadChunk)
         {
-            std::map<unsigned int, std::unique_ptr<parser_input::Doodad>> doodads;
-
             for (unsigned int i = 0; i < adt.m_doodadChunk->Doodads.size(); ++i)
             {
-                auto const &modelName = adt.m_doodadNames[adt.m_doodadChunk->Doodads[i].NameId];
-                auto const &doodad = adt.m_doodadChunk->Doodads[i];
+                auto const &doodadDefinition = adt.m_doodadChunk->Doodads[i];
 
-                auto const newDoodad = new parser_input::Doodad(modelName, doodad);
+                // if it has already been loaded, skip parsing it again
+                if (continent->IsDoodadLoaded(doodadDefinition.UniqueId))
+                    continue;
+
+                auto const &modelName = adt.m_doodadNames[doodadDefinition.NameId];
+
+                std::unique_ptr<parser_input::Doodad> newDoodad(new parser_input::Doodad(modelName, doodadDefinition));
 
                 if (!newDoodad->Vertices.size() || !newDoodad->Indices.size())
-                {
-                    delete newDoodad;
                     continue;
-                }
 
-                doodads[doodad.UniqueId] = std::unique_ptr<parser_input::Doodad>(newDoodad);
-            }
+                auto const doodad = new Doodad(newDoodad->Vertices, newDoodad->Indices, newDoodad->MinZ, newDoodad->MaxZ);
 
-            for (int chunkY = 0; chunkY < 16; ++chunkY)
-                for (int chunkX = 0; chunkX < 16; ++chunkX)
+                continent->InsertDoodad(doodadDefinition.UniqueId, doodad);
+
+                // iterate over all vertices to determine which chunks have the doodad
+                for (size_t v = 0; v < doodad->Vertices.size(); ++v)
                 {
-                    auto const chunk = m_chunks[chunkY][chunkX].get();
+                    auto const &vertex = doodad->Vertices[v];
 
-                    const Vector2 upperLeftCorner(chunk->m_terrainVertices[0].X, chunk->m_terrainVertices[0].Y),
-                                  lowerRightCorner(chunk->m_terrainVertices[144].X, chunk->m_terrainVertices[144].Y);
+                    // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
+                    if (vertex.X > MaxX || vertex.X < MinX || vertex.Y > MaxY || vertex.Y < MinY)
+                        continue;
 
-                    for (auto const &d : doodads)
-                    {
-                        auto const uniqueId = d.first;
-                        auto const doodad = d.second.get();
+                    const float chunkSize = 33.f + (1.f / 3.f);
 
-                        bool landsOnChunk = false;
+                    const int chunkX = static_cast<int>((MaxY - vertex.Y) / chunkSize);
+                    const int chunkY = static_cast<int>((MaxX - vertex.X) / chunkSize);
 
-                        for (size_t i = 0; i < doodad->Vertices.size(); ++i)
-                        {
-                            if (doodad->Vertices[i].X >  upperLeftCorner.X ||
-                                doodad->Vertices[i].X < lowerRightCorner.X ||
-                                doodad->Vertices[i].Y >  upperLeftCorner.Y ||
-                                doodad->Vertices[i].Y < lowerRightCorner.Y)
-                                continue;
+                    assert(chunkX < 16 && chunkY < 16);
 
-                            landsOnChunk = true;
-                            break;
-                        }
-
-                        if (!landsOnChunk)
-                            continue;
-
-                        chunk->m_doodads.insert(uniqueId);
-
-                        if (continent->HasDoodad(uniqueId))
-                            continue;
-
-                        continent->InsertDoodad(uniqueId, new Doodad(doodad->Vertices, doodad->Indices, doodad->MinZ, doodad->MaxZ));
-                    }
+                    m_chunks[chunkY][chunkX]->m_doodads.insert(doodadDefinition.UniqueId);
                 }
+            }
         }
     }
 

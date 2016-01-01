@@ -14,24 +14,27 @@ namespace parser_input
 
         const float parRotX = MathHelper::ToRadians(parentInfo->OrientationC);
         const float parRotY = MathHelper::ToRadians(parentInfo->OrientationA);
-        const float parRotZ = MathHelper::ToRadians(parentInfo->OrientationB - 90.f);
+        const float parRotZ = MathHelper::ToRadians(parentInfo->OrientationB + 180.f);
 
-        //Quaternion q = Quaternion(-wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, -wmoDoodadInfo->RotX, wmoDoodadInfo->RotW);
         // according to MaiN, from Greyman:
-        Quaternion q = Quaternion(wmoDoodadInfo->RotX, wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, wmoDoodadInfo->RotZ);
+        //Quaternion q = Quaternion(wmoDoodadInfo->RotX, wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, wmoDoodadInfo->RotZ);
 
-        Matrix transformMatrix = Matrix::CreateScalingMatrix(wmoDoodadInfo->Scale) *
-                                        Matrix::CreateRotationY(PI) *
-                                        Matrix::CreateFromQuaternion(q) *
-                                        Matrix::CreateTranslationMatrix(origin) *
-                                        Matrix::CreateRotationX(parRotX) *
-                                        Matrix::CreateRotationY(parRotY) *
-                                        Matrix::CreateRotationZ(parRotZ) *
-                                        Matrix::CreateTranslationMatrix(parentOrigin);
+        Quaternion q(-wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, -wmoDoodadInfo->RotX, wmoDoodadInfo->RotW);
+
+        const Matrix wmoTransformMatrix = Matrix::CreateScalingMatrix(wmoDoodadInfo->Scale) *
+                                          Matrix::CreateRotationY(PI) *
+                                          Matrix::CreateRotationZ(PI) *
+                                          Matrix::CreateFromQuaternion(q);
+
+        const Matrix worldTransformMatrix = Matrix::CreateRotationZ(parRotZ) *
+                                            Matrix::CreateRotationY(parRotY) *
+                                            Matrix::CreateRotationX(parRotX);
 
         for (unsigned int i = 0; i < Vertices.size(); ++i)
         {
-            Vertices[i] = Vertex::Transform(Vertices[i], transformMatrix);
+            auto const wmoVertex = Vertex::Transform(Vertices[i], wmoTransformMatrix) + origin;
+
+            Vertices[i] = Vertex::Transform(wmoVertex, worldTransformMatrix) + parentOrigin;
 
             if (!i)
                 MinZ = MaxZ = Vertices[0].Z;

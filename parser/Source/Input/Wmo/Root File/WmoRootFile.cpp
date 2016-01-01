@@ -146,10 +146,12 @@ namespace parser_input
             // process MLIQ data
 
             // FIXME XXX wmo liquid is disabled for now until the renderer is working well enough to debug it!
-            //if (!groupFiles[g]->LiquidChunk)
+            if (!groupFiles[g]->LiquidChunk)
                 continue;
 
             const float tileSize = (533.f + (1.f / 3.f)) / 128.f;
+
+            auto const liquidChunk = groupFiles[g]->LiquidChunk.get();
 
             // process liquid chunk for the current group file
             for (unsigned int y = 0; y < groupFiles[g]->LiquidChunk->Height; ++y)
@@ -170,7 +172,7 @@ namespace parser_input
                     Vertex v3(x * tileSize, (y + 1) * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(y + 1, x));
                     v3 = origin + Vertex::Transform(baseVertex + v3, transformMatrix);
 
-                    Vertex v4((x + 1) * tileSize, (y + 1) * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(x + 1, y + 1));
+                    Vertex v4((x + 1) * tileSize, (y + 1) * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(y + 1, x + 1));
                     v4 = origin + Vertex::Transform(baseVertex + v4, transformMatrix);
 
                     LiquidVertices.push_back(v1);
@@ -179,12 +181,12 @@ namespace parser_input
                     LiquidVertices.push_back(v4);
 
                     LiquidIndices.push_back(LiquidVertices.size() - 4);
-                    LiquidIndices.push_back(LiquidVertices.size() - 2);
                     LiquidIndices.push_back(LiquidVertices.size() - 3);
+                    LiquidIndices.push_back(LiquidVertices.size() - 2);
 
                     LiquidIndices.push_back(LiquidVertices.size() - 2);
-                    LiquidIndices.push_back(LiquidVertices.size() - 1);
                     LiquidIndices.push_back(LiquidVertices.size() - 3);
+                    LiquidIndices.push_back(LiquidVertices.size() - 1);
 
                     if (!minMaxStarted)
                     {
@@ -205,46 +207,49 @@ namespace parser_input
 
         // Doodads...
 
-        std::unique_ptr<MODS> doodadSetsChunk(modsLoc > 0 ? new MODS(information.DoodadSetsCount, modsLoc, Reader) : nullptr);
-        std::unique_ptr<MODN> doodadNamesChunk(modnLoc > 0 ? new MODN(information.DoodadNamesCount, modnLoc, Reader) : nullptr);
-        std::unique_ptr<MODD> doodadChunk(moddLoc > 0 ? new MODD(moddLoc, Reader) : nullptr);
+        MODS doodadSetsChunk(information.DoodadSetsCount, modsLoc, Reader);
+        MODN doodadNamesChunk(information.DoodadNamesCount, modnLoc, Reader);
+        MODD doodadChunk(moddLoc, Reader);
 
-        std::vector<std::unique_ptr<WmoDoodad>> finalDoodads;
-        finalDoodads.resize(doodadChunk->Count);
+        std::vector<std::unique_ptr<WmoDoodad>> finalDoodads(doodadChunk.Count);
 
-        for (int i = 0; i < doodadChunk->Count; ++i)
+        // add up vertex count so we can resize the vector only once
+        size_t vertexCount = 0;
+
+        for (size_t i = 0; i < finalDoodads.size(); ++i)
         {
-            const unsigned int nameIndex = doodadChunk->Doodads[i].DoodadInfo.NameIndex;
-            const unsigned int index = doodadChunk->Doodads[i].Index;
+            const unsigned int nameIndex = doodadChunk.Doodads[i].DoodadInfo.NameIndex;
+            const unsigned int index = doodadChunk.Doodads[i].Index;
 
-            if (!!doodadSetsChunk && doodadSetsChunk->Count)
+            if (doodadSetsChunk.Count)
             {
-                const DoodadSetInfo *set = &doodadSetsChunk->DoodadSets[info->DoodadSet];
+                const DoodadSetInfo *set = &doodadSetsChunk.DoodadSets[info->DoodadSet];
 
                 if (index < set->FirstDoodadIndex || index > (set->FirstDoodadIndex + set->DoodadCount - 1))
                     continue;
             }
 
-            finalDoodads[i].reset(new WmoDoodad(info, &doodadChunk->Doodads[i].DoodadInfo, doodadNamesChunk->Names[nameIndex]));
+            finalDoodads[i].reset(new WmoDoodad(info, &doodadChunk.Doodads[i].DoodadInfo, doodadNamesChunk.Names[nameIndex]));
+            vertexCount += finalDoodads[i]->Vertices.size();
         }
 
-        for (unsigned int i = 0; i < finalDoodads.size(); ++i)
+        DoodadVertices.resize(vertexCount);
+
+        // re-use this variable to track the re-indexing of doodad triangles
+        vertexCount = 0;
+
+        for (size_t i = 0; i < finalDoodads.size(); ++i)
         {
             const WmoDoodad *doodad = finalDoodads[i].get();
 
-            if (!doodad)
+            if (!doodad || !doodad->Vertices.size() || !doodad->Indices.size())
                 continue;
 
-            if (!doodad->Vertices.size())
-                continue;
+            for (size_t j = 0; j < doodad->Indices.size(); ++j)
+                DoodadIndices.push_back(vertexCount + doodad->Indices[j]);
 
-            const unsigned int oldSize = DoodadVertices.size();
-            DoodadVertices.resize(oldSize + doodad->Vertices.size());
-
-            for (unsigned int j = 0; j < doodad->Indices.size(); ++j)
-                DoodadIndices.push_back(oldSize + doodad->Indices[j]);
-
-            memcpy((void *)&DoodadVertices[oldSize], &doodad->Vertices[0], sizeof(Vertex) * doodad->Vertices.size());
+            memcpy((void *)&DoodadVertices[vertexCount], &doodad->Vertices[0], sizeof(Vertex) * doodad->Vertices.size());
+            vertexCount += doodad->Vertices.size();
 
             if (!minMaxStarted)
             {
