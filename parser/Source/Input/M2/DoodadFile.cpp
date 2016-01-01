@@ -71,10 +71,11 @@ namespace parser_input
         const float rotX = MathHelper::ToRadians(doodadInfo.OrientationC);
         const float rotY = MathHelper::ToRadians(doodadInfo.OrientationA);
         const float rotZ = MathHelper::ToRadians(doodadInfo.OrientationB + 180.f);
+
         const Matrix transformMatrix = Matrix::CreateScalingMatrix(doodadInfo.Scale / 1024.f) *
-                                       Matrix::CreateRotationX(rotX) *
+                                       Matrix::CreateRotationZ(rotZ) *
                                        Matrix::CreateRotationY(rotY) *
-                                       Matrix::CreateRotationZ(rotZ);
+                                       Matrix::CreateRotationX(rotX);
 
         for (unsigned int i = 0; i < Vertices.size(); ++i)
         {
