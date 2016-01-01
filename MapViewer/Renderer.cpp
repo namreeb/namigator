@@ -21,7 +21,7 @@
 //#define WIREFRAME
 
 const float Renderer::TerrainColor[4] = { 0.1f, 0.8f, 0.3f, 1.f };
-const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.1f };
+const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.5f };
 const float Renderer::WmoColor[4] = { 1.f, 0.95f, 0.f, 1.f };
 const float Renderer::DoodadColor[4] = { 1.0f, 0.f, 0.f, 1.f };
 const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
@@ -168,6 +168,22 @@ Renderer::Renderer(HWND window) : m_window(window)
 
     m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 0);
     m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, m_depthStencilView);
+
+    D3D11_BLEND_DESC bd;
+    ZERO(bd);
+
+    bd.RenderTarget[0].BlendEnable = TRUE;
+    bd.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    bd.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+    bd.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    ThrowIfFail(m_device->CreateBlendState(&bd, &m_liquidBlendState));
+
+    bd.RenderTarget[0].BlendEnable = FALSE;
+    ThrowIfFail(m_device->CreateBlendState(&bd, &m_opaqueBlendState));
 }
 
 Renderer::~Renderer()
@@ -182,6 +198,8 @@ Renderer::~Renderer()
     m_depthStencilBuffer->Release();
     m_dxgiFactory->Release();
     m_depthStencilState->Release();
+    m_liquidBlendState->Release();
+    m_opaqueBlendState->Release();
 }
 
 void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -354,6 +372,9 @@ void Renderer::Render() const
         m_deviceContext->DrawIndexed(m_doodadBuffers[i].IndexCount, 0, 0);
     }
 
+    const static float blendFactor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    m_deviceContext->OMSetBlendState(m_liquidBlendState, blendFactor, 0xffffffff);
+
     // draw liquid
     for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
     {
@@ -363,6 +384,8 @@ void Renderer::Render() const
 
         m_deviceContext->DrawIndexed(m_liquidBuffers[i].IndexCount, 0, 0);
     }
+
+    m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);
 
     // switch the back buffer and the front buffer
     DXGI_PRESENT_PARAMETERS presentParams;
