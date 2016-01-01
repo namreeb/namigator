@@ -308,7 +308,7 @@ void Renderer::Render() const
     m_deviceContext->RSGetViewports(&viewportCount, &viewport);
 
     float aspect = viewport.Width / viewport.Height;
-    auto proj = utility::Matrix::CreateProjectionMatrix(PI / 4.f, aspect, 2.00f, 1000.f);
+    auto proj = utility::Matrix::CreateProjectionMatrix(PI / 4.f, aspect, 1.f, 10000.f);
 
     struct VSConstants {
         float viewMatrix[16];
