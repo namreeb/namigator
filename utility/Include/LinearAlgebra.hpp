@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #ifndef PI
 #define PI 3.14159264f
@@ -79,12 +80,21 @@ namespace utility
 
         Vector3& operator += (const Vector3 &other);
 
+        float& operator[](int idx) {
+            return *(&X + idx);
+        }
+
+        const float& operator[](int idx) const {
+            return *(&X + idx);
+        }
+
         float Length() const;
     };
 
     Vector3 operator + (const Vector3 &a, const Vector3 &b);
     Vector3 operator - (const Vector3 &a, const Vector3 &b);
     Vector3 operator * (float multiplier, const Vector3 &vector);
+    Vector3 operator * (const Vector3& vector, float multiplier);
 
     typedef Vector3 Vertex;
 
@@ -134,4 +144,22 @@ namespace utility
                         out[r*Columns + c] = matrix[r][c];
             }
     };
+
+    template <typename Vector>
+    Vector takeMinimum(const Vector& a, const Vector& b) {
+        return Vector{
+            std::min(a.X, b.X),
+            std::min(a.Y, b.Y),
+            std::min(a.Z, b.Z)
+        };
+    }
+
+    template <typename Vector>
+    Vector takeMaximum(const Vector& a, const Vector& b) {
+        return Vector{
+            std::max(a.X, b.X),
+            std::max(a.Y, b.Y),
+            std::max(a.Z, b.Z)
+        };
+    }
 }

@@ -68,21 +68,27 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\AABBTree.cpp" />
     <ClCompile Include="Source\BinaryStream.cpp" />
+    <ClCompile Include="Source\BoundingBox.cpp" />
     <ClCompile Include="Source\Directory.cpp" />
     <ClCompile Include="Source\LinearAlgebra.cpp" />
     <ClCompile Include="source\Log.cpp" />
     <ClCompile Include="Source\MathHelper.cpp" />
+    <ClCompile Include="Source\Ray.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\AABBTree.hpp" />
     <ClInclude Include="Include\Array2d.hpp" />
     <ClInclude Include="Include\BinaryStream.hpp" />
+    <ClInclude Include="Include\BoundingBox.hpp" />
     <ClInclude Include="Include\Cache.hpp" />
     <ClInclude Include="Include\Directory.hpp" />
     <ClInclude Include="Include\LinearAlgebra.hpp" />
     <ClInclude Include="include\Log.hpp" />
     <ClInclude Include="Include\MathHelper.hpp" />
     <ClInclude Include="Include\Misc.hpp" />
+    <ClInclude Include="Include\Ray.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

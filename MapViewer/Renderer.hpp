@@ -48,6 +48,8 @@ class Renderer
         ID3D11DepthStencilView *m_depthStencilView;
         ID3D11DepthStencilState *m_depthStencilState;
         ID3D11Texture2D *m_depthStencilBuffer;
+        ID3D11BlendState* m_liquidBlendState;
+        ID3D11BlendState* m_opaqueBlendState;
 
         std::vector<GeometryBuffer> m_terrainBuffers;
         std::vector<GeometryBuffer> m_liquidBuffers;

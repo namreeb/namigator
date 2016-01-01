@@ -4,6 +4,7 @@
 #include <string>
 
 #include "LinearAlgebra.hpp"
+#include "BoundingBox.hpp"
 #include "MathHelper.hpp"
 #include "Input/WowFile.hpp"
 #include "Input/Wmo/WmoParserInfo.hpp"

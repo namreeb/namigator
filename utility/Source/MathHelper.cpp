@@ -34,35 +34,35 @@ namespace utility
         return (int)floorf(num + 0.5f);
     }
 
-    BoundingBox::BoundingBox()
-        : MinCorner(0.f, 0.f, 0.f), MaxCorner(0.f, 0.f, 0.f) {}
+    //BoundingBox::BoundingBox()
+    //    : MinCorner(0.f, 0.f, 0.f), MaxCorner(0.f, 0.f, 0.f) {}
 
-    BoundingBox::BoundingBox(const Vertex &minCorner, const Vertex &maxCorner)
-        : MinCorner(minCorner), MaxCorner(maxCorner) {}
+    //BoundingBox::BoundingBox(const Vertex &minCorner, const Vertex &maxCorner)
+    //    : MinCorner(minCorner), MaxCorner(maxCorner) {}
 
-    BoundingBox::BoundingBox(const Vertex &a, const Vertex &b, const Vertex &c)
-        : MinCorner(std::min({ a.X, b.X, c.X }), std::min({ a.Y, b.Y, c.Y }), std::min({ a.Z, b.Z, c.Z })),
-          MaxCorner(std::max({ a.X, b.X, c.X }), std::max({ a.Y, b.Y, c.Y }), std::max({ a.Z, b.Z, c.Z })) {}
+    //BoundingBox::BoundingBox(const Vertex &a, const Vertex &b, const Vertex &c)
+    //    : MinCorner(std::min({ a.X, b.X, c.X }), std::min({ a.Y, b.Y, c.Y }), std::min({ a.Z, b.Z, c.Z })),
+    //      MaxCorner(std::max({ a.X, b.X, c.X }), std::max({ a.Y, b.Y, c.Y }), std::max({ a.Z, b.Z, c.Z })) {}
 
-    BoundingBox::BoundingBox(float minX, float minY, float maxX, float maxY)
-        : MinCorner(minX, maxX, 0.f), MaxCorner(maxX, maxY, 0.f) {}
+    //BoundingBox::BoundingBox(float minX, float minY, float maxX, float maxY)
+    //    : MinCorner(minX, maxX, 0.f), MaxCorner(maxX, maxY, 0.f) {}
 
-    BoundingBox::BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ)
-        : MinCorner(minX, minY, minZ), MaxCorner(maxX, maxY, maxZ) {}
+    //BoundingBox::BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ)
+    //    : MinCorner(minX, minY, minZ), MaxCorner(maxX, maxY, maxZ) {}
 
-    bool BoundingBox::Intersects(const BoundingBox &other) const
-    {
-        return !(MinCorner.X > other.MaxCorner.X || MaxCorner.X < other.MinCorner.X ||
-                 MinCorner.Y > other.MaxCorner.Y || MaxCorner.Y < other.MinCorner.Y ||
-                 MinCorner.Z > other.MaxCorner.Z || MaxCorner.Z < other.MinCorner.Z);
-    }
+    //bool BoundingBox::Intersects(const BoundingBox &other) const
+    //{
+    //    return !(MinCorner.X > other.MaxCorner.X || MaxCorner.X < other.MinCorner.X ||
+    //             MinCorner.Y > other.MaxCorner.Y || MaxCorner.Y < other.MinCorner.Y ||
+    //             MinCorner.Z > other.MaxCorner.Z || MaxCorner.Z < other.MinCorner.Z);
+    //}
 
-    bool BoundingBox::Contains(const Vertex &vertex) const
-    {
-        return !(vertex.X < MinCorner.X || vertex.X > MaxCorner.X ||
-                 vertex.Y < MinCorner.Y || vertex.Y > MaxCorner.Y ||
-                 vertex.Z < MinCorner.Z || vertex.Z > MaxCorner.Z);
-    }
+    //bool BoundingBox::Contains(const Vertex &vertex) const
+    //{
+    //    return !(vertex.X < MinCorner.X || vertex.X > MaxCorner.X ||
+    //             vertex.Y < MinCorner.Y || vertex.Y > MaxCorner.Y ||
+    //             vertex.Z < MinCorner.Z || vertex.Z > MaxCorner.Z);
+    //}
 
     void Convert::AdtToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY)
     {
