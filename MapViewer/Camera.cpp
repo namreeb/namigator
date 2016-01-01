@@ -2,76 +2,66 @@
 #include "Camera.hpp"
 
 Camera::Camera()
-    : m_projectionMatrix(utility::Matrix::CreateProjectionMatrix(PI / 4.f, 1200.f/800.f, 2.f, 10000.f)),
-      m_mousePanning(false), m_mousePanX(0), m_mousePanY(0),
-      m_position({ 0.f,  0.f,  0.f }),
-      m_target(  { 0.f,  0.f, -1.f }),
-      m_up(      { 1.f,  0.f,  0.f }),
-      m_right(   { 0.f, -1.f,  0.f })
-{}
-
-void Camera::UpdateViewProjectionMatrix()
+    : m_mousePanning(false), m_mousePanX(0), m_mousePanY(0),
+      m_position({ 1.f, 1.f, 1.f })
 {
-    auto const viewProjection = utility::Matrix::CreateViewMatrix(m_position, m_target, m_up) * m_projectionMatrix;
+    LookAt(0.0f, 0.0f, 0.0f);
+}
 
-    viewProjection.PopulateArray(m_viewProjectionMatrix);
+void Camera::UpdateViewMatrix()
+{
+    m_viewMatrix = utility::Matrix::CreateViewMatrix(m_position, m_position + m_forward, m_up);
 }
 
 void Camera::Move(const utility::Vertex &position)
 {
     m_position = position;
 
-    UpdateViewProjectionMatrix();
+    UpdateViewMatrix();
 }
 
 void Camera::LookAt(const utility::Vertex &target)
 {
-    m_target = target;
+    m_forward = utility::Vector3::Normalize(target - m_position);
+    m_right = utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_forward, { 0.f, 0.f, 1.f }));
+    m_up = utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_right, m_forward));
 
-    auto const forward = utility::Vector3::Normalize(m_target - m_position);
-
-    m_right = utility::Vector3::Normalize(utility::Vector3::CrossProduct(forward, { 0.f, 0.f, 1.f }));
-    m_up = utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_right, forward));
-
-    UpdateViewProjectionMatrix();
+    UpdateViewMatrix();
 }
 
-void Camera::MoveVertical(float delta)
+void Camera::MoveUp(float delta)
 {
-    m_position.Z += delta;
-    m_target.Z += delta;
+    m_position += delta*m_up;
 
-    UpdateViewProjectionMatrix();
+    UpdateViewMatrix();
 }
 
 void Camera::MoveIn(float delta)
 {
-    auto const direction = utility::Vector3::Normalize(m_target - m_position);
-    
-    m_position += delta*direction;
-    m_target += delta*direction;
-
-    UpdateViewProjectionMatrix();
+    m_position += delta*m_forward;
+    UpdateViewMatrix();
 }
 
 void Camera::MoveRight(float delta)
 {
     m_position += delta*m_right;
-    m_target += delta*m_right;
+    UpdateViewMatrix();
+}
 
-    UpdateViewProjectionMatrix();
+void Camera::MoveVertical(float delta)
+{
+    m_position.Z += delta;
+    UpdateViewMatrix();
 }
 
 void Camera::Yaw(float delta)
 {
     auto const rotate = utility::Matrix::CreateRotationZ(delta);
-    auto const lookAtTarget = utility::Vector3::Transform(m_target - m_position, rotate);
-
-    m_up = utility::Vector3::Normalize(utility::Vector3::Transform(m_up, rotate));
+    m_forward = utility::Vector3::Normalize(utility::Vector3::Transform(m_forward, rotate));
     m_right = utility::Vector3::Normalize(utility::Vector3::Transform(m_right, rotate));
-    m_target = m_position + lookAtTarget;
+    m_up = utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_right, m_forward));
 
-    UpdateViewProjectionMatrix();
+    UpdateViewMatrix();
 }
 
 void Camera::Pitch(float delta)
@@ -84,11 +74,9 @@ void Camera::Pitch(float delta)
         newUp.Z = 0.0f;
 
     m_up = utility::Vector3::Normalize(newUp);
+    m_forward = utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_up, m_right));
 
-    auto const lookAtLength = (m_target - m_position).Length();
-    m_target = m_position + lookAtLength * utility::Vector3::Normalize(utility::Vector3::CrossProduct(m_up, m_right));
-
-    UpdateViewProjectionMatrix();
+    UpdateViewMatrix();
 }
 
 void Camera::BeginMousePan(int screenX, int screenY)
@@ -109,10 +97,10 @@ void Camera::UpdateMousePan(int newX, int newY)
     const int deltaY = newY - m_mousePanY;
 
     if (abs(deltaX) > 1)
-        Yaw(0.001f * static_cast<float>(deltaX));
+        Yaw(-0.002f * static_cast<float>(deltaX));
 
     if (abs(deltaY) > 1)
-        Pitch(0.001f * static_cast<float>(deltaY));
+        Pitch(-0.002f * static_cast<float>(deltaY));
 }
 
 void Camera::GetMousePanStart(int &x, int &y) const

@@ -7,6 +7,7 @@
 #include <memory>
 #include <Windows.h>
 #include <d3d11.h>
+#include <dxgi1_3.h>
 #include <set>
 
 class Renderer
@@ -34,7 +35,8 @@ class Renderer
 
         const HWND m_window;
 
-        IDXGISwapChain *m_swapChain;            // the pointer to the swap chain interface
+        IDXGIFactory2 *m_dxgiFactory;
+        IDXGISwapChain1 *m_swapChain;            // the pointer to the swap chain interface
         ID3D11Device *m_device;                 // the pointer to our Direct3D device interface
         ID3D11DeviceContext *m_deviceContext;   // the pointer to our Direct3D device context
         ID3D11RenderTargetView *m_backBuffer;   // the pointer to our back buffer
@@ -44,6 +46,7 @@ class Renderer
         ID3D11Buffer *m_cbPerObjectBuffer;
         ID3D11RasterizerState *m_rasterizerState;
         ID3D11DepthStencilView *m_depthStencilView;
+        ID3D11DepthStencilState *m_depthStencilState;
         ID3D11Texture2D *m_depthStencilBuffer;
 
         std::vector<GeometryBuffer> m_terrainBuffers;

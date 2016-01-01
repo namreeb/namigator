@@ -1,6 +1,6 @@
 cbuffer cbPerObject {
-    // Why is this all in one matrix? Should have model, view and projection seperate
-    row_major float4x4 WVP;
+    row_major float4x4 viewMatrix;
+    row_major float4x4 projMatrix;
 };
 
 struct VSInput {
@@ -18,8 +18,12 @@ struct VSOutput {
 
 VSOutput VShader(VSInput input)
 {
+    float4 position = float4(input.position, 1.0f);
+    position = mul(position, viewMatrix);
+    position = mul(projMatrix, position);
+
     VSOutput output = (VSOutput)0;
-    output.position = mul(float4(input.position, 1.0f), WVP);
+    output.position = position;
     output.worldPos = input.position;
     output.normal = input.normal;
     output.color = input.color;

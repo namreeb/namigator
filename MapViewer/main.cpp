@@ -21,7 +21,7 @@
 #define CONTROL_WIDTH       300
 #define CONTROL_HEIGHT      250
 
-#define CAMERA_STEP         2.f
+#define CAMERA_STEP         0.2f
 
 // FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
 #define MAGIC_LEFT_SHIFT    15
@@ -30,6 +30,11 @@ HWND gGuiWindow, gControlWindow;
 
 std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<::parser::Continent> gContinent;
+
+int gMovingUp = 0;
+int gMovingVertical = 0;
+int gMovingRight = 0;
+int gMovingForward = 0;
 
 // this is the main message handler for the program
 LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -69,25 +74,55 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             switch (static_cast<char>(wParam))
             {
                 case ' ':
-                    gRenderer->m_camera.MoveVertical(CAMERA_STEP);
-                    return TRUE;
-                case 'Z':
-                    gRenderer->m_camera.MoveVertical(-CAMERA_STEP);
-                    return TRUE;
-                case 'D':
-                    gRenderer->m_camera.MoveRight(CAMERA_STEP);
-                    return TRUE;
-                case 'A':
-                    gRenderer->m_camera.MoveRight(-CAMERA_STEP);
-                    return TRUE;
-                case 'W':
-                    gRenderer->m_camera.MoveIn(CAMERA_STEP);
+                    gMovingVertical = +1;
                     return TRUE;
                 case 'X':
-                    gRenderer->m_camera.MoveIn(-CAMERA_STEP);
+                    gMovingVertical = -1;
+                    return TRUE;
+                case 'Q':
+                    gMovingUp = +1;
+                    return TRUE;
+                case 'E':
+                    gMovingUp = -1;
+                    return TRUE;
+                case 'D':
+                    gMovingRight = +1;
+                    return TRUE;
+                case 'A':
+                    gMovingRight = -1;
+                    return TRUE;
+                case 'W':
+                    gMovingForward = +1;
+                    return TRUE;
+                case 'S':
+                    gMovingForward = -1;
                     return TRUE;
             }
                 
+            break;
+        }
+
+        case WM_KEYUP:
+        {
+            switch (static_cast<char>(wParam))
+            {
+            case ' ':
+            case 'X':
+                gMovingVertical = 0;
+                return TRUE;
+            case 'Q':
+            case 'E':
+                gMovingUp = 0;
+                return TRUE;
+            case 'D':
+            case 'A':
+                gMovingRight = 0;
+                return TRUE;
+            case 'W':
+            case 'S':
+                gMovingForward = 0;
+                return TRUE;
+            }
             break;
         }
 
@@ -100,7 +135,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             return TRUE;
         }
 
-        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
         {
             POINT point;
             GetCursorPos(&point);
@@ -113,7 +148,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_MOUSEMOVE:
         {
-            if (!!(wParam & MK_LBUTTON) && gRenderer->m_camera.IsMousePanning())
+            if (!!(wParam & MK_RBUTTON) && gRenderer->m_camera.IsMousePanning())
             {
                 POINT point;
                 GetCursorPos(&point);
@@ -135,7 +170,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             break;
         }
 
-        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
         {
             if (gRenderer->m_camera.IsMousePanning())
             {
@@ -207,8 +242,12 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             }
                         }
 
-                    gRenderer->m_camera.Move(adt->MaxX+350.f, adt->MaxY+350.f, adt->MaxZ + 1150.f);
-                    gRenderer->m_camera.LookAt((adt->MaxX + adt->MinX) / 2.f, (adt->MaxY + adt->MinY) / 2.f, (adt->MaxZ + adt->MinZ) / 2.f);
+                    float cx = (adt->MaxX + adt->MinX) / 2.f;
+                    float cy = (adt->MaxY + adt->MinY) / 2.f;
+                    float cz = (adt->MaxZ + adt->MinZ) / 2.f;
+
+                    gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
+                    gRenderer->m_camera.LookAt(cx, cy, cz);
 
                     return TRUE;
                 }
@@ -348,6 +387,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     while (true)
     {
+        if (gMovingForward)
+            gRenderer->m_camera.MoveIn(CAMERA_STEP * gMovingForward);
+        if (gMovingRight)
+            gRenderer->m_camera.MoveRight(CAMERA_STEP * gMovingRight);
+        if (gMovingUp)
+            gRenderer->m_camera.MoveUp(CAMERA_STEP * gMovingUp);
+        if (gMovingVertical)
+            gRenderer->m_camera.MoveVertical(CAMERA_STEP * gMovingVertical);
+
         gRenderer->Render();
 
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))

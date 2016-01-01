@@ -239,6 +239,7 @@ namespace utility
         return ret;
     }
 
+    // Possibly wrong, this is neither left nor right handed
     Matrix Matrix::CreateViewMatrix(const Vertex &eye, const Vertex &target, const Vector3 &up)
     {
         const Vector3 v_z = Vector3::Normalize(eye - target);
@@ -259,6 +260,7 @@ namespace utility
         return ret;
     }
 
+    // Right handed
     Matrix Matrix::CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar)
     {
         Matrix ret(4, 4);
@@ -267,11 +269,11 @@ namespace utility
             for (int x = 0; x < 4; ++x)
                 ret[y][x] = 0.f;
 
-        const float h = 1.f / tanf(0.5f * fovy);
-        const float w = h * aspect;
+        const float yscale = 1.f / tanf(0.5f * fovy);
+        const float xscale = yscale / aspect;
 
-        ret[0][0] = w;
-        ret[1][1] = h;
+        ret[0][0] = xscale;
+        ret[1][1] = yscale;
         ret[2][2] = zFar / (zNear - zFar);
         ret[2][3] = -1.f;
         ret[3][2] = zNear*zFar / (zNear - zFar);

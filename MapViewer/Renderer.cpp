@@ -3,12 +3,14 @@
 #include <set>
 
 #include <d3d11.h>
+#include <dxgi1_3.h>
 
 #include "Renderer.hpp"
 #include "LinearAlgebra.hpp"
 
 // include the Direct3D Library file
 #pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "dxgi.lib")
 
 #include "pixelShader.hpp"
 #include "vertexShader.hpp"
@@ -26,36 +28,52 @@ const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
 
 Renderer::Renderer(HWND window) : m_window(window)
 {
+    RECT wr;
+    GetWindowRect(window, &wr);
+
     // create a struct to hold information about the swap chain
-    DXGI_SWAP_CHAIN_DESC scd;
+    DXGI_SWAP_CHAIN_DESC1 scd;
 
     // clear out the struct for use
     ZERO(scd);
 
     // fill the swap chain description struct
     scd.BufferCount = 1;                                    // one back buffer
-    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
+    scd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;                // use 32-bit color
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
-    scd.OutputWindow = window;                              // the window to be used
+    scd.Width = wr.right - wr.left;
+    scd.Height = wr.bottom - wr.top;
     scd.SampleDesc.Count = 1;                               // how many multisamples
     scd.SampleDesc.Quality = 0;                             // multisample quality level
-    scd.Windowed = TRUE;                                    // windowed/full-screen mode
+    scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    scd.Scaling = DXGI_SCALING_STRETCH;
+
+    ThrowIfFail(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &m_device, nullptr, &m_deviceContext));
+
+    UINT quality = 0;
+    if (SUCCEEDED(m_device->CheckMultisampleQualityLevels(scd.Format, 8, &quality))) {
+        scd.SampleDesc.Count = 8;
+        scd.SampleDesc.Quality = quality - 1;
+    }
+
+    ThrowIfFail(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_dxgiFactory)));
+    ThrowIfFail(m_dxgiFactory->CreateSwapChainForHwnd(m_device, m_window, &scd, NULL, NULL, &m_swapChain));
 
     // create a device, device context and swap chain using the information in the scd struct
-    ThrowIfFail(D3D11CreateDeviceAndSwapChain(nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        0,
-        nullptr,
-        0,
-        D3D11_SDK_VERSION,
-        &scd,
-        &m_swapChain,
-        &m_device,
-        nullptr,
-        &m_deviceContext));
+    //ThrowIfFail(D3D11CreateDeviceAndSwapChain(nullptr,
+    //    D3D_DRIVER_TYPE_HARDWARE,
+    //    nullptr,
+    //    0,
+    //    nullptr,
+    //    0,
+    //    D3D11_SDK_VERSION,
+    //    &scd,
+    //    &m_swapChain,
+    //    &m_device,
+    //    nullptr,
+    //    &m_deviceContext));
 
-    assert(m_swapChain);
+    //assert(m_swapChain);
 
     // get the address of the back buffer
     ID3D11Texture2D *backBuffer;
@@ -68,9 +86,6 @@ Renderer::Renderer(HWND window) : m_window(window)
     // Set the viewport
     D3D11_VIEWPORT viewport;
     ZERO(viewport);
-
-    RECT wr;
-    GetWindowRect(window, &wr);
 
     viewport.TopLeftX = 0.f;
     viewport.TopLeftY = 0.f;
@@ -101,7 +116,7 @@ Renderer::Renderer(HWND window) : m_window(window)
     ZERO(cbbd);
 
     cbbd.Usage = D3D11_USAGE_DEFAULT;
-    cbbd.ByteWidth = 16 * sizeof(float);
+    cbbd.ByteWidth = 32 * sizeof(float);
     cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbbd.CPUAccessFlags = 0;
     cbbd.MiscFlags = 0;
@@ -124,24 +139,34 @@ Renderer::Renderer(HWND window) : m_window(window)
     ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
     m_deviceContext->RSSetState(m_rasterizerState);
 
-    D3D11_TEXTURE2D_DESC depthStencilDesc;
-    ZERO(depthStencilDesc);
+    D3D11_TEXTURE2D_DESC dsdtex;
+    ZERO(dsdtex);
 
-    depthStencilDesc.Width = wr.right - wr.left;
-    depthStencilDesc.Height = wr.bottom - wr.top;
-    depthStencilDesc.MipLevels = 1;
-    depthStencilDesc.ArraySize = 1;
-    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.SampleDesc.Quality = 0;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    depthStencilDesc.CPUAccessFlags = 0;
-    depthStencilDesc.MiscFlags = 0;
+    dsdtex.Width = wr.right - wr.left;
+    dsdtex.Height = wr.bottom - wr.top;
+    dsdtex.MipLevels = 1;
+    dsdtex.ArraySize = 1;
+    dsdtex.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsdtex.SampleDesc = scd.SampleDesc;
+    dsdtex.Usage = D3D11_USAGE_DEFAULT;
+    dsdtex.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    dsdtex.CPUAccessFlags = 0;
+    dsdtex.MiscFlags = 0;
 
-    ThrowIfFail(m_device->CreateTexture2D(&depthStencilDesc, nullptr, &m_depthStencilBuffer));
+    ThrowIfFail(m_device->CreateTexture2D(&dsdtex, nullptr, &m_depthStencilBuffer));
     ThrowIfFail(m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr, &m_depthStencilView));
 
+    D3D11_DEPTH_STENCIL_DESC dsd;
+    ZERO(dsd);
+
+    dsd.DepthEnable = TRUE;
+    dsd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    dsd.DepthFunc = D3D11_COMPARISON_LESS;
+    dsd.StencilEnable = FALSE;
+
+    ThrowIfFail(m_device->CreateDepthStencilState(&dsd, &m_depthStencilState));
+
+    m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 0);
     m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, m_depthStencilView);
 }
 
@@ -155,6 +180,8 @@ Renderer::~Renderer()
     m_rasterizerState->Release();
     m_depthStencilView->Release();
     m_depthStencilBuffer->Release();
+    m_dxgiFactory->Release();
+    m_depthStencilState->Release();
 }
 
 void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -275,7 +302,23 @@ void Renderer::Render() const
     m_deviceContext->ClearRenderTargetView(m_backBuffer, BackgroundColor);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
-    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, m_camera.GetProjectionMatrix(), 0, 0);
+    D3D11_VIEWPORT viewport;
+    UINT viewportCount = 1;
+
+    m_deviceContext->RSGetViewports(&viewportCount, &viewport);
+
+    float aspect = viewport.Width / viewport.Height;
+    auto proj = utility::Matrix::CreateProjectionMatrix(PI / 4.f, aspect, 2.00f, 1000.f);
+
+    struct VSConstants {
+        float viewMatrix[16];
+        float projMatrix[16];
+    } constants;
+
+    proj.PopulateArray(constants.projMatrix);
+    m_camera.GetViewMatrix().PopulateArray(constants.viewMatrix);
+
+    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &constants, 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
 
     const unsigned int stride = sizeof(ColoredVertex);
