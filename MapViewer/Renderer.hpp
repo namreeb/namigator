@@ -63,6 +63,8 @@ class Renderer
         Renderer(HWND window);
         ~Renderer();
 
+        void ClearBuffers();
+
         void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);

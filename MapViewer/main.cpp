@@ -29,6 +29,7 @@
 HWND gGuiWindow, gControlWindow;
 
 std::unique_ptr<Renderer> gRenderer;
+std::unique_ptr<CommonControl> gControls;
 std::unique_ptr<::parser::Continent> gContinent;
 
 int gMovingUp = 0;
@@ -211,9 +212,19 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                 case Buttons::LoadADT:
                 {
-                    gContinent.reset(new ::parser::Continent("Azeroth"));
+                    auto const adtX = std::stoi(gControls->GetText(L"ADT_X"));
+                    auto const adtY = std::stoi(gControls->GetText(L"ADT_Y"));
+                    auto const continentChoice = gControls->GetText(L"CONTINENT");
+                    auto const continentName = continentChoice.substr(continentChoice.find(' ') + 1);
 
-                    auto const adt = gContinent->LoadAdt(32, 48);
+                    // if we are switching continents, unload our buffers
+                    if (gContinent && gContinent->Name != continentName)
+                        gRenderer->ClearBuffers();
+                    // if we are loading the first continent, intialize it first
+                    else if (!gContinent)
+                        gContinent.reset(new ::parser::Continent(continentName));
+
+                    auto const adt = gContinent->LoadAdt(adtX, adtY);
                     
                     for (int x = 0; x < 16; ++x)
                         for (int y = 0; y < 16; ++y)
@@ -239,6 +250,8 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                                 assert(wmo);
 
                                 gRenderer->AddWmo(w, wmo->Vertices, wmo->Indices);
+                                gRenderer->AddDoodad(w, wmo->DoodadVertices, wmo->DoodadIndices);
+                                gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
                             }
                         }
 
@@ -336,9 +349,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     gRenderer.reset(new Renderer(gGuiWindow));
 
     // set up and initialize our Windows common control API for the control window
-    CommonControl controls(gControlWindow);
+    gControls.reset(new CommonControl(gControlWindow));
 
-    controls.AddLabel(L"Select Continent:", 10, 12, 100, 20);
+    gControls->AddLabel(L"Select Continent:", 10, 12, 100, 20);
 
     std::vector<std::wstring> continents;
     continents.push_back(L"000 Azeroth");
@@ -358,28 +371,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     continents.push_back(L"530 expansion01 (Outland");
     continents.push_back(L"571 Northrend");
 
-    controls.AddComboBox(L"Continent", continents, 115, 10, 155, 150);
+    gControls->AddComboBox(L"CONTINENT", continents, 115, 10, 155, 150);
 
-    controls.AddLabel(L"Position:", 10, 10, 300, 20);
+    gControls->AddLabel(L"Position:", 10, 10, 300, 20);
 
-    controls.AddLabel(L"X:", 10, 47, 20, 20);
-    controls.AddTextBox(L"X", L"", 25, 45, 75, 20);
+    gControls->AddLabel(L"X:", 10, 47, 20, 20);
+    gControls->AddTextBox(L"X", L"", 25, 45, 75, 20);
 
-    controls.AddLabel(L"Y:", 10, 72, 20, 20);
-    controls.AddTextBox(L"Y", L"", 25, 70, 75, 20);
+    gControls->AddLabel(L"Y:", 10, 72, 20, 20);
+    gControls->AddTextBox(L"Y", L"", 25, 70, 75, 20);
 
-    controls.AddLabel(L"Z:", 10, 97, 20, 20);
-    controls.AddTextBox(L"Z", L"", 25, 95, 75, 20);
+    gControls->AddLabel(L"Z:", 10, 97, 20, 20);
+    gControls->AddTextBox(L"Z", L"", 25, 95, 75, 20);
 
-    controls.AddButton(L"Load Position", Buttons::LoadPosition, 115, 92, 100, 25);
+    gControls->AddButton(L"Load Position", Buttons::LoadPosition, 115, 92, 100, 25);
 
-    controls.AddLabel(L"X:", 10, 147, 20, 20);
-    controls.AddTextBox(L"ADT_X", L"32", 25, 145, 75, 20);
+    gControls->AddLabel(L"X:", 10, 147, 20, 20);
+    gControls->AddTextBox(L"ADT_X", L"30", 25, 145, 75, 20);
 
-    controls.AddLabel(L"Y:", 10, 172, 20, 20);
-    controls.AddTextBox(L"ADT_Y", L"48", 25, 170, 75, 20);
+    gControls->AddLabel(L"Y:", 10, 172, 20, 20);
+    gControls->AddTextBox(L"ADT_Y", L"48", 25, 170, 75, 20);
 
-    controls.AddButton(L"Load ADT", Buttons::LoadADT, 115, 167, 100, 25);
+    gControls->AddButton(L"Load ADT", Buttons::LoadADT, 115, 167, 100, 25);
 
     // enter the main loop:
 

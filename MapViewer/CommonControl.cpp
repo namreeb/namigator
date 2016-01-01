@@ -16,6 +16,7 @@ void CommonControl::AddLabel(const std::wstring &text, int x, int y, int width, 
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
     SetWindowText(control, text.c_str());
+
 }
 
 void CommonControl::AddTextBox(const std::wstring &name, const std::wstring &text, int x, int y, int width, int height)
@@ -24,6 +25,8 @@ void CommonControl::AddTextBox(const std::wstring &name, const std::wstring &tex
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
     SetWindowText(control, text.c_str());
+
+    m_controls.insert(std::pair<std::wstring, HWND>(name, control));
 }
 
 void CommonControl::AddComboBox(const std::wstring &name, const std::vector<std::wstring> &items, int x, int y, int width, int height)
@@ -37,6 +40,8 @@ void CommonControl::AddComboBox(const std::wstring &name, const std::vector<std:
         SendMessage(control, CB_ADDSTRING, (WPARAM)0, (LPARAM)s.c_str());
 
     SendMessage(control, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+
+    m_controls.insert(std::pair<std::wstring, HWND>(name, control));
 }
 
 void CommonControl::AddButton(const std::wstring &text, int id, int x, int y, int width, int height)
@@ -45,4 +50,17 @@ void CommonControl::AddButton(const std::wstring &text, int id, int x, int y, in
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
     SetWindowText(control, text.c_str());
+}
+
+const std::string CommonControl::GetText(const std::wstring &name) const
+{
+    auto control = m_controls.find(name);
+
+    if (control == m_controls.end())
+        throw "control not found";
+
+    std::vector<char> buffer(GetWindowTextLengthA(control->second)+1);
+    GetWindowTextA(control->second, &buffer[0], buffer.size());
+
+    return std::string(&buffer[0]);
 }

@@ -184,6 +184,41 @@ Renderer::~Renderer()
     m_depthStencilState->Release();
 }
 
+void Renderer::ClearBuffers()
+{
+    for (auto &buffer : m_terrainBuffers)
+    {
+        buffer.IndexBuffer->Release();
+        buffer.VertexBuffer->Release();
+    }
+
+    m_terrainBuffers.clear();
+
+    for (auto &buffer : m_liquidBuffers)
+    {
+        buffer.IndexBuffer->Release();
+        buffer.VertexBuffer->Release();
+    }
+
+    m_liquidBuffers.clear();
+
+    for (auto &buffer : m_wmoBuffers)
+    {
+        buffer.IndexBuffer->Release();
+        buffer.VertexBuffer->Release();
+    }
+
+    m_wmoBuffers.clear();
+
+    for (auto &buffer : m_doodadBuffers)
+    {
+        buffer.IndexBuffer->Release();
+        buffer.VertexBuffer->Release();
+    }
+
+    m_doodadBuffers.clear();
+}
+
 void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
     InsertBuffer(m_terrainBuffers, TerrainColor, vertices, indices);
