@@ -7,10 +7,10 @@ namespace parser_input
     {
         unsigned int NameIndex;
         Vertex Position;
-        float RotW;
         float RotX;
         float RotY;
         float RotZ;
+        float RotW;
         float Scale;
         unsigned int Color;
     };

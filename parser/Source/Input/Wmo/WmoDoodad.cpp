@@ -16,14 +16,9 @@ namespace parser_input
         const float parRotY = MathHelper::ToRadians(parentInfo->OrientationA);
         const float parRotZ = MathHelper::ToRadians(parentInfo->OrientationB + 180.f);
 
-        // according to MaiN, from Greyman:
-        //Quaternion q = Quaternion(wmoDoodadInfo->RotX, wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, wmoDoodadInfo->RotZ);
-
-        Quaternion q(-wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, -wmoDoodadInfo->RotX, wmoDoodadInfo->RotW);
+        Quaternion q(wmoDoodadInfo->RotX, wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, wmoDoodadInfo->RotW);
 
         const Matrix wmoTransformMatrix = Matrix::CreateScalingMatrix(wmoDoodadInfo->Scale) *
-                                          Matrix::CreateRotationY(PI) *
-                                          Matrix::CreateRotationZ(PI) *
                                           Matrix::CreateFromQuaternion(q);
 
         const Matrix worldTransformMatrix = Matrix::CreateRotationZ(parRotZ) *
