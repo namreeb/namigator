@@ -219,9 +219,13 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                     // if we are switching continents, unload our buffers
                     if (gContinent && gContinent->Name != continentName)
+                    {
                         gRenderer->ClearBuffers();
-                    // if we are loading the first continent, intialize it first
-                    else if (!gContinent)
+                        gContinent.reset(nullptr);
+                    }
+
+                    // if we are loading the first adt in the continent, intialize it first
+                    if (!gContinent)
                         gContinent.reset(new ::parser::Continent(continentName));
 
                     auto const adt = gContinent->LoadAdt(adtX, adtY);
