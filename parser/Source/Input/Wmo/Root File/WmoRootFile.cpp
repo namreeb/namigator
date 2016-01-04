@@ -149,31 +149,25 @@ namespace parser_input
             if (!groupFiles[g]->LiquidChunk)
                 continue;
 
-            const float tileSize = (533.f + (1.f / 3.f)) / 128.f;
-
+            auto const tileSize = (533.f + (1.f / 3.f)) / 128.f;
             auto const liquidChunk = groupFiles[g]->LiquidChunk.get();
 
+            const Vertex baseVertex(liquidChunk->Base[0], liquidChunk->Base[1], liquidChunk->Base[2]);
+
             // process liquid chunk for the current group file
-            for (unsigned int y = 0; y < groupFiles[g]->LiquidChunk->Height; ++y)
-                for (unsigned int x = 0; x < groupFiles[g]->LiquidChunk->Width; ++x)
+            // XXX - for some reason, this works best when you ignore the height map and use only the base height
+            for (unsigned int y = 0; y < liquidChunk->Height; ++y)
+                for (unsigned int x = 0; x < liquidChunk->Width; ++x)
                 {
-                    const Vertex baseVertex(groupFiles[g]->LiquidChunk->Base[0],
-                                            groupFiles[g]->LiquidChunk->Base[1],
-                                            groupFiles[g]->LiquidChunk->Base[2]);
+                    const Vertex v1 = origin + Vertex::Transform({ (x + 0)*tileSize + baseVertex.X, (y + 0)*tileSize + baseVertex.Y, baseVertex.Z }, transformMatrix);
+                    const Vertex v2 = origin + Vertex::Transform({ (x + 1)*tileSize + baseVertex.X, (y + 0)*tileSize + baseVertex.Y, baseVertex.Z }, transformMatrix);
+                    const Vertex v3 = origin + Vertex::Transform({ (x + 0)*tileSize + baseVertex.X, (y + 1)*tileSize + baseVertex.Y, baseVertex.Z }, transformMatrix);
+                    const Vertex v4 = origin + Vertex::Transform({ (x + 1)*tileSize + baseVertex.X, (y + 1)*tileSize + baseVertex.Y, baseVertex.Z }, transformMatrix);
 
-                    // XXX - for some reason, this works best when you ignore the height map and use only the base height
-
-                    Vertex v1(x * tileSize, y * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(y, x));
-                    v1 = origin + Vertex::Transform(baseVertex + v1, transformMatrix);
-
-                    Vertex v2((x + 1) * tileSize, y * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(y, x + 1));
-                    v2 = origin + Vertex::Transform(baseVertex + v2, transformMatrix);
-
-                    Vertex v3(x * tileSize, (y + 1) * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(y + 1, x));
-                    v3 = origin + Vertex::Transform(baseVertex + v3, transformMatrix);
-
-                    Vertex v4((x + 1) * tileSize, (y + 1) * tileSize, groupFiles[g]->LiquidChunk->Heights->Get(y + 1, x + 1));
-                    v4 = origin + Vertex::Transform(baseVertex + v4, transformMatrix);
+                    //auto const h1 = liquidChunk->Heights->Get(y, x);
+                    //auto const h2 = liquidChunk->Heights->Get(y, x+1);
+                    //auto const h3 = liquidChunk->Heights->Get(y+1, x);
+                    //auto const h4 = liquidChunk->Heights->Get(y+1, x+1);
 
                     LiquidVertices.push_back(v1);
                     LiquidVertices.push_back(v2);
