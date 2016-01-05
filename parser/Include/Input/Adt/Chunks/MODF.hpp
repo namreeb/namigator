@@ -1,19 +1,22 @@
 #include <vector>
 
-#include "BinaryStream.hpp"
+#include "utility/Include/BinaryStream.hpp"
 #include "Input/Adt/AdtChunk.hpp"
 #include "Input/Wmo/WmoParserInfo.hpp"
 
-namespace parser_input
+namespace parser
 {
-    class MODF : AdtChunk
-    {
-        private:
-            static const int WmoSize = 0x40;
+namespace input
+{
+class MODF : AdtChunk
+{
+    private:
+        static const int WmoSize = 0x40;
 
-        public:
-            std::vector<WmoParserInfo> Wmos;
+    public:
+        std::vector<WmoParserInfo> Wmos;
 
-            MODF(long position, utility::BinaryStream *reader);
-    };
+        MODF(long position, utility::BinaryStream *reader);
+};
+}
 }

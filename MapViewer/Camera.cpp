@@ -1,4 +1,4 @@
-#include "LinearAlgebra.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 #include "Camera.hpp"
 
 Camera::Camera()

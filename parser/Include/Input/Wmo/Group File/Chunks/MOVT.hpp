@@ -1,20 +1,21 @@
 #pragma once
 
+#include "utility/Include/LinearAlgebra.hpp"
+#include "Input/Wmo/Group File/WmoGroupChunk.hpp"
+#include "utility/Include/BinaryStream.hpp"
+
 #include <vector>
 
-#include "LinearAlgebra.hpp"
-#include "Input/Wmo/Group File/WmoGroupChunk.hpp"
-#include "BinaryStream.hpp"
-
-using namespace utility;
-
-namespace parser_input
+namespace parser
 {
-    class MOVT : WmoGroupChunk
-    {
-        public:
-            std::vector<Vertex> Vertices;
+namespace input
+{
+class MOVT : WmoGroupChunk
+{
+    public:
+        std::vector<utility::Vertex> Vertices;
 
-            MOVT(long position, utility::BinaryStream *groupFileStream);
-    };
+        MOVT(long position, utility::BinaryStream *groupFileStream);
+};
+}
 }

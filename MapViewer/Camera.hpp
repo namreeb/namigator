@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LinearAlgebra.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
 class Camera
 {

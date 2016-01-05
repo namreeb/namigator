@@ -7,55 +7,43 @@
 
 namespace utility
 {
-    class BinaryStream
+class BinaryStream
+{
+    private:
+    std::vector<char> m_buffer;
+    unsigned long m_position;
+
+    public:
+    BinaryStream(std::vector<char> &buffer, unsigned long bufferLength);
+    BinaryStream(unsigned long bufferLength = 4096);
+
+    template <typename T> T Read()
     {
-        private:
-            std::vector<char> _buffer;
-            unsigned long _position;
+        T *pos = reinterpret_cast<T *>(&m_buffer[m_position]);
+        m_position += sizeof(T);
 
-        public:
-            BinaryStream(std::vector<char> &buffer, unsigned long bufferLength);
-            BinaryStream(unsigned long bufferLength = 4096);
+        return *pos;
+    }
 
-            template <typename T> T Read()
-            {
-                char *pos = (char *)&_buffer[0] + _position;
-                T ret = *(T *)pos;
-                _position += sizeof(T);
+    template <typename T> void Write(T data)
+    {
+        if (m_position + sizeof(T) > m _buffer.size())
+            m_buffer.resize(2 * m_buffer.size());
 
-                return ret;
-            }
+        T *pos = reinterpret_cast<T *>(&m_buffer[m_position]);
+        *pos = data;
 
-            void Write(char *data, int length);
+        m_position += sizeof(T);
+    }
 
-            template <typename T> void Write(T data)
-            {
-                if (_position + sizeof(T) > _buffer.size())
-                    _buffer.resize((int)(_buffer.size() * 1.5));
+    void Write(const char *data, int length);
+    void ReadBytes(void *dest, unsigned long length);
+    std::string ReadCString();
 
-                T *pos = (T *)((char *)&_buffer[0] + _position)
-                *pos = data;
+    size_t Length() const;
+    unsigned long GetPosition() const;
 
-                _position += sizeof(T);
-            }
-
-            void ReadBytes(void *dest, unsigned long length);
-            std::string ReadCString();
-
-            template <typename T>
-            T *AllocateAndReadStruct()
-            {
-                T *ret = new T;
-
-                memcpy(ret, &_buffer[_position], sizeof(T));
-                _position += sizeof(T);
-
-                return ret;
-            }
-
-            inline unsigned long Length() { return _buffer.size(); }
-            inline void SetPosition(unsigned long position) { _position = position; }
-            inline unsigned long GetPosition() { return _position; }
-            inline void Slide(long offset) { _position += offset; }
-    };
+    void SetPosition(unsigned long position);
+    void Slide(long offset);
 };
+}

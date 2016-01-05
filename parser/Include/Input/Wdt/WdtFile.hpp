@@ -4,16 +4,19 @@
 #include "Input/Wmo/WmoParserInfo.hpp"
 #include "Input/Wmo/Root File/WmoRootFile.hpp"
 
-namespace parser_input
+namespace parser
 {
-    class WdtFile : WowFile
-    {
-        public:
-            bool HasAdt[64][64];
-            bool HasTerrain;
+namespace input
+{
+class WdtFile : WowFile
+{
+    public:
+        bool HasAdt[64][64];
+        bool HasTerrain;
 
-            std::unique_ptr<WmoRootFile> Wmo;
+        std::unique_ptr<WmoRootFile> Wmo;
 
-            WdtFile(const std::string &path);
-    };
+        WdtFile(const std::string &path);
+};
+}
 }

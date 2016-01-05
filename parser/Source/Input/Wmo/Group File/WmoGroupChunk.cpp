@@ -1,17 +1,19 @@
-#include <memory>
-
+#include "Input/Wmo/WmoChunkHeader.hpp"
 #include "Input/WMO/Group File/WmoGroupChunk.hpp"
 
-namespace parser_input
+namespace parser
 {
-    WmoGroupChunk::WmoGroupChunk(long position, utility::BinaryStream *groupFileStream) : Position(position)
-    {
-        groupFileStream->SetPosition(position);
+namespace input
+{
+WmoGroupChunk::WmoGroupChunk(long position, utility::BinaryStream *groupFileStream) : Position(position)
+{
+    groupFileStream->SetPosition(position);
 
-        WmoChunkHeader header;
-        groupFileStream->ReadBytes(&header, sizeof(header));
+    WmoChunkHeader header;
+    groupFileStream->ReadBytes(&header, sizeof(header));
 
-        Type = header.Type;
-        Size = header.Size;
-    }
+    Type = static_cast<WmoGroupChunkType>(header.Type);
+    Size = header.Size;
+}
+}
 }

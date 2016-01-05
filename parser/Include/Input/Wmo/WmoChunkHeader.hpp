@@ -1,10 +1,13 @@
 #pragma once
 
-namespace parser_input
+namespace parser
 {
-    struct WmoChunkHeader
-    {
-        unsigned int Type;
-        unsigned int Size;
-    };
+namespace input
+{
+struct WmoChunkHeader
+{
+    unsigned int Type;
+    unsigned int Size;
+};
+}
 }

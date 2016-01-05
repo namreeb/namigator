@@ -74,7 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;..\recastnavigation;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;..\recastnavigation;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -104,7 +104,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -121,7 +121,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

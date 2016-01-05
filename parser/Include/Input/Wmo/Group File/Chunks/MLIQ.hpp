@@ -1,21 +1,24 @@
 #pragma once
 
-#include <utility>
-
 #include "Input/Wmo/Group File/WmoGroupChunk.hpp"
-#include "Array2d.hpp"
+#include "utility/Include/Array2d.hpp"
 
-namespace parser_input
+#include <memory>
+
+namespace parser
 {
-    class MLIQ : WmoGroupChunk
-    {
-        public:
-            unsigned int Width;
-            unsigned int Height;
+namespace input
+{
+class MLIQ : WmoGroupChunk
+{
+    public:
+        unsigned int Width;
+        unsigned int Height;
 
-            float Base[3];
-            std::unique_ptr<Array2d<float>> Heights;
+        float Base[3];
+        std::unique_ptr<utility::Array2d<float>> Heights;
 
-            MLIQ(long position, utility::BinaryStream *groupFileStream);
-    };
+        MLIQ(long position, utility::BinaryStream *groupFileStream);
+};
+}
 }

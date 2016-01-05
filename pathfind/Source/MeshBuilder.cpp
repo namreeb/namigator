@@ -9,7 +9,6 @@ namespace pathfind
 {
 namespace build
 {
-
 MeshBuilder::MeshBuilder(DataManager *dataManager) : m_dataManager(dataManager) {}
 
 // r+d -> wow: (x, y, z) -> (-z, -x, y)
@@ -158,6 +157,5 @@ bool MeshBuilder::GenerateTile(int adtX, int adtY)
 
     return true;
 }
-
 }
 }

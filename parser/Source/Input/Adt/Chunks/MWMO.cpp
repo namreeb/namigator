@@ -1,31 +1,37 @@
 #include "Input/ADT/Chunks/MWMO.hpp"
+#include "utility/Include/Misc.hpp"
 
-namespace parser_input
+#include <vector>
+
+namespace parser
 {
-    MWMO::MWMO(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+namespace input
+{
+MWMO::MWMO(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+{
+    Type = AdtChunkType::MWMO;
+
+    reader->SetPosition(position + 8);
+
+    std::vector<char> wmoNames(Size);
+    reader->ReadBytes(&wmoNames[0], Size);
+
+    char *p;
+
+    for (p = &wmoNames[0]; *p == '\0'; ++p);
+
+    do
     {
-        Type = AdtChunkType::MWMO;
+        if (p >= &wmoNames[Size])
+            THROW("Something that wasnt supposed to be possible has happened");
 
-        reader->SetPosition(position + 8);
+        WmoNames.push_back(std::string(p));
 
-        std::unique_ptr<char> wmoNames(new char[Size]);
-        reader->ReadBytes(wmoNames.get(), Size);
+        if (!(p = strchr(p, '\0')))
+            break;
 
-        char *p;
-
-        for (p = wmoNames.get(); *p == '\0'; ++p);
-
-        do
-        {
-            if (p >= wmoNames.get() + Size)
-                throw "Something that wasnt supposed to be possible has happened";
-
-            WmoNames.push_back(std::string(p));
-
-            if (!(p = strchr(p, '\0')))
-                break;
-
-            p++;
-        } while (p < wmoNames.get() + Size);
-    }
+        p++;
+    } while (p < &wmoNames[Size]);
+}
+}
 }

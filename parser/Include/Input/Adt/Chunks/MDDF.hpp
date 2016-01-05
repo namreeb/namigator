@@ -3,20 +3,21 @@
 #include <vector>
 #include <memory>
 
-#include "BinaryStream.hpp"
-
-using namespace utility;
+#include "utility/Include/BinaryStream.hpp"
 
 #include "Input/Adt/AdtChunk.hpp"
 #include "Input/M2/DoodadFile.hpp"
 
-namespace parser_input
+namespace parser
 {
-    class MDDF : AdtChunk
-    {
-        public:
-            std::vector<DoodadInfo> Doodads;
+namespace input
+{
+class MDDF : AdtChunk
+{
+    public:
+        std::vector<DoodadInfo> Doodads;
 
-            MDDF(long position, utility::BinaryStream *reader);
-    };
+        MDDF(long position, utility::BinaryStream *reader);
+};
+}
 }

@@ -1,6 +1,6 @@
-#include <string>
+#include "utility/Include/Directory.hpp"
 
-#include "Directory.hpp"
+#include <string>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -13,34 +13,23 @@
 
 namespace utility
 {
-    bool Directory::Exists(const std::string &path)
-    {
-        return Exists(path.c_str());
-    }
+bool Directory::Exists(const std::string &path)
+{
+    const unsigned int a = GetFileAttributes(path.c_str());
+    const bool isDir = (a & FILE_ATTRIBUTE_DIRECTORY) ? true : false;
 
-    bool Directory::Exists(const char *path)
-    {
-        unsigned int a = GetFileAttributes(path);
+    return a == INVALID_FILE_ATTRIBUTES ? false : isDir;
+}
 
-        bool isDir = (a & FILE_ATTRIBUTE_DIRECTORY) ? true : false;
+void Directory::Create(const std::string &path)
+{
+    CreateDirectory(path.c_str(), nullptr);
+}
 
-        return a == INVALID_FILE_ATTRIBUTES ? false : isDir;
-    }
+std::string Directory::Current()
+{
+    char cCurrentDir[1024];
 
-    void Directory::Create(const std::string &path)
-    {
-        Create(path.c_str());
-    }
-
-    void Directory::Create(const char *path)
-    {
-        CreateDirectory(path, nullptr);
-    }
-
-    std::string Directory::Current()
-    {
-        char cCurrentDir[1024];
-
-        return std::string(GetCurrentDir(cCurrentDir, sizeof(cCurrentDir)));
-    }
+    return std::string(GetCurrentDir(cCurrentDir, sizeof(cCurrentDir)));
+}
 }

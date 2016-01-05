@@ -1,38 +1,37 @@
 #pragma once
 
-#include "Input/Wmo/WmoChunkHeader.hpp"
-#include "BinaryStream.hpp"
+#include "utility/Include/BinaryStream.hpp"
 
-using namespace utility;
-
-namespace parser_input
+namespace parser
 {
-    class WmoGroupChunk
-    {
-        public:
-            const long Position;
+namespace input
+{
+enum class WmoGroupChunkType : unsigned int
+{
+    MOGP = 'PGOM',
+    MOPY = 'YPOM',
+    MOVI = 'IVOM',
+    MOVT = 'TVOM',
+    MONR = 'RNOM',
+    MOTV = 'VTOM',
+    MOBA = 'ABOM',
+    MOLR = 'RLOM',
+    MODR = 'RDOM',
+    MOBN = 'NBOM',
+    MOBR = 'RBOM',
+    MOCV = 'VCOM',
+    MLIQ = 'QILM',
+};
 
-            unsigned int Size;
-            unsigned int Type;
+class WmoGroupChunk
+{
+    public:
+        const long Position;
 
-            WmoGroupChunk(long position, utility::BinaryStream *groupFileStream);
-    };
+        unsigned int Size;
+        WmoGroupChunkType Type;
 
-    class WmoGroupChunkType
-    {
-        public:
-            static const unsigned int MOGP = 0x50474F4D;
-            static const unsigned int MOPY = 0x59504F4D;
-            static const unsigned int MOVI = 0x49564F4D;
-            static const unsigned int MOVT = 0x54564F4D;
-            static const unsigned int MONR = 0x524E4F4D;
-            static const unsigned int MOTV = 0x56544F4D;
-            static const unsigned int MOBA = 0x41424F4D;
-            static const unsigned int MOLR = 0x524C4F4D;
-            static const unsigned int MODR = 0x52444F4D;
-            static const unsigned int MOBN = 0x4E424F4D;
-            static const unsigned int MOBR = 0x52424F4D;
-            static const unsigned int MOCV = 0x56434F4D;
-            static const unsigned int MLIQ = 0x51494C4D;
-    };
+        WmoGroupChunk(long position, utility::BinaryStream *groupFileStream);
+};
+}
 }

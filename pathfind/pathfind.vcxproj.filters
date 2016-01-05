@@ -77,10 +77,10 @@
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourNode.cpp">
       <Filter>Source Files\Detour</Filter>
     </ClCompile>
-    <ClCompile Include="MeshBuilder.cpp">
+    <ClCompile Include="Source\DataManager.cpp">
       <Filter>Source Files\Building</Filter>
     </ClCompile>
-    <ClCompile Include="DataManager.cpp">
+    <ClCompile Include="Source\MeshBuilder.cpp">
       <Filter>Source Files\Building</Filter>
     </ClCompile>
   </ItemGroup>
@@ -121,10 +121,10 @@
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourStatus.h">
       <Filter>Header Files\Detour</Filter>
     </ClInclude>
-    <ClInclude Include="MeshBuilder.hpp">
+    <ClInclude Include="Include\DataManager.hpp">
       <Filter>Header Files\Building</Filter>
     </ClInclude>
-    <ClInclude Include="DataManager.hpp">
+    <ClInclude Include="Include\MeshBuilder.hpp">
       <Filter>Header Files\Building</Filter>
     </ClInclude>
   </ItemGroup>

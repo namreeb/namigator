@@ -1,38 +1,44 @@
-#include <list>
 
-#include "BinaryStream.hpp"
 #include "Input/ADT/Chunks/MMDX.hpp"
 #include "Input/M2/DoodadFile.hpp"
+#include "utility/Include/BinaryStream.hpp"
+#include "utility/Include/Misc.hpp"
 
-namespace parser_input
+#include <list>
+#include <vector>
+
+namespace parser
 {
-    MMDX::MMDX(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+namespace input
+{
+MMDX::MMDX(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+{
+    if (Size == 0)
+        return;
+
+    reader->SetPosition(position + 8);
+
+    std::vector<char> doodadNames(Size);
+    reader->ReadBytes(&doodadNames[0], Size);
+
+    char *p;
+
+    for (p = &doodadNames[0]; *p == '\0'; ++p);
+
+    do
     {
-        if (Size == 0)
-            return;
+        if (p >= &doodadNames[Size])
+            THROW("Something that isnt supposed to be possible just happened.");
 
-        reader->SetPosition(position + 8);
+        DoodadNames.push_back(std::string(p));
 
-        std::unique_ptr<char> doodadNames(new char[Size]);
-        reader->ReadBytes(doodadNames.get(), Size);
+        p = strchr(p, '\0');
 
-        char *p;
+        if (!p)
+            break;
 
-        for (p = doodadNames.get(); *p == '\0'; ++p);
-
-        do
-        {
-            if (p >= doodadNames.get() + Size)
-                throw "Something that isnt supposed to be possible just happened.";
-
-            DoodadNames.push_back(std::string(p));
-
-            p = strchr(p, '\0');
-
-            if (!p)
-                break;
-
-            p++;
-        } while (p < doodadNames.get() + Size);
-    }
+        p++;
+    } while (p < &doodadNames[Size]);
+}
+}
 }

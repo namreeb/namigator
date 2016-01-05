@@ -43,11 +43,3 @@ inline unsigned int StringHash(const std::string &value)
 
     return hash;
 }
-
-template <class T>
-inline void Swap(T &a, T &b)
-{
-    T tmp = a;
-    a = b;
-    b = tmp;
-}

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MeshBuilder.hpp"
-#include "DataManager.hpp"
+#include "pathfind/Include/MeshBuilder.hpp"
+#include "pathfind/Include/DataManager.hpp"
 
 #include <thread>
 #include <queue>

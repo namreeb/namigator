@@ -4,16 +4,19 @@
 
 #include "Input/Wmo/Group File/WmoGroupChunk.hpp"
 
-namespace parser_input
+namespace parser
 {
-    class MOPY : public WmoGroupChunk
-    {
-        public:
-            const int TriangleCount;
+namespace input
+{
+class MOPY : public WmoGroupChunk
+{
+    public:
+        const int TriangleCount;
 
-            std::vector<unsigned char> Flags;
-            std::vector<unsigned char> MaterialId;
+        std::vector<unsigned char> Flags;
+        std::vector<unsigned char> MaterialId;
 
-            MOPY(long position, utility::BinaryStream *groupFileStream);
-    };
+        MOPY(long position, utility::BinaryStream *groupFileStream);
+};
+}
 }

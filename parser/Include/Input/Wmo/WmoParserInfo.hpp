@@ -1,24 +1,25 @@
 #pragma once
 
-#include "LinearAlgebra.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
-using namespace utility;
-
-namespace parser_input
+namespace parser
 {
-    struct WmoParserInfo
-    {
-        unsigned int NameId;
-        unsigned int UniqueId;
-        Vertex BasePosition;
-        float OrientationA;
-        float OrientationB;
-        float OrientationC;
-        Vertex MaxCorner;
-        Vertex MinCorner;
-        unsigned short Flags;
-        unsigned short DoodadSet;
-        unsigned short NameSet;
-        unsigned short _pad;
-    };
+namespace input
+{
+struct WmoParserInfo
+{
+    unsigned int NameId;
+    unsigned int UniqueId;
+    utility::Vertex BasePosition;
+    float OrientationA;
+    float OrientationB;
+    float OrientationC;
+    utility::Vertex MaxCorner;
+    utility::Vertex MinCorner;
+    unsigned short Flags;
+    unsigned short DoodadSet;
+    unsigned short NameSet;
+    unsigned short _pad;
+};
+}
 }

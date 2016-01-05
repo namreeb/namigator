@@ -1,70 +1,74 @@
-#include <iostream>
-
 #include "Input/WMO/Group File/WmoGroupFile.hpp"
+#include "utility/Include/Misc.hpp"
 
-namespace parser_input
+#include <memory>
+
+namespace parser
 {
-    WmoGroupFile::WmoGroupFile(const std::string &path) : WowFile(path)
-    {
-        char *cPath = new char[path.length()+1], *p;
+namespace input
+{
+WmoGroupFile::WmoGroupFile(const std::string &path) : WowFile(path)
+{
+    char *cPath = new char[path.length()+1], *p;
 
-        memcpy(cPath, path.c_str(), path.length() + 1);
+    memcpy(cPath, path.c_str(), path.length() + 1);
 
-        p = strrchr(cPath, '.');
-        *p = '\0';
-        p = strrchr(cPath, '_');
-        *p++ = '\0';
+    p = strrchr(cPath, '.');
+    *p = '\0';
+    p = strrchr(cPath, '_');
+    *p++ = '\0';
 
-        Index = atoi(p);
+    Index = atoi(p);
 
-        delete[] cPath;
+    delete[] cPath;
 
-        // MOGP
+    // MOGP
 
-        const long mogpOffset = GetChunkLocation("MOGP", 0xC);
+    const long mogpOffset = GetChunkLocation("MOGP", 0xC);
 
-        if (mogpOffset < 0)
-            throw "No MOGP chunk";
+    if (mogpOffset < 0)
+        THROW("No MOGP chunk");
 
-        // since all we want are flags + bounding box, we needn't bother creating an MOGP chunk class
-        Reader->SetPosition(mogpOffset + 16);
-        Flags = Reader->Read<unsigned int>();
+    // since all we want are flags + bounding box, we needn't bother creating an MOGP chunk class
+    Reader->SetPosition(mogpOffset + 16);
+    Flags = Reader->Read<unsigned int>();
 
-        Reader->ReadBytes((void *)&Min, 3*sizeof(float));
-        Reader->ReadBytes((void *)&Max, 3*sizeof(float));
+    Reader->ReadBytes((void *)&Min, 3*sizeof(float));
+    Reader->ReadBytes((void *)&Max, 3*sizeof(float));
 
-        // MOPY
+    // MOPY
 
-        const long mopyOffset = GetChunkLocation("MOPY", 0x58);
+    const long mopyOffset = GetChunkLocation("MOPY", 0x58);
 
-        if (mopyOffset < 0)
-            throw "No MOPY chunk";
+    if (mopyOffset < 0)
+        THROW("No MOPY chunk");
 
-        MaterialsChunk.reset(new MOPY(mopyOffset, Reader));
+    MaterialsChunk.reset(new MOPY(mopyOffset, Reader));
 
-        // MOVI
+    // MOVI
 
-        const long moviOffset = GetChunkLocation("MOVI", (int)mopyOffset + 4 + (int)MaterialsChunk->Size);
+    const long moviOffset = GetChunkLocation("MOVI", (int)mopyOffset + 4 + (int)MaterialsChunk->Size);
 
-        if (moviOffset < 0)
-            throw "No MOVI chunk";
+    if (moviOffset < 0)
+        THROW("No MOVI chunk");
 
-        IndicesChunk.reset(new MOVI(moviOffset, Reader));
+    IndicesChunk.reset(new MOVI(moviOffset, Reader));
 
-        // MOVT
+    // MOVT
 
-        const long movtOffset = GetChunkLocation("MOVT", (int)moviOffset + 4 + (int)IndicesChunk->Size);
+    const long movtOffset = GetChunkLocation("MOVT", (int)moviOffset + 4 + (int)IndicesChunk->Size);
 
-        if (movtOffset < 0)
-            throw "No MOVT chunk";
+    if (movtOffset < 0)
+        THROW("No MOVT chunk");
 
-        VerticesChunk.reset(new MOVT(movtOffset, Reader));
+    VerticesChunk.reset(new MOVT(movtOffset, Reader));
 
-        // MLIQ
+    // MLIQ
 
-        const long mliqOffset = GetChunkLocation("MLIQ", 0x58);
+    const long mliqOffset = GetChunkLocation("MLIQ", 0x58);
 
-        // not guarunteed to be present
-        LiquidChunk.reset((mliqOffset >= 0 ? new MLIQ(mliqOffset, Reader) : nullptr));
-    }
+    // not guarunteed to be present
+    LiquidChunk.reset((mliqOffset >= 0 ? new MLIQ(mliqOffset, Reader) : nullptr));
+}
+}
 }

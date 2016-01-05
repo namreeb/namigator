@@ -1,51 +1,54 @@
 #pragma once
 
-#include "BinaryStream.hpp"
+#include "utility/Include/BinaryStream.hpp"
 #include "Input/Adt/AdtChunk.hpp"
 
 #include <memory>
 
-namespace parser_input
+namespace parser
 {
-    struct LiquidLayer
-    {
-        int X;
-        int Y;
+namespace input
+{
+struct LiquidLayer
+{
+    int X;
+    int Y;
 
-        bool Render[8][8];
-        float Heights[9][9];
-    };
+    bool Render[8][8];
+    float Heights[9][9];
+};
 
-    class MH2O : AdtChunk
-    {
-        private:
-            struct MH2OHeader
-            {
-                int InstancesOffset;
-                int LayerCount;
-                int AttributesOffset;
-            };
+class MH2O : AdtChunk
+{
+    private:
+        struct MH2OHeader
+        {
+            int InstancesOffset;
+            int LayerCount;
+            int AttributesOffset;
+        };
 
-            struct LiquidInstance
-            {
-                unsigned short Type;
-                unsigned short Flags;
+        struct LiquidInstance
+        {
+            unsigned short Type;
+            unsigned short Flags;
 
-                float MinHeight;
-                float MaxHeight;
+            float MinHeight;
+            float MaxHeight;
 
-                unsigned __int8 XOffset;
-                unsigned __int8 YOffset;
-                unsigned __int8 Width;
-                unsigned __int8 Height;
+            unsigned __int8 XOffset;
+            unsigned __int8 YOffset;
+            unsigned __int8 Width;
+            unsigned __int8 Height;
 
-                unsigned int OffsetExistsBitmap;
-                unsigned int OffsetVertexData;
-            };
+            unsigned int OffsetExistsBitmap;
+            unsigned int OffsetVertexData;
+        };
 
-        public:
-            std::vector<std::unique_ptr<LiquidLayer>> Layers;
+    public:
+        std::vector<std::unique_ptr<LiquidLayer>> Layers;
 
-            MH2O(long position, utility::BinaryStream *reader);
-    };
+        MH2O(long position, utility::BinaryStream *reader);
+};
+}
 }

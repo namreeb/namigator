@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Camera.hpp"
-#include "LinearAlgebra.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
 #include <vector>
 #include <memory>

@@ -1,62 +1,62 @@
 #pragma once
 
+#include "parser/Include/Output/Wmo.hpp"
+#include "parser/Include/Output/Doodad.hpp"
+
 #include <string>
 #include <list>
 #include <vector>
 #include <set>
 #include <memory>
 
-#include "Output/Wmo.hpp"
-#include "Output/Doodad.hpp"
-
 namespace parser
 {
-    struct AdtChunk
-    {
-        bool m_holeMap[8][8];
+struct AdtChunk
+{
+    bool m_holeMap[8][8];
 
-        std::vector<Vertex> m_terrainVertices;
-        std::vector<int> m_terrainIndices;
+    std::vector<utility::Vertex> m_terrainVertices;
+    std::vector<int> m_terrainIndices;
 
-        std::vector<Vector3> m_surfaceNormals;
+    std::vector<utility::Vector3> m_surfaceNormals;
 
-        std::vector<Vertex> m_liquidVertices;
-        std::vector<int> m_liquidIndices;
+    std::vector<utility::Vertex> m_liquidVertices;
+    std::vector<int> m_liquidIndices;
 
-        // set of unique wmo identifiers present in this chunk
-        std::set<unsigned int> m_wmos;
+    // set of unique wmo identifiers present in this chunk
+    std::set<unsigned int> m_wmos;
 
-        // set of unique doodad identifiers present in this chunk
-        std::set<unsigned int> m_doodads;
-    };
+    // set of unique doodad identifiers present in this chunk
+    std::set<unsigned int> m_doodads;
+};
 
-    class Continent;
+class Continent;
 
-    class Adt
-    {
-        private:
-            static inline bool IsRendered(unsigned char mask[], int x, int y);
+class Adt
+{
+    private:
+        static inline bool IsRendered(unsigned char mask[], int x, int y);
 
-            std::unique_ptr<AdtChunk> m_chunks[16][16];
-            Continent *m_continent;
+        std::unique_ptr<AdtChunk> m_chunks[16][16];
+        Continent * const m_continent;
 
-        public:
-            const int X;
-            const int Y;
+    public:
+        const int X;
+        const int Y;
 
-            const float MaxX;
-            const float MinX;
+        const float MaxX;
+        const float MinX;
 
-            const float MaxY;
-            const float MinY;
+        const float MaxY;
+        const float MinY;
 
-            float MaxZ;
-            float MinZ;
+        float MaxZ;
+        float MinZ;
 
-            Adt(Continent *continent, int x, int y);
+        Adt(Continent *continent, int x, int y);
 
-            void WriteObjFile() const;
+        void WriteObjFile() const;
 
-            const AdtChunk *GetChunk(int chunkX, int chunkY) const;
-    };
+        const AdtChunk *GetChunk(int chunkX, int chunkY) const;
+};
 }

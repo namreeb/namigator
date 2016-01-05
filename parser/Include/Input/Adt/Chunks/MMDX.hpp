@@ -2,16 +2,19 @@
 #include <string>
 #include <vector>
 
-#include "BinaryStream.hpp"
+#include "utility/Include/BinaryStream.hpp"
 #include "Input/Adt/AdtChunk.hpp"
 
-namespace parser_input
+namespace parser
 {
-    class MMDX : public AdtChunk
-    {
-        public:
-            std::vector<std::string> DoodadNames;
+namespace input
+{
+class MMDX : public AdtChunk
+{
+    public:
+        std::vector<std::string> DoodadNames;
 
-            MMDX(long position, utility::BinaryStream *reader);
-    };
+        MMDX(long position, utility::BinaryStream *reader);
+};
+}
 }

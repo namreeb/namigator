@@ -1,26 +1,29 @@
 #include "Input/WMO/Root File/Chunks/MODN.hpp"
 
-namespace parser_input
+namespace parser
 {
-    MODN::MODN(unsigned int doodadNamesCount, long position, utility::BinaryStream *reader) : WmoRootChunk(position, reader)
+namespace input
+{
+MODN::MODN(unsigned int doodadNamesCount, long position, utility::BinaryStream *reader) : WmoRootChunk(position, reader)
+{
+    reader->SetPosition(position + 8);
+
+    unsigned int currOffset = 0;
+
+    for (unsigned int i = 0; i < doodadNamesCount; ++i)
     {
-        reader->SetPosition(position + 8);
+        unsigned char nextByte;
 
-        unsigned int currOffset = 0;
+        while (!(nextByte = reader->Read<unsigned char>()))
+            ++currOffset;
 
-        for (unsigned int i = 0; i < doodadNamesCount; ++i)
-        {
-            unsigned char nextByte;
+        std::string currFileName = reader->ReadCString();
+        currFileName.insert(0, 1, nextByte);
 
-            while (!(nextByte = reader->Read<unsigned char>()))
-                ++currOffset;
+        Names[currOffset] = currFileName;
 
-            std::string currFileName = reader->ReadCString();
-            currFileName.insert(0, 1, nextByte);
-
-            Names[currOffset] = currFileName;
-
-            currOffset += (unsigned int)currFileName.length() + 1;
-        }
+        currOffset += (unsigned int)currFileName.length() + 1;
     }
+}
+}
 }

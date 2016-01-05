@@ -9,10 +9,6 @@
 #include <limits>
 #include <vector>
 
-#ifdef _DEBUG
-#include <iostream>
-#endif
-
 Worker::Worker(pathfind::build::DataManager *dataManager)
     : m_shutdownRequested(false), m_thread([this]() { this->Work(); }), m_meshBuild(dataManager)
 {}

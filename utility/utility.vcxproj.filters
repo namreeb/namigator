@@ -10,9 +10,6 @@
     <ClCompile Include="Source\LinearAlgebra.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="source\Log.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Directory.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -33,13 +30,7 @@
     <ClInclude Include="Include\BinaryStream.hpp">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Cache.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="Include\LinearAlgebra.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Log.hpp">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Misc.hpp">

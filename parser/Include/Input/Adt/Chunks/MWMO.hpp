@@ -2,13 +2,16 @@
 
 #include "Input/Adt/AdtChunk.hpp"
 
-namespace parser_input
+namespace parser
 {
-    class MWMO : AdtChunk
-    {
-        public:
-            std::vector<std::string> WmoNames;
+namespace input
+{
+class MWMO : AdtChunk
+{
+    public:
+        std::vector<std::string> WmoNames;
 
-            MWMO(long position, utility::BinaryStream *reader);
-    };
+        MWMO(long position, utility::BinaryStream *reader);
+};
+}
 }

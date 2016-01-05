@@ -1,10 +1,10 @@
-#include "parser.hpp"
 #include "Output/MpqManager.hpp"
+#include "parser.hpp"
 
 namespace parser
 {
-    void Parser::Initialize()
-    {
-        MpqManager::Initialize();
-    }
+void Parser::Initialize()
+{
+    MpqManager::Initialize();
+}
 }

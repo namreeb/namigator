@@ -6,7 +6,7 @@
 #include <dxgi1_3.h>
 
 #include "Renderer.hpp"
-#include "LinearAlgebra.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
 // include the Direct3D Library file
 #pragma comment (lib, "d3d11.lib")

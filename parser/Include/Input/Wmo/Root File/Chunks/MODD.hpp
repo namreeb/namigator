@@ -1,20 +1,23 @@
 #pragma once
 
-#include <vector>
-
 #include "Input/Wmo/WmoDoodad.hpp"
 #include "Input/Wmo/Root File/WmoRootChunk.hpp"
 
-#include "LinearAlgebra.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
-namespace parser_input
+#include <vector>
+
+namespace parser
 {
-    class MODD : WmoRootChunk
-    {
-        public:
-            const int Count;
-            std::vector<WmoDoodadIndexedInfo> Doodads;
+namespace input
+{
+class MODD : WmoRootChunk
+{
+    public:
+        const int Count;
+        std::vector<WmoDoodadIndexedInfo> Doodads;
 
-            MODD(long position, utility::BinaryStream *reader);
-    };
+        MODD(long position, utility::BinaryStream *reader);
+};
+}
 }

@@ -1,18 +1,21 @@
-#include "Misc.hpp"
+#include "utility/Include/Misc.hpp"
 #include "Input/ADT/Chunks/MHDR.hpp"
 
-namespace parser_input
+namespace parser
 {
-    MHDR::MHDR(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
-    {
+namespace input
+{
+MHDR::MHDR(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+{
 #ifdef DEBUG
-        if (Type != AdtChunkType::MHDR)
-            THROW("Expected (but did not find) MHDR type");
+    if (Type != AdtChunkType::MHDR)
+        THROW("Expected (but did not find) MHDR type");
 
-        if (Size != sizeof(MHDRInfo))
-            THROW("MHDR chunk of incorrect size");
+    if (Size != sizeof(MHDRInfo))
+        THROW("MHDR chunk of incorrect size");
 #endif
 
-        reader->ReadBytes(&Offsets, sizeof(Offsets));
-    }
+    reader->ReadBytes(&Offsets, sizeof(Offsets));
+}
+}
 }

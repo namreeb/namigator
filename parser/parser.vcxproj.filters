@@ -133,9 +133,6 @@
     <ClInclude Include="Include\Input\Wdt\WdtFile.hpp">
       <Filter>Include\Input\Wdt</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Input\Wmo\WmoChunkHeader.hpp">
-      <Filter>Include\Input\Wmo</Filter>
-    </ClInclude>
     <ClInclude Include="Include\Input\Wmo\WmoDoodad.hpp">
       <Filter>Include\Input\Wmo</Filter>
     </ClInclude>
@@ -202,6 +199,9 @@
     </ClInclude>
     <ClInclude Include="Include\Input\Adt\Chunks\Subchunks\MCNR.hpp">
       <Filter>Include\Input\Adt\Chunks\Subchunks</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input\Wmo\WmoChunkHeader.hpp">
+      <Filter>Include\Input\Wmo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

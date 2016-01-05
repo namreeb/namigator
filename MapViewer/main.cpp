@@ -10,8 +10,8 @@
 
 #include "Renderer.hpp"
 #include "CommonControl.hpp"
-#include "parser.hpp"
-#include "Output/Continent.hpp"
+#include "parser/Include/parser.hpp"
+#include "parser/Include/Output/Continent.hpp"
 
 #define START_X             100
 #define START_Y             100
@@ -30,7 +30,7 @@ HWND gGuiWindow, gControlWindow;
 
 std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<CommonControl> gControls;
-std::unique_ptr<::parser::Continent> gContinent;
+std::unique_ptr<parser::Continent> gContinent;
 
 int gMovingUp = 0;
 int gMovingVertical = 0;
@@ -226,7 +226,7 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                     // if we are loading the first adt in the continent, intialize it first
                     if (!gContinent)
-                        gContinent.reset(new ::parser::Continent(continentName));
+                        gContinent.reset(new parser::Continent(continentName));
 
                     auto const adt = gContinent->LoadAdt(adtX, adtY);
                     
@@ -341,7 +341,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    ::parser::Parser::Initialize();
+    parser::Parser::Initialize();
 
     InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 

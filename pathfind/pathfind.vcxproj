@@ -74,7 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\recastnavigation\Recast\Include;..\recastnavigation\Detour\Include;..\parser\Include;..\utility\Include;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -85,7 +85,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\recastnavigation\Recast\Include;..\recastnavigation\Detour\Include;..\parser\Include;..\utility\Include;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -98,7 +98,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\recastnavigation\Recast\Include;..\recastnavigation\Detour\Include;..\parser\Include;..\utility\Include;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -113,7 +113,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\recastnavigation\Recast\Include;..\recastnavigation\Detour\Include;..\parser\Include;..\utility\Include;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -138,8 +138,8 @@
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastRasterization.cpp" />
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastRegion.cpp" />
-    <ClCompile Include="DataManager.cpp" />
-    <ClCompile Include="MeshBuilder.cpp" />
+    <ClCompile Include="Source\DataManager.cpp" />
+    <ClCompile Include="Source\MeshBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourAlloc.h" />
@@ -154,8 +154,8 @@
     <ClInclude Include="..\recastnavigation\Recast\Include\Recast.h" />
     <ClInclude Include="..\recastnavigation\Recast\Include\RecastAlloc.h" />
     <ClInclude Include="..\recastnavigation\Recast\Include\RecastAssert.h" />
-    <ClInclude Include="DataManager.hpp" />
-    <ClInclude Include="MeshBuilder.hpp" />
+    <ClInclude Include="Include\DataManager.hpp" />
+    <ClInclude Include="Include\MeshBuilder.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

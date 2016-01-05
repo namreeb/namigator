@@ -1,43 +1,67 @@
+#include "utility/Include/BinaryStream.hpp"
+#include "utility/Include/Misc.hpp"
+
 #include <string>
 #include <vector>
 #include <algorithm>
 
-#include "BinaryStream.hpp"
-#include "Misc.hpp"
-
 namespace utility
 {
-    BinaryStream::BinaryStream(std::vector<char> &buffer, unsigned long bufferLength) : _buffer(std::move(buffer)), _position(0L)
-    {
-        if (!bufferLength)
-            throw "Empty utility::BinaryStream";
-    }
+BinaryStream::BinaryStream(std::vector<char> &buffer, unsigned long bufferLength) : m_buffer(std::move(buffer)), m_position(0L)
+{
+    if (!bufferLength)
+        THROW("Empty BinaryStream");
+}
 
-    BinaryStream::BinaryStream(unsigned long bufferLength) : _buffer(bufferLength), _position(0L) {}
+BinaryStream::BinaryStream(unsigned long bufferLength) : m_buffer(bufferLength), m_position(0L)
+{
+    if (!bufferLength)
+        THROW("Empty BinaryStream");
+}
 
-    void utility::BinaryStream::Write(char *data, int length)
-    {
-        if (_position + length > _buffer.size())
-            _buffer.resize((int)(_buffer.size() * 1.5));
+void BinaryStream::Write(const char *data, int length)
+{
+    if (m_position + length > m_buffer.size())
+        m_buffer.resize(2 * m_buffer.size());
 
-        memcpy((char *)(&_buffer[0] + _position), data, length);
-        _position += length;
-    }
+    memcpy(&m_buffer[m_position], data, length);
+    m_position += length;
+}
 
-    std::string utility::BinaryStream::ReadCString()
-    {
-        std::string ret;
+std::string BinaryStream::ReadCString()
+{
+    std::string ret;
 
-        for (char c = Read<char>(); c != '\0'; c = Read<char>())
-            ret += c;
+    for (char c = Read<char>(); c != '\0'; c = Read<char>())
+        ret += c;
 
-        return ret;
-    }
+    return ret;
+}
 
-    void utility::BinaryStream::ReadBytes(void *dest, unsigned long length)
-    {
-        std::copy(&_buffer[_position], &_buffer[_position + length], static_cast<char *>(dest));
+void BinaryStream::ReadBytes(void *dest, unsigned long length)
+{
+    std::copy(&m_buffer[m_position], &m_buffer[m_position + length], static_cast<char *>(dest));
 
-        _position += length;
-    }
-};
+    m_position += length;
+}
+
+size_t BinaryStream::Length() const
+{
+    return m_buffer.size();
+}
+
+unsigned long BinaryStream::GetPosition() const
+{
+    return m_position;
+}
+
+void BinaryStream::SetPosition(unsigned long position)
+{
+    m_position = position;
+}
+
+void BinaryStream::Slide(long offset)
+{
+    m_position += offset;
+}
+}
