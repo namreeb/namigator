@@ -12,6 +12,8 @@
 #include "CommonControl.hpp"
 #include "parser/Include/parser.hpp"
 #include "parser/Include/Output/Continent.hpp"
+#include "utility/Include/Directory.hpp"
+#include "pathfind/Include/NavMesh.hpp"
 
 #define START_X             100
 #define START_Y             100
@@ -31,6 +33,7 @@ HWND gGuiWindow, gControlWindow;
 std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<CommonControl> gControls;
 std::unique_ptr<parser::Continent> gContinent;
+std::unique_ptr<pathfind::NavMesh> gNavMesh;
 
 int gMovingUp = 0;
 int gMovingVertical = 0;
@@ -226,7 +229,10 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                     // if we are loading the first adt in the continent, intialize it first
                     if (!gContinent)
+                    {
                         gContinent.reset(new parser::Continent(continentName));
+                        gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
+                    }
 
                     auto const adt = gContinent->LoadAdt(adtX, adtY);
                     
@@ -259,9 +265,24 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                             }
                         }
 
-                    float cx = (adt->MaxX + adt->MinX) / 2.f;
-                    float cy = (adt->MaxY + adt->MinY) / 2.f;
-                    float cz = (adt->MaxZ + adt->MinZ) / 2.f;
+                    if (gNavMesh->LoadTile(adtX, adtY))
+                    {
+                        std::vector<utility::Vertex> meshVertices;
+                        std::vector<int> meshIndices;
+                        gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices);
+
+                        assert(!!meshVertices.size() && !!meshIndices.size());
+
+                        // raise the z values for each mesh vertex slightly to help visualize them
+                        for (size_t i = 0; i < meshVertices.size(); ++i)
+                            meshVertices[i].Z += 0.3f;
+
+                        gRenderer->AddMesh(meshVertices, meshIndices);
+                    }
+
+                    const float cx = (adt->MaxX + adt->MinX) / 2.f;
+                    const float cy = (adt->MaxY + adt->MinY) / 2.f;
+                    const float cz = (adt->MaxZ + adt->MinZ) / 2.f;
 
                     gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
                     gRenderer->m_camera.LookAt(cx, cy, cz);
@@ -341,7 +362,19 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    parser::Parser::Initialize();
+    if (!utility::Directory::Exists(".\\Data"))
+    {
+        MessageBox(NULL, L"Data folder does not exist", L"ERROR", 0);
+        return EXIT_FAILURE;
+    }
+
+    if (!utility::Directory::Exists(".\\Maps"))
+    {
+        MessageBox(NULL, L"Maps folder does not exist", L"ERROR", 0);
+        return EXIT_FAILURE;
+    }
+
+    parser::Parser::Initialize(".\\Data");
 
     InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 
@@ -391,7 +424,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     gControls->AddButton(L"Load Position", Buttons::LoadPosition, 115, 92, 100, 25);
 
     gControls->AddLabel(L"X:", 10, 147, 20, 20);
-    gControls->AddTextBox(L"ADT_X", L"30", 25, 145, 75, 20);
+    gControls->AddTextBox(L"ADT_X", L"32", 25, 145, 75, 20);
 
     gControls->AddLabel(L"Y:", 10, 172, 20, 20);
     gControls->AddTextBox(L"ADT_Y", L"48", 25, 170, 75, 20);

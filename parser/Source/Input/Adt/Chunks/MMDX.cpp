@@ -27,9 +27,6 @@ MMDX::MMDX(long position, utility::BinaryStream *reader) : AdtChunk(position, re
 
     do
     {
-        if (p >= &doodadNames[Size])
-            THROW("Something that isnt supposed to be possible just happened.");
-
         DoodadNames.push_back(std::string(p));
 
         p = strchr(p, '\0');
@@ -38,7 +35,7 @@ MMDX::MMDX(long position, utility::BinaryStream *reader) : AdtChunk(position, re
             break;
 
         p++;
-    } while (p < &doodadNames[Size]);
+    } while (p <= &doodadNames[Size-1]);
 }
 }
 }

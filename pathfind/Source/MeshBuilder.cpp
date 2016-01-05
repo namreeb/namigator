@@ -1,7 +1,15 @@
 #include "MeshBuilder.hpp"
+#include "AreaFlags.hpp"
+
+#include "utility/Include/MathHelper.hpp"
+
 #include "Recast.h"
+#include "DetourNavMeshBuilder.h"
 
 #include <cassert>
+#include <string>
+#include <fstream>
+#include <sstream>
 
 #define ZERO(x) memset(&x, 0, sizeof(x));
 
@@ -9,47 +17,51 @@ namespace pathfind
 {
 namespace build
 {
+namespace
+{
+bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
+               const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
+{
+    if (!vertices.size() || !indices.size())
+        return true;
+
+    std::vector<float> rastVert;
+    utility::Convert::VerticesToRecast(vertices, rastVert);
+
+    std::vector<unsigned short> rastIndices;
+    utility::Convert::ToShort(indices, rastIndices);
+
+    std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
+
+    // XXX FIXME - why on earth does recast take indices as ints here, but unsigned short elsewhere? o.O
+    if (filterWalkable)
+        rcMarkWalkableTriangles(&ctx, slope, &rastVert[0], vertices.size(), &indices[0], indices.size() / 3, &areas[0]);
+    else
+        memset(&areas[0], RC_WALKABLE_AREA, areas.size());
+
+    return rcRasterizeTriangles(&ctx, &rastVert[0], vertices.size(), &rastIndices[0], &areas[0], rastIndices.size() / 3, heightField);
+}
+}
+
 MeshBuilder::MeshBuilder(DataManager *dataManager) : m_dataManager(dataManager) {}
 
-// r+d -> wow: (x, y, z) -> (-z, -x, y)
-void MeshBuilder::ConvertVerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output)
-{
-    output.resize(input.size() * 3);
-
-    for (size_t i = 0; i < input.size(); ++i)
-    {
-        output[i * 3 + 0] = -input[i].Z;
-        output[i * 3 + 1] = -input[i].X;
-        output[i * 3 + 2] = input[i].Y;
-    }
-}
-
-// wow -> r+d: (x, y, z) -> (-y, z, -x)
-void MeshBuilder::ConvertVerticesToWow(const std::vector<float> &input, std::vector<utility::Vertex> &output)
-{
-    throw "Not implemented yet";
-}
-
-void MeshBuilder::ConvertToShort(const std::vector<int> &input, std::vector<unsigned short> &output)
-{
-    output.resize(input.size());
-
-    for (size_t i = 0; i < input.size(); ++i)
-        output[i] = static_cast<unsigned short>(input[i]);
-}
-
-bool MeshBuilder::GenerateTile(int adtX, int adtY)
+// todo: filter out terrain triangles underneath liquid
+bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 {
     auto const adt = m_dataManager->m_continent->LoadAdt(adtX, adtY);
 
     assert(adt);
+
+#ifdef _DEBUG
+    adt->WriteObjFile();
+#endif
 
     rcConfig config;
     ZERO(config);
 
     config.cs = TileSize / static_cast<float>(TileVoxelSize);
     config.ch = CellHeight;
-    config.walkableSlopeAngle = 90.f;
+    config.walkableSlopeAngle = 50.f;
     config.walkableHeight = static_cast<int>(std::round(WalkableHeight / CellHeight));
     config.walkableClimb = std::numeric_limits<int>::max();
     config.walkableRadius = static_cast<int>(std::round(WalkableRadius / config.cs));
@@ -65,20 +77,19 @@ bool MeshBuilder::GenerateTile(int adtX, int adtY)
     config.detailSampleDist = 3.f;
     config.detailSampleMaxError = 1.25f;
 
-    config.bmin[0] = adt->MinX;
-    config.bmin[1] = adt->MinY;
-    config.bmin[2] = adt->MinZ;
+    config.bmin[0] = -adt->MaxY;
+    config.bmin[1] =  adt->MinZ;
+    config.bmin[2] = -adt->MaxX;
 
-    config.bmax[0] = adt->MaxX;
-    config.bmax[1] = adt->MaxX;
-    config.bmax[2] = adt->MaxX;
-
-    rcHeightfield solid;
-    ZERO(solid);
+    config.bmax[0] = -adt->MinY;
+    config.bmax[1] =  adt->MaxZ;
+    config.bmax[2] = -adt->MinX;
 
     rcContext ctx;
 
-    if (!rcCreateHeightfield(&ctx, solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
+    std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)> solid(rcAllocHeightfield(), rcFreeHeightField);
+
+    if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
         return false;
 
     std::set<int> rasterizedWmos;
@@ -91,34 +102,12 @@ bool MeshBuilder::GenerateTile(int adtX, int adtY)
             auto const chunk = adt->GetChunk(x, y);
 
             // adt terrain
-            if (!!chunk->m_terrainVertices.size() && !!chunk->m_terrainIndices.size())
-            {
-                std::vector<float> chunkTerrainVertices;
-                ConvertVerticesToRecast(chunk->m_terrainVertices, chunkTerrainVertices);
-
-                std::vector<unsigned short> indices;
-                ConvertToShort(chunk->m_terrainIndices, indices);
-
-                std::vector<unsigned char> areas(indices.size() / 3, 0);
-
-                if (!rcRasterizeTriangles(&ctx, &chunkTerrainVertices[0], chunk->m_terrainVertices.size(), &indices[0], &areas[0], indices.size() / 3, solid))
-                    return false;
-            }
+            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::Adt))
+                return false;
 
             // liquid
-            if (!!chunk->m_liquidVertices.size() && !!chunk->m_liquidIndices.size())
-            {
-                std::vector<float> chunkLiquidVertices;
-                ConvertVerticesToRecast(chunk->m_liquidVertices, chunkLiquidVertices);
-
-                std::vector<unsigned short> liquidIndices;
-                ConvertToShort(chunk->m_liquidIndices, liquidIndices);
-
-                std::vector<unsigned char> liquidAreas(liquidIndices.size() / 3, 1);
-
-                if (!rcRasterizeTriangles(&ctx, &chunkLiquidVertices[0], chunk->m_liquidVertices.size(), &liquidIndices[0], &liquidAreas[0], liquidIndices.size() / 3, solid))
-                    return false;
-            }
+            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
+                return false;
 
             // wmos (and included doodads and liquid)
             for (auto const &wmoId : chunk->m_wmos)
@@ -130,17 +119,14 @@ bool MeshBuilder::GenerateTile(int adtX, int adtY)
 
                 assert(wmo);
 
-                if (wmo->Vertices.size() && wmo->Indices.size())
-                {
-                    std::vector<float> wmoVertices;
-                    ConvertVerticesToRecast(wmo->Vertices, wmoVertices);
+                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::Wmo))
+                    return false;
 
-                    std::vector<unsigned short> wmoIndices;
-                    ConvertToShort(wmo->Indices, wmoIndices);
+                if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::Wmo | AreaFlags::Liquid))
+                    return false;
 
-                    std::vector<unsigned char> wmoAreas(wmoIndices.size() / 3, 0);
-                }
-                //if (!rcRasterizeTriangles(&ctx, ))
+                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::Wmo | AreaFlags::Doodad))
+                    return false;
             }
 
             // doodads
@@ -152,8 +138,98 @@ bool MeshBuilder::GenerateTile(int adtX, int adtY)
                 auto const doodad = m_dataManager->m_continent->GetDoodad(doodadId);
 
                 assert(doodad);
+
+                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, doodad->Vertices, doodad->Indices, AreaFlags::Doodad))
+                    return false;
             }
         }
+
+    rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+    rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+    rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+
+    // initialize compact height field
+    std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)> chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
+
+    if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, config.walkableClimb, *solid, *chf))
+        return false;
+
+    solid.reset(nullptr);
+
+    if (!rcErodeWalkableArea(&ctx, config.walkableRadius, *chf))
+        return false;
+    
+    // any further area marking is done here.  not sure if we will need this or not
+
+    // we use watershed partitioning only for now.  we also have the option of monotone and partition layers.  see Sample_TileMesh.cpp for more information.
+
+    if (!rcBuildDistanceField(&ctx, *chf))
+        return false;
+
+    if (!rcBuildRegions(&ctx, *chf, config.borderSize, config.minRegionArea, config.mergeRegionArea))
+        return false;
+
+    std::unique_ptr<rcContourSet, decltype(&rcFreeContourSet)> cset(rcAllocContourSet(), rcFreeContourSet);
+
+    if (!rcBuildContours(&ctx, *chf, config.maxSimplificationError, config.maxEdgeLen, *cset))
+        return false;
+
+    assert(!!cset->nconts);
+
+    std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)> polyMesh(rcAllocPolyMesh(), rcFreePolyMesh);
+
+    if (!rcBuildPolyMesh(&ctx, *cset, config.maxVertsPerPoly, *polyMesh))
+        return false;
+
+    std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)> polyMeshDetail(rcAllocPolyMeshDetail(), rcFreePolyMeshDetail);
+
+    if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist, config.detailSampleMaxError, *polyMeshDetail))
+        return false;
+
+    chf.reset(nullptr);
+    cset.reset(nullptr);
+
+    dtNavMeshCreateParams params;
+    ZERO(params);
+
+    params.verts = polyMesh->verts;
+    params.vertCount = polyMesh->nverts;
+    params.polys = polyMesh->polys;
+    params.polyAreas = polyMesh->areas;
+    params.polyFlags = polyMesh->flags;
+    params.polyCount = polyMesh->npolys;
+    params.nvp = polyMesh->nvp;
+    params.detailMeshes = polyMeshDetail->meshes;
+    params.detailVerts = polyMeshDetail->verts;
+    params.detailVertsCount = polyMeshDetail->nverts;
+    params.detailTris = polyMeshDetail->tris;
+    params.detailTriCount = polyMeshDetail->ntris;
+    params.walkableHeight = WalkableHeight;
+    params.walkableRadius = WalkableRadius;
+    params.walkableClimb = 1.f;
+    params.tileX = adtX;
+    params.tileY = adtY;
+    params.tileLayer = 0;
+    memcpy(params.bmin, polyMesh->bmin, sizeof(polyMesh->bmin));
+    memcpy(params.bmax, polyMesh->bmax, sizeof(polyMesh->bmax));
+    params.cs = config.cs;
+    params.ch = config.ch;
+    params.buildBvTree = true;
+
+    unsigned char *outData;
+    int outDataSize;
+    if (!dtCreateNavMeshData(&params, &outData, &outDataSize))
+        return false;
+
+    std::stringstream str;
+
+    str << m_dataManager->m_outputPath << "\\" << m_dataManager->m_continent->Name << "_" << adtX << "_" << adtY << ".map";
+
+    std::ofstream out(str.str(), std::ofstream::binary|std::ofstream::trunc);
+    out.write(reinterpret_cast<const char *>(outData), outDataSize);
+    out.close();
+
+    dtFree(outData);
 
     return true;
 }

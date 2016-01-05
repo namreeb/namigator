@@ -22,16 +22,13 @@ MWMO::MWMO(long position, utility::BinaryStream *reader) : AdtChunk(position, re
 
     do
     {
-        if (p >= &wmoNames[Size])
-            THROW("Something that wasnt supposed to be possible has happened");
-
         WmoNames.push_back(std::string(p));
 
         if (!(p = strchr(p, '\0')))
             break;
 
         p++;
-    } while (p < &wmoNames[Size]);
+    } while (p <= &wmoNames[Size-1]);
 }
 }
 }

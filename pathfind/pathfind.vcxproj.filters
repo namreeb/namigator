@@ -21,11 +21,17 @@
     <Filter Include="Header Files\Detour">
       <UniqueIdentifier>{6e24e4f5-cb55-47e6-8242-f72e7102a0ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Building">
+    <Filter Include="Header Files\Build">
+      <UniqueIdentifier>{c4a9eee8-8ec0-48ef-a327-9ca83bd532af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Query">
+      <UniqueIdentifier>{dde85569-6427-450b-9621-f0331e9189e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Build">
       <UniqueIdentifier>{cacf4d88-76ee-4411-84a3-36b9d19790e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Building">
-      <UniqueIdentifier>{c4a9eee8-8ec0-48ef-a327-9ca83bd532af}</UniqueIdentifier>
+    <Filter Include="Source Files\Query">
+      <UniqueIdentifier>{593afedb-7497-40a5-8c5a-41f042c95a90}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -78,10 +84,13 @@
       <Filter>Source Files\Detour</Filter>
     </ClCompile>
     <ClCompile Include="Source\DataManager.cpp">
-      <Filter>Source Files\Building</Filter>
+      <Filter>Source Files\Build</Filter>
     </ClCompile>
     <ClCompile Include="Source\MeshBuilder.cpp">
-      <Filter>Source Files\Building</Filter>
+      <Filter>Source Files\Build</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\NavMesh.cpp">
+      <Filter>Source Files\Query</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -122,10 +131,16 @@
       <Filter>Header Files\Detour</Filter>
     </ClInclude>
     <ClInclude Include="Include\DataManager.hpp">
-      <Filter>Header Files\Building</Filter>
+      <Filter>Header Files\Build</Filter>
     </ClInclude>
     <ClInclude Include="Include\MeshBuilder.hpp">
-      <Filter>Header Files\Building</Filter>
+      <Filter>Header Files\Build</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\AreaFlags.hpp">
+      <Filter>Header Files\Query</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\NavMesh.hpp">
+      <Filter>Header Files\Query</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

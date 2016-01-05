@@ -7,4 +7,9 @@ void Parser::Initialize()
 {
     MpqManager::Initialize();
 }
+
+void Parser::Initialize(const char *path)
+{
+    MpqManager::Initialize(path);
+}
 }

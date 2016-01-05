@@ -38,7 +38,7 @@ void Worker::Work()
             m_adts.pop();
         }
 
-        m_meshBuild.GenerateTile(adtXY.first, adtXY.second);
+        m_meshBuild.GenerateAndSaveTile(adtXY.first, adtXY.second);
     } while (!m_shutdownRequested);
 }
 

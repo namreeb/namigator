@@ -27,3 +27,5 @@
 /MapBuilder/*.user
 /pathfind/Debug
 /MapBuilder/x64/Debug
+/pathfind/Release
+/MapBuilder/Release

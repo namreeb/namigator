@@ -18,6 +18,7 @@ class Renderer
         static const float WmoColor[4];
         static const float DoodadColor[4];
         static const float BackgroundColor[4];
+        static const float MeshColor[4];
 
         struct ColoredVertex
         {
@@ -55,6 +56,7 @@ class Renderer
         std::vector<GeometryBuffer> m_liquidBuffers;
         std::vector<GeometryBuffer> m_wmoBuffers;
         std::vector<GeometryBuffer> m_doodadBuffers;
+        std::vector<GeometryBuffer> m_meshBuffers;
 
         std::set<unsigned int> m_wmos;
         std::set<unsigned int> m_doodads;
@@ -71,6 +73,7 @@ class Renderer
         void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
         void Render() const;
 

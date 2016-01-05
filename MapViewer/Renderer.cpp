@@ -23,7 +23,8 @@
 const float Renderer::TerrainColor[4] = { 0.1f, 0.8f, 0.3f, 1.f };
 const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.5f };
 const float Renderer::WmoColor[4] = { 1.f, 0.95f, 0.f, 1.f };
-const float Renderer::DoodadColor[4] = { 1.0f, 0.f, 0.f, 1.f };
+const float Renderer::DoodadColor[4] = { 1.f, 0.f, 0.f, 1.f };
+const float Renderer::MeshColor[4] = { 1.f, 1.f, 1.f, 0.5f };
 const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
 
 Renderer::Renderer(HWND window) : m_window(window)
@@ -235,6 +236,14 @@ void Renderer::ClearBuffers()
     }
 
     m_doodadBuffers.clear();
+
+    for (auto &buffer : m_meshBuffers)
+    {
+        buffer.IndexBuffer->Release();
+        buffer.VertexBuffer->Release();
+    }
+
+    m_meshBuffers.clear();
 }
 
 void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -267,6 +276,11 @@ void Renderer::AddDoodad(unsigned int id, const std::vector<utility::Vertex> &ve
     m_doodads.insert(id);
 
     InsertBuffer(m_doodadBuffers, DoodadColor, vertices, indices);
+}
+
+void Renderer::AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    InsertBuffer(m_meshBuffers, MeshColor, vertices, indices);
 }
 
 void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -375,7 +389,7 @@ void Renderer::Render() const
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
 
     const unsigned int stride = sizeof(ColoredVertex);
-    unsigned int offset = 0;
+    const unsigned int offset = 0;
 
     // draw terrain
     for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
@@ -410,7 +424,7 @@ void Renderer::Render() const
     const static float blendFactor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     m_deviceContext->OMSetBlendState(m_liquidBlendState, blendFactor, 0xffffffff);
 
-    // draw liquid
+    // draw liquid (with alpha blending)
     for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
     {
         m_deviceContext->IASetVertexBuffers(0, 1, &m_liquidBuffers[i].VertexBuffer, &stride, &offset);
@@ -418,6 +432,16 @@ void Renderer::Render() const
         m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         m_deviceContext->DrawIndexed(m_liquidBuffers[i].IndexCount, 0, 0);
+    }
+
+    // draw meshes (also with alpha blending)
+    for (size_t i = 0; i < m_meshBuffers.size(); ++i)
+    {
+        m_deviceContext->IASetVertexBuffers(0, 1, &m_meshBuffers[i].VertexBuffer, &stride, &offset);
+        m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        m_deviceContext->DrawIndexed(m_meshBuffers[i].IndexCount, 0, 0);
     }
 
     m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);

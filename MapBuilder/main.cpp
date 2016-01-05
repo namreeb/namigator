@@ -1,5 +1,6 @@
 #include "Worker.hpp"
 #include "pathfind/Include/DataManager.hpp"
+#include "utility/Include/Directory.hpp"
 
 #include <boost/program_options.hpp>
 
@@ -10,7 +11,7 @@
 
 int main(int argc, char *argv[])
 {
-    std::string dataPath, continent;
+    std::string dataPath, continent, outputPath;
 #ifdef _DEBUG
     int adtX, adtY;
 #else
@@ -19,15 +20,16 @@ int main(int argc, char *argv[])
 
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
-        ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value(".")->required(),   "data folder")
-        ("continent,c", boost::program_options::value<std::string>(&continent)->required(),                 "continent")
+        ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value(".")->required(),           "data folder")
+        ("continent,c", boost::program_options::value<std::string>(&continent)->required(),                         "continent")
+        ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps")->required(), "output path")
 #ifdef _DEBUG
-        ("adtX,x", boost::program_options::value<int>(&adtX)->required(),                                   "adt x")
-        ("adtY,y", boost::program_options::value<int>(&adtY)->required(),                                   "adt y")
+        ("adtX,x", boost::program_options::value<int>(&adtX)->required(),                                           "adt x")
+        ("adtY,y", boost::program_options::value<int>(&adtY)->required(),                                           "adt y")
 #else
-        ("jobs,j", boost::program_options::value<int>(&jobs)->required(),                                   "build jobs")
+        ("jobs,j", boost::program_options::value<int>(&jobs)->required(),                                           "build jobs")
 #endif
-        ("help,h",                                                                                          "display help message");
+        ("help,h",                                                                                                  "display help message");
 
     boost::program_options::variables_map vm;
 
@@ -50,7 +52,15 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    pathfind::build::DataManager dataManager(continent);
+    if (!utility::Directory::Exists(outputPath))
+    {
+        std::cerr << "ERROR: " << outputPath << " does not exist." << std::endl;
+        std::cerr << "Current directory: " << utility::Directory::Current() << std::endl;
+
+        return EXIT_FAILURE;
+    }
+
+    pathfind::build::DataManager dataManager(dataPath, outputPath, continent);
 
 #ifdef _DEBUG
     std::cout << "Debug mode." << std::endl;

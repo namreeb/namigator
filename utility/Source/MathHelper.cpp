@@ -2,6 +2,7 @@
 #include "utility/Include/MathHelper.hpp"
 
 #include <algorithm>
+#include <vector>
 
 namespace utility
 {
@@ -68,5 +69,80 @@ void Convert::AdtToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float
 {
     worldX = ((float)(32.f - adtY)) * (533.f + (1.f / 3.f));
     worldY = ((float)(32.f - adtX)) * (533.f + (1.f / 3.f));
+}
+
+// wow -> r+d: (x, y, z) -> (-y, z, -x)
+void Convert::VerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output)
+{
+    output.resize(input.size() * 3);
+
+    for (size_t i = 0; i < input.size(); ++i)
+    {
+        output[i * 3 + 0] = -input[i].Y;
+        output[i * 3 + 1] =  input[i].Z;
+        output[i * 3 + 2] = -input[i].X;
+    }
+}
+
+// r+d -> wow: (x, y, z) -> (-z, -x, y)
+void Convert::VerticesToWow(const float *input, int vertexCount, std::vector<utility::Vertex> &output)
+{
+    output.resize(vertexCount);
+
+    float minX, minY, minZ, maxX, maxY, maxZ;
+
+    for (int i = 0; i < vertexCount; ++i)
+    {
+        output[i].X = -input[i * 3 + 2];
+        output[i].Y = -input[i * 3 + 0];
+        output[i].Z =  input[i * 3 + 1];
+
+        if (i)
+        {
+            if (output[i].X < minX)
+                minX = output[i].X;
+            if (output[i].Y < minY)
+                minY = output[i].Y;
+            if (output[i].Z < minZ)
+                minZ = output[i].Z;
+
+            if (output[i].X > maxX)
+                maxX = output[i].X;
+            if (output[i].Y > maxY)
+                maxY = output[i].Y;
+            if (output[i].Z > maxZ)
+                maxZ = output[i].Z;
+        }
+        else
+        {
+            minX = maxX = output[i].X;
+            minY = maxY = output[i].Y;
+            minZ = maxZ = output[i].Z;
+        }
+    }
+}
+
+void Convert::ToShort(const std::vector<int> &input, std::vector<unsigned short> &output)
+{
+    output.resize(input.size());
+
+    for (size_t i = 0; i < input.size(); ++i)
+        output[i] = static_cast<unsigned short>(input[i]);
+}
+
+void Convert::ToInt(const unsigned short *input, int count, std::vector<int> &output)
+{
+    output.resize(count);
+
+    for (int i = 0; i < count; ++i)
+        output[i] = static_cast<int>(input[i]);
+}
+
+void Convert::ToInt(const unsigned char *input, int count, std::vector<int> &output)
+{
+    output.resize(count);
+
+    for (int i = 0; i < count; ++i)
+        output[i] = static_cast<int>(input[i]);
 }
 }

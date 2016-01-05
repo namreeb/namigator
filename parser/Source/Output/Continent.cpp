@@ -83,13 +83,17 @@ const Wmo *Continent::GetWmo(unsigned int uniqueId) const
 {
     std::lock_guard<std::mutex> guard(m_wmoMutex);
 
-    return IsWmoLoaded(uniqueId) ? m_loadedWmos.at(uniqueId).get() : nullptr;
+    auto const itr = m_loadedWmos.find(uniqueId);
+
+    return itr == m_loadedWmos.end() ? nullptr : itr->second.get();
 }
 
 const Doodad *Continent::GetDoodad(unsigned int uniqueId) const
 {
     std::lock_guard<std::mutex> guard(m_doodadMutex);
 
-    return IsDoodadLoaded(uniqueId) ? m_loadedDoodads.at(uniqueId).get() : nullptr;
+    auto const itr = m_loadedDoodads.find(uniqueId);
+
+    return itr == m_loadedDoodads.end() ? nullptr : itr->second.get();
 }
 }

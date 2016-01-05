@@ -16,9 +16,11 @@ namespace utility
 bool Directory::Exists(const std::string &path)
 {
     const unsigned int a = GetFileAttributes(path.c_str());
-    const bool isDir = (a & FILE_ATTRIBUTE_DIRECTORY) ? true : false;
 
-    return a == INVALID_FILE_ATTRIBUTES ? false : isDir;
+    if (a == INVALID_FILE_ATTRIBUTES)
+        return false;
+
+    return !!(a & FILE_ATTRIBUTE_DIRECTORY);
 }
 
 void Directory::Create(const std::string &path)
