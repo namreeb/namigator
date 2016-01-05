@@ -33,6 +33,8 @@ namespace parser
 
     const Adt *Continent::LoadAdt(int x, int y)
     {
+        std::lock_guard<std::mutex> guard(m_adtMutex);
+
         if (m_adts.find(CONV(x, y)) == m_adts.end())
             m_adts[CONV(x, y)] = std::unique_ptr<Adt>(new Adt(this, x, y));
 
@@ -41,36 +43,55 @@ namespace parser
 
     bool Continent::IsAdtLoaded(int x, int y) const
     {
+        std::lock_guard<std::mutex> guard(m_adtMutex);
+
         return m_adts.find(CONV(x, y)) != m_adts.end();
     }
 
     bool Continent::IsWmoLoaded(unsigned int uniqueId) const
     {
+        std::lock_guard<std::mutex> guard(m_wmoMutex);
+
         return m_loadedWmos.find(uniqueId) != m_loadedWmos.end();
     }
 
     bool Continent::IsDoodadLoaded(unsigned int uniqueId) const
     {
+        std::lock_guard<std::mutex> guard(m_doodadMutex);
+
         return m_loadedDoodads.find(uniqueId) != m_loadedDoodads.end();
     }
 
     void Continent::InsertWmo(unsigned int uniqueId, Wmo *wmo)
     {
+        std::lock_guard<std::mutex> guard(m_wmoMutex);
+
         m_loadedWmos[uniqueId].reset(wmo);
     }
 
     void Continent::InsertDoodad(unsigned int uniqueId, Doodad *doodad)
     {
+        std::lock_guard<std::mutex> guard(m_doodadMutex);
+
         m_loadedDoodads[uniqueId].reset(doodad);
+    }
+
+    const Wmo *Continent::GetWmo() const
+    {
+        return m_wmo.get();
     }
 
     const Wmo *Continent::GetWmo(unsigned int uniqueId) const
     {
+        std::lock_guard<std::mutex> guard(m_wmoMutex);
+
         return IsWmoLoaded(uniqueId) ? m_loadedWmos.at(uniqueId).get() : nullptr;
     }
 
     const Doodad *Continent::GetDoodad(unsigned int uniqueId) const
     {
+        std::lock_guard<std::mutex> guard(m_doodadMutex);
+
         return IsDoodadLoaded(uniqueId) ? m_loadedDoodads.at(uniqueId).get() : nullptr;
     }
 }

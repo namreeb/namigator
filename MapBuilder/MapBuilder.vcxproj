@@ -74,12 +74,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\parser\Include;..\utility\Include;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;..\recastnavigation;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>parser.lib;pathfind.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -88,12 +88,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\parser\Include;..\utility\Include;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;..\recastnavigation;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>parser.lib;pathfind.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -104,13 +104,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\parser\Include;..\utility\Include;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;c:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\include;F:\APIs\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;f:\APIs\idasdk61\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>parser.lib;pathfind.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -121,13 +121,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..\parser\Include;..\utility\Include;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\APIs\boost_1_60_0;..;f:\apis\hadesmem\include\memory;F:\APIs\hadesmem\deps\asmjit\asmjit\src;F:\APIs\hadesmem\deps\udis86\udis86;F:\APIs\hadesmem\deps\pugixml\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>parser.lib;pathfind.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -138,6 +138,15 @@
   <ItemGroup>
     <ProjectReference Include="..\parser\parser.vcxproj">
       <Project>{374e3660-9432-4306-8550-f76030ffc8e8}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\pathfind\pathfind.vcxproj">
+      <Project>{f146e8cf-b077-48d0-901c-7c5e92ce24ca}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\stormlib\StormLib_vs15.vcxproj">
+      <Project>{78424708-1f6e-4d4b-920c-fb6d26847055}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\utility\utility.vcxproj">
+      <Project>{5a918b0c-418f-42f3-ba09-987891a1696d}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

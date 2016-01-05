@@ -5,24 +5,27 @@
 #include <queue>
 #include <mutex>
 #include <utility>
+#include <cmath>
+#include <limits>
+#include <vector>
 
 #ifdef _DEBUG
 #include <iostream>
 #endif
 
-Worker::Worker(parser::Continent *continent)
-    : m_shutdown(false), m_thread([this]() { this->Work(); }), m_continent(continent)
+Worker::Worker(pathfind::build::DataManager *dataManager)
+    : m_shutdownRequested(false), m_thread([this]() { this->Work(); }), m_meshBuild(dataManager)
 {}
 
 Worker::~Worker()
 {
-    m_shutdown = true;
+    m_shutdownRequested = true;
     m_thread.join();
 }
 
 void Worker::Work()
 {
-    while (!m_shutdown)
+    do
     {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -39,12 +42,8 @@ void Worker::Work()
             m_adts.pop();
         }
 
-        auto const adt = m_continent->LoadAdt(adtXY.first, adtXY.second);
-
-#ifdef _DEBUG
-        std::cout << "We are now ready to process ADT (" << adtXY.first << ", " << adtXY.second << ")" << std::endl;
-#endif
-    }
+        m_meshBuild.GenerateTile(adtXY.first, adtXY.second);
+    } while (!m_shutdownRequested);
 }
 
 void Worker::EnqueueAdt(int x, int y)
@@ -58,3 +57,4 @@ int Worker::Jobs() const
     std::lock_guard<std::mutex> guard(m_mutex);
     return m_adts.size();
 }
+

@@ -1,5 +1,4 @@
-#include "parser.hpp"
-#include "Output/Continent.hpp"
+#include "DataManager.hpp"
 #include "Worker.hpp"
 
 #include <boost/program_options.hpp>
@@ -11,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    std::string dataPath;
+    std::string dataPath, continent;
 #ifdef _DEBUG
     int adtX, adtY;
 #else
@@ -21,6 +20,7 @@ int main(int argc, char *argv[])
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
         ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value(".")->required(),   "data folder")
+        ("continent,c", boost::program_options::value<std::string>(&continent)->required(),                 "continent")
 #ifdef _DEBUG
         ("adtX,x", boost::program_options::value<int>(&adtX)->required(),                                   "adt x")
         ("adtY,y", boost::program_options::value<int>(&adtY)->required(),                                   "adt y")
@@ -50,16 +50,15 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    parser::Parser::Initialize();
+    pathfind::build::DataManager dataManager(continent);
 
 #ifdef _DEBUG
     std::cout << "Debug mode." << std::endl;
 
     {
-        parser::Continent azeroth("Azeroth");
-        Worker worker(&azeroth);
+        Worker worker(&dataManager);
 
-        worker.EnqueueAdt(32, 48);
+        worker.EnqueueAdt(adtX, adtY);
 
         std::cout << "Waiting for worker..." << std::endl;
 
@@ -68,7 +67,7 @@ int main(int argc, char *argv[])
             std::this_thread::sleep_for(std::chrono::microseconds(500));
         }
 
-        std::cout << "Workers are not waiting for main thread.  Scope-destruction incoming..." << std::endl;
+        std::cout << "Worker initialized.  Waiting for finish..." << std::endl;
     }
 
     std::cout << "Finished." << std::endl;

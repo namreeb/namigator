@@ -25,3 +25,5 @@
 /RecastDetourBuild/Recast/Debug
 /MapBuilder/Debug
 /MapBuilder/*.user
+/pathfind/Debug
+/MapBuilder/x64/Debug
