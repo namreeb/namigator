@@ -1,13 +1,3 @@
-#define NOMINMAX
-
-#include <memory>
-#include <windows.h>
-#include <windowsx.h>
-#include <sstream>
-#include <cassert>
-
-#include "resource.h"
-
 #include "Renderer.hpp"
 #include "CommonControl.hpp"
 #include "parser/Include/parser.hpp"
@@ -15,13 +5,21 @@
 #include "utility/Include/Directory.hpp"
 #include "pathfind/Include/NavMesh.hpp"
 
+#include "resource.h"
+
+#include <memory>
+#include <windows.h>
+#include <windowsx.h>
+#include <sstream>
+#include <cassert>
+
 #define START_X             100
 #define START_Y             100
 #define START_WIDTH         1200
 #define START_HEIGHT        800
 
 #define CONTROL_WIDTH       300
-#define CONTROL_HEIGHT      375
+#define CONTROL_HEIGHT      280
 
 #define CAMERA_STEP         2.f
 
@@ -195,9 +193,6 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 enum Controls : int
 {
     ContinentsCombo,
-    PositionX,
-    PositionY,
-    LoadPosition,
     ADTX,
     ADTY,
     LoadADT,
@@ -397,30 +392,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, 155, 150);
 
-    gControls->AddLabel(L"Position:", 10, 10, 300, 20);
+    gControls->AddLabel(L"X:", 10, 35, 20, 20);
+    gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);
 
-    gControls->AddLabel(L"X:", 10, 47, 20, 20);
-    gControls->AddTextBox(Controls::PositionX, L"", 25, 45, 75, 20);
+    gControls->AddLabel(L"Y:", 10, 60, 20, 20);
+    gControls->AddTextBox(Controls::ADTY, L"40", 25, 60, 75, 20);
 
-    gControls->AddLabel(L"Y:", 10, 72, 20, 20);
-    gControls->AddTextBox(Controls::PositionY, L"", 25, 70, 75, 20);
+    gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 57, 100, 25, LoadADTFromGUI);
 
-    gControls->AddButton(Controls::LoadPosition, L"Load Position", 115, 92, 100, 25, []() { MessageBox(gControlWindow, L"Not implemented yet", L"DEBUG", 0); });
-
-    gControls->AddLabel(L"X:", 10, 147, 20, 20);
-    gControls->AddTextBox(Controls::ADTX, L"38", 25, 145, 75, 20);
-
-    gControls->AddLabel(L"Y:", 10, 172, 20, 20);
-    gControls->AddTextBox(Controls::ADTY, L"40", 25, 170, 75, 20);
-
-    gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 167, 100, 25, LoadADTFromGUI);
-
-    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 200, 100, 20, false, [](bool checked) { gRenderer->SetWireframe(checked); });
-    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 220, 100, 20, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
-    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 240, 150, 20, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
-    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 260, 100, 20, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
-    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 280, 150, 20, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
-    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 300, 150, 20, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
+    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 85, 100, 20, false, [](bool checked) { gRenderer->SetWireframe(checked); });
+    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 110, 100, 20, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
+    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 135, 150, 20, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
+    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 160, 100, 20, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
+    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 185, 150, 20, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
+    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 210, 150, 20, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
 
     // enter the main loop:
 
