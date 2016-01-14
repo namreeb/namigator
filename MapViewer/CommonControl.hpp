@@ -26,11 +26,11 @@ class CommonControl
         CommonControl(HWND window);
 
         // adding controls
-        void AddLabel(const std::wstring &text, int x, int y, int width, int height);
+        void AddLabel(const std::wstring &text, int x, int y);
         void AddTextBox(int id, const std::wstring &text, int x, int y, int width, int height);
         void AddComboBox(int id, const std::vector<std::wstring> &items, int x, int y, int width, int height);
         void AddButton(int id, const std::wstring &text, int x, int y, int width, int height, std::function<void()> handler);
-        void AddCheckBox(int id, const std::wstring &text, int x, int y, int width, int height, bool checked, std::function<void (bool)> handler);
+        void AddCheckBox(int id, const std::wstring &text, int x, int y, bool checked, std::function<void (bool)> handler);
 
         const std::string GetText(int id) const;
 };

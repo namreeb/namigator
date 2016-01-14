@@ -370,7 +370,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // set up and initialize our Windows common control API for the control window
     gControls.reset(new CommonControl(gControlWindow));
 
-    gControls->AddLabel(L"Select Continent:", 10, 12, 100, 20);
+    gControls->AddLabel(L"Select Continent:", 10, 12);
 
     std::vector<std::wstring> continents;
     continents.push_back(L"000 Azeroth");
@@ -392,20 +392,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, 155, 150);
 
-    gControls->AddLabel(L"X:", 10, 35, 20, 20);
+    gControls->AddLabel(L"X:", 10, 35);
     gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);
 
-    gControls->AddLabel(L"Y:", 10, 60, 20, 20);
+    gControls->AddLabel(L"Y:", 10, 60);
     gControls->AddTextBox(Controls::ADTY, L"40", 25, 60, 75, 20);
 
     gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 57, 100, 25, LoadADTFromGUI);
 
-    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 85, 100, 20, false, [](bool checked) { gRenderer->SetWireframe(checked); });
-    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 110, 100, 20, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
-    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 135, 150, 20, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
-    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 160, 100, 20, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
-    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 185, 150, 20, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
-    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 210, 150, 20, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
+    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 85, false, [](bool checked) { gRenderer->SetWireframe(checked); });
+    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 110, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
+    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 135, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
+    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 160, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
+    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 185, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
+    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 210, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
 
     // enter the main loop:
 

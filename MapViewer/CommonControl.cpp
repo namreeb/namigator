@@ -88,10 +88,17 @@ LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-void CommonControl::AddLabel(const std::wstring &text, int x, int y, int width, int height)
+void CommonControl::AddLabel(const std::wstring &text, int x, int y)
 {
-    auto control = CreateWindow(L"STATIC", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, width, height, m_window, nullptr, m_instance, nullptr);
+    auto hdc = GetDC(m_window);
 
+    assert(!!hdc);
+
+    SIZE textSize;
+    assert(GetTextExtentPoint(hdc, text.c_str(), text.length(), &textSize));
+
+    auto control = CreateWindow(L"STATIC", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, textSize.cx, textSize.cy, m_window, nullptr, m_instance, nullptr);
+    
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
 }
 
@@ -128,9 +135,16 @@ void CommonControl::AddButton(int id, const std::wstring &text, int x, int y, in
     m_buttonHandlers.insert(std::pair<int, decltype(handler)>(id, handler));
 }
 
-void CommonControl::AddCheckBox(int id, const std::wstring &text, int x, int y, int width, int height, bool checked, std::function<void (bool)> handler)
+void CommonControl::AddCheckBox(int id, const std::wstring &text, int x, int y, bool checked, std::function<void (bool)> handler)
 {
-    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX, x, y, width, height, m_window, (HMENU)id, m_instance, nullptr);
+    auto hdc = GetDC(m_window);
+
+    assert(!!hdc);
+
+    SIZE textSize;
+    assert(GetTextExtentPoint(hdc, text.c_str(), text.length(), &textSize));
+
+    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX, x, y, 20+textSize.cx, textSize.cy, m_window, (HMENU)id, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
 
