@@ -152,7 +152,8 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     ThrowIfFail(m_device->CreateDepthStencilState(&dsd, &m_depthStencilState));
 
     m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 0);
-    m_deviceContext->OMSetRenderTargets(1, &m_backBuffer, m_depthStencilView);
+    ID3D11RenderTargetView * pBackBuffer[] = { m_backBuffer };
+    m_deviceContext->OMSetRenderTargets(1, pBackBuffer, m_depthStencilView);
 
     D3D11_BLEND_DESC bd;
     ZERO(bd);
@@ -171,62 +172,12 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     ThrowIfFail(m_device->CreateBlendState(&bd, &m_opaqueBlendState));
 }
 
-Renderer::~Renderer()
-{
-    m_swapChain->Release();
-    m_backBuffer->Release();
-    m_device->Release();
-    m_deviceContext->Release();
-    m_cbPerObjectBuffer->Release();
-    m_rasterizerState->Release();
-    m_depthStencilView->Release();
-    m_depthStencilBuffer->Release();
-    m_dxgiFactory->Release();
-    m_depthStencilState->Release();
-    m_liquidBlendState->Release();
-    m_opaqueBlendState->Release();
-}
-
 void Renderer::ClearBuffers()
 {
-    for (auto &buffer : m_terrainBuffers)
-    {
-        buffer.IndexBuffer->Release();
-        buffer.VertexBuffer->Release();
-    }
-
     m_terrainBuffers.clear();
-
-    for (auto &buffer : m_liquidBuffers)
-    {
-        buffer.IndexBuffer->Release();
-        buffer.VertexBuffer->Release();
-    }
-
     m_liquidBuffers.clear();
-
-    for (auto &buffer : m_wmoBuffers)
-    {
-        buffer.IndexBuffer->Release();
-        buffer.VertexBuffer->Release();
-    }
-
     m_wmoBuffers.clear();
-
-    for (auto &buffer : m_doodadBuffers)
-    {
-        buffer.IndexBuffer->Release();
-        buffer.VertexBuffer->Release();
-    }
-
     m_doodadBuffers.clear();
-
-    for (auto &buffer : m_meshBuffers)
-    {
-        buffer.IndexBuffer->Release();
-        buffer.VertexBuffer->Release();
-    }
-
     m_meshBuffers.clear();
 }
 
@@ -370,7 +321,7 @@ void Renderer::Render() const
     m_camera.GetViewMatrix().PopulateArray(constants.viewMatrix);
 
     m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &constants, 0, 0);
-    m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer);
+    m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer.p);
 
     const unsigned int stride = sizeof(ColoredVertex);
     const unsigned int offset = 0;
@@ -379,7 +330,8 @@ void Renderer::Render() const
     if (m_renderADT)
         for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
         {
-            m_deviceContext->IASetVertexBuffers(0, 1, &m_terrainBuffers[i].VertexBuffer, &stride, &offset);
+            ID3D11Buffer *const pBuffer[] = { m_terrainBuffers[i].VertexBuffer };
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
             m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -390,7 +342,8 @@ void Renderer::Render() const
     if (m_renderWMO)
         for (size_t i = 0; i < m_wmoBuffers.size(); ++i)
         {
-            m_deviceContext->IASetVertexBuffers(0, 1, &m_wmoBuffers[i].VertexBuffer, &stride, &offset);
+            ID3D11Buffer *const pBuffer[] = { m_wmoBuffers[i].VertexBuffer };
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
             m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -401,7 +354,8 @@ void Renderer::Render() const
     if (m_renderDoodad)
         for (size_t i = 0; i < m_doodadBuffers.size(); ++i)
         {
-            m_deviceContext->IASetVertexBuffers(0, 1, &m_doodadBuffers[i].VertexBuffer, &stride, &offset);
+            ID3D11Buffer *const pBuffer[] = { m_doodadBuffers[i].VertexBuffer };
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
             m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -417,7 +371,8 @@ void Renderer::Render() const
         if (m_renderLiquid)
             for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
             {
-                m_deviceContext->IASetVertexBuffers(0, 1, &m_liquidBuffers[i].VertexBuffer, &stride, &offset);
+                ID3D11Buffer *const pBuffer[] = { m_liquidBuffers[i].VertexBuffer };
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
                 m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -428,7 +383,8 @@ void Renderer::Render() const
         if (m_renderMesh)
             for (size_t i = 0; i < m_meshBuffers.size(); ++i)
             {
-                m_deviceContext->IASetVertexBuffers(0, 1, &m_meshBuffers[i].VertexBuffer, &stride, &offset);
+                ID3D11Buffer *const pBuffer[] = { m_meshBuffers[i].VertexBuffer };
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
                 m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -463,6 +419,7 @@ void Renderer::SetWireframe(bool enabled)
         rasterizerDesc.CullMode = D3D11_CULL_BACK;
     }
 
+    m_rasterizerState.Release();
     ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
     m_deviceContext->RSSetState(m_rasterizerState);
 }

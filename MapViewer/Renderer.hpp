@@ -9,6 +9,7 @@
 #include <d3d11.h>
 #include <dxgi1_3.h>
 #include <set>
+#include <atlbase.h>
 
 class Renderer
 {
@@ -29,28 +30,28 @@ class Renderer
 
         struct GeometryBuffer
         {
-            ID3D11Buffer *VertexBuffer;
-            ID3D11Buffer *IndexBuffer;
+            CComPtr<ID3D11Buffer> VertexBuffer;
+            CComPtr<ID3D11Buffer> IndexBuffer;
             unsigned int IndexCount;
         };
 
         const HWND m_window;
 
-        IDXGIFactory2 *m_dxgiFactory;
-        IDXGISwapChain1 *m_swapChain;            // the pointer to the swap chain interface
-        ID3D11Device *m_device;                 // the pointer to our Direct3D device interface
-        ID3D11DeviceContext *m_deviceContext;   // the pointer to our Direct3D device context
-        ID3D11RenderTargetView *m_backBuffer;   // the pointer to our back buffer
-        ID3D11InputLayout *m_inputLayout;
-        ID3D11VertexShader *m_vertexShader;
-        ID3D11PixelShader *m_pixelShader;
-        ID3D11Buffer *m_cbPerObjectBuffer;
-        ID3D11RasterizerState *m_rasterizerState;
-        ID3D11DepthStencilView *m_depthStencilView;
-        ID3D11DepthStencilState *m_depthStencilState;
-        ID3D11Texture2D *m_depthStencilBuffer;
-        ID3D11BlendState* m_liquidBlendState;
-        ID3D11BlendState* m_opaqueBlendState;
+        CComPtr<IDXGIFactory2> m_dxgiFactory;
+        CComPtr<IDXGISwapChain1> m_swapChain;           // the pointer to the swap chain interface
+        CComPtr<ID3D11Device> m_device;                 // the pointer to our Direct3D device interface
+        CComPtr<ID3D11DeviceContext> m_deviceContext;   // the pointer to our Direct3D device context
+        CComPtr<ID3D11RenderTargetView> m_backBuffer;   // the pointer to our back buffer
+        CComPtr<ID3D11InputLayout> m_inputLayout;
+        CComPtr<ID3D11VertexShader> m_vertexShader;
+        CComPtr<ID3D11PixelShader> m_pixelShader;
+        CComPtr<ID3D11Buffer> m_cbPerObjectBuffer;
+        CComPtr<ID3D11RasterizerState> m_rasterizerState;
+        CComPtr<ID3D11DepthStencilView> m_depthStencilView;
+        CComPtr<ID3D11DepthStencilState> m_depthStencilState;
+        CComPtr<ID3D11Texture2D> m_depthStencilBuffer;
+        CComPtr<ID3D11BlendState> m_liquidBlendState;
+        CComPtr<ID3D11BlendState> m_opaqueBlendState;
 
         std::vector<GeometryBuffer> m_terrainBuffers;
         std::vector<GeometryBuffer> m_liquidBuffers;
@@ -71,7 +72,6 @@ class Renderer
 
     public:
         Renderer(HWND window);
-        ~Renderer();
 
         void ClearBuffers();
 
