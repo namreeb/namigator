@@ -195,12 +195,11 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 enum Controls : int
 {
     ContinentsCombo,
-    ADTX,
-    ADTY,
     PositionX,
     PositionY,
-    PositionZ,
     LoadPosition,
+    ADTX,
+    ADTY,
     LoadADT,
     Wireframe,
     RenderADT,
@@ -209,201 +208,6 @@ enum Controls : int
     RenderDoodad,
     RenderMesh,
 };
-
-LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-        case WM_COMMAND:
-        {
-            switch (wParam)
-            {
-                case Controls::LoadPosition:
-                {
-                    MessageBox(hWnd, L"Not implemented yet.", L"DEBUG", 0);
-                    
-                    return TRUE;
-                }
-
-                case Controls::LoadADT:
-                {
-                    auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
-                    auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
-                    auto const continentChoice = gControls->GetText(Controls::ContinentsCombo);
-                    auto const continentName = continentChoice.substr(continentChoice.find(' ') + 1);
-
-                    // if we are switching continents, unload our buffers
-                    if (gContinent && gContinent->Name != continentName)
-                    {
-                        gRenderer->ClearBuffers();
-                        gContinent.reset(nullptr);
-                    }
-
-                    // if we are loading the first adt in the continent, intialize it first
-                    if (!gContinent)
-                    {
-                        gContinent.reset(new parser::Continent(continentName));
-                        gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
-                    }
-
-                    auto const adt = gContinent->LoadAdt(adtX, adtY);
-                    
-                    for (int x = 0; x < 16; ++x)
-                        for (int y = 0; y < 16; ++y)
-                        {
-                            auto const chunk = adt->GetChunk(x, y);
-
-                            gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
-                            gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
-
-                            for (auto &d : chunk->m_doodads)
-                            {
-                                auto const doodad = gContinent->GetDoodad(d);
-
-                                assert(doodad);
-
-                                gRenderer->AddDoodad(d, doodad->Vertices, doodad->Indices);
-                            }
-
-                            for (auto &w : chunk->m_wmos)
-                            {
-                                auto const wmo = gContinent->GetWmo(w);
-
-                                assert(wmo);
-
-                                gRenderer->AddWmo(w, wmo->Vertices, wmo->Indices);
-                                gRenderer->AddDoodad(w, wmo->DoodadVertices, wmo->DoodadIndices);
-                                gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
-                            }
-                        }
-
-                    if (gNavMesh->LoadTile(adtX, adtY))
-                    {
-                        std::vector<utility::Vertex> meshVertices;
-                        std::vector<int> meshIndices;
-                        gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices);
-
-                        assert(!!meshVertices.size() && !!meshIndices.size());
-
-                        // raise the z values for each mesh vertex slightly to help visualize them
-                        for (size_t i = 0; i < meshVertices.size(); ++i)
-                            meshVertices[i].Z += 0.3f;
-
-                        gRenderer->AddMesh(meshVertices, meshIndices);
-                    }
-
-                    const float cx = (adt->MaxX + adt->MinX) / 2.f;
-                    const float cy = (adt->MaxY + adt->MinY) / 2.f;
-                    const float cz = (adt->MaxZ + adt->MinZ) / 2.f;
-
-                    gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
-                    gRenderer->m_camera.LookAt(cx, cy, cz);
-
-                    return TRUE;
-                }
-
-                case Controls::Wireframe:
-                {
-                    if (IsDlgButtonChecked(hWnd, wParam))
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
-                        gRenderer->SetWireframe(false);
-                    }
-                    else
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
-                        gRenderer->SetWireframe(true);
-                    }
-
-                    return TRUE;
-                }
-
-                case Controls::RenderADT:
-                {
-                    if (IsDlgButtonChecked(hWnd, wParam))
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
-                        gRenderer->SetRenderADT(false);
-                    }
-                    else
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
-                        gRenderer->SetRenderADT(true);
-                    }
-
-                    return TRUE;
-                }
-
-                case Controls::RenderLiquid:
-                {
-                    if (IsDlgButtonChecked(hWnd, wParam))
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
-                        gRenderer->SetRenderLiquid(false);
-                    }
-                    else
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
-                        gRenderer->SetRenderLiquid(true);
-                    }
-
-                    return TRUE;
-                }
-
-                case Controls::RenderWMO:
-                {
-                    if (IsDlgButtonChecked(hWnd, wParam))
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
-                        gRenderer->SetRenderWMO(false);
-                    }
-                    else
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
-                        gRenderer->SetRenderWMO(true);
-                    }
-
-                    return TRUE;
-                }
-
-                case Controls::RenderDoodad:
-                {
-                    if (IsDlgButtonChecked(hWnd, wParam))
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
-                        gRenderer->SetRenderDoodad(false);
-                    }
-                    else
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
-                        gRenderer->SetRenderDoodad(true);
-                    }
-
-                    return TRUE;
-                }
-
-                case Controls::RenderMesh:
-                {
-                    if (IsDlgButtonChecked(hWnd, wParam))
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
-                        gRenderer->SetRenderMesh(false);
-                    }
-                    else
-                    {
-                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
-                        gRenderer->SetRenderMesh(true);
-                    }
-
-                    return TRUE;
-                }
-
-            }
-        }
-    }
-
-    return DefWindowProc(hWnd, message, wParam, lParam);
-}
 
 void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow)
 {
@@ -444,7 +248,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
 
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = ControlWindowProc;
+    wc.lpfnWndProc = DefWindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
@@ -466,6 +270,81 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
         nullptr,
         hInstance,
         nullptr);
+}
+
+void LoadADTFromGUI()
+{
+    auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
+    auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
+    auto const continentChoice = gControls->GetText(Controls::ContinentsCombo);
+    auto const continentName = continentChoice.substr(continentChoice.find(' ') + 1);
+
+    // if we are switching continents, unload our buffers
+    if (gContinent && gContinent->Name != continentName)
+    {
+        gRenderer->ClearBuffers();
+        gContinent.reset(nullptr);
+    }
+
+    // if we are loading the first adt in the continent, intialize it first
+    if (!gContinent)
+    {
+        gContinent.reset(new parser::Continent(continentName));
+        gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
+    }
+
+    auto const adt = gContinent->LoadAdt(adtX, adtY);
+
+    for (int x = 0; x < 16; ++x)
+        for (int y = 0; y < 16; ++y)
+        {
+            auto const chunk = adt->GetChunk(x, y);
+
+            gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
+            gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
+
+            for (auto &d : chunk->m_doodads)
+            {
+                auto const doodad = gContinent->GetDoodad(d);
+
+                assert(doodad);
+
+                gRenderer->AddDoodad(d, doodad->Vertices, doodad->Indices);
+            }
+
+            for (auto &w : chunk->m_wmos)
+            {
+                auto const wmo = gContinent->GetWmo(w);
+
+                assert(wmo);
+
+                gRenderer->AddWmo(w, wmo->Vertices, wmo->Indices);
+                gRenderer->AddDoodad(w, wmo->DoodadVertices, wmo->DoodadIndices);
+                gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
+            }
+        }
+
+    if (gNavMesh->LoadTile(adtX, adtY))
+    {
+        std::vector<utility::Vertex> meshVertices;
+        std::vector<int> meshIndices;
+        gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices);
+
+        assert(!!meshVertices.size() && !!meshIndices.size());
+
+        // raise the z values for each mesh vertex slightly to help visualize them
+        for (size_t i = 0; i < meshVertices.size(); ++i)
+            meshVertices[i].Z += 0.3f;
+
+        gRenderer->AddMesh(meshVertices, meshIndices);
+    }
+
+    const float cx = (adt->MaxX + adt->MinX) / 2.f;
+    const float cy = (adt->MaxY + adt->MinY) / 2.f;
+    const float cz = (adt->MaxZ + adt->MinZ) / 2.f;
+
+    gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
+    gRenderer->m_camera.LookAt(cx, cy, cz);
 }
 
 // the entry point for any Windows program
@@ -491,7 +370,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ShowWindow(gControlWindow, nCmdShow);
 
     // set up and initialize Direct3D
-    
     gRenderer.reset(new Renderer(gGuiWindow));
 
     // set up and initialize our Windows common control API for the control window
@@ -527,10 +405,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     gControls->AddLabel(L"Y:", 10, 72, 20, 20);
     gControls->AddTextBox(Controls::PositionY, L"", 25, 70, 75, 20);
 
-    gControls->AddLabel(L"Z:", 10, 97, 20, 20);
-    gControls->AddTextBox(Controls::PositionZ, L"", 25, 95, 75, 20);
-
-    gControls->AddButton(Controls::LoadPosition, L"Load Position", 115, 92, 100, 25);
+    gControls->AddButton(Controls::LoadPosition, L"Load Position", 115, 92, 100, 25, []() { MessageBox(gControlWindow, L"Not implemented yet", L"DEBUG", 0); });
 
     gControls->AddLabel(L"X:", 10, 147, 20, 20);
     gControls->AddTextBox(Controls::ADTX, L"38", 25, 145, 75, 20);
@@ -538,14 +413,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     gControls->AddLabel(L"Y:", 10, 172, 20, 20);
     gControls->AddTextBox(Controls::ADTY, L"40", 25, 170, 75, 20);
 
-    gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 167, 100, 25);
+    gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 167, 100, 25, LoadADTFromGUI);
 
-    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 200, 100, 20, false);
-    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 220, 100, 20, true);
-    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 240, 150, 20, true);
-    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 260, 100, 20, true);
-    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 280, 150, 20, true);
-    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 300, 150, 20, true);
+    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 200, 100, 20, false, [](bool checked) { gRenderer->SetWireframe(checked); });
+    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 220, 100, 20, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
+    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 240, 150, 20, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
+    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 260, 100, 20, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
+    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 280, 150, 20, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
+    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 300, 150, 20, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
 
     // enter the main loop:
 
