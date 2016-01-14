@@ -24,7 +24,7 @@ const float Renderer::TerrainColor[4] = { 0.1f, 0.8f, 0.3f, 1.f };
 const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.5f };
 const float Renderer::WmoColor[4] = { 1.f, 0.95f, 0.f, 1.f };
 const float Renderer::DoodadColor[4] = { 1.f, 0.f, 0.f, 1.f };
-const float Renderer::MeshColor[4] = { 1.f, 1.f, 1.f, 0.5f };
+const float Renderer::MeshColor[4] = { 1.f, 1.f, 1.f, 0.75f };
 const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
 
 Renderer::Renderer(HWND window) : m_window(window)
