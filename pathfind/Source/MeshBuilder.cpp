@@ -1,5 +1,5 @@
 #include "MeshBuilder.hpp"
-#include "AreaFlags.hpp"
+#include "Common.hpp"
 
 #include "utility/Include/MathHelper.hpp"
 
@@ -39,6 +39,43 @@ bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, 
 
     return rcRasterizeTriangles(&ctx, &rastVert[0], vertices.size(), &rastIndices[0], &areas[0], rastIndices.size() / 3, heightField);
 }
+
+void FilterGroundBeneathLiquid(rcHeightfield &solid)
+{
+    for (int i = 0; i < solid.width*solid.height; ++i)
+    {
+        std::list<rcSpan *> spans;
+
+        for (rcSpan *s = solid.spans[i]; s; s = s->next)
+        {
+            // if we found a non-wmo liquid span, remove everything beneath it
+            if (!!(s->area & AreaFlags::Liquid) && !(s->area & AreaFlags::WMO))
+            {
+                for (auto ns : spans)
+                    ns->area = RC_NULL_AREA;
+
+                spans.clear();
+            }
+            // if we found a wmo liquid span, remove every wmo span beneath it
+            else if (!!(s->area & (AreaFlags::Liquid | AreaFlags::WMO)))
+            {
+                for (auto ns : spans)
+                    if (!!(ns->area & AreaFlags::WMO))
+                        ns->area = RC_NULL_AREA;
+
+                spans.clear();
+            }
+            else
+                spans.push_back(s);
+        }
+    }
+}
+
+void RestoreAdtSpans(const std::vector<rcSpan *> &spans)
+{
+    for (auto s : spans)
+        s->area |= AreaFlags::ADT;
+}
 }
 
 MeshBuilder::MeshBuilder(DataManager *dataManager) : m_dataManager(dataManager) {}
@@ -57,18 +94,18 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     rcConfig config;
     ZERO(config);
 
-    config.cs = TileSize / static_cast<float>(TileVoxelSize);
-    config.ch = CellHeight;
-    config.walkableSlopeAngle = WalkableSlope;
-    config.walkableClimb = static_cast<int>(std::round(WalkableClimb / CellHeight));
-    config.walkableHeight = static_cast<int>(std::round(WalkableHeight / CellHeight));
-    config.walkableRadius = static_cast<int>(std::round(WalkableRadius / config.cs));
+    config.cs = RecastSettings::TileSize / static_cast<float>(RecastSettings::TileVoxelSize);
+    config.ch = RecastSettings::CellHeight;
+    config.walkableSlopeAngle = RecastSettings::WalkableSlope;
+    config.walkableClimb = static_cast<int>(std::round(RecastSettings::WalkableClimb / RecastSettings::CellHeight));
+    config.walkableHeight = static_cast<int>(std::round(RecastSettings::WalkableHeight / RecastSettings::CellHeight));
+    config.walkableRadius = static_cast<int>(std::round(RecastSettings::WalkableRadius / config.cs));
     config.maxEdgeLen = config.walkableRadius * 8;
-    config.maxSimplificationError = MaxSimplificationError;
+    config.maxSimplificationError = RecastSettings::MaxSimplificationError;
     config.minRegionArea = 20;
     config.mergeRegionArea = 40;
     config.maxVertsPerPoly = 6;
-    config.tileSize = TileVoxelSize;
+    config.tileSize = RecastSettings::TileVoxelSize;
     config.borderSize = config.walkableRadius + 3;
     config.width = config.tileSize + config.borderSize * 2;
     config.height = config.tileSize + config.borderSize * 2;
@@ -100,7 +137,7 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
             auto const chunk = adt->GetChunk(x, y);
 
             // adt terrain
-            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::Adt))
+            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::ADT))
                 return false;
 
             // liquid
@@ -117,13 +154,13 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
                 assert(wmo);
 
-                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::Wmo))
+                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::WMO))
                     return false;
 
-                if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::Wmo | AreaFlags::Liquid))
+                if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
                     return false;
 
-                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::Wmo | AreaFlags::Doodad))
+                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
                     return false;
             }
 
@@ -142,9 +179,29 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
             }
         }
 
-    rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
-    rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
-    rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+    FilterGroundBeneathLiquid(*solid);
+
+    // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
+    {
+        std::vector<rcSpan *> adtSpans;
+
+        for (int i = 0; i < solid->width * solid->height; ++i)
+            for (rcSpan *s = solid->spans[i]; s; s = s->next)
+                if (!!(s->area & AreaFlags::ADT))
+                    adtSpans.push_back(s);
+
+        rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+
+        RestoreAdtSpans(adtSpans);
+
+        rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+
+        RestoreAdtSpans(adtSpans);
+
+        rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+
+        RestoreAdtSpans(adtSpans);
+    }
 
     // initialize compact height field
     std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)> chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
@@ -154,8 +211,8 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
     solid.reset(nullptr);
 
-    if (!rcErodeWalkableArea(&ctx, config.walkableRadius, *chf))
-        return false;
+    //if (!rcErodeWalkableArea(&ctx, config.walkableRadius, *chf))
+    //    return false;
     
     // any further area marking is done here.  not sure if we will need this or not
 
@@ -202,8 +259,8 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     params.detailVertsCount = polyMeshDetail->nverts;
     params.detailTris = polyMeshDetail->tris;
     params.detailTriCount = polyMeshDetail->ntris;
-    params.walkableHeight = WalkableHeight;
-    params.walkableRadius = WalkableRadius;
+    params.walkableHeight = RecastSettings::WalkableHeight;
+    params.walkableRadius = RecastSettings::WalkableRadius;
     params.walkableClimb = 1.f;
     params.tileX = adtX;
     params.tileY = adtY;

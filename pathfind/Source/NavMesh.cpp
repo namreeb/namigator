@@ -19,7 +19,7 @@ NavMesh::NavMesh(const std::string &dataPath, const std::string &continentName) 
     params.orig[0] = -32.f * tileWidth;
     params.orig[1] = 0.f;
     params.orig[2] = -32.f * tileWidth;
-    params.tileHeight = params.tileWidth = tileWidth;
+    params.tileHeight = params.tileWidth = 1800;
     params.maxTiles = 64 * 64;
     params.maxPolys = 1 << DT_POLY_BITS;
 
@@ -37,13 +37,11 @@ bool NavMesh::LoadTile(int x, int y)
     auto const size = in.tellg();
     in.seekg(0, in.beg);
 
-    auto const xx = static_cast<unsigned int>(size);
-
     // the dtNavMesh destructor will handle deallocation of this data
     auto const buff = new unsigned char[static_cast<unsigned int>(size)];
     in.read(reinterpret_cast<char *>(buff), size);
 
-    return m_navMesh.addTile(buff, static_cast<int>(size), 0, 0, nullptr) == DT_SUCCESS;
+    return m_navMesh.addTile(buff, static_cast<int>(size), DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
 }
 
 void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices)
@@ -52,13 +50,8 @@ void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertic
 
     unsigned int triCount = 0;
 
-    for (int i = 0; i < tile->header->polyCount; ++i)
-    {
-        if (tile->polys[i].areaAndtype == DT_POLYTYPE_OFFMESH_CONNECTION)
-            continue;
-
+    for (int i = 0; i < tile->header->detailMeshCount; ++i)
         triCount += tile->detailMeshes[i].triCount;
-    }
 
     vertices.reserve(3 * triCount);
     indices.reserve(triCount);

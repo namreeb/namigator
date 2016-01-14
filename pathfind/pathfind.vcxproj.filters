@@ -136,11 +136,11 @@
     <ClInclude Include="Include\MeshBuilder.hpp">
       <Filter>Header Files\Build</Filter>
     </ClInclude>
-    <ClInclude Include="Include\AreaFlags.hpp">
-      <Filter>Header Files\Query</Filter>
-    </ClInclude>
     <ClInclude Include="Include\NavMesh.hpp">
       <Filter>Header Files\Query</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

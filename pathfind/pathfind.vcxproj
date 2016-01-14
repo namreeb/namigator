@@ -159,7 +159,7 @@
     <ClInclude Include="..\recastnavigation\Recast\Include\Recast.h" />
     <ClInclude Include="..\recastnavigation\Recast\Include\RecastAlloc.h" />
     <ClInclude Include="..\recastnavigation\Recast\Include\RecastAssert.h" />
-    <ClInclude Include="Include\AreaFlags.hpp" />
+    <ClInclude Include="Include\Common.hpp" />
     <ClInclude Include="Include\DataManager.hpp" />
     <ClInclude Include="Include\MeshBuilder.hpp" />
     <ClInclude Include="Include\NavMesh.hpp" />
