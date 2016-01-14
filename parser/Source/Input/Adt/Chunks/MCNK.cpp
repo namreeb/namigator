@@ -77,14 +77,16 @@ MCNK::MCNK(long position, utility::BinaryStream *reader)
         const int y = i / 17;
         const float innerOffset = (i % 17 > 8 ? quadSize / 2.f : 0.f);
 
-        if (heightChunk.Heights[i] > MaxZ)
-            MaxZ = heightChunk.Heights[i];
-        if (heightChunk.Heights[i] < MinZ)
-            MinZ = heightChunk.Heights[i];
+        const float z = information.Position[2] + heightChunk.Heights[i];
+
+        if (z > MaxZ)
+            MaxZ = z;
+        if (z < MinZ)
+            MinZ = z;
 
         Positions.push_back({ information.Position[0] - (y*quadSize) - innerOffset,
-                                information.Position[1] - (x*quadSize) - innerOffset,
-                                information.Position[2] + heightChunk.Heights[i] });
+                              information.Position[1] - (x*quadSize) - innerOffset,
+                              z });
 
         Normals.push_back({ normalChunk.Entries[i].Normal[0] / 127.f,
                             normalChunk.Entries[i].Normal[1] / 127.f,
