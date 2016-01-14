@@ -35,9 +35,7 @@ bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, 
 
     // XXX FIXME - why on earth does recast take indices as ints here, but unsigned short elsewhere? o.O
     if (filterWalkable)
-        rcMarkWalkableTriangles(&ctx, slope, &rastVert[0], vertices.size(), &indices[0], indices.size() / 3, &areas[0]);
-    else
-        memset(&areas[0], RC_WALKABLE_AREA, areas.size());
+        rcClearUnwalkableTriangles(&ctx, slope, &rastVert[0], vertices.size(), &indices[0], indices.size() / 3, &areas[0]);
 
     return rcRasterizeTriangles(&ctx, &rastVert[0], vertices.size(), &rastIndices[0], &areas[0], rastIndices.size() / 3, heightField);
 }
@@ -61,9 +59,9 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
     config.cs = TileSize / static_cast<float>(TileVoxelSize);
     config.ch = CellHeight;
-    config.walkableSlopeAngle = 50.f;
+    config.walkableSlopeAngle = WalkableSlope;
+    config.walkableClimb = static_cast<int>(std::round(WalkableClimb / CellHeight));
     config.walkableHeight = static_cast<int>(std::round(WalkableHeight / CellHeight));
-    config.walkableClimb = std::numeric_limits<int>::max();
     config.walkableRadius = static_cast<int>(std::round(WalkableRadius / config.cs));
     config.maxEdgeLen = config.walkableRadius * 8;
     config.maxSimplificationError = MaxSimplificationError;

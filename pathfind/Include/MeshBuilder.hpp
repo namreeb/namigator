@@ -18,6 +18,8 @@ class MeshBuilder
 
         static constexpr float WalkableHeight = 1.6f;   // agent height in world units (yards)
         static constexpr float WalkableRadius = 0.3f;   // narrowest allowable hallway in world units (yards)
+        static constexpr float WalkableSlope = 50.f;    // maximum walkable slope, in degrees
+        static constexpr float WalkableClimb = 1.f;     // maximum 'step' height for which slope is ignored (yards)
 
         static constexpr float MaxSimplificationError = 1.3f;
 
