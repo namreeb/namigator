@@ -61,6 +61,12 @@ class Renderer
         std::set<unsigned int> m_wmos;
         std::set<unsigned int> m_doodads;
 
+        bool m_renderADT;
+        bool m_renderLiquid;
+        bool m_renderWMO;
+        bool m_renderDoodad;
+        bool m_renderMesh;
+
         void InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
     public:
@@ -76,6 +82,13 @@ class Renderer
         void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
         void Render() const;
+
+        void SetWireframe(bool enabled);
+        void SetRenderADT(bool enabled) { m_renderADT = enabled; }
+        void SetRenderLiquid(bool enabled) { m_renderLiquid = enabled; }
+        void SetRenderWMO(bool enabled) { m_renderWMO = enabled; }
+        void SetRenderDoodad(bool enabled) { m_renderDoodad = enabled; }
+        void SetRenderMesh(bool enabled) { m_renderMesh = enabled; }
 
         Camera m_camera;
 };

@@ -18,16 +18,14 @@
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 #define ThrowIfFail(x) if (FAILED(x)) throw "Renderer initialization error"
 
-//#define WIREFRAME
+const float Renderer::TerrainColor[4]       = { 0.1f, 0.8f, 0.3f, 1.f };
+const float Renderer::LiquidColor[4]        = { 0.25f, 0.28f, 0.9f, 0.5f };
+const float Renderer::WmoColor[4]           = { 1.f, 0.95f, 0.f, 1.f };
+const float Renderer::DoodadColor[4]        = { 1.f, 0.f, 0.f, 1.f };
+const float Renderer::MeshColor[4]          = { 1.f, 1.f, 1.f, 0.75f };
+const float Renderer::BackgroundColor[4]    = { 0.f, 0.2f, 0.4f, 1.f };
 
-const float Renderer::TerrainColor[4] = { 0.1f, 0.8f, 0.3f, 1.f };
-const float Renderer::LiquidColor[4] = { 0.25f, 0.28f, 0.9f, 0.5f };
-const float Renderer::WmoColor[4] = { 1.f, 0.95f, 0.f, 1.f };
-const float Renderer::DoodadColor[4] = { 1.f, 0.f, 0.f, 1.f };
-const float Renderer::MeshColor[4] = { 1.f, 1.f, 1.f, 0.75f };
-const float Renderer::BackgroundColor[4] = { 0.f, 0.2f, 0.4f, 1.f };
-
-Renderer::Renderer(HWND window) : m_window(window)
+Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true)
 {
     RECT wr;
     GetWindowRect(window, &wr);
@@ -124,21 +122,7 @@ Renderer::Renderer(HWND window) : m_window(window)
 
     ThrowIfFail(m_device->CreateBuffer(&cbbd, nullptr, &m_cbPerObjectBuffer));
 
-    D3D11_RASTERIZER_DESC rasterizerDesc;
-    ZERO(rasterizerDesc);
-
-    rasterizerDesc.FrontCounterClockwise = true;
-
-#ifdef WIREFRAME
-    rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
-    rasterizerDesc.CullMode = D3D11_CULL_NONE;
-#else
-    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.CullMode = D3D11_CULL_BACK;
-#endif
-
-    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
-    m_deviceContext->RSSetState(m_rasterizerState);
+    SetWireframe(false);
 
     D3D11_TEXTURE2D_DESC dsdtex;
     ZERO(dsdtex);
@@ -392,63 +376,93 @@ void Renderer::Render() const
     const unsigned int offset = 0;
 
     // draw terrain
-    for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
-    {
-        m_deviceContext->IASetVertexBuffers(0, 1, &m_terrainBuffers[i].VertexBuffer, &stride, &offset);
-        m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    if (m_renderADT)
+        for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
+        {
+            m_deviceContext->IASetVertexBuffers(0, 1, &m_terrainBuffers[i].VertexBuffer, &stride, &offset);
+            m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        m_deviceContext->DrawIndexed(m_terrainBuffers[i].IndexCount, 0, 0);
-    }
+            m_deviceContext->DrawIndexed(m_terrainBuffers[i].IndexCount, 0, 0);
+        }
 
     // draw wmos
-    for (size_t i = 0; i < m_wmoBuffers.size(); ++i)
-    {
-        m_deviceContext->IASetVertexBuffers(0, 1, &m_wmoBuffers[i].VertexBuffer, &stride, &offset);
-        m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    if (m_renderWMO)
+        for (size_t i = 0; i < m_wmoBuffers.size(); ++i)
+        {
+            m_deviceContext->IASetVertexBuffers(0, 1, &m_wmoBuffers[i].VertexBuffer, &stride, &offset);
+            m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        m_deviceContext->DrawIndexed(m_wmoBuffers[i].IndexCount, 0, 0);
-    }
+            m_deviceContext->DrawIndexed(m_wmoBuffers[i].IndexCount, 0, 0);
+        }
 
     // draw doodads
-    for (size_t i = 0; i < m_doodadBuffers.size(); ++i)
+    if (m_renderDoodad)
+        for (size_t i = 0; i < m_doodadBuffers.size(); ++i)
+        {
+            m_deviceContext->IASetVertexBuffers(0, 1, &m_doodadBuffers[i].VertexBuffer, &stride, &offset);
+            m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            m_deviceContext->DrawIndexed(m_doodadBuffers[i].IndexCount, 0, 0);
+        }
+
+    if (m_renderLiquid || m_renderMesh)
     {
-        m_deviceContext->IASetVertexBuffers(0, 1, &m_doodadBuffers[i].VertexBuffer, &stride, &offset);
-        m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        const static float blendFactor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        m_deviceContext->OMSetBlendState(m_liquidBlendState, blendFactor, 0xffffffff);
 
-        m_deviceContext->DrawIndexed(m_doodadBuffers[i].IndexCount, 0, 0);
+        // draw liquid (with alpha blending)
+        if (m_renderLiquid)
+            for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
+            {
+                m_deviceContext->IASetVertexBuffers(0, 1, &m_liquidBuffers[i].VertexBuffer, &stride, &offset);
+                m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+                m_deviceContext->DrawIndexed(m_liquidBuffers[i].IndexCount, 0, 0);
+            }
+
+        // draw meshes (also with alpha blending)
+        if (m_renderMesh)
+            for (size_t i = 0; i < m_meshBuffers.size(); ++i)
+            {
+                m_deviceContext->IASetVertexBuffers(0, 1, &m_meshBuffers[i].VertexBuffer, &stride, &offset);
+                m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+                m_deviceContext->DrawIndexed(m_meshBuffers[i].IndexCount, 0, 0);
+            }
+
+        m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);
     }
-
-    const static float blendFactor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    m_deviceContext->OMSetBlendState(m_liquidBlendState, blendFactor, 0xffffffff);
-
-    // draw liquid (with alpha blending)
-    for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
-    {
-        m_deviceContext->IASetVertexBuffers(0, 1, &m_liquidBuffers[i].VertexBuffer, &stride, &offset);
-        m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        m_deviceContext->DrawIndexed(m_liquidBuffers[i].IndexCount, 0, 0);
-    }
-
-    // draw meshes (also with alpha blending)
-    for (size_t i = 0; i < m_meshBuffers.size(); ++i)
-    {
-        m_deviceContext->IASetVertexBuffers(0, 1, &m_meshBuffers[i].VertexBuffer, &stride, &offset);
-        m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        m_deviceContext->DrawIndexed(m_meshBuffers[i].IndexCount, 0, 0);
-    }
-
-    m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);
 
     // switch the back buffer and the front buffer
     DXGI_PRESENT_PARAMETERS presentParams;
     ZERO(presentParams);
 
     m_swapChain->Present1(0, 0, &presentParams);
+}
+
+void Renderer::SetWireframe(bool enabled)
+{
+    D3D11_RASTERIZER_DESC rasterizerDesc;
+    ZERO(rasterizerDesc);
+
+    rasterizerDesc.FrontCounterClockwise = true;
+
+    if (enabled)
+    {
+        rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+        rasterizerDesc.CullMode = D3D11_CULL_NONE;
+    }
+    else
+    {
+        rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+        rasterizerDesc.CullMode = D3D11_CULL_BACK;
+    }
+
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
+    m_deviceContext->RSSetState(m_rasterizerState);
 }

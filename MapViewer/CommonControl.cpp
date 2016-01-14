@@ -1,6 +1,7 @@
-#include <string>
-
 #include "CommonControl.hpp"
+
+#include <string>
+#include <cassert>
 
 CommonControl::CommonControl(HWND window)
     : m_instance((HINSTANCE)GetWindowLong(window, GWL_HINSTANCE)), m_window(window),
@@ -12,26 +13,23 @@ CommonControl::CommonControl(HWND window)
 
 void CommonControl::AddLabel(const std::wstring &text, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"STATIC", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, width, height, m_window, nullptr, m_instance, nullptr);
+    auto control = CreateWindow(L"STATIC", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
-    SetWindowText(control, text.c_str());
-
 }
 
-void CommonControl::AddTextBox(const std::wstring &name, const std::wstring &text, int x, int y, int width, int height)
+void CommonControl::AddTextBox(int id, const std::wstring &text, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"EDIT", name.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER, x, y, width, height, m_window, nullptr, m_instance, nullptr);
+    auto control = CreateWindow(L"EDIT", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER, x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
-    SetWindowText(control, text.c_str());
 
-    m_controls.insert(std::pair<std::wstring, HWND>(name, control));
+    m_controls.insert(std::pair<int, HWND>(id, control));
 }
 
-void CommonControl::AddComboBox(const std::wstring &name, const std::vector<std::wstring> &items, int x, int y, int width, int height)
+void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"COMBOBOX", name.c_str(), CBS_DROPDOWN | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
+    auto control = CreateWindow(L"COMBOBOX", nullptr, CBS_DROPDOWN | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
                                 x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
@@ -41,23 +39,31 @@ void CommonControl::AddComboBox(const std::wstring &name, const std::vector<std:
 
     SendMessage(control, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 
-    m_controls.insert(std::pair<std::wstring, HWND>(name, control));
+    m_controls.insert(std::pair<int, HWND>(id, control));
 }
 
-void CommonControl::AddButton(const std::wstring &text, int id, int x, int y, int width, int height)
+void CommonControl::AddButton(int id, const std::wstring &text, int x, int y, int width, int height)
 {
     auto control = CreateWindow(L"BUTTON", text.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD, x, y, width, height, m_window, (HMENU)id, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
-    SetWindowText(control, text.c_str());
 }
 
-const std::string CommonControl::GetText(const std::wstring &name) const
+void CommonControl::AddCheckBox(int id, const std::wstring &text, int x, int y, int width, int height, bool checked)
 {
-    auto control = m_controls.find(name);
+    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX, x, y, width, height, m_window, (HMENU)id, m_instance, nullptr);
 
-    if (control == m_controls.end())
-        throw "control not found";
+    SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
+
+    if (checked)
+        CheckDlgButton(m_window, id, BST_CHECKED);
+}
+
+const std::string CommonControl::GetText(int id) const
+{
+    auto control = m_controls.find(id);
+
+    assert(control != m_controls.end());
 
     std::vector<char> buffer(GetWindowTextLengthA(control->second)+1);
     GetWindowTextA(control->second, &buffer[0], buffer.size());

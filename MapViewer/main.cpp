@@ -21,7 +21,7 @@
 #define START_HEIGHT        800
 
 #define CONTROL_WIDTH       300
-#define CONTROL_HEIGHT      250
+#define CONTROL_HEIGHT      375
 
 #define CAMERA_STEP         2.f
 
@@ -192,10 +192,22 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-enum Buttons : int
+enum Controls : int
 {
+    ContinentsCombo,
+    ADTX,
+    ADTY,
+    PositionX,
+    PositionY,
+    PositionZ,
     LoadPosition,
-    LoadADT
+    LoadADT,
+    Wireframe,
+    RenderADT,
+    RenderLiquid,
+    RenderWMO,
+    RenderDoodad,
+    RenderMesh,
 };
 
 LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -206,18 +218,18 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         {
             switch (wParam)
             {
-                case Buttons::LoadPosition:
+                case Controls::LoadPosition:
                 {
                     MessageBox(hWnd, L"Not implemented yet.", L"DEBUG", 0);
                     
                     return TRUE;
                 }
 
-                case Buttons::LoadADT:
+                case Controls::LoadADT:
                 {
-                    auto const adtX = std::stoi(gControls->GetText(L"ADT_X"));
-                    auto const adtY = std::stoi(gControls->GetText(L"ADT_Y"));
-                    auto const continentChoice = gControls->GetText(L"CONTINENT");
+                    auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
+                    auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
+                    auto const continentChoice = gControls->GetText(Controls::ContinentsCombo);
                     auto const continentName = continentChoice.substr(continentChoice.find(' ') + 1);
 
                     // if we are switching continents, unload our buffers
@@ -289,6 +301,103 @@ LRESULT CALLBACK ControlWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
                     return TRUE;
                 }
+
+                case Controls::Wireframe:
+                {
+                    if (IsDlgButtonChecked(hWnd, wParam))
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
+                        gRenderer->SetWireframe(false);
+                    }
+                    else
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
+                        gRenderer->SetWireframe(true);
+                    }
+
+                    return TRUE;
+                }
+
+                case Controls::RenderADT:
+                {
+                    if (IsDlgButtonChecked(hWnd, wParam))
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
+                        gRenderer->SetRenderADT(false);
+                    }
+                    else
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
+                        gRenderer->SetRenderADT(true);
+                    }
+
+                    return TRUE;
+                }
+
+                case Controls::RenderLiquid:
+                {
+                    if (IsDlgButtonChecked(hWnd, wParam))
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
+                        gRenderer->SetRenderLiquid(false);
+                    }
+                    else
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
+                        gRenderer->SetRenderLiquid(true);
+                    }
+
+                    return TRUE;
+                }
+
+                case Controls::RenderWMO:
+                {
+                    if (IsDlgButtonChecked(hWnd, wParam))
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
+                        gRenderer->SetRenderWMO(false);
+                    }
+                    else
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
+                        gRenderer->SetRenderWMO(true);
+                    }
+
+                    return TRUE;
+                }
+
+                case Controls::RenderDoodad:
+                {
+                    if (IsDlgButtonChecked(hWnd, wParam))
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
+                        gRenderer->SetRenderDoodad(false);
+                    }
+                    else
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
+                        gRenderer->SetRenderDoodad(true);
+                    }
+
+                    return TRUE;
+                }
+
+                case Controls::RenderMesh:
+                {
+                    if (IsDlgButtonChecked(hWnd, wParam))
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_UNCHECKED);
+                        gRenderer->SetRenderMesh(false);
+                    }
+                    else
+                    {
+                        CheckDlgButton(hWnd, wParam, BST_CHECKED);
+                        gRenderer->SetRenderMesh(true);
+                    }
+
+                    return TRUE;
+                }
+
             }
         }
     }
@@ -408,28 +517,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     continents.push_back(L"530 expansion01 (Outland");
     continents.push_back(L"571 Northrend");
 
-    gControls->AddComboBox(L"CONTINENT", continents, 115, 10, 155, 150);
+    gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, 155, 150);
 
     gControls->AddLabel(L"Position:", 10, 10, 300, 20);
 
     gControls->AddLabel(L"X:", 10, 47, 20, 20);
-    gControls->AddTextBox(L"X", L"", 25, 45, 75, 20);
+    gControls->AddTextBox(Controls::PositionX, L"", 25, 45, 75, 20);
 
     gControls->AddLabel(L"Y:", 10, 72, 20, 20);
-    gControls->AddTextBox(L"Y", L"", 25, 70, 75, 20);
+    gControls->AddTextBox(Controls::PositionY, L"", 25, 70, 75, 20);
 
     gControls->AddLabel(L"Z:", 10, 97, 20, 20);
-    gControls->AddTextBox(L"Z", L"", 25, 95, 75, 20);
+    gControls->AddTextBox(Controls::PositionZ, L"", 25, 95, 75, 20);
 
-    gControls->AddButton(L"Load Position", Buttons::LoadPosition, 115, 92, 100, 25);
+    gControls->AddButton(Controls::LoadPosition, L"Load Position", 115, 92, 100, 25);
 
     gControls->AddLabel(L"X:", 10, 147, 20, 20);
-    gControls->AddTextBox(L"ADT_X", L"32", 25, 145, 75, 20);
+    gControls->AddTextBox(Controls::ADTX, L"38", 25, 145, 75, 20);
 
     gControls->AddLabel(L"Y:", 10, 172, 20, 20);
-    gControls->AddTextBox(L"ADT_Y", L"48", 25, 170, 75, 20);
+    gControls->AddTextBox(Controls::ADTY, L"40", 25, 170, 75, 20);
 
-    gControls->AddButton(L"Load ADT", Buttons::LoadADT, 115, 167, 100, 25);
+    gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 167, 100, 25);
+
+    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 200, 100, 20, false);
+    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 220, 100, 20, true);
+    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 240, 150, 20, true);
+    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 260, 100, 20, true);
+    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 280, 150, 20, true);
+    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 300, 150, 20, true);
 
     // enter the main loop:
 
