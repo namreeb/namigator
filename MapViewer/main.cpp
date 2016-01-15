@@ -18,7 +18,7 @@
 #define START_WIDTH         1200
 #define START_HEIGHT        800
 
-#define CONTROL_WIDTH       400
+#define CONTROL_WIDTH       355
 #define CONTROL_HEIGHT      280
 
 #define CAMERA_STEP         2.f
@@ -267,26 +267,55 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
         nullptr);
 }
 
+void GetContinentName(const std::string &inName, std::string &outName)
+{
+    outName = inName.substr(inName.find(' ') + 1);
+    outName = outName.substr(0, outName.find('('));
+    outName.erase(std::remove(outName.begin(), outName.end(), ' '));
+}
+
+void ChangeContinent(const std::string &cn)
+{
+    std::string continentName;
+
+    GetContinentName(cn, continentName);
+
+    if (gContinent)
+        gRenderer->ClearBuffers();
+
+    gContinent.reset(new parser::Continent(continentName));
+    gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
+
+    // if the loaded continent has no ADTs, but instead a global WMO, load it now
+    if (auto wmo = gContinent->GetWmo())
+    {
+        gRenderer->AddWmo(0, wmo->Vertices, wmo->Indices);
+        gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
+        gRenderer->AddDoodad(0, wmo->DoodadVertices, wmo->DoodadIndices);
+
+        const float cx = (wmo->Bounds.MaxCorner.X + wmo->Bounds.MinCorner.X) / 2.f;
+        const float cy = (wmo->Bounds.MaxCorner.Y + wmo->Bounds.MinCorner.Y) / 2.f;
+        const float cz = (wmo->Bounds.MaxCorner.Z + wmo->Bounds.MinCorner.Z) / 2.f;
+
+        gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
+        gRenderer->m_camera.LookAt(cx, cy, cz);
+
+        // mesh to load?
+    }
+}
+
 void LoadADTFromGUI()
 {
+    // if we have not yet loaded the continent, do so now
+    if (!gContinent)
+        ChangeContinent(gControls->GetText(Controls::ContinentsCombo));
+
+    // if the current continent has only a global WMO, do nothing further
+    if (gContinent->GetWmo())
+        return;
+
     auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
     auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
-    auto const continentChoice = gControls->GetText(Controls::ContinentsCombo);
-    auto const continentName = continentChoice.substr(continentChoice.find(' ') + 1);
-
-    // if we are switching continents, unload our buffers
-    if (gContinent && gContinent->Name != continentName)
-    {
-        gRenderer->ClearBuffers();
-        gContinent.reset(nullptr);
-    }
-
-    // if we are loading the first adt in the continent, intialize it first
-    if (!gContinent)
-    {
-        gContinent.reset(new parser::Continent(continentName));
-        gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
-    }
 
     auto const adt = gContinent->LoadAdt(adtX, adtY);
 
@@ -376,21 +405,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     continents.push_back(L"000 Azeroth");
     continents.push_back(L"001 Kalimdor");
     continents.push_back(L"013 Test");
-    continents.push_back(L"025 Scott test");
+    continents.push_back(L"025 Scott Test");
     continents.push_back(L"029 Test");
-    continents.push_back(L"030 PVPzone01 (Alterac Valley)");
+    continents.push_back(L"030 PVPZone01 (Alterac Valley)");
     continents.push_back(L"033 Shadowfang");
-    continents.push_back(L"034 stormwindjail");
-    continents.push_back(L"035 stormwindprison");
-    continents.push_back(L"036 deadminesInstance");
+    continents.push_back(L"034 StormwindJail (Stockades)");
+    //continents.push_back(L"035 StormwindPrison");
+    continents.push_back(L"036 DeadminesInstance");
     continents.push_back(L"037 PVPZone02 (Azshara Crater)");
     continents.push_back(L"043 WailingCaverns");
     continents.push_back(L"489 PVPzone03 (Warsong Gulch)");
     continents.push_back(L"529 PVPzone04 (Arathi Basin)");
-    continents.push_back(L"530 expansion01 (Outland");
+    continents.push_back(L"530 Expansion01 (Outland");
     continents.push_back(L"571 Northrend");
 
-    gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, [](const std::string &text) {});
+    gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, ChangeContinent);
 
     gControls->AddLabel(L"X:", 10, 35);
     gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);

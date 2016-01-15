@@ -8,8 +8,6 @@
 
 class CommonControl
 {
-    friend LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-
     private:
         LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
