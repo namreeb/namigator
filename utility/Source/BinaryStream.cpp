@@ -40,7 +40,7 @@ std::string BinaryStream::ReadCString()
 
 void BinaryStream::ReadBytes(void *dest, unsigned long length)
 {
-    std::copy(&m_buffer[m_position], &m_buffer[m_position + length], static_cast<char *>(dest));
+    std::copy(&m_buffer[m_position], &m_buffer[m_position]+length, static_cast<char *>(dest));
 
     m_position += length;
 }

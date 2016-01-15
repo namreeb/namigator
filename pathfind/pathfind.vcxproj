@@ -142,7 +142,6 @@
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastRasterization.cpp" />
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastRegion.cpp" />
-    <ClCompile Include="Source\DataManager.cpp" />
     <ClCompile Include="Source\MeshBuilder.cpp" />
     <ClCompile Include="Source\NavMesh.cpp" />
   </ItemGroup>
@@ -160,7 +159,6 @@
     <ClInclude Include="..\recastnavigation\Recast\Include\RecastAlloc.h" />
     <ClInclude Include="..\recastnavigation\Recast\Include\RecastAssert.h" />
     <ClInclude Include="Include\Common.hpp" />
-    <ClInclude Include="Include\DataManager.hpp" />
     <ClInclude Include="Include\MeshBuilder.hpp" />
     <ClInclude Include="Include\NavMesh.hpp" />
   </ItemGroup>

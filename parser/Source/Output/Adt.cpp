@@ -24,10 +24,17 @@ inline bool Adt::IsRendered(unsigned char mask[], int x, int y)
 }
 
 Adt::Adt(Continent *continent, int x, int y)
-    : X(x), Y(y),
-        MaxX((32.f-(float)y)*(533.f+(1.f/3.f))), MinX(MaxX - (533.f + (1.f/3.f))),
-        MaxY((32.f-(float)x)*(533.f+(1.f/3.f))), MinY(MaxY - (533.f + (1.f/3.f))), m_continent(continent),
-        MaxZ(std::numeric_limits<float>::lowest()), MinZ(std::numeric_limits<float>::max())
+    : X(x), Y(y), m_continent(continent),
+      Bounds({
+            (32.f - (float)y - 1.f)*(533.f + (1.f / 3.f)),
+            (32.f - (float)x - 1.f)*(533.f + (1.f / 3.f)),
+            std::numeric_limits<float>::max()
+        },
+        {
+            (32.f - (float)y)*(533.f + (1.f / 3.f)),
+            (32.f - (float)x)*(533.f + (1.f / 3.f)),
+            std::numeric_limits<float>::lowest()
+        })
 {
     std::stringstream ss;
 
@@ -52,10 +59,10 @@ Adt::Adt(Continent *continent, int x, int y)
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
             chunk->m_surfaceNormals = std::move(mapChunk->Normals);
 
-            if (mapChunk->MaxZ > MaxZ)
-                MaxZ = mapChunk->MaxZ;
-            if (mapChunk->MinZ < MinZ)
-                MinZ = mapChunk->MinZ;
+            if (mapChunk->MaxZ > Bounds.MaxCorner.Z)
+                Bounds.MaxCorner.Z = mapChunk->MaxZ;
+            if (mapChunk->MinZ < Bounds.MinCorner.Z)
+                Bounds.MinCorner.Z = mapChunk->MinZ;
 
             memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(bool)*8*8);
 
@@ -213,9 +220,9 @@ Adt::Adt(Continent *continent, int x, int y)
                 continue;
 
             auto const wmo = new Wmo(newWmo->Vertices, newWmo->Indices,
-                                        newWmo->LiquidVertices, newWmo->LiquidIndices,
-                                        newWmo->DoodadVertices, newWmo->DoodadIndices,
-                                        newWmo->Bounds.MinCorner.Z, newWmo->Bounds.MaxCorner.Z);
+                                     newWmo->LiquidVertices, newWmo->LiquidIndices,
+                                     newWmo->DoodadVertices, newWmo->DoodadIndices,
+                                     newWmo->Bounds);
 
             continent->InsertWmo(wmoDefinition.UniqueId, wmo);
 
@@ -225,13 +232,13 @@ Adt::Adt(Continent *continent, int x, int y)
                 auto const &vertex = wmo->Vertices[v];
 
                 // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
-                if (vertex.X > MaxX || vertex.X < MinX || vertex.Y > MaxY || vertex.Y < MinY)
+                if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
                     continue;
 
                 const float chunkSize = 33.f + (1.f / 3.f);
 
-                const int chunkX = static_cast<int>((MaxY - vertex.Y) / chunkSize);
-                const int chunkY = static_cast<int>((MaxX - vertex.X) / chunkSize);
+                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / chunkSize);
+                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / chunkSize);
 
                 assert(chunkX < 16 && chunkY < 16);
 
@@ -269,13 +276,13 @@ Adt::Adt(Continent *continent, int x, int y)
                 auto const &vertex = doodad->Vertices[v];
 
                 // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
-                if (vertex.X > MaxX || vertex.X < MinX || vertex.Y > MaxY || vertex.Y < MinY)
+                if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
                     continue;
 
                 const float chunkSize = 33.f + (1.f / 3.f);
 
-                const int chunkX = static_cast<int>((MaxY - vertex.Y) / chunkSize);
-                const int chunkY = static_cast<int>((MaxX - vertex.X) / chunkSize);
+                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / chunkSize);
+                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / chunkSize);
 
                 assert(chunkX < 16 && chunkY < 16);
 

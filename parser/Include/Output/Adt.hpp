@@ -3,6 +3,8 @@
 #include "parser/Include/Output/Wmo.hpp"
 #include "parser/Include/Output/Doodad.hpp"
 
+#include "utility/Include/BoundingBox.hpp"
+
 #include <string>
 #include <list>
 #include <vector>
@@ -44,14 +46,7 @@ class Adt
         const int X;
         const int Y;
 
-        const float MaxX;
-        const float MinX;
-
-        const float MaxY;
-        const float MinY;
-
-        float MaxZ;
-        float MinZ;
+        utility::BoundingBox Bounds;
 
         Adt(Continent *continent, int x, int y);
 

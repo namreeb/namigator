@@ -83,14 +83,11 @@
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourNode.cpp">
       <Filter>Source Files\Detour</Filter>
     </ClCompile>
-    <ClCompile Include="Source\DataManager.cpp">
-      <Filter>Source Files\Build</Filter>
+    <ClCompile Include="Source\NavMesh.cpp">
+      <Filter>Source Files\Query</Filter>
     </ClCompile>
     <ClCompile Include="Source\MeshBuilder.cpp">
       <Filter>Source Files\Build</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\NavMesh.cpp">
-      <Filter>Source Files\Query</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -130,17 +127,14 @@
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourStatus.h">
       <Filter>Header Files\Detour</Filter>
     </ClInclude>
-    <ClInclude Include="Include\DataManager.hpp">
-      <Filter>Header Files\Build</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\MeshBuilder.hpp">
-      <Filter>Header Files\Build</Filter>
-    </ClInclude>
     <ClInclude Include="Include\NavMesh.hpp">
       <Filter>Header Files\Query</Filter>
     </ClInclude>
     <ClInclude Include="Include\Common.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\MeshBuilder.hpp">
+      <Filter>Header Files\Build</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

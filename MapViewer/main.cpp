@@ -334,9 +334,9 @@ void LoadADTFromGUI()
         gRenderer->AddMesh(meshVertices, meshIndices);
     }
 
-    const float cx = (adt->MaxX + adt->MinX) / 2.f;
-    const float cy = (adt->MaxY + adt->MinY) / 2.f;
-    const float cz = (adt->MaxZ + adt->MinZ) / 2.f;
+    const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
+    const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;
+    const float cz = (adt->Bounds.MaxCorner.Z + adt->Bounds.MinCorner.Z) / 2.f;
 
     gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
     gRenderer->m_camera.LookAt(cx, cy, cz);

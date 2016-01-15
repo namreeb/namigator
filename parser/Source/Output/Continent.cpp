@@ -12,7 +12,7 @@
 
 namespace parser
 {
-Continent::Continent(const std::string &continentName) : Name(continentName)
+Continent::Continent(const std::string &continentName) : Name(continentName), m_wmo(nullptr)
 {
     std::string file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
@@ -26,7 +26,7 @@ Continent::Continent(const std::string &continentName) : Name(continentName)
         m_wmo.reset(new Wmo(continent.Wmo->Vertices, continent.Wmo->Indices,
                             continent.Wmo->LiquidVertices, continent.Wmo->LiquidIndices,
                             continent.Wmo->DoodadVertices, continent.Wmo->DoodadIndices,
-                            continent.Wmo->Bounds.MinCorner.Z, continent.Wmo->Bounds.MaxCorner.Z));
+                            continent.Wmo->Bounds));
 }
 
 const Adt *Continent::LoadAdt(int x, int y)

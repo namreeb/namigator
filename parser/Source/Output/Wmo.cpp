@@ -2,6 +2,7 @@
 #include "parser.hpp"
 
 #include <string>
+#include <sstream>
 #include <fstream>
 
 namespace parser
@@ -9,9 +10,62 @@ namespace parser
 Wmo::Wmo(std::vector<utility::Vertex> &vertices, std::vector<int> &indices,
          std::vector<utility::Vertex> &liquidVertices, std::vector<int> &liquidIndices,
          std::vector<utility::Vertex> &doodadVertices, std::vector<int> &doodadIndices,
-         const float minZ, const float maxZ)
-    : MinZ(minZ), MaxZ(maxZ),
+         const utility::BoundingBox &bounds)
+    : Bounds(bounds),
       Vertices(std::move(vertices)), Indices(std::move(indices)),
       LiquidVertices(std::move(liquidVertices)), LiquidIndices(std::move(liquidIndices)),
       DoodadVertices(std::move(doodadVertices)), DoodadIndices(std::move(doodadIndices)) {}
+
+void Wmo::WriteGlobalObjFile(const std::string &continentName) const
+{
+    std::stringstream ss;
+
+    ss << continentName << ".obj";
+
+    std::ofstream out(ss.str());
+
+    unsigned int indexOffset = 1;
+
+    out << "# wmo vertices" << std::endl;
+    for (size_t i = 0; i < Vertices.size(); ++i)
+        out << "v " << -Vertices[i].Y
+            << " "  <<  Vertices[i].Z
+            << " "  << -Vertices[i].X << std::endl;
+
+    out << "# wmo indices" << std::endl;
+    for (size_t i = 0; i < Indices.size(); i += 3)
+        out << "f " << indexOffset + Indices[i + 0]
+            << " "  << indexOffset + Indices[i + 1]
+            << " "  << indexOffset + Indices[i + 2] << std::endl;
+
+    indexOffset += Indices.size();
+
+    out << "# wmo liquid vertices" << std::endl;
+    for (size_t i = 0; i < LiquidVertices.size(); ++i)
+        out << "v " << -LiquidVertices[i].Y
+            << " "  <<  LiquidVertices[i].Z
+            << " "  << -LiquidVertices[i].X << std::endl;
+
+    out << "# wmo liquid incices" << std::endl;
+    for (size_t i = 0; i < LiquidIndices.size(); i += 3)
+        out << "f " << indexOffset + LiquidIndices[i + 0]
+            << " "  << indexOffset + LiquidIndices[i + 1]
+            << " "  << indexOffset + LiquidIndices[i + 2] << std::endl;
+
+    indexOffset += LiquidIndices.size();
+
+    out << "# wmo doodad vertices" << std::endl;
+    for (size_t i = 0; i < DoodadVertices.size(); ++i)
+        out << "v " << -DoodadVertices[i].Y
+            << " "  <<  DoodadVertices[i].Z
+            << " "  << -DoodadVertices[i].X << std::endl;
+
+    out << "# wmo doodad indices" << std::endl;
+    for (size_t i = 0; i < DoodadIndices.size(); i += 3)
+        out << "f " << indexOffset + DoodadIndices[i + 0]
+            << " "  << indexOffset + DoodadIndices[i + 1]
+            << " "  << indexOffset + DoodadIndices[i + 2] << std::endl;
+
+    out.close();
+}
 }

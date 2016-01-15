@@ -132,10 +132,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Worker.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\parser\parser.vcxproj">
       <Project>{374e3660-9432-4306-8550-f76030ffc8e8}</Project>
     </ProjectReference>
@@ -150,7 +146,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Worker.hpp" />
+    <ClInclude Include="Include\Worker.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\Worker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
