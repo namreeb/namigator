@@ -21,6 +21,7 @@ class NavMesh
         NavMesh(const std::string &dataPath, const std::string &continentName);
 
         bool LoadTile(int x, int y);
+        bool LoadGlobalWMO();
 
         void GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices);
 };

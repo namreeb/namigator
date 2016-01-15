@@ -43,6 +43,24 @@ bool NavMesh::LoadTile(int x, int y)
     return m_navMesh.addTile(buff, static_cast<int>(size), DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
 }
 
+bool NavMesh::LoadGlobalWMO()
+{
+    std::stringstream str;
+    str << m_dataPath << "\\" << m_continentName << ".map";
+
+    std::ifstream in(str.str(), std::ifstream::binary);
+
+    in.seekg(0, in.end);
+    auto const size = in.tellg();
+    in.seekg(0, in.beg);
+
+    // the dtNavMesh destructor will handle deallocation of this data
+    auto const buff = new unsigned char[static_cast<unsigned int>(size)];
+    in.read(reinterpret_cast<char *>(buff), size);
+
+    return m_navMesh.addTile(buff, static_cast<int>(size), DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
+}
+
 void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices)
 {
     auto const tile = m_navMesh.getTileAt(x, y, 0);

@@ -300,7 +300,20 @@ void ChangeContinent(const std::string &cn)
         gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
         gRenderer->m_camera.LookAt(cx, cy, cz);
 
-        // mesh to load?
+        if (gNavMesh->LoadGlobalWMO())
+        {
+            std::vector<utility::Vertex> meshVertices;
+            std::vector<int> meshIndices;
+            gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices);
+
+            assert(!!meshVertices.size() && !!meshIndices.size());
+
+            // raise the z values for each mesh vertex slightly to help visualize them
+            for (size_t i = 0; i < meshVertices.size(); ++i)
+                meshVertices[i].Z += 0.3f;
+
+            gRenderer->AddMesh(meshVertices, meshIndices);
+        }
     }
 }
 
