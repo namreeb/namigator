@@ -25,22 +25,34 @@ NavMesh::NavMesh(const std::string &dataPath, const std::string &continentName) 
     assert(m_navMesh.init(&params) == DT_SUCCESS);
 }
 
+bool NavMesh::LoadFile(const std::string &filename, unsigned char **data, int *size)
+{
+    std::ifstream in(filename, std::ifstream::binary);
+
+    in.seekg(0, in.end);
+    auto const s = in.tellg();
+    *size = static_cast<int>(s);
+    in.seekg(0, in.beg);
+
+    // the dtNavMesh destructor will handle deallocation of this data
+    *data = new unsigned char[*size];
+    in.read(reinterpret_cast<char *>(*data), *size);
+
+    return true;
+}
+
 bool NavMesh::LoadTile(int x, int y)
 {
     std::stringstream str;
     str << m_dataPath << "\\" << m_continentName << "_" << x << "_" << y << ".map";
 
-    std::ifstream in(str.str(), std::ifstream::binary);
+    unsigned char *buff;
+    int size;
 
-    in.seekg(0, in.end);
-    auto const size = in.tellg();
-    in.seekg(0, in.beg);
+    if (!LoadFile(str.str(), &buff, &size))
+        return false;
 
-    // the dtNavMesh destructor will handle deallocation of this data
-    auto const buff = new unsigned char[static_cast<unsigned int>(size)];
-    in.read(reinterpret_cast<char *>(buff), size);
-
-    return m_navMesh.addTile(buff, static_cast<int>(size), DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
+    return m_navMesh.addTile(buff, size, DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
 }
 
 bool NavMesh::LoadGlobalWMO()
@@ -48,17 +60,13 @@ bool NavMesh::LoadGlobalWMO()
     std::stringstream str;
     str << m_dataPath << "\\" << m_continentName << ".map";
 
-    std::ifstream in(str.str(), std::ifstream::binary);
+    unsigned char *buff;
+    int size;
 
-    in.seekg(0, in.end);
-    auto const size = in.tellg();
-    in.seekg(0, in.beg);
+    if (!LoadFile(str.str(), &buff, &size))
+        return false;
 
-    // the dtNavMesh destructor will handle deallocation of this data
-    auto const buff = new unsigned char[static_cast<unsigned int>(size)];
-    in.read(reinterpret_cast<char *>(buff), size);
-
-    return m_navMesh.addTile(buff, static_cast<int>(size), DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
+    return m_navMesh.addTile(buff, size, DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
 }
 
 void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices)

@@ -17,6 +17,8 @@ class NavMesh
 
         dtNavMesh m_navMesh;
 
+        static bool LoadFile(const std::string &filename, unsigned char **data, int *size);
+
     public:
         NavMesh(const std::string &dataPath, const std::string &continentName);
 
