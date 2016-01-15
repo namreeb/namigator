@@ -18,7 +18,7 @@
 #define START_WIDTH         1200
 #define START_HEIGHT        800
 
-#define CONTROL_WIDTH       300
+#define CONTROL_WIDTH       400
 #define CONTROL_HEIGHT      280
 
 #define CAMERA_STEP         2.f
@@ -390,7 +390,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     continents.push_back(L"530 expansion01 (Outland");
     continents.push_back(L"571 Northrend");
 
-    gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, 155, 150);
+    gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, [](const std::string &text) {});
 
     gControls->AddLabel(L"X:", 10, 35);
     gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);

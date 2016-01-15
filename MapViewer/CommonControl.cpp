@@ -36,8 +36,10 @@ LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 
             auto const control = reinterpret_cast<HWND>(lParam);
 
-            if (GetClassName(control, className, sizeof(className)/sizeof(className[0])) &&
-                !wcsncmp(className, L"Button", wcslen(className)))
+            if (!GetClassName(control, className, sizeof(className) / sizeof(className[0])))
+                break;
+
+            if (!wcsncmp(className, L"Button", wcslen(className)))
             {
                 auto const style = GetWindowLong(control, GWL_STYLE);
 
@@ -81,6 +83,17 @@ LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
                     }
                 }
             }
+            else if (!wcsncmp(className, L"ComboBox", wcslen(className)) && HIWORD(wParam) == CBN_SELCHANGE)
+            {
+                auto handler = m_comboBoxHandlers.find(static_cast<int>(LOWORD(wParam)));
+
+                if (handler != m_comboBoxHandlers.end())
+                {
+                    handler->second(GetText(handler->first));
+
+                    return TRUE;
+                }
+            }
         }
     }
 
@@ -111,9 +124,28 @@ void CommonControl::AddTextBox(int id, const std::wstring &text, int x, int y, i
     m_controls.insert(std::pair<int, HWND>(id, control));
 }
 
-void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, int x, int y, int width, int height)
+void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, int x, int y, std::function<void(const std::string &)> handler)
 {
-    auto control = CreateWindow(L"COMBOBOX", nullptr, CBS_DROPDOWN | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
+    auto hdc = GetDC(m_window);
+
+    assert(!!hdc);
+
+    int width = -1, height = 0;
+
+    for (auto &s : items)
+    {
+        SIZE textSize;
+        assert(GetTextExtentPoint(hdc, s.c_str(), s.length(), &textSize));
+
+        if (width < textSize.cx)
+            width = textSize.cx;
+
+        height += textSize.cy;
+    }
+
+    height += 2 * items.size();
+
+    auto control = CreateWindow(L"COMBOBOX", nullptr, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
                                 x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
@@ -124,6 +156,7 @@ void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, 
     SendMessage(control, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 
     m_controls.insert(std::pair<int, HWND>(id, control));
+    m_comboBoxHandlers.insert(std::pair<int, decltype(handler)>(id, handler));
 }
 
 void CommonControl::AddButton(int id, const std::wstring &text, int x, int y, int width, int height, std::function<void()> handler)
