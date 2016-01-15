@@ -1,4 +1,5 @@
 #include "NavMesh.hpp"
+#include "Common.hpp"
 #include "utility/Include/MathHelper.hpp"
 
 #include "DetourNavMesh.h"
@@ -14,12 +15,10 @@ NavMesh::NavMesh(const std::string &dataPath, const std::string &continentName) 
 {
     dtNavMeshParams params;
 
-    const float tileWidth = 533.f + (1.f / 3.f);
-
-    params.orig[0] = -32.f * tileWidth;
+    params.orig[0] = -32.f * RecastSettings::TileSize;
     params.orig[1] = 0.f;
-    params.orig[2] = -32.f * tileWidth;
-    params.tileHeight = params.tileWidth = 1800;
+    params.orig[2] = -32.f * RecastSettings::TileSize;
+    params.tileHeight = params.tileWidth = RecastSettings::TileVoxelSize;
     params.maxTiles = 64 * 64;
     params.maxPolys = 1 << DT_POLY_BITS;
 

@@ -92,8 +92,8 @@ void InitializeRecastConfig(rcConfig &config)
     config.walkableRadius = static_cast<int>(std::round(RecastSettings::WalkableRadius / config.cs));
     config.maxEdgeLen = config.walkableRadius * 8;
     config.maxSimplificationError = RecastSettings::MaxSimplificationError;
-    config.minRegionArea = 20;
-    config.mergeRegionArea = 40;
+    config.minRegionArea = RecastSettings::MinRegionSize;
+    config.mergeRegionArea = RecastSettings::MergeRegionSize;
     config.maxVertsPerPoly = 6;
     config.tileSize = RecastSettings::TileVoxelSize;
     config.borderSize = config.walkableRadius + 3;
