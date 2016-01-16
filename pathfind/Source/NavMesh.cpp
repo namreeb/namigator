@@ -29,6 +29,9 @@ bool NavMesh::LoadFile(const std::string &filename, unsigned char **data, int *s
 {
     std::ifstream in(filename, std::ifstream::binary);
 
+    if (in.fail())
+        return false;
+
     in.seekg(0, in.end);
     auto const s = in.tellg();
     *size = static_cast<int>(s);

@@ -12,6 +12,8 @@
 #include <fstream>
 #include <sstream>
 #include <list>
+#include <mutex>
+#include <iomanip>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -186,15 +188,55 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, co
 
 MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, std::string &continentName) : m_outputPath(outputPath)
 {
+    memset(m_adtReferences, 0, sizeof(m_adtReferences));
+
     parser::Parser::Initialize(dataPath.c_str());
 
     // this must follow the parser initialization
     m_continent.reset(new parser::Continent(continentName));
 }
 
+void MeshBuilder::BuildWorkList(std::vector<std::pair<int, int>> &tiles) const
+{
+    tiles.reserve(64 * 64);
+    for (int y = 0; y < 64; ++y)
+        for (int x = 0; x < 64; ++x)
+            if (m_continent->HasAdt(x, y))
+                tiles.push_back(std::pair<int, int>(x, y));
+}
+
 bool MeshBuilder::IsGlobalWMO() const
 {
     return !!m_continent->GetWmo();
+}
+
+void MeshBuilder::AddReference(int adtX, int adtY)
+{
+    if (!m_continent->HasAdt(adtX, adtY))
+        return;
+
+    std::lock_guard<std::mutex> guard(m_mutex);
+    ++m_adtReferences[adtY][adtX];
+}
+
+void MeshBuilder::RemoveReference(int adtX, int adtY)
+{
+    if (!m_continent->HasAdt(adtX, adtY))
+        return;
+
+    std::lock_guard<std::mutex> guard(m_mutex);
+    --m_adtReferences[adtY][adtX];
+
+    if (m_adtReferences[adtY][adtX] <= 0)
+    {
+#ifdef _DEBUG
+        std::stringstream str;
+        str << "No threads need ADT (" << std::setfill(' ') << std::setw(2) << adtX << ", "
+            << std::setfill(' ') << std::setw(2) << adtY << ").  Unloading.\n";
+        std::cout << str.str();
+#endif
+        m_continent->UnloadAdt(adtX, adtY);
+    }
 }
 
 bool MeshBuilder::GenerateAndSaveGlobalWMO()
@@ -203,9 +245,9 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
 
     assert(!!wmo);
 
-#ifdef _DEBUG
-    wmo->WriteGlobalObjFile(m_continent->Name);
-#endif
+//#ifdef _DEBUG
+//    wmo->WriteGlobalObjFile(m_continent->Name);
+//#endif
 
     rcConfig config;
     InitializeRecastConfig(config);
@@ -253,24 +295,30 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
 
 bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 {
-    auto const adt = m_continent->LoadAdt(adtX, adtY);
+    const parser::Adt *adts[9] = {
+        m_continent->LoadAdt(adtX - 1, adtY - 1), m_continent->LoadAdt(adtX - 0, adtY - 1), m_continent->LoadAdt(adtX + 1, adtY - 1),
+        m_continent->LoadAdt(adtX - 1, adtY - 0), m_continent->LoadAdt(adtX - 0, adtY - 0), m_continent->LoadAdt(adtX + 1, adtY - 0),
+        m_continent->LoadAdt(adtX - 1, adtY + 1), m_continent->LoadAdt(adtX - 0, adtY + 1), m_continent->LoadAdt(adtX + 1, adtY + 1),
+    };
 
-    assert(!!adt);
+    const parser::Adt *thisTile = adts[4];
+
+    assert(!!thisTile);
 
 #ifdef _DEBUG
-    adt->WriteObjFile();
+    thisTile->WriteObjFile();
 #endif
 
     rcConfig config;
     InitializeRecastConfig(config);
 
-    config.bmin[0] = -adt->Bounds.MaxCorner.Y;
-    config.bmin[1] =  adt->Bounds.MinCorner.Z;
-    config.bmin[2] = -adt->Bounds.MaxCorner.X;
+    config.bmin[0] = -thisTile->Bounds.MaxCorner.Y;
+    config.bmin[1] =  thisTile->Bounds.MinCorner.Z;
+    config.bmin[2] = -thisTile->Bounds.MaxCorner.X;
 
-    config.bmax[0] = -adt->Bounds.MinCorner.Y;
-    config.bmax[1] =  adt->Bounds.MaxCorner.Z;
-    config.bmax[2] = -adt->Bounds.MinCorner.X;
+    config.bmax[0] = -thisTile->Bounds.MinCorner.Y;
+    config.bmax[1] =  thisTile->Bounds.MaxCorner.Z;
+    config.bmax[2] = -thisTile->Bounds.MinCorner.X;
 
     rcContext ctx;
 
@@ -282,77 +330,83 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     std::set<int> rasterizedWmos;
     std::set<int> rasterizedDoodads;
 
-    // the mesh geometry can be rasterized into the height field stages, which is good for us
-    for (int y = 0; y < 16; ++y)
-        for (int x = 0; x < 16; ++x)
-        {
-            auto const chunk = adt->GetChunk(x, y);
-
-            // adt terrain
-            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::ADT))
-                return false;
-
-            // liquid
-            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
-                return false;
-
-            // wmos (and included doodads and liquid)
-            for (auto const &wmoId : chunk->m_wmos)
-            {
-                if (rasterizedWmos.find(wmoId) != rasterizedWmos.end())
-                    continue;
-
-                auto const wmo = m_continent->GetWmo(wmoId);
-
-                assert(wmo);
-
-                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::WMO))
-                    return false;
-
-                if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
-                    return false;
-
-                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
-                    return false;
-            }
-
-            // doodads
-            for (auto const &doodadId : chunk->m_doodads)
-            {
-                if (rasterizedDoodads.find(doodadId) != rasterizedDoodads.end())
-                    continue;
-
-                auto const doodad = m_continent->GetDoodad(doodadId);
-
-                assert(doodad);
-
-                if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, doodad->Vertices, doodad->Indices, AreaFlags::Doodad))
-                    return false;
-            }
-        }
-
-    FilterGroundBeneathLiquid(*solid);
-
-    // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
+    for (int i = 0; i < sizeof(adts) / sizeof(adts[0]); ++i)
     {
-        std::vector<rcSpan *> adtSpans;
+        if (!adts[i])
+            continue;
 
-        for (int i = 0; i < solid->width * solid->height; ++i)
-            for (rcSpan *s = solid->spans[i]; s; s = s->next)
-                if (!!(s->area & AreaFlags::ADT))
-                    adtSpans.push_back(s);
+        // the mesh geometry can be rasterized into the height field stages, which is good for us
+        for (int y = 0; y < 16; ++y)
+            for (int x = 0; x < 16; ++x)
+            {
+                auto const chunk = adts[i]->GetChunk(x, y);
 
-        rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+                // adt terrain
+                if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::ADT))
+                    return false;
 
-        RestoreAdtSpans(adtSpans);
+                // liquid
+                if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
+                    return false;
 
-        rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+                // wmos (and included doodads and liquid)
+                for (auto const &wmoId : chunk->m_wmos)
+                {
+                    if (rasterizedWmos.find(wmoId) != rasterizedWmos.end())
+                        continue;
 
-        RestoreAdtSpans(adtSpans);
+                    auto const wmo = m_continent->GetWmo(wmoId);
 
-        rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+                    assert(wmo);
 
-        RestoreAdtSpans(adtSpans);
+                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::WMO))
+                        return false;
+
+                    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
+                        return false;
+
+                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
+                        return false;
+                }
+
+                // doodads
+                for (auto const &doodadId : chunk->m_doodads)
+                {
+                    if (rasterizedDoodads.find(doodadId) != rasterizedDoodads.end())
+                        continue;
+
+                    auto const doodad = m_continent->GetDoodad(doodadId);
+
+                    assert(doodad);
+
+                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, doodad->Vertices, doodad->Indices, AreaFlags::Doodad))
+                        return false;
+                }
+            }
+
+        FilterGroundBeneathLiquid(*solid);
+
+        // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
+        {
+            std::vector<rcSpan *> adtSpans;
+
+            for (int i = 0; i < solid->width * solid->height; ++i)
+                for (rcSpan *s = solid->spans[i]; s; s = s->next)
+                    if (!!(s->area & AreaFlags::ADT))
+                        adtSpans.push_back(s);
+
+            rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+
+            RestoreAdtSpans(adtSpans);
+
+            rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+
+            RestoreAdtSpans(adtSpans);
+
+            rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+
+            RestoreAdtSpans(adtSpans);
+        }
     }
 
     std::stringstream str;
