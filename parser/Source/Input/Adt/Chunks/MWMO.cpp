@@ -11,6 +11,9 @@ MWMO::MWMO(long position, utility::BinaryStream *reader) : AdtChunk(position, re
 {
     Type = AdtChunkType::MWMO;
 
+    if (!Size)
+        return;
+
     reader->SetPosition(position + 8);
 
     std::vector<char> wmoNames(Size);

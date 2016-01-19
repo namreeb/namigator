@@ -4,6 +4,8 @@
 #include <memory>
 #include <cassert>
 #include <vector>
+#include <iostream>
+#include <thread>
 
 namespace parser
 {
@@ -46,21 +48,44 @@ MH2O::MH2O(long position, utility::BinaryStream *reader) : AdtChunk(position, re
                 memset(newLayer->Heights, 0, sizeof(newLayer->Heights));
 
                 std::vector<unsigned char> exists(instance.OffsetVertexData - instance.OffsetExistsBitmap);
+                std::vector<float> heightMap((instance.Width + 1)*(instance.Height + 1));
 
-                if (header.AttributesOffset && instance.OffsetExistsBitmap)
+                if (!exists.size())
                 {
-                    reader->SetPosition(offsetFrom + instance.OffsetExistsBitmap);
-                    reader->ReadBytes(&exists[0], exists.size());
-                }
-                else
+                    exists.resize(instance.Width * instance.Height);
                     memset(&exists[0], 0xFF, exists.size());
 
-                std::vector<float> heightMap((instance.Width + 1)*(instance.Height + 1));
-                reader->SetPosition(offsetFrom + instance.OffsetVertexData);
-                reader->ReadBytes(&heightMap[0], sizeof(float)*heightMap.size());
+                    assert((instance.MaxHeight - instance.MinHeight) < 0.001f);
+                    assert(!std::isnan(instance.MaxHeight));
 
-                // the depth map can be skipped.  it functions only to assist in shading.
-                reader->Slide(heightMap.size());
+                    for (size_t i = 0; i < heightMap.size(); ++i)
+                        heightMap[i] = instance.MaxHeight;
+                }
+                else
+                {
+                    if (header.AttributesOffset && instance.OffsetExistsBitmap)
+                    {
+                        reader->SetPosition(offsetFrom + instance.OffsetExistsBitmap);
+                        reader->ReadBytes(&exists[0], exists.size());
+                    }
+                    else
+                        memset(&exists[0], 0xFF, exists.size());
+
+                    // ocean?  no height map!
+                    if (instance.Type == 2)
+                    {
+                        for (size_t i = 0; i < heightMap.size(); ++i)
+                            heightMap[i] = instance.MaxHeight;
+                    }
+                    else
+                    {
+                        reader->SetPosition(offsetFrom + instance.OffsetVertexData);
+                        reader->ReadBytes(&heightMap[0], sizeof(float)*heightMap.size());
+
+                        // the depth map can be skipped.  it functions only to assist in shading.
+                        reader->Slide(heightMap.size());
+                    }
+                }
 
                 int currentByte = 0;
                 int currentBit = 0;

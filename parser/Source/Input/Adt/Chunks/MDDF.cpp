@@ -7,6 +7,9 @@ namespace input
 {
 MDDF::MDDF(long position, utility::BinaryStream *reader) : AdtChunk(position, reader)
 {
+    if (!Size)
+        return;
+
     const unsigned int count = Size / sizeof(DoodadInfo);
     Doodads.resize(count);
 
