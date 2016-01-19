@@ -312,9 +312,9 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
     assert(!!thisTile);
 
-#ifdef _DEBUG
-    thisTile->WriteObjFile();
-#endif
+//#ifdef _DEBUG
+//    thisTile->WriteObjFile();
+//#endif
 
     rcConfig config;
     InitializeRecastConfig(config);
