@@ -23,6 +23,9 @@ inline bool Adt::IsRendered(unsigned char mask[], int x, int y)
     return (mask[y] >> x & 1) != 0;
 }
 
+#define MAX(a, b) if (b > a) a = b
+#define MIN(a, b) if (b < a) a = b
+
 Adt::Adt(Continent *continent, int x, int y)
     : X(x), Y(y), m_continent(continent),
       Bounds({
@@ -59,10 +62,8 @@ Adt::Adt(Continent *continent, int x, int y)
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
             chunk->m_surfaceNormals = std::move(mapChunk->Normals);
 
-            if (mapChunk->MaxZ > Bounds.MaxCorner.Z)
-                Bounds.MaxCorner.Z = mapChunk->MaxZ;
-            if (mapChunk->MinZ < Bounds.MinCorner.Z)
-                Bounds.MinCorner.Z = mapChunk->MinZ;
+            MAX(Bounds.MaxCorner.Z, mapChunk->MaxZ);
+            MIN(Bounds.MinCorner.Z, mapChunk->MinZ);
 
             memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(bool)*8*8);
 
@@ -127,16 +128,25 @@ Adt::Adt(Continent *continent, int x, int y)
                             continue;
 
                         int terrainVert = y * 17 + x;
-                        chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y][x] });
+                        chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 0][x + 0] });
 
                         terrainVert = y * 17 + (x + 1);
-                        chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y][x + 1] });
+                        chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 0][x + 1] });
 
                         terrainVert = (y + 1) * 17 + x;
-                        chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x] });
+                        chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x + 0] });
 
                         terrainVert = (y + 1) * 17 + (x + 1);
                         chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x + 1] });
+
+                        MAX(Bounds.MaxCorner.Z, layer->Heights[y + 0][x + 0]);
+                        MIN(Bounds.MinCorner.Z, layer->Heights[y + 0][x + 0]);
+                        MAX(Bounds.MaxCorner.Z, layer->Heights[y + 0][x + 1]);
+                        MIN(Bounds.MinCorner.Z, layer->Heights[y + 0][x + 1]);
+                        MAX(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 0]);
+                        MIN(Bounds.MinCorner.Z, layer->Heights[y + 1][x + 0]);
+                        MAX(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 1]);
+                        MIN(Bounds.MinCorner.Z, layer->Heights[y + 1][x + 1]);
 
                         chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
                         chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
@@ -188,6 +198,15 @@ Adt::Adt(Continent *continent, int x, int y)
 
                         terrainVert = (y + 1) * 17 + (x + 1);
                         chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y + 1][x + 1] });
+
+                        MAX(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 0][x + 0]);
+                        MIN(Bounds.MinCorner.Z, mclqBlock->Heights[y + 0][x + 0]);
+                        MAX(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 0][x + 1]);
+                        MIN(Bounds.MinCorner.Z, mclqBlock->Heights[y + 0][x + 1]);
+                        MAX(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 0]);
+                        MIN(Bounds.MinCorner.Z, mclqBlock->Heights[y + 1][x + 0]);
+                        MAX(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
+                        MIN(Bounds.MinCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
 
                         chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
                         chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
@@ -249,6 +268,9 @@ Adt::Adt(Continent *continent, int x, int y)
 
                 assert(chunkX < 16 && chunkY < 16);
 
+                MAX(Bounds.MaxCorner.Z, vertex.Z);
+                MIN(Bounds.MinCorner.Z, vertex.Z);
+
                 m_chunks[chunkY][chunkX]->m_wmos.insert(wmoDefinition.UniqueId);
             }
         }
@@ -292,6 +314,9 @@ Adt::Adt(Continent *continent, int x, int y)
                 const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / chunkSize);
 
                 assert(chunkX < 16 && chunkY < 16);
+
+                MAX(Bounds.MaxCorner.Z, vertex.Z);
+                MIN(Bounds.MinCorner.Z, vertex.Z);
 
                 m_chunks[chunkY][chunkX]->m_doodads.insert(doodadDefinition.UniqueId);
             }
