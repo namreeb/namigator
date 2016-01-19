@@ -48,6 +48,7 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
 {
     for (int i = 0; i < solid.width*solid.height; ++i)
     {
+        // as we go, we build a list of spans which will be removed in the event we find liquid
         std::list<rcSpan *> spans;
 
         for (rcSpan *s = solid.spans[i]; s; s = s->next)
@@ -389,30 +390,30 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
                         return false;
                 }
             }
+    }
 
-        FilterGroundBeneathLiquid(*solid);
+    FilterGroundBeneathLiquid(*solid);
 
-        // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
-        {
-            std::vector<rcSpan *> adtSpans;
+    // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
+    {
+        std::vector<rcSpan *> adtSpans;
 
-            for (int i = 0; i < solid->width * solid->height; ++i)
-                for (rcSpan *s = solid->spans[i]; s; s = s->next)
-                    if (!!(s->area & AreaFlags::ADT))
-                        adtSpans.push_back(s);
+        for (int i = 0; i < solid->width * solid->height; ++i)
+            for (rcSpan *s = solid->spans[i]; s; s = s->next)
+                if (!!(s->area & AreaFlags::ADT))
+                    adtSpans.push_back(s);
 
-            rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+        rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
 
-            RestoreAdtSpans(adtSpans);
+        RestoreAdtSpans(adtSpans);
 
-            rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+        rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
 
-            RestoreAdtSpans(adtSpans);
+        RestoreAdtSpans(adtSpans);
 
-            rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+        rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
 
-            RestoreAdtSpans(adtSpans);
-        }
+        RestoreAdtSpans(adtSpans);
     }
 
     std::stringstream str;
