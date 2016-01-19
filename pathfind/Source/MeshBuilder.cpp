@@ -11,7 +11,6 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <list>
 #include <mutex>
 #include <iomanip>
 
@@ -49,7 +48,7 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
     for (int i = 0; i < solid.width*solid.height; ++i)
     {
         // as we go, we build a list of spans which will be removed in the event we find liquid
-        std::list<rcSpan *> spans;
+        std::vector<rcSpan *> spans;
 
         for (rcSpan *s = solid.spans[i]; s; s = s->next)
         {
