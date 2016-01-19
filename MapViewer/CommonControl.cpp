@@ -16,13 +16,13 @@ CommonControl::CommonControl(HWND window)
 {
     auto const handler = [](HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
-        auto const ctrl = reinterpret_cast<CommonControl *>(GetWindowLong(hwnd, GWL_USERDATA));
+        auto const ctrl = reinterpret_cast<CommonControl *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
         return ctrl->WindowProc(hwnd, message, wParam, lParam);
     };
 
-    SetWindowLongPtr(window, GWL_USERDATA, (LONG)this);
-    SetWindowLongPtr(window, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(static_cast<decltype(&DefWindowProc)>(handler)));
+    SetWindowLongPtr(window, GWLP_USERDATA, (LONG)this);
+    SetWindowLongPtr(window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(static_cast<decltype(&DefWindowProc)>(handler)));
 }
 
 LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -108,7 +108,8 @@ void CommonControl::AddLabel(const std::wstring &text, int x, int y)
     assert(!!hdc);
 
     SIZE textSize;
-    assert(GetTextExtentPoint(hdc, text.c_str(), text.length(), &textSize));
+    auto result = GetTextExtentPoint(hdc, text.c_str(), text.length(), &textSize);
+    assert(result);
 
     auto control = CreateWindow(L"STATIC", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, textSize.cx, textSize.cy, m_window, nullptr, m_instance, nullptr);
     
@@ -135,7 +136,8 @@ void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, 
     for (auto &s : items)
     {
         SIZE textSize;
-        assert(GetTextExtentPoint(hdc, s.c_str(), s.length(), &textSize));
+        auto result = GetTextExtentPoint(hdc, s.c_str(), s.length(), &textSize);
+        assert(result);
 
         if (width < textSize.cx)
             width = textSize.cx;
@@ -175,7 +177,8 @@ void CommonControl::AddCheckBox(int id, const std::wstring &text, int x, int y, 
     assert(!!hdc);
 
     SIZE textSize;
-    assert(GetTextExtentPoint(hdc, text.c_str(), text.length(), &textSize));
+    auto result = GetTextExtentPoint(hdc, text.c_str(), text.length(), &textSize);
+    assert(result);
 
     auto control = CreateWindow(L"BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX, x, y, 20+textSize.cx, textSize.cy, m_window, (HMENU)id, m_instance, nullptr);
 

@@ -105,10 +105,16 @@ void InitializeRecastConfig(rcConfig &config)
     config.detailSampleMaxError = 1.25f;
 }
 
+using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
+using SmartCompactHeightFieldPtr = std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)>;
+using SmartContourSetPtr = std::unique_ptr<rcContourSet, decltype(&rcFreeContourSet)>;
+using SmartPolyMeshPtr = std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)>;
+using SmartPolyMeshDetailPtr = std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)>;
+
 bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, const std::string &outputFile, rcHeightfield &solid)
 {
     // initialize compact height field
-    std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)> chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
+    SmartCompactHeightFieldPtr chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
 
     if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, config.walkableClimb, solid, *chf))
         return false;
@@ -124,19 +130,19 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, co
     if (!rcBuildRegions(&ctx, *chf, config.borderSize, config.minRegionArea, config.mergeRegionArea))
         return false;
 
-    std::unique_ptr<rcContourSet, decltype(&rcFreeContourSet)> cset(rcAllocContourSet(), rcFreeContourSet);
+    SmartContourSetPtr cset(rcAllocContourSet(), rcFreeContourSet);
 
     if (!rcBuildContours(&ctx, *chf, config.maxSimplificationError, config.maxEdgeLen, *cset))
         return false;
 
     assert(!!cset->nconts);
 
-    std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)> polyMesh(rcAllocPolyMesh(), rcFreePolyMesh);
+    SmartPolyMeshPtr polyMesh(rcAllocPolyMesh(), rcFreePolyMesh);
 
     if (!rcBuildPolyMesh(&ctx, *cset, config.maxVertsPerPoly, *polyMesh))
         return false;
 
-    std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)> polyMeshDetail(rcAllocPolyMeshDetail(), rcFreePolyMeshDetail);
+    SmartPolyMeshDetailPtr polyMeshDetail(rcAllocPolyMeshDetail(), rcFreePolyMeshDetail);
 
     if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist, config.detailSampleMaxError, *polyMeshDetail))
         return false;
@@ -262,7 +268,7 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
 
     rcContext ctx;
 
-    std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)> solid(rcAllocHeightfield(), rcFreeHeightField);
+    SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
 
     if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
         return false;
@@ -322,7 +328,7 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
     rcContext ctx;
 
-    std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)> solid(rcAllocHeightfield(), rcFreeHeightField);
+    SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
 
     if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
         return false;

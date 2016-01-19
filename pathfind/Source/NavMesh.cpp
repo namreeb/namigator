@@ -22,7 +22,8 @@ NavMesh::NavMesh(const std::string &dataPath, const std::string &continentName) 
     params.maxTiles = 64 * 64;
     params.maxPolys = 1 << DT_POLY_BITS;
 
-    assert(m_navMesh.init(&params) == DT_SUCCESS);
+    auto result = m_navMesh.init(&params);
+    assert(result == DT_SUCCESS);
 }
 
 bool NavMesh::LoadFile(const std::string &filename, unsigned char **data, int *size)
