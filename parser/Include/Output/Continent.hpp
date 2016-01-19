@@ -8,16 +8,14 @@
 #include <memory>
 #include <string>
 #include <map>
+#include <set>
 
 namespace parser
 {
 class Continent
 {
     private:
-        mutable std::mutex m_wmoMutex;
         mutable std::mutex m_doodadMutex;
-
-        std::map<unsigned int, std::unique_ptr<Wmo>> m_loadedWmos;
         std::map<unsigned int, std::unique_ptr<Doodad>> m_loadedDoodads;
 
         bool m_hasAdt[64][64];
@@ -26,6 +24,9 @@ class Continent
         mutable std::mutex m_adtMutex;
         std::map<int, std::unique_ptr<Adt>> m_adts;
 
+        mutable std::mutex m_wmoMutex;
+        std::map<unsigned int, std::unique_ptr<const Wmo>> m_loadedWmos;
+        std::set<unsigned int> m_loadingWmos;
         std::unique_ptr<Wmo> m_wmo;
 
     public:
@@ -34,16 +35,20 @@ class Continent
         Continent(const std::string &continentName);
 
         const Adt *LoadAdt(int x, int y);
+        void UnloadAdt(int x, int y);
 
+        bool HasAdt(int x, int y) const;
         bool IsAdtLoaded(int x, int y) const;
+
         bool IsWmoLoaded(unsigned int uniqueId) const;
-        bool IsDoodadLoaded(unsigned int uniqueId) const;
-
-        void InsertWmo(unsigned int uniqueId, Wmo *wmo);
-        void InsertDoodad(unsigned int uniqueId, Doodad *doodad);
-
+        bool IsWmoLoading(unsigned int uniqueId) const;
+        void LoadingWmo(unsigned int uniqueId);
+        void InsertWmo(unsigned int uniqueId, const Wmo *wmo);
         const Wmo *GetWmo() const;
         const Wmo *GetWmo(unsigned int uniqueId) const;
+
+        bool IsDoodadLoaded(unsigned int uniqueId) const;
+        void InsertDoodad(unsigned int uniqueId, Doodad *doodad);
         const Doodad *GetDoodad(unsigned int uniqueId) const;
 };
 }

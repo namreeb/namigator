@@ -208,23 +208,30 @@ Adt::Adt(Continent *continent, int x, int y)
         {
             auto const &wmoDefinition = adt.m_wmoChunk->Wmos[i];
 
-            // if it has already been loaded, skip parsing it again
-            if (continent->IsWmoLoaded(wmoDefinition.UniqueId))
-                continue;
+            const Wmo *wmo;
 
-            auto const &wmoName = adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId];
+            // if it has not been loaded, ensure that it is loaded before proceeding (either by waiting for another thread or loading it ourselves)
+            if (!continent->IsWmoLoaded(wmoDefinition.UniqueId))
+            {
+                if (continent->IsWmoLoading(wmoDefinition.UniqueId))
+                    while (continent->IsWmoLoading(wmoDefinition.UniqueId))
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                else
+                {
+                    input::WmoRootFile newWmo(adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId], &adt.m_wmoChunk->Wmos[i]);
 
-            std::unique_ptr<input::WmoRootFile> newWmo(new input::WmoRootFile(wmoName, &adt.m_wmoChunk->Wmos[i]));
+                    assert(!!newWmo.Vertices.size() && !!newWmo.Indices.size());
 
-            if (!newWmo->Vertices.size() || !newWmo->Indices.size())
-                continue;
+                    continent->InsertWmo(wmoDefinition.UniqueId, new Wmo(newWmo.Vertices, newWmo.Indices,
+                                                                         newWmo.LiquidVertices, newWmo.LiquidIndices,
+                                                                         newWmo.DoodadVertices, newWmo.DoodadIndices,
+                                                                         newWmo.Bounds));
+                }
+            }
 
-            auto const wmo = new Wmo(newWmo->Vertices, newWmo->Indices,
-                                     newWmo->LiquidVertices, newWmo->LiquidIndices,
-                                     newWmo->DoodadVertices, newWmo->DoodadIndices,
-                                     newWmo->Bounds);
+            wmo = continent->GetWmo(wmoDefinition.UniqueId);
 
-            continent->InsertWmo(wmoDefinition.UniqueId, wmo);
+            assert(!!wmo);
 
             // iterate over all vertices to determine which chunks have the wmo
             for (size_t v = 0; v < wmo->Vertices.size(); ++v)
@@ -235,7 +242,7 @@ Adt::Adt(Continent *continent, int x, int y)
                 if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
                     continue;
 
-                const float chunkSize = 33.f + (1.f / 3.f);
+                constexpr float chunkSize = 33.f + (1.f / 3.f);
 
                 const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / chunkSize);
                 const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / chunkSize);
