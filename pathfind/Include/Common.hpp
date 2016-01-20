@@ -23,7 +23,7 @@ class RecastSettings
 
         static constexpr float MaxSimplificationError = 1.3f;
 
-        static constexpr int TileVoxelSize = 1800;
+        static constexpr int TileVoxelSize = 900;
         static constexpr int MinRegionSize = 20;
         static constexpr int MergeRegionSize = 40;
 };
