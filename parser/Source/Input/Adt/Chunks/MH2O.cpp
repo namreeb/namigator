@@ -27,13 +27,10 @@ MH2O::MH2O(long position, utility::BinaryStream *reader) : AdtChunk(position, re
             if (header.LayerCount <= 0)
                 continue;
 
-            // XXX FIXME this isn't actually always true, but i am leaving it here to help us know when we run into a case of it
-            assert(header.LayerCount == 1);
-
-            reader->SetPosition(offsetFrom + header.InstancesOffset);
-
             for (int layer = 0; layer < header.LayerCount; ++layer)
             {
+                reader->SetPosition(offsetFrom + header.InstancesOffset + layer*sizeof(LiquidInstance));
+
                 LiquidInstance instance;
                 reader->ReadBytes(&instance, sizeof(instance));
 
@@ -81,9 +78,6 @@ MH2O::MH2O(long position, utility::BinaryStream *reader) : AdtChunk(position, re
                     {
                         reader->SetPosition(offsetFrom + instance.OffsetVertexData);
                         reader->ReadBytes(&heightMap[0], sizeof(float)*heightMap.size());
-
-                        // the depth map can be skipped.  it functions only to assist in shading.
-                        reader->Slide(heightMap.size());
                     }
                 }
 
