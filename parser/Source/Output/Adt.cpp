@@ -6,14 +6,16 @@
 #include "Input/Adt/AdtFile.hpp"
 #include "Output/Adt.hpp"
 #include "Output/Continent.hpp"
-#include "utility/Include/LinearAlgebra.hpp"
 #include "parser.hpp"
+
+#include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/Directory.hpp"
 
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <iostream>
 #include <set>
 #include <memory>
 #include <cassert>
@@ -27,22 +29,22 @@ inline bool Adt::IsRendered(unsigned char mask[], int x, int y)
     return (mask[y] >> x & 1) != 0;
 }
 
-Adt::Adt(Continent *continent, int x, int y)
-    : X(x), Y(y), m_continent(continent),
+Adt::Adt(Continent *continent, int adtX, int adtY)
+    : X(adtX), Y(adtY), m_continent(continent),
       Bounds({
-            (32.f - (float)y - 1.f)*(533.f + (1.f / 3.f)),
-            (32.f - (float)x - 1.f)*(533.f + (1.f / 3.f)),
+            (32.f - (float)adtY - 1.f)*utility::MathHelper::AdtSize,
+            (32.f - (float)adtX - 1.f)*utility::MathHelper::AdtSize,
             std::numeric_limits<float>::max()
         },
         {
-            (32.f - (float)y)*(533.f + (1.f / 3.f)),
-            (32.f - (float)x)*(533.f + (1.f / 3.f)),
+            (32.f - (float)adtY)*utility::MathHelper::AdtSize,
+            (32.f - (float)adtX)*utility::MathHelper::AdtSize,
             std::numeric_limits<float>::lowest()
         })
 {
     std::stringstream ss;
 
-    ss << "World\\Maps\\" << continent->Name << "\\" << continent->Name << "_" << x << "_" << y << ".adt";
+    ss << "World\\Maps\\" << continent->Name << "\\" << continent->Name << "_" << adtX << "_" << adtY << ".adt";
 
     // parsing
     input::AdtFile adt(ss.str());
@@ -66,7 +68,7 @@ Adt::Adt(Continent *continent, int x, int y)
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mapChunk->MinZ);
 
-            memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(bool)*8*8);
+            memcpy(chunk->m_holeMap, mapChunk->HoleMap, sizeof(chunk->m_holeMap));
 
             // build index list to exclude holes (8 * 8 quads, 4 triangles per quad, 3 indices per triangle)
             chunk->m_terrainIndices.reserve(8 * 8 * 4 * 3);
@@ -230,23 +232,17 @@ Adt::Adt(Continent *continent, int x, int y)
 
             const Wmo *wmo;
 
-            // if it has not been loaded, ensure that it is loaded before proceeding (either by waiting for another thread or loading it ourselves)
+            // if it has not been loaded, ensure that it is loaded before proceeding 
             if (!continent->IsWmoLoaded(wmoDefinition.UniqueId))
             {
-                if (continent->IsWmoLoading(wmoDefinition.UniqueId))
-                    while (continent->IsWmoLoading(wmoDefinition.UniqueId))
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                else
-                {
-                    input::WmoRootFile newWmo(adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId], &adt.m_wmoChunk->Wmos[i]);
+                input::WmoRootFile newWmo(adt.m_wmoNames[adt.m_wmoChunk->Wmos[i].NameId], &adt.m_wmoChunk->Wmos[i]);
 
-                    assert(!!newWmo.Vertices.size() && !!newWmo.Indices.size());
+                assert(!!newWmo.Vertices.size() && !!newWmo.Indices.size());
 
-                    continent->InsertWmo(wmoDefinition.UniqueId, new Wmo(newWmo.Vertices, newWmo.Indices,
-                                                                         newWmo.LiquidVertices, newWmo.LiquidIndices,
-                                                                         newWmo.DoodadVertices, newWmo.DoodadIndices,
-                                                                         newWmo.Bounds));
-                }
+                continent->InsertWmo(wmoDefinition.UniqueId, new Wmo(newWmo.Vertices, newWmo.Indices,
+                                                                     newWmo.LiquidVertices, newWmo.LiquidIndices,
+                                                                     newWmo.DoodadVertices, newWmo.DoodadIndices,
+                                                                     newWmo.Bounds));
             }
 
             wmo = continent->GetWmo(wmoDefinition.UniqueId);
@@ -262,10 +258,8 @@ Adt::Adt(Continent *continent, int x, int y)
                 if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
                     continue;
 
-                constexpr float chunkSize = 33.f + (1.f / 3.f);
-
-                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / chunkSize);
-                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / chunkSize);
+                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / utility::MathHelper::AdtChunkSize);
+                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / utility::MathHelper::AdtChunkSize);
 
                 assert(chunkX < 16 && chunkY < 16);
 
@@ -309,10 +303,8 @@ Adt::Adt(Continent *continent, int x, int y)
                 if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
                     continue;
 
-                const float chunkSize = 33.f + (1.f / 3.f);
-
-                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / chunkSize);
-                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / chunkSize);
+                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / utility::MathHelper::AdtChunkSize);
+                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / utility::MathHelper::AdtChunkSize);
 
                 assert(chunkX < 16 && chunkY < 16);
 

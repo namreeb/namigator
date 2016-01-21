@@ -6,13 +6,6 @@
 
 namespace utility
 {
-float MathHelper::ToRadians(float degrees)
-{
-    const float conversion = (float)(PI / 180.f);
-
-    return degrees * conversion;
-}
-
 bool MathHelper::FaceTooSteep(const utility::Vertex &a, const utility::Vertex &b, const utility::Vertex &c, float degrees)
 {
     return CalculateTriangleNormal(a, b, c).Z <= cosf(PI * degrees / 180.f);
@@ -28,11 +21,6 @@ float MathHelper::InterpolateHeight(const utility::Vertex &a, const utility::Ver
 
     // re-arranging equation for plane: n_x(x - x_o) + n_y(y - y_0) + n_z(z - z_0) = 0, solve for z.
     return a.Z + (-n.X * (x - a.X) - n.Y * (y - a.Y)) / n.Z;
-}
-
-int MathHelper::Round(float num)
-{
-    return (int)floorf(num + 0.5f);
 }
 
 //BoundingBox::BoundingBox()
@@ -65,13 +53,21 @@ int MathHelper::Round(float num)
 //             vertex.Z < MinCorner.Z || vertex.Z > MaxCorner.Z);
 //}
 
-void Convert::AdtToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY)
+float Convert::ToRadians(float degrees)
 {
-    worldX = ((float)(32.f - adtY)) * (533.f + (1.f / 3.f));
-    worldY = ((float)(32.f - adtX)) * (533.f + (1.f / 3.f));
+    constexpr float conversion = MathHelper::Pi / 180.f;
+
+    return degrees * conversion;
 }
 
-// wow -> r+d: (x, y, z) -> (-y, z, -x)
+void Convert::WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY)
+{
+    constexpr float mid = 32.f * MathHelper::AdtSize;
+
+    adtX = static_cast<int>((mid - vertex.Y) / MathHelper::AdtSize);
+    adtY = static_cast<int>((mid - vertex.X) / MathHelper::AdtSize);
+}
+
 void Convert::VerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output)
 {
     output.resize(input.size() * 3);
@@ -84,7 +80,6 @@ void Convert::VerticesToRecast(const std::vector<utility::Vertex> &input, std::v
     }
 }
 
-// r+d -> wow: (x, y, z) -> (-z, -x, y)
 void Convert::VerticesToWow(const float *input, int vertexCount, std::vector<utility::Vertex> &output)
 {
     output.resize(vertexCount);
@@ -128,21 +123,5 @@ void Convert::ToShort(const std::vector<int> &input, std::vector<unsigned short>
 
     for (size_t i = 0; i < input.size(); ++i)
         output[i] = static_cast<unsigned short>(input[i]);
-}
-
-void Convert::ToInt(const unsigned short *input, int count, std::vector<int> &output)
-{
-    output.resize(count);
-
-    for (int i = 0; i < count; ++i)
-        output[i] = static_cast<int>(input[i]);
-}
-
-void Convert::ToInt(const unsigned char *input, int count, std::vector<int> &output)
-{
-    output.resize(count);
-
-    for (int i = 0; i < count; ++i)
-        output[i] = static_cast<int>(input[i]);
 }
 }

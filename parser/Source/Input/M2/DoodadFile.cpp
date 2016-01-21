@@ -65,15 +65,16 @@ DoodadFile::DoodadFile(const std::string &path) : WowFile(GetRealModelPath(path)
 
 Doodad::Doodad(const std::string &path, const DoodadInfo &doodadInfo) : DoodadFile(path)
 {
-    const float mid = (533.f + (1.f/3.f)) * 32.f;
+    constexpr float mid = utility::MathHelper::AdtSize * 32.f;
+
     const float xPos = -(doodadInfo.BasePosition.Z - mid);
     const float yPos = -(doodadInfo.BasePosition.X - mid);
     const float zPos = doodadInfo.BasePosition.Y;
     const utility::Vertex origin(xPos, yPos, zPos);
 
-    const float rotX = utility::MathHelper::ToRadians(doodadInfo.OrientationC);
-    const float rotY = utility::MathHelper::ToRadians(doodadInfo.OrientationA);
-    const float rotZ = utility::MathHelper::ToRadians(doodadInfo.OrientationB + 180.f);
+    const float rotX = utility::Convert::ToRadians(doodadInfo.OrientationC);
+    const float rotY = utility::Convert::ToRadians(doodadInfo.OrientationA);
+    const float rotZ = utility::Convert::ToRadians(doodadInfo.OrientationB + 180.f);
 
     const utility::Matrix transformMatrix = utility::Matrix::CreateScalingMatrix(doodadInfo.Scale / 1024.f) *
                                             utility::Matrix::CreateRotationZ(rotZ) *

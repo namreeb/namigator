@@ -9,7 +9,8 @@ namespace input
 {
 WmoDoodad::WmoDoodad(const WmoParserInfo *parentInfo, const WmoDoodadInfo *wmoDoodadInfo, const std::string &path) : DoodadFile(path)
 {
-    const float mid = (533.f + (1.f / 3.f)) * 32.f;
+    constexpr float mid = 32.f * utility::MathHelper::AdtSize;
+
     const float xPos = -(parentInfo->BasePosition.Z - mid);
     const float yPos = -(parentInfo->BasePosition.X - mid);
     const float zPos = parentInfo->BasePosition.Y;
@@ -17,9 +18,9 @@ WmoDoodad::WmoDoodad(const WmoParserInfo *parentInfo, const WmoDoodadInfo *wmoDo
     const utility::Vertex parentOrigin(xPos, yPos, zPos);
     const utility::Vertex origin = wmoDoodadInfo->Position;
 
-    const float parRotX = utility::MathHelper::ToRadians(parentInfo->OrientationC);
-    const float parRotY = utility::MathHelper::ToRadians(parentInfo->OrientationA);
-    const float parRotZ = utility::MathHelper::ToRadians(parentInfo->OrientationB + 180.f);
+    const float parRotX = utility::Convert::ToRadians(parentInfo->OrientationC);
+    const float parRotY = utility::Convert::ToRadians(parentInfo->OrientationA);
+    const float parRotZ = utility::Convert::ToRadians(parentInfo->OrientationB + 180.f);
 
     const utility::Quaternion q(wmoDoodadInfo->RotX, wmoDoodadInfo->RotY, wmoDoodadInfo->RotZ, wmoDoodadInfo->RotW);
 

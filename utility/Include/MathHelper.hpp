@@ -5,19 +5,17 @@
 #include <memory>
 #include <vector>
 
-#ifndef PI
-#define PI 3.14159264f
-#endif
-
 namespace utility
 {
 class MathHelper
 {
     public:
-        static float ToRadians(float degrees);
+        static constexpr float AdtSize = 533.f + (1.f / 3.f);
+        static constexpr float AdtChunkSize = AdtSize / 16.f;
+        static constexpr float Pi = 3.14159264f;
+
         static bool FaceTooSteep(const utility::Vertex &a, const utility::Vertex &b, const utility::Vertex &c, float degrees);
         static float InterpolateHeight(const utility::Vertex &a, const utility::Vertex &b, const utility::Vertex &c, float x, float y);
-        static int Round(float num);
 
         static Vector3 CalculateTriangleNormal(const Vector3 a, const Vector3 b, const Vector3 c)
         {
@@ -31,14 +29,14 @@ class MathHelper
 class Convert
 {
     public:
-        static void AdtToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY);
+        static float ToRadians(float degrees);
+
+        static void WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY);
 
         static void VerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output);
         static void VerticesToWow(const float *input, int vertexCount, std::vector<utility::Vertex> &output);
 
         // XXX FIXME we maybe never need to change the indices from ushort to int in the first place?
         static void ToShort(const std::vector<int> &input, std::vector<unsigned short> &output);
-        static void ToInt(const unsigned short *input, int count, std::vector<int> &output);
-        static void ToInt(const unsigned char *input, int count, std::vector<int> &output);
 };
 }

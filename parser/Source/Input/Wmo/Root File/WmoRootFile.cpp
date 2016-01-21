@@ -49,8 +49,10 @@ WmoRootFile::WmoRootFile(const std::string &path, const WmoParserInfo *info) : W
     const long moddLoc = GetChunkLocation("MODD");
 
     // PROCESSING...
+    // NOTE: The minimum and maximum z values obtained from the data files are not always correct.  Therefore we double check and update them as we build vertices.
+    // XXX FIXME we should probably check to make sure that the min/max x and y values can be trusted, too!
 
-    const float mid = (float)((533.0 + (1.0/3.0)) * 32.0);
+    constexpr float mid = 32.f * utility::MathHelper::AdtSize;
     float xPos = -(info->BasePosition.Z - mid);
     float yPos = -(info->BasePosition.X - mid);
     float zPos = info->BasePosition.Y;
@@ -70,9 +72,9 @@ WmoRootFile::WmoRootFile(const std::string &path, const WmoParserInfo *info) : W
 
     Bounds = utility::BoundingBox(minCorner, maxCorner);
 
-    const float rotX = utility::MathHelper::ToRadians(info->OrientationC);
-    const float rotY = utility::MathHelper::ToRadians(info->OrientationA);
-    const float rotZ = utility::MathHelper::ToRadians(info->OrientationB + 180.f);    // XXX - other people use -90?
+    const float rotX = utility::Convert::ToRadians(info->OrientationC);
+    const float rotY = utility::Convert::ToRadians(info->OrientationA);
+    const float rotZ = utility::Convert::ToRadians(info->OrientationB + 180.f);    // XXX - other people use -90?
     const utility::Matrix transformMatrix = utility::Matrix::CreateRotationX(rotX) *
                                             utility::Matrix::CreateRotationY(rotY) *
                                             utility::Matrix::CreateRotationZ(rotZ);
@@ -150,7 +152,7 @@ WmoRootFile::WmoRootFile(const std::string &path, const WmoParserInfo *info) : W
         if (!groupFiles[g]->LiquidChunk)
             continue;
 
-        auto const tileSize = (533.f + (1.f / 3.f)) / 128.f;
+        constexpr float tileSize = utility::MathHelper::AdtSize / 128.f;
         auto const liquidChunk = groupFiles[g]->LiquidChunk.get();
 
         const utility::Vertex baseVertex(liquidChunk->Base[0], liquidChunk->Base[1], liquidChunk->Base[2]);
