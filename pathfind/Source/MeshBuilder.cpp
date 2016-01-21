@@ -86,12 +86,12 @@ void InitializeRecastConfig(rcConfig &config)
 {
     ZERO(config);
 
-    config.cs = RecastSettings::TileSize / static_cast<float>(RecastSettings::TileVoxelSize);
+    config.cs = RecastSettings::CellSize;
     config.ch = RecastSettings::CellHeight;
     config.walkableSlopeAngle = RecastSettings::WalkableSlope;
-    config.walkableClimb = static_cast<int>(std::round(RecastSettings::WalkableClimb / RecastSettings::CellHeight));
-    config.walkableHeight = static_cast<int>(std::round(RecastSettings::WalkableHeight / RecastSettings::CellHeight));
-    config.walkableRadius = static_cast<int>(std::round(RecastSettings::WalkableRadius / config.cs));
+    config.walkableClimb = RecastSettings::VoxelWalkableClimb;
+    config.walkableHeight = RecastSettings::VoxelWalkableHeight;
+    config.walkableRadius = RecastSettings::VoxelWalkableRadius;
     config.maxEdgeLen = config.walkableRadius * 8;
     config.maxSimplificationError = RecastSettings::MaxSimplificationError;
     config.minRegionArea = RecastSettings::MinRegionSize;
@@ -266,6 +266,11 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
     config.bmax[1] =  wmo->Bounds.MaxCorner.Z;
     config.bmax[2] = -wmo->Bounds.MinCorner.X;
 
+    config.bmin[0] -= config.borderSize * config.cs;
+    config.bmin[2] -= config.borderSize * config.cs;
+    config.bmax[0] += config.borderSize * config.cs;
+    config.bmax[2] += config.borderSize * config.cs;
+
     rcContext ctx;
 
     SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
@@ -325,6 +330,11 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     config.bmax[0] = -thisTile->Bounds.MinCorner.Y;
     config.bmax[1] =  thisTile->Bounds.MaxCorner.Z;
     config.bmax[2] = -thisTile->Bounds.MinCorner.X;
+
+    config.bmin[0] -= config.borderSize * config.cs;
+    config.bmin[2] -= config.borderSize * config.cs;
+    config.bmax[0] += config.borderSize * config.cs;
+    config.bmax[2] += config.borderSize * config.cs;
 
     rcContext ctx;
 
