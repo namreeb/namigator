@@ -16,13 +16,13 @@ class MeshBuilder
         std::mutex m_mutex;
         int m_adtReferences[64][64];
 
+        void AddReference(int adtX, int adtY);
+
     public:
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, std::string &continentName);
 
         void BuildWorkList(std::vector<std::pair<int, int>> &tiles) const;
         bool IsGlobalWMO() const;
-
-        void AddReference(int adtX, int adtY);
         void RemoveReference(int adtX, int adtY);
 
         bool GenerateAndSaveGlobalWMO();

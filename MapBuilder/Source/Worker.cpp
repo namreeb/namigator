@@ -82,16 +82,6 @@ void Worker::EnqueueGlobalWMO()
     m_wmo = true;
 }
 
-void Worker::InitializeADTReferences()
-{
-    for (auto s : m_adts)
-    {
-        m_meshBuilder->AddReference(s.first - 1, s.second - 1); m_meshBuilder->AddReference(s.first - 0, s.second - 1); m_meshBuilder->AddReference(s.first + 1, s.second - 1);
-        m_meshBuilder->AddReference(s.first - 1, s.second - 0); m_meshBuilder->AddReference(s.first - 0, s.second - 0); m_meshBuilder->AddReference(s.first + 1, s.second - 0);
-        m_meshBuilder->AddReference(s.first - 1, s.second + 1); m_meshBuilder->AddReference(s.first - 0, s.second + 1); m_meshBuilder->AddReference(s.first + 1, s.second + 1);
-    }
-}
-
 void Worker::Begin()
 {
     m_thread = std::thread(&Worker::Work, this);

@@ -190,12 +190,23 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, co
 
 MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, std::string &continentName) : m_outputPath(outputPath)
 {
-    memset(m_adtReferences, 0, sizeof(m_adtReferences));
-
     parser::Parser::Initialize(dataPath.c_str());
 
     // this must follow the parser initialization
     m_continent.reset(new parser::Continent(continentName));
+
+    memset(m_adtReferences, 0, sizeof(m_adtReferences));
+
+    for (int y = 0; y < 64; ++y)
+        for (int x = 0; x < 64; ++x)
+        {
+            if (!m_continent->HasAdt(x, y))
+                continue;
+
+            AddReference(x - 1, y - 1); AddReference(x - 0, y - 1); AddReference(x + 1, y - 1);
+            AddReference(x - 1, y - 0); AddReference(x - 0, y - 0); AddReference(x + 1, y - 0);
+            AddReference(x - 1, y + 1); AddReference(x - 0, y + 1); AddReference(x + 1, y + 1);
+        }
 }
 
 void MeshBuilder::BuildWorkList(std::vector<std::pair<int, int>> &tiles) const
@@ -214,11 +225,8 @@ bool MeshBuilder::IsGlobalWMO() const
 
 void MeshBuilder::AddReference(int adtX, int adtY)
 {
-    if (!m_continent->HasAdt(adtX, adtY))
-        return;
-
-    std::lock_guard<std::mutex> guard(m_mutex);
-    ++m_adtReferences[adtY][adtX];
+    if (m_continent->HasAdt(adtX, adtY))
+        ++m_adtReferences[adtY][adtX];
 }
 
 void MeshBuilder::RemoveReference(int adtX, int adtY)

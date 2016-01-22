@@ -32,7 +32,6 @@ class Worker
         void EnqueueADT(int x, int y);
         void EnqueueGlobalWMO();
 
-        void InitializeADTReferences();
         void Begin();
 
         int Jobs() const;

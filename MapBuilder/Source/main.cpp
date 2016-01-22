@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
 
             std::cout << "Building " << continent << " (" << adtX << ", " << adtY << ")..." << std::endl;
             worker.EnqueueADT(adtX, adtY);
-            worker.InitializeADTReferences();
             worker.Begin();
         }
 
@@ -125,9 +124,6 @@ int main(int argc, char *argv[])
             lastWorker = (lastWorker + 1) % workers.size();
         }
     }
-
-    for (auto &worker : workers)
-        worker->InitializeADTReferences();
 
     for (auto &worker : workers)
         worker->Begin();
