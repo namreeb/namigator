@@ -126,41 +126,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\recastnavigation\Detour\Source\DetourAlloc.cpp" />
-    <ClCompile Include="..\recastnavigation\Detour\Source\DetourCommon.cpp" />
-    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMesh.cpp" />
-    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
-    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp" />
-    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNode.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\Recast.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastAlloc.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastArea.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastContour.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastFilter.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastLayers.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastMesh.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastRasterization.cpp" />
-    <ClCompile Include="..\recastnavigation\Recast\Source\RecastRegion.cpp" />
-    <ClCompile Include="Source\MeshBuilder.cpp" />
     <ClCompile Include="Source\NavMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourAlloc.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourAssert.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourCommon.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourMath.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNavMesh.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNavMeshBuilder.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNavMeshQuery.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNode.h" />
-    <ClInclude Include="..\recastnavigation\Detour\Include\DetourStatus.h" />
-    <ClInclude Include="..\recastnavigation\Recast\Include\Recast.h" />
-    <ClInclude Include="..\recastnavigation\Recast\Include\RecastAlloc.h" />
-    <ClInclude Include="..\recastnavigation\Recast\Include\RecastAssert.h" />
-    <ClInclude Include="Include\Common.hpp" />
-    <ClInclude Include="Include\MeshBuilder.hpp" />
     <ClInclude Include="Include\NavMesh.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RecastDetourBuild\RecastDetourBuild.vcxproj">
+      <Project>{9102e9e0-373a-4b3a-bcd5-46687fab7bdb}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\utility\utility.vcxproj">
+      <Project>{5a918b0c-418f-42f3-ba09-987891a1696d}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -18,12 +18,18 @@
     <ClInclude Include="Include\Worker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\MeshBuilder.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Worker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MeshBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

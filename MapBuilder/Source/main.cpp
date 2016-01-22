@@ -1,6 +1,6 @@
+#include "MeshBuilder.hpp"
 #include "Worker.hpp"
 
-#include "pathfind/Include/MeshBuilder.hpp"
 #include "utility/Include/Directory.hpp"
 
 #include <boost/program_options.hpp>
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    pathfind::build::MeshBuilder meshBuilder(dataPath, outputPath, continent);
+    MeshBuilder meshBuilder(dataPath, outputPath, continent);
 
     if (vm.count("adtX") && vm.count("adtY"))
     {

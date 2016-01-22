@@ -19,36 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2C32D32F-53FA-4AEB-BC9B-7FF74741302F}</ProjectGuid>
-    <RootNamespace>MapBuilder</RootNamespace>
+    <ProjectGuid>{9102E9E0-373A-4B3A-BCD5-46687FAB7BDB}</ProjectGuid>
+    <RootNamespace>RecastDetourBuild</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -75,13 +75,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>DT_POLYREF64;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -90,12 +87,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>DT_POLYREF64;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -106,14 +101,12 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DT_POLYREF64;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -124,37 +117,46 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DT_POLYREF64;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\parser\parser.vcxproj">
-      <Project>{374e3660-9432-4306-8550-f76030ffc8e8}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\RecastDetourBuild\RecastDetourBuild.vcxproj">
-      <Project>{9102e9e0-373a-4b3a-bcd5-46687fab7bdb}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\stormlib\StormLib_vs15.vcxproj">
-      <Project>{78424708-1f6e-4d4b-920c-fb6d26847055}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\utility\utility.vcxproj">
-      <Project>{5a918b0c-418f-42f3-ba09-987891a1696d}</Project>
-    </ProjectReference>
+    <ClCompile Include="..\recastnavigation\Detour\Source\DetourAlloc.cpp" />
+    <ClCompile Include="..\recastnavigation\Detour\Source\DetourCommon.cpp" />
+    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMesh.cpp" />
+    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="..\recastnavigation\Detour\Source\DetourNode.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\Recast.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastAlloc.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastArea.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastContour.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastFilter.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastLayers.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastMesh.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastRasterization.cpp" />
+    <ClCompile Include="..\recastnavigation\Recast\Source\RecastRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\MeshBuilder.hpp" />
-    <ClInclude Include="Include\Worker.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\main.cpp" />
-    <ClCompile Include="Source\MeshBuilder.cpp" />
-    <ClCompile Include="Source\Worker.cpp" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourAlloc.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourAssert.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourCommon.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourMath.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNavMesh.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNavMeshBuilder.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNavMeshQuery.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourNode.h" />
+    <ClInclude Include="..\recastnavigation\Detour\Include\DetourStatus.h" />
+    <ClInclude Include="..\recastnavigation\Recast\Include\Recast.h" />
+    <ClInclude Include="..\recastnavigation\Recast\Include\RecastAlloc.h" />
+    <ClInclude Include="..\recastnavigation\Recast\Include\RecastAssert.h" />
+    <ClInclude Include="Include\Common.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

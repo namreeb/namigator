@@ -1,13 +1,11 @@
 #pragma once
 
-namespace pathfind
-{
 enum AreaFlags : unsigned char
 {
-    ADT = 1 << 1,
-    Liquid = 1 << 2,
-    WMO = 1 << 3,
-    Doodad = 1 << 4,
+    ADT     = 1 << 1,
+    Liquid  = 1 << 2,
+    WMO     = 1 << 3,
+    Doodad  = 1 << 4,
 };
 
 class RecastSettings
@@ -37,4 +35,3 @@ class RecastSettings
         static_assert(VoxelWalkableClimb >= 0, "VoxelWalkableClimb must be non-negative integer");
         static_assert(CellSize > 0.f, "CellSize must be positive");
 };
-}

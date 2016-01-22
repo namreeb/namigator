@@ -1,8 +1,8 @@
 #include "MeshBuilder.hpp"
-#include "Common.hpp"
 
 #include "parser/Include/parser.hpp"
 #include "utility/Include/MathHelper.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include "Recast.h"
 #include "DetourNavMeshBuilder.h"
@@ -16,10 +16,6 @@
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
-namespace pathfind
-{
-namespace build
-{
 namespace
 {
 bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
@@ -491,6 +487,4 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     str << m_outputPath << "\\" << m_continent->Name << "_" << adtX << "_" << adtY << ".map";
 
     return FinishMesh(ctx, config, adtX, adtY, str.str(), *solid);
-}
-}
 }

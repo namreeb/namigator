@@ -1,5 +1,6 @@
 #include "NavMesh.hpp"
-#include "Common.hpp"
+
+#include "RecastDetourBuild/Include/Common.hpp"
 #include "utility/Include/MathHelper.hpp"
 
 #include "DetourNavMesh.h"

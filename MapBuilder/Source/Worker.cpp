@@ -1,6 +1,5 @@
+#include "MeshBuilder.hpp"
 #include "Worker.hpp"
-
-#include "pathfind/Include/MeshBuilder.hpp"
 
 #include <thread>
 #include <chrono>
@@ -12,7 +11,7 @@
 #include <iomanip>
 #include <sstream>
 
-Worker::Worker(pathfind::build::MeshBuilder *meshBuilder) : m_shutdownRequested(false), m_meshBuilder(meshBuilder), m_wmo(false) {}
+Worker::Worker(MeshBuilder *meshBuilder) : m_shutdownRequested(false), m_meshBuilder(meshBuilder), m_wmo(false) {}
 
 Worker::~Worker()
 {

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "pathfind/Include/MeshBuilder.hpp"
+#include "MeshBuilder.hpp"
+
 #include "parser/Include/Output/Wmo.hpp"
 
 #include <thread>
@@ -11,7 +12,7 @@
 class Worker
 {
     private:
-        pathfind::build::MeshBuilder * const m_meshBuilder;
+        MeshBuilder * const m_meshBuilder;
 
         bool m_shutdownRequested;
 
@@ -25,7 +26,7 @@ class Worker
         void Work();
 
     public:
-        Worker(pathfind::build::MeshBuilder *meshBuilder);
+        Worker(MeshBuilder *meshBuilder);
         ~Worker();
 
         void EnqueueADT(int x, int y);

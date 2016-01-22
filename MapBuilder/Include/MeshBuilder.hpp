@@ -7,10 +7,6 @@
 #include <string>
 #include <mutex>
 
-namespace pathfind
-{
-namespace build
-{
 class MeshBuilder
 {
     private:
@@ -32,5 +28,3 @@ class MeshBuilder
         bool GenerateAndSaveGlobalWMO();
         bool GenerateAndSaveTile(int adtX, int adtY);
 };
-}
-}
