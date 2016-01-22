@@ -107,52 +107,45 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-    try
+    // once we reach here it is the usual case of generating an entire continent
+    std::vector<std::unique_ptr<Worker>> workers(jobs);
+
+    for (auto &worker : workers)
+        worker.reset(new Worker(&meshBuilder));
+
     {
-        // once we reach here it is the usual case of generating an entire continent
-        std::vector<std::unique_ptr<Worker>> workers(jobs);
+        std::vector<std::pair<int, int>> tiles;
+        meshBuilder.BuildWorkList(tiles);
 
-        for (auto &worker : workers)
-            worker.reset(new Worker(&meshBuilder));
-
+        int lastWorker = 0;
+        for (size_t i = 0; i < tiles.size(); ++i)
         {
-            std::vector<std::pair<int, int>> tiles;
-            meshBuilder.BuildWorkList(tiles);
+            workers[lastWorker]->EnqueueADT(tiles[i].first, tiles[i].second);
 
-            int lastWorker = 0;
-            for (size_t i = 0; i < tiles.size(); ++i)
-            {
-                workers[lastWorker]->EnqueueADT(tiles[i].first, tiles[i].second);
-
-                lastWorker = (lastWorker + 1) % workers.size();
-            }
-        }
-
-        for (auto &worker : workers)
-            worker->InitializeADTReferences();
-
-        for (auto &worker : workers)
-            worker->Begin();
-
-        while (true)
-        {
-            bool done = true;
-            for (auto &worker : workers)
-                if (!!worker->Jobs())
-                {
-                    done = false;
-                    break;
-                }
-
-            if (done)
-                break;
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            lastWorker = (lastWorker + 1) % workers.size();
         }
     }
-    catch (...)
+
+    for (auto &worker : workers)
+        worker->InitializeADTReferences();
+
+    for (auto &worker : workers)
+        worker->Begin();
+
+    while (true)
     {
-        int asdf = 1234;
+        bool done = true;
+        for (auto &worker : workers)
+            if (!!worker->Jobs())
+            {
+                done = false;
+                break;
+            }
+
+        if (done)
+            break;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     return EXIT_SUCCESS;

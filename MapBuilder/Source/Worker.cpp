@@ -95,7 +95,7 @@ void Worker::InitializeADTReferences()
 
 void Worker::Begin()
 {
-    m_thread = std::thread([this]() { this->Work(); });
+    m_thread = std::thread(&Worker::Work, this);
 }
 
 int Worker::Jobs() const
