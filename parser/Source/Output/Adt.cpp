@@ -255,7 +255,8 @@ Adt::Adt(Continent *continent, int adtX, int adtY)
                 auto const &vertex = wmo->Vertices[v];
 
                 // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
-                if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
+                // if it falls on the edge, always handle it the same way (<= in the min case on both axis)
+                if (vertex.X > Bounds.MaxCorner.X || vertex.X <= Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y <= Bounds.MinCorner.Y)
                     continue;
 
                 const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / utility::MathHelper::AdtChunkSize);
@@ -300,7 +301,7 @@ Adt::Adt(Continent *continent, int adtX, int adtY)
                 auto const &vertex = doodad->Vertices[v];
 
                 // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
-                if (vertex.X > Bounds.MaxCorner.X || vertex.X < Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y < Bounds.MinCorner.Y)
+                if (vertex.X > Bounds.MaxCorner.X || vertex.X <= Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y <= Bounds.MinCorner.Y)
                     continue;
 
                 const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / utility::MathHelper::AdtChunkSize);
