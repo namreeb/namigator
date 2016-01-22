@@ -100,6 +100,13 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
+#ifdef _WIN32
+#ifdef _DEBUG
+    if (jobs > 4)
+        std::cerr << "WARNING!  Running more than 4 jobs in 32 bit mode has been shown to fail due to memory fragmentation" << std::endl;
+#endif
+#endif
+
     try
     {
         // once we reach here it is the usual case of generating an entire continent
