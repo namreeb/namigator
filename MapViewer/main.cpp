@@ -287,7 +287,7 @@ void ChangeContinent(const std::string &cn)
     gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
 
     // if the loaded continent has no ADTs, but instead a global WMO, load it now
-    if (auto wmo = gContinent->GetWmo())
+    if (auto wmo = gContinent->GetGlobalWmo())
     {
         gRenderer->AddWmo(0, wmo->Vertices, wmo->Indices);
         gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
@@ -324,7 +324,7 @@ void LoadADTFromGUI()
         ChangeContinent(gControls->GetText(Controls::ContinentsCombo));
 
     // if the current continent has only a global WMO, do nothing further
-    if (gContinent->GetWmo())
+    if (gContinent->GetGlobalWmo())
         return;
 
     auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));

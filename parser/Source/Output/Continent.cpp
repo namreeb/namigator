@@ -7,12 +7,12 @@
 #include <memory>
 #include <sstream>
 #include <fstream>
-
-#define CONV(x, y) (y * 64 + x)
+#include <iostream>
+#include <iomanip>
 
 namespace parser
 {
-Continent::Continent(const std::string &continentName) : Name(continentName), m_wmo(nullptr)
+Continent::Continent(const std::string &continentName) : Name(continentName), m_globalWmo(nullptr)
 {
     std::string file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
@@ -23,10 +23,10 @@ Continent::Continent(const std::string &continentName) : Name(continentName), m_
     m_hasTerrain = continent.HasTerrain;
 
     if (!m_hasTerrain)
-        m_wmo.reset(new Wmo(continent.Wmo->Vertices, continent.Wmo->Indices,
-                            continent.Wmo->LiquidVertices, continent.Wmo->LiquidIndices,
-                            continent.Wmo->DoodadVertices, continent.Wmo->DoodadIndices,
-                            continent.Wmo->Bounds));
+        m_globalWmo.reset(new Wmo(continent.Wmo->Vertices, continent.Wmo->Indices,
+                                  continent.Wmo->LiquidVertices, continent.Wmo->LiquidIndices,
+                                  continent.Wmo->DoodadVertices, continent.Wmo->DoodadIndices,
+                                  continent.Wmo->Bounds));
 }
 
 const Adt *Continent::LoadAdt(int x, int y)
@@ -36,17 +36,16 @@ const Adt *Continent::LoadAdt(int x, int y)
     if (!m_hasAdt[y][x])
         return nullptr;
 
-    if (m_adts.find(CONV(x, y)) == m_adts.end())
-        m_adts[CONV(x, y)] = std::unique_ptr<Adt>(new Adt(this, x, y));
+    if (!m_adts[y][x])
+        m_adts[y][x].reset(new Adt(this, x, y));
 
-    return m_adts[CONV(x, y)].get();
+    return m_adts[y][x].get();
 }
 
 void Continent::UnloadAdt(int x, int y)
 {
     std::lock_guard<std::mutex> guard(m_adtMutex);
-
-    m_adts.erase(CONV(x, y));
+    m_adts[y][x].reset(nullptr);
 }
 
 bool Continent::HasAdt(int x, int y) const
@@ -57,7 +56,7 @@ bool Continent::HasAdt(int x, int y) const
 bool Continent::IsAdtLoaded(int x, int y) const
 {
     std::lock_guard<std::mutex> guard(m_adtMutex);
-    return m_adts.find(CONV(x, y)) != m_adts.end();
+    return !!m_adts[y][x];
 }
 
 bool Continent::IsWmoLoaded(unsigned int uniqueId) const
@@ -66,23 +65,35 @@ bool Continent::IsWmoLoaded(unsigned int uniqueId) const
     return m_loadedWmos.find(uniqueId) != m_loadedWmos.end();
 }
 
-bool Continent::IsWmoLoading(unsigned int uniqueId) const
-{
-    std::lock_guard<std::mutex> guard(m_wmoMutex);
-    return m_loadingWmos.find(uniqueId) != m_loadingWmos.end();
-}
-
-void Continent::LoadingWmo(unsigned int uniqueId)
-{
-    std::lock_guard<std::mutex> guard(m_wmoMutex);
-    m_loadingWmos.insert(uniqueId);
-}
-
 void Continent::InsertWmo(unsigned int uniqueId, const Wmo *wmo)
 {
     std::lock_guard<std::mutex> guard(m_wmoMutex);
-    m_loadingWmos.erase(uniqueId);
+
+    if (m_loadedWmos[uniqueId])
+    {
+        delete wmo;
+#ifdef _DEBUG
+        std::stringstream str;
+        str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id()
+            << " loaded already present wmo #" << uniqueId << ".  De-allocating and aborting load.\n";
+        std::cout << str.str();
+#endif
+        return;
+    }
+
     m_loadedWmos[uniqueId].reset(wmo);
+#ifdef _DEBUG
+    std::stringstream str;
+    str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id()
+        << " loaded WMO #" << uniqueId << ".  Needed by ADTs:";
+
+    for (auto const &adt : wmo->Adts)
+        str << " (" << adt.first << ", " << adt.second << "),";
+
+    str << "\n";
+
+    std::cout << str.str();
+#endif
 }
 
 bool Continent::IsDoodadLoaded(unsigned int uniqueId) const
@@ -97,9 +108,9 @@ void Continent::InsertDoodad(unsigned int uniqueId, Doodad *doodad)
     m_loadedDoodads[uniqueId].reset(doodad);
 }
 
-const Wmo *Continent::GetWmo() const
+const Wmo *Continent::GetGlobalWmo() const
 {
-    return m_wmo.get();
+    return m_globalWmo.get();
 }
 
 const Wmo *Continent::GetWmo(unsigned int uniqueId) const
@@ -111,6 +122,12 @@ const Wmo *Continent::GetWmo(unsigned int uniqueId) const
     return itr == m_loadedWmos.end() ? nullptr : itr->second.get();
 }
 
+void Continent::UnloadWmo(unsigned int uniqueId)
+{
+    std::lock_guard<std::mutex> guard(m_wmoMutex);
+    m_loadedWmos.erase(uniqueId);
+}
+
 const Doodad *Continent::GetDoodad(unsigned int uniqueId) const
 {
     std::lock_guard<std::mutex> guard(m_doodadMutex);
@@ -118,5 +135,11 @@ const Doodad *Continent::GetDoodad(unsigned int uniqueId) const
     auto const itr = m_loadedDoodads.find(uniqueId);
 
     return itr == m_loadedDoodads.end() ? nullptr : itr->second.get();
+}
+
+void Continent::UnloadDoodad(unsigned int uniqueId)
+{
+    std::lock_guard<std::mutex> guard(m_doodadMutex);
+    m_loadedDoodads.erase(uniqueId);
 }
 }

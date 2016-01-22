@@ -213,7 +213,7 @@ void MeshBuilder::BuildWorkList(std::vector<std::pair<int, int>> &tiles) const
 
 bool MeshBuilder::IsGlobalWMO() const
 {
-    return !!m_continent->GetWmo();
+    return !!m_continent->GetGlobalWmo();
 }
 
 void MeshBuilder::AddReference(int adtX, int adtY)
@@ -241,13 +241,60 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
             << std::setfill(' ') << std::setw(2) << adtY << ").  Unloading.\n";
         std::cout << str.str();
 #endif
-        m_continent->UnloadAdt(adtX, adtY);
+        auto const adt = m_continent->LoadAdt(adtX, adtY);
+
+        // check if there are any wmos or doodads we can now remove
+        for (int y = 0; y < 16; ++y)
+            for (int x = 0; x < 16; ++x)
+            {
+                auto const chunk = adt->GetChunk(x, y);
+                
+                for (auto const &wmoId : chunk->m_wmos)
+                {
+                    if (!m_continent->IsWmoLoaded(wmoId))
+                        continue;
+
+                    bool unload = true;
+
+                    auto const wmo = m_continent->GetWmo(wmoId);
+                    for (auto const &adt : wmo->Adts)
+                        if (m_adtReferences[adt.second][adt.first] > 0)
+                        {
+                            unload = false;
+                            break;
+                        }
+
+                    if (unload)
+                        m_continent->UnloadWmo(wmoId);
+                }
+
+                for (auto const &doodadId : chunk->m_doodads)
+                {
+                    if (!m_continent->IsDoodadLoaded(doodadId))
+                        continue;
+
+                    bool unload = true;
+
+                    auto const doodad = m_continent->GetDoodad(doodadId);
+                    for (auto const &adt : doodad->Adts)
+                        if (m_adtReferences[adt.second][adt.first] > 0)
+                        {
+                            unload = false;
+                            break;
+                        }
+
+                    if (unload)
+                        m_continent->UnloadDoodad(doodadId);
+                }
+            }
+
+        m_continent->UnloadAdt(adtX, adtY);       
     }
 }
 
 bool MeshBuilder::GenerateAndSaveGlobalWMO()
 {
-    auto const wmo = m_continent->GetWmo();
+    auto const wmo = m_continent->GetGlobalWmo();
 
     assert(!!wmo);
 
@@ -373,6 +420,13 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
                     auto const wmo = m_continent->GetWmo(wmoId);
 
+                    if (!wmo)
+                    {
+                        std::stringstream str;
+                        str << "Could not find required WMO ID = " << wmoId << " needed by ADT (" << adtX << ", " << adtY << ")\n";
+                        std::cout << str.str();
+                    }
+
                     assert(wmo);
 
                     if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::WMO))
@@ -383,6 +437,8 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
                     if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
                         return false;
+
+                    rasterizedWmos.insert(wmoId);
                 }
 
                 // doodads
@@ -397,6 +453,8 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
                     if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, doodad->Vertices, doodad->Indices, AreaFlags::Doodad))
                         return false;
+
+                    rasterizedDoodads.insert(doodadId);
                 }
             }
     }
@@ -406,6 +464,9 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
     {
         std::vector<rcSpan *> adtSpans;
+
+        
+        adtSpans.reserve(solid->width*solid->height);
 
         for (int i = 0; i < solid->width * solid->height; ++i)
             for (rcSpan *s = solid->spans[i]; s; s = s->next)

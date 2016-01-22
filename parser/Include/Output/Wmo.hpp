@@ -6,11 +6,15 @@
 
 #include <vector>
 #include <string>
+#include <set>
 
 namespace parser
 {
 class Wmo
 {
+    private:
+        void AmmendAdtSet(const std::vector<utility::Vertex> &vertices);
+
     public:
         const utility::BoundingBox Bounds;
 
@@ -28,6 +32,8 @@ class Wmo
             std::vector<utility::Vertex> &liquidVertices, std::vector<int> &liquidIndices,
             std::vector<utility::Vertex> &doodadVertices, std::vector<int> &doodadIndices,
             const utility::BoundingBox &bounds);
+
+        std::set<std::pair<int, int>> Adts;
 
         void WriteGlobalObjFile(const std::string &continentName) const;
 };

@@ -1,9 +1,12 @@
 #include "Output/Wmo.hpp"
 #include "parser.hpp"
 
+#include "utility/Include/MathHelper.hpp"
+
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <set>
 
 namespace parser
 {
@@ -14,7 +17,22 @@ Wmo::Wmo(std::vector<utility::Vertex> &vertices, std::vector<int> &indices,
     : Bounds(bounds),
       Vertices(std::move(vertices)), Indices(std::move(indices)),
       LiquidVertices(std::move(liquidVertices)), LiquidIndices(std::move(liquidIndices)),
-      DoodadVertices(std::move(doodadVertices)), DoodadIndices(std::move(doodadIndices)) {}
+      DoodadVertices(std::move(doodadVertices)), DoodadIndices(std::move(doodadIndices))
+{
+    AmmendAdtSet(Vertices);
+    AmmendAdtSet(LiquidVertices);
+    AmmendAdtSet(DoodadVertices);
+}
+
+void Wmo::AmmendAdtSet(const std::vector<utility::Vertex> &vertices)
+{
+    for (auto const &v : vertices)
+    {
+        int adtX, adtY;
+        utility::Convert::WorldToAdt(v, adtX, adtY);
+        Adts.insert({ adtX, adtY });
+    }
+}
 
 void Wmo::WriteGlobalObjFile(const std::string &continentName) const
 {
