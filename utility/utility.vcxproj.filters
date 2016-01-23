@@ -33,9 +33,6 @@
     <ClInclude Include="Include\LinearAlgebra.hpp">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Misc.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="Include\MathHelper.hpp">
       <Filter>Include</Filter>
     </ClInclude>
@@ -49,6 +46,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\BoundingBox.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Exception.hpp">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

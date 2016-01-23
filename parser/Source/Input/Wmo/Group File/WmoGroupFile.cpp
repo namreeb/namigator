@@ -1,5 +1,5 @@
 #include "Input/WMO/Group File/WmoGroupFile.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include <memory>
 

@@ -1,5 +1,5 @@
 #include "utility/Include/LinearAlgebra.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include <math.h>
 #include <ostream>

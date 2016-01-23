@@ -1,5 +1,5 @@
 #include "utility/Include/BinaryStream.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include <string>
 #include <vector>

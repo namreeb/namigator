@@ -130,9 +130,9 @@
     <ClInclude Include="Include\BinaryStream.hpp" />
     <ClInclude Include="Include\BoundingBox.hpp" />
     <ClInclude Include="Include\Directory.hpp" />
+    <ClInclude Include="Include\Exception.hpp" />
     <ClInclude Include="Include\LinearAlgebra.hpp" />
     <ClInclude Include="Include\MathHelper.hpp" />
-    <ClInclude Include="Include\Misc.hpp" />
     <ClInclude Include="Include\Ray.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

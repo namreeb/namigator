@@ -2,7 +2,7 @@
 #include "Input/ADT/Chunks/MMDX.hpp"
 #include "Input/M2/DoodadFile.hpp"
 #include "utility/Include/BinaryStream.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include <list>
 #include <vector>

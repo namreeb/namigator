@@ -1,5 +1,5 @@
 #include "Input/M2/DoodadFile.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 namespace parser
 {

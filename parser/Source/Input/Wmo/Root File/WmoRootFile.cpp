@@ -7,7 +7,7 @@
 #include "Input/WMO/Root File/WmoRootFile.hpp"
 
 #include "utility/Include/MathHelper.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include <vector>
 #include <sstream>

@@ -1,7 +1,7 @@
 #include "Input/WowFile.hpp"
 #include "Output/MpqManager.hpp"
 #include "utility/Include/BinaryStream.hpp"
-#include "utility/Include/Misc.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include <algorithm>
 
