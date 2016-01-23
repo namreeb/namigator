@@ -68,9 +68,8 @@ int main(int argc, char *argv[])
 
         {
             Worker worker(&meshBuilder);
-
+            meshBuilder.SingleAdt(adtX, adtY);
             std::cout << "Building " << continent << " (" << adtX << ", " << adtY << ")..." << std::endl;
-            worker.EnqueueADT(adtX, adtY);
             worker.Begin();
         }
 
@@ -90,11 +89,8 @@ int main(int argc, char *argv[])
     // if the continent is a single wmo, we have no use for multiple threads
     if (meshBuilder.IsGlobalWMO())
     {
-        {
-            Worker worker(&meshBuilder);
-
-            worker.EnqueueGlobalWMO();
-        }
+        Worker worker(&meshBuilder);
+        worker.EnqueueGlobalWMO();
 
         return EXIT_SUCCESS;
     }
@@ -112,19 +108,6 @@ int main(int argc, char *argv[])
     for (auto &worker : workers)
         worker.reset(new Worker(&meshBuilder));
 
-    {
-        std::vector<std::pair<int, int>> tiles;
-        meshBuilder.BuildWorkList(tiles);
-
-        int lastWorker = 0;
-        for (size_t i = 0; i < tiles.size(); ++i)
-        {
-            workers[lastWorker]->EnqueueADT(tiles[i].first, tiles[i].second);
-
-            lastWorker = (lastWorker + 1) % workers.size();
-        }
-    }
-
     for (auto &worker : workers)
         worker->Begin();
 
@@ -132,7 +115,7 @@ int main(int argc, char *argv[])
     {
         bool done = true;
         for (auto &worker : workers)
-            if (!!worker->Jobs())
+            if (worker->IsRunning())
             {
                 done = false;
                 break;

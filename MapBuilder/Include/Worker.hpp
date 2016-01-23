@@ -15,12 +15,9 @@ class Worker
         MeshBuilder * const m_meshBuilder;
 
         bool m_shutdownRequested;
-
-        mutable std::mutex m_mutex;
-        std::list<std::pair<int, int>> m_adts;
         bool m_wmo;
+        bool m_isRunning;
 
-        // this is defined last so that the thread will not start until the other members are initialized
         std::thread m_thread;
 
         void Work();
@@ -29,10 +26,8 @@ class Worker
         Worker(MeshBuilder *meshBuilder);
         ~Worker();
 
-        void EnqueueADT(int x, int y);
         void EnqueueGlobalWMO();
-
         void Begin();
 
-        int Jobs() const;
+        bool IsRunning() const;
 };

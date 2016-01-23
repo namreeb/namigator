@@ -13,6 +13,8 @@
 #include <sstream>
 #include <mutex>
 #include <iomanip>
+#include <vector>
+#include <queue>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -206,16 +208,33 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
             AddReference(x - 1, y - 1); AddReference(x - 0, y - 1); AddReference(x + 1, y - 1);
             AddReference(x - 1, y - 0); AddReference(x - 0, y - 0); AddReference(x + 1, y - 0);
             AddReference(x - 1, y + 1); AddReference(x - 0, y + 1); AddReference(x + 1, y + 1);
+
+            m_adts.push({ x, y });
         }
 }
 
-void MeshBuilder::BuildWorkList(std::vector<std::pair<int, int>> &tiles) const
+void MeshBuilder::SingleAdt(int adtX, int adtY)
 {
-    tiles.reserve(64 * 64);
-    for (int y = 0; y < 64; ++y)
-        for (int x = 0; x < 64; ++x)
-            if (m_continent->HasAdt(x, y))
-                tiles.push_back(std::pair<int, int>(x, y));
+    std::lock_guard<std::mutex> guard(m_mutex);
+    
+    m_adts = std::move(std::queue<std::pair<int, int>>());
+    m_adts.push({ adtX, adtY });
+}
+
+bool MeshBuilder::GetNextAdt(int &adtX, int &adtY)
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    if (m_adts.empty())
+        return false;
+
+    auto const front = m_adts.front();
+    m_adts.pop();
+
+    adtX = front.first;
+    adtY = front.second;
+
+    return true;
 }
 
 bool MeshBuilder::IsGlobalWMO() const
