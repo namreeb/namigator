@@ -113,6 +113,12 @@ int main(int argc, char *argv[])
 
     while (true)
     {
+#ifdef _DEBUG
+        auto const adtMap = meshBuilder.AdtMap();
+        auto const adtReferencesMap = meshBuilder.AdtReferencesMap();
+        auto const wmoMap = meshBuilder.WmoMap();
+#endif
+
         bool done = true;
         for (auto &worker : workers)
             if (worker->IsRunning())

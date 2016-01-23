@@ -3,7 +3,7 @@
 #include "parser/Include/Output/Continent.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 
-#include <queue>
+#include <vector>
 #include <string>
 #include <mutex>
 
@@ -13,8 +13,8 @@ class MeshBuilder
         std::unique_ptr<parser::Continent> m_continent;
         const std::string m_outputPath;
 
-        std::mutex m_mutex;
-        std::queue<std::pair<int, int>> m_adts;
+        mutable std::mutex m_mutex;
+        std::vector<std::pair<int, int>> m_pendingAdts;
         int m_adtReferences[64][64];
 
         void AddReference(int adtX, int adtY);
@@ -30,4 +30,10 @@ class MeshBuilder
 
         bool GenerateAndSaveGlobalWMO();
         bool GenerateAndSaveTile(int adtX, int adtY);
+
+#ifdef _DEBUG
+        std::string AdtMap() const;
+        std::string AdtReferencesMap() const;
+        std::string WmoMap() const;
+#endif
 };

@@ -318,6 +318,7 @@ Adt::Adt(Continent *continent, int adtX, int adtY)
     }
 }
 
+#ifdef _DEBUG
 void Adt::WriteObjFile() const
 {
     std::stringstream ss;
@@ -444,6 +445,18 @@ void Adt::WriteObjFile() const
 
     out.close();
 }
+
+size_t Adt::GetWmoCount() const
+{
+    std::set<unsigned int> wmos;
+
+    for (int chunkY = 0; chunkY < 16; ++chunkY)
+        for (int chunkX = 0; chunkX < 16; ++chunkX)
+            wmos.insert(m_chunks[chunkY][chunkX]->m_wmos.cbegin(), m_chunks[chunkY][chunkX]->m_wmos.cend());
+
+    return wmos.size();
+}
+#endif
 
 const AdtChunk *Adt::GetChunk(const int chunkX, const int chunkY) const
 {

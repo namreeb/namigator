@@ -209,7 +209,7 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
             AddReference(x - 1, y - 0); AddReference(x - 0, y - 0); AddReference(x + 1, y - 0);
             AddReference(x - 1, y + 1); AddReference(x - 0, y + 1); AddReference(x + 1, y + 1);
 
-            m_adts.push({ x, y });
+            m_pendingAdts.push_back({ x, y });
         }
 }
 
@@ -217,19 +217,19 @@ void MeshBuilder::SingleAdt(int adtX, int adtY)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
     
-    m_adts = std::move(std::queue<std::pair<int, int>>());
-    m_adts.push({ adtX, adtY });
+    m_pendingAdts.clear();
+    m_pendingAdts.push_back({ adtX, adtY });
 }
 
 bool MeshBuilder::GetNextAdt(int &adtX, int &adtY)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
 
-    if (m_adts.empty())
+    if (m_pendingAdts.empty())
         return false;
 
-    auto const front = m_adts.front();
-    m_adts.pop();
+    auto const front = m_pendingAdts.back();
+    m_pendingAdts.pop_back();
 
     adtX = front.first;
     adtY = front.second;
@@ -515,3 +515,94 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
     return FinishMesh(ctx, config, adtX, adtY, str.str(), *solid);
 }
+
+#ifdef _DEBUG
+std::string MeshBuilder::AdtMap() const
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    std::stringstream ret;
+
+    for (int y = 1; y < 64; ++y)
+    {
+        for (int x = 1; x < 64; ++x)
+        {
+            if (!m_continent->HasAdt(x, y))
+            {
+                ret << " ";
+                continue;
+            }
+
+            bool pending = false;
+
+            for (auto const &adt : m_pendingAdts)
+                if (adt.first == x && adt.second == y)
+                {
+                    pending = true;
+                    break;
+                }
+
+            ret << (pending ? "X" : ".");
+        }
+
+        ret << "\n";
+    }
+
+    return ret.str();
+}
+
+std::string MeshBuilder::AdtReferencesMap() const
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    std::stringstream ret;
+
+    for (int y = 1; y < 64; ++y)
+    {
+        for (int x = 1; x < 64; ++x)
+        {
+            if (m_continent->HasAdt(x, y))
+                ret << m_adtReferences[y][x];
+            else
+                ret << " ";
+        }
+
+        ret << "\n";
+    }
+
+    return ret.str();
+}
+
+std::string MeshBuilder::WmoMap() const
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    std::stringstream ret;
+
+    for (int y = 1; y < 64; ++y)
+    {
+        for (int x = 1; x < 64; ++x)
+        {
+            if (!m_continent->HasAdt(x, y) || !m_continent->IsAdtLoaded(x, y))
+            {
+                ret << " ";
+                continue;
+            }
+
+            auto const adt = m_continent->LoadAdt(x, y);
+            assert(!!adt);
+
+            auto const count = adt->GetWmoCount();
+
+            if (count > 9)
+                ret << "X";
+            else
+                ret << count;
+        }
+
+        ret << "\n";
+    }
+
+    return ret.str();
+}
+#endif

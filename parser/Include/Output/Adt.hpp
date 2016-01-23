@@ -50,7 +50,10 @@ class Adt
 
         Adt(Continent *continent, int x, int y);
 
+#ifdef _DEBUG
         void WriteObjFile() const;
+        size_t GetWmoCount() const;
+#endif
 
         const AdtChunk *GetChunk(int chunkX, int chunkY) const;
 };
