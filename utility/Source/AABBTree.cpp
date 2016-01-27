@@ -52,10 +52,18 @@ void AABBTree::Serialize(BinaryStream& stream) const
 {
     stream.Write(uint32_t('BVH1'));
 
+    stream.Write(uint32_t(m_vertices.size()));
+    for (const auto& vertex : m_vertices)
+        stream.Write(vertex);
+
+    stream.Write(uint32_t(m_indices.size()));
+    for (const auto& index : m_indices)
+        stream.Write(int32_t(index));
+
     stream.Write(uint32_t(m_nodes.size()));
     for (const auto& node : m_nodes)
     {
-        stream.Write(uint32_t(node.numFaces));
+        stream.Write(uint8_t(node.numFaces));
         if (!!node.numFaces)
         {
             // Write leaf node
@@ -68,14 +76,6 @@ void AABBTree::Serialize(BinaryStream& stream) const
             stream.Write(node.bounds);
         }
     }
-
-    stream.Write(uint32_t(m_vertices.size()));
-    for (const auto& vertex : m_vertices)
-        stream.Write(vertex);
-
-    stream.Write(uint32_t(m_indices.size()));
-    for (unsigned int index : m_indices)
-        stream.Write(uint32_t(index));
 }
 
 bool AABBTree::Deserialize(BinaryStream& stream)
@@ -83,10 +83,18 @@ bool AABBTree::Deserialize(BinaryStream& stream)
     if (stream.Read<uint32_t>() != uint32_t('BVH1'))
         return false;
 
+    m_vertices.resize(size_t(stream.Read<uint32_t>()));
+    for (auto& vertex : m_vertices)
+        vertex = stream.Read<Vector3>();
+
+    m_indices.resize(size_t(stream.Read<uint32_t>()));
+    for (auto& index : m_indices)
+        index = stream.Read<int32_t>();
+
     m_nodes.resize(size_t(stream.Read<uint32_t>()));
     for (auto& node : m_nodes)
     {
-        node.numFaces = stream.Read<uint32_t>();
+        node.numFaces = stream.Read<uint8_t>();
         if (!!node.numFaces)
         {
             // Read leaf node
@@ -99,14 +107,6 @@ bool AABBTree::Deserialize(BinaryStream& stream)
             node.bounds = stream.Read<BoundingBox>();
         }
     }
-
-    m_vertices.resize(size_t(stream.Read<uint32_t>()));
-    for (auto& vertex : m_vertices)
-        vertex = stream.Read<Vector3>();
-
-    m_indices.resize(size_t(stream.Read<uint32_t>()));
-    for (auto& index : m_indices)
-        index = stream.Read<uint32_t>();
 
     return true;
 }
