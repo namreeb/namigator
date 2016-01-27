@@ -27,7 +27,7 @@ class BinaryStream
 
     template <typename T> void Write(T data)
     {
-        if (m_position + sizeof(T) > m _buffer.size())
+        if (m_position + sizeof(T) > m_buffer.size())
             m_buffer.resize(2 * m_buffer.size());
 
         T *pos = reinterpret_cast<T *>(&m_buffer[m_position]);

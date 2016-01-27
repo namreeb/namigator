@@ -15,13 +15,17 @@ void Ray::setHitPoint(float distance) {
 }
 
 bool Ray::intersectTriangle(const Vector3* verts, float* distance) const {
+    return intersectTriangle(verts[0], verts[1], verts[2], distance);
+}
+
+bool Ray::intersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance) const {
     // To increase precision for very small world scales
     const float upscaleFactor = 10.0f;
 
     Vector3 rayDir = getDirection() * upscaleFactor;
-    Vector3 v0 = verts[0] * upscaleFactor;
-    Vector3 v1 = verts[1] * upscaleFactor - v0;
-    Vector3 v2 = verts[2] * upscaleFactor - v0;
+    Vector3 v0 = p0 * upscaleFactor;
+    Vector3 v1 = p1 * upscaleFactor - v0;
+    Vector3 v2 = p2 * upscaleFactor - v0;
 
     Vector3 p = Vector3::CrossProduct(rayDir, v2);
     float det = Vector3::DotProduct(v1, p);

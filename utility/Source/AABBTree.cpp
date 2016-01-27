@@ -7,109 +7,204 @@ namespace utility
 namespace {
 class ModelFaceSorter {
     public:
-    ModelFaceSorter(const ModelFace* faces, unsigned int numFaces, unsigned int axis)
-        : faces(faces)
-        , numFaces(numFaces)
-        , axis(axis) {
-    }
+        ModelFaceSorter(const Vertex* vertices, const int* indices, unsigned int axis)
+            : m_vertices(vertices)
+            , m_indices(indices)
+            , m_axis(axis)
+        {
+        }
 
-    bool operator () (unsigned int lhs, unsigned int rhs) const {
-        float a = getCenteroid(lhs);
-        float b = getCenteroid(rhs);
-        return (a != b) ? (a < b) : (lhs < rhs);
-    }
+        bool operator () (unsigned int lhs, unsigned int rhs) const
+        {
+            float a = getCenteroid(lhs);
+            float b = getCenteroid(rhs);
+            return (a != b) ? (a < b) : (lhs < rhs);
+        }
 
-    float getCenteroid(unsigned int face) const {
-        auto& a = faces[face].vertices[0];
-        auto& b = faces[face].vertices[1];
-        auto& c = faces[face].vertices[2];
-        return (a[axis] + b[axis] + c[axis]) / 3.0f;
-    }
+        float getCenteroid(unsigned int face) const
+        {
+            auto& a = m_vertices[m_indices[face*3 + 0]];
+            auto& b = m_vertices[m_indices[face*3 + 1]];
+            auto& c = m_vertices[m_indices[face*3 + 2]];
+            return (a[m_axis] + b[m_axis] + c[m_axis]) / 3.0f;
+        }
 
-    private:
-    const ModelFace* faces;
-    unsigned int numFaces;
-    unsigned int axis;
+        private:
+        const Vertex* m_vertices;
+        const int* m_indices;
+        unsigned int m_axis;
 };
 }
 
-AABBTree::AABBTree(const std::vector<ModelFace>& faces) {
-    build(faces);
+AABBTree::AABBTree(const std::vector<Vertex>& vertices, const std::vector<int>& indices)
+{
+    Build(vertices, indices);
 }
 
-BoundingBox AABBTree::getBoundingBox() const {
-    if (nodes.empty()) {
+BoundingBox AABBTree::GetBoundingBox() const
+{
+    if (m_nodes.empty())
         return BoundingBox{};
-    }
-    return nodes.front().bounds;
+    return m_nodes.front().bounds;
 }
 
-BoundingBox AABBTree::calculateFaceBounds(unsigned int* faces, unsigned int numFaces) const {
+void AABBTree::Serialize(BinaryStream& stream) const
+{
+    stream.Write(uint32_t('BVH1'));
+
+    stream.Write(uint32_t(m_nodes.size()));
+    for (const auto& node : m_nodes)
+    {
+        stream.Write(uint32_t(node.numFaces));
+        if (!!node.numFaces)
+        {
+            // Write leaf node
+            stream.Write(uint32_t(node.startFace));
+        }
+        else
+        {
+            // Write inner node
+            stream.Write(uint32_t(node.children));
+            stream.Write(node.bounds);
+        }
+    }
+
+    stream.Write(uint32_t(m_vertices.size()));
+    for (const auto& vertex : m_vertices)
+        stream.Write(vertex);
+
+    stream.Write(uint32_t(m_indices.size()));
+    for (unsigned int index : m_indices)
+        stream.Write(uint32_t(index));
+}
+
+bool AABBTree::Deserialize(BinaryStream& stream)
+{
+    if (stream.Read<uint32_t>() != uint32_t('BVH1'))
+        return false;
+
+    m_nodes.resize(size_t(stream.Read<uint32_t>()));
+    for (auto& node : m_nodes)
+    {
+        node.numFaces = stream.Read<uint32_t>();
+        if (!!node.numFaces)
+        {
+            // Read leaf node
+            node.startFace = stream.Read<uint32_t>();
+        }
+        else
+        {
+            // Read inner node
+            node.children = stream.Read<uint32_t>();
+            node.bounds = stream.Read<BoundingBox>();
+        }
+    }
+
+    m_vertices.resize(size_t(stream.Read<uint32_t>()));
+    for (auto& vertex : m_vertices)
+        vertex = stream.Read<Vector3>();
+
+    m_indices.resize(size_t(stream.Read<uint32_t>()));
+    for (auto& index : m_indices)
+        index = stream.Read<uint32_t>();
+
+    return true;
+}
+
+BoundingBox AABBTree::CalculateFaceBounds(unsigned int* faces, unsigned int numFaces) const
+{
     float min = std::numeric_limits<float>::lowest();
     float max = std::numeric_limits<float>::max();
 
     Vector3 minExtents = { max, max, max };
     Vector3 maxExtents = { min, min, min };
 
-    for (unsigned int i = 0; i < numFaces; ++i) {
-        auto& face = modelFaces.at(faces[i]);
-        minExtents = utility::takeMinimum(minExtents, face.vertices[0]);
-        maxExtents = utility::takeMaximum(maxExtents, face.vertices[0]);
+    for (unsigned int i = 0; i < numFaces; ++i)
+    {
+        auto& v0 = m_vertices[m_indices[faces[i] * 3 + 0]];
+        auto& v1 = m_vertices[m_indices[faces[i] * 3 + 1]];
+        auto& v2 = m_vertices[m_indices[faces[i] * 3 + 2]];
 
-        minExtents = utility::takeMinimum(minExtents, face.vertices[1]);
-        maxExtents = utility::takeMaximum(maxExtents, face.vertices[1]);
+        minExtents = utility::takeMinimum(minExtents, v0);
+        maxExtents = utility::takeMaximum(maxExtents, v0);
 
-        minExtents = utility::takeMinimum(minExtents, face.vertices[2]);
-        maxExtents = utility::takeMaximum(maxExtents, face.vertices[2]);
+        minExtents = utility::takeMinimum(minExtents, v1);
+        maxExtents = utility::takeMaximum(maxExtents, v1);
+
+        minExtents = utility::takeMinimum(minExtents, v2);
+        maxExtents = utility::takeMaximum(maxExtents, v2);
     }
 
     return BoundingBox(minExtents, maxExtents);
 }
 
-void AABBTree::build(const std::vector<ModelFace>& newFaces) {
-    modelFaces = newFaces;
-    faceBounds.clear();
-    faceIndices.clear();
+void AABBTree::Build(const std::vector<Vector3>& verts, const std::vector<int>& indices)
+{
+    m_vertices = verts;
+    m_indices = indices;
 
-    faceBounds.reserve(modelFaces.size());
-    faceIndices.reserve(modelFaces.size());
+    m_faceBounds.clear();
+    m_faceIndices.clear();
 
-    for (size_t i = 0; i < modelFaces.size(); ++i) {
-        faceIndices.push_back(i);
-        faceBounds.push_back(calculateFaceBounds(&i, 1));
+    size_t numFaces = indices.size() / 3;
+
+    m_faceBounds.reserve(numFaces);
+    m_faceIndices.reserve(numFaces);
+
+    for (unsigned int i = 0; i < unsigned int(numFaces); ++i)
+    {
+        m_faceIndices.push_back(i);
+        m_faceBounds.push_back(CalculateFaceBounds(&i, 1));
     }
 
-    freeNode = 1;
-    nodes.clear();
-    nodes.reserve(int(modelFaces.size() * 1.5f));
+    m_freeNode = 1;
+    m_nodes.clear();
+    m_nodes.reserve(int(numFaces * 1.5f));
 
-    buildRecursive(0, faceIndices.data(), modelFaces.size());
-    faceBounds.clear();
+    BuildRecursive(0, m_faceIndices.data(), unsigned int(numFaces));
+    m_faceBounds.clear();
+
+    // Reorder the model indices according to the face indices
+    std::vector<int> sortedIndices(m_indices.size());
+    for (size_t i = 0; i < numFaces; ++i)
+    {
+        unsigned int index = m_faceIndices[i] * 3;
+        sortedIndices[i*3 + 0] = m_indices[index + 0];
+        sortedIndices[i*3 + 1] = m_indices[index + 1];
+        sortedIndices[i*3 + 2] = m_indices[index + 2];
+    }
+
+    m_indices.swap(sortedIndices);
+    m_faceIndices.clear();
 }
 
-unsigned int AABBTree::getLongestAxis(const Vector3& v) {
-    if (v.X > v.Y && v.X > v.Z) {
+unsigned int AABBTree::GetLongestAxis(const Vector3& v)
+{
+    if (v.X > v.Y && v.X > v.Z)
         return 0;
-    }
+
     return (v.Y > v.Z) ? 1 : 2;
 }
 
-unsigned int AABBTree::partitionMedian(Node& node, unsigned int* faces, unsigned int numFaces) {
-    unsigned int axis = getLongestAxis(node.bounds.getVector());
-    ModelFaceSorter predicate(modelFaces.data(), modelFaces.size(), axis);
+unsigned int AABBTree::PartitionMedian(Node& node, unsigned int* faces, unsigned int numFaces)
+{
+    unsigned int axis = GetLongestAxis(node.bounds.getVector());
+    ModelFaceSorter predicate(m_vertices.data(), m_indices.data(), axis);
 
     std::nth_element(faces, faces + numFaces / 2, faces + numFaces, predicate);
     return numFaces / 2;
 }
 
-unsigned int AABBTree::partitionSurfaceArea(Node& node, unsigned int* faces, unsigned int numFaces) {
+unsigned int AABBTree::PartitionSurfaceArea(Node& node, unsigned int* faces, unsigned int numFaces)
+{
     unsigned int bestAxis = 0;
     unsigned int bestIndex = 0;
 
     float bestCost = std::numeric_limits<float>::max();
 
-    for (unsigned int axis = 0; axis < 3; ++axis) {
-        ModelFaceSorter predicate(modelFaces.data(), modelFaces.size(), axis);
+    for (unsigned int axis = 0; axis < 3; ++axis)
+    {
+        ModelFaceSorter predicate(m_vertices.data(), m_indices.data(), axis);
         std::sort(faces, faces + numFaces, predicate);
 
         // Two passes over data to calculate upper and lower bounds
@@ -118,9 +213,10 @@ unsigned int AABBTree::partitionSurfaceArea(Node& node, unsigned int* faces, uns
 
         BoundingBox lower, upper;
 
-        for (unsigned int i = 0; i < numFaces; ++i) {
-            lower.connectWith(faceBounds[faces[i]]);
-            upper.connectWith(faceBounds[faces[numFaces - i - 1]]);
+        for (unsigned int i = 0; i < numFaces; ++i)
+        {
+            lower.connectWith(m_faceBounds[faces[i]]);
+            upper.connectWith(m_faceBounds[faces[numFaces - i - 1]]);
 
             cumulativeLower[i] = lower.getSurfaceArea();
             cumulativeUpper[numFaces - i - 1] = upper.getSurfaceArea();
@@ -129,12 +225,14 @@ unsigned int AABBTree::partitionSurfaceArea(Node& node, unsigned int* faces, uns
         float invTotalArea = 1.0f / cumulativeUpper[0];
 
         // Test split positions
-        for (unsigned int i = 0; i < numFaces - 1; ++i) {
+        for (unsigned int i = 0; i < numFaces - 1; ++i)
+        {
             float below = cumulativeLower[i] * invTotalArea;
             float above = cumulativeUpper[i] * invTotalArea;
 
             float cost = 0.125f + (below * i + above * (numFaces - i));
-            if (cost <= bestCost) {
+            if (cost <= bestCost)
+            {
                 bestCost = cost;
                 bestIndex = i;
                 bestAxis = axis;
@@ -143,80 +241,143 @@ unsigned int AABBTree::partitionSurfaceArea(Node& node, unsigned int* faces, uns
     }
 
     // Sort faces by best axis
-    ModelFaceSorter predicate(modelFaces.data(), modelFaces.size(), bestAxis);
+    ModelFaceSorter predicate(m_vertices.data(), m_indices.data(), bestAxis);
     std::sort(faces, faces + numFaces, predicate);
 
     return bestIndex + 1;
 }
 
-void AABBTree::buildRecursive(unsigned int nodeIndex, unsigned int* faces, unsigned int numFaces) {
+void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsigned int numFaces)
+{
     const unsigned int maxFacesPerLeaf = 6;
 
     // Allocate more nodes if out of nodes
-    if (nodeIndex >= nodes.size()) {
-        int size = std::max(int(1.5f * nodes.size()), 512);
-        nodes.resize(size);
+    if (nodeIndex >= m_nodes.size())
+    {
+        int size = std::max(int(1.5f * m_nodes.size()), 512);
+        m_nodes.resize(size);
     }
 
-    auto& node = nodes[nodeIndex];
-    node.bounds = calculateFaceBounds(faces, numFaces);
+    auto& node = m_nodes[nodeIndex];
+    node.bounds = CalculateFaceBounds(faces, numFaces);
 
-    if (numFaces <= maxFacesPerLeaf) {
-        node.faces = faces;
+    if (numFaces <= maxFacesPerLeaf)
+    {
+        node.startFace = faces - m_faceIndices.data();
         node.numFaces = numFaces;
     }
-    else {
-        unsigned int leftCount = partitionSurfaceArea(node, faces, numFaces);
+    else
+    {
+        unsigned int leftCount = PartitionSurfaceArea(node, faces, numFaces);
         unsigned int rightCount = numFaces - leftCount;
 
         // Allocate 2 nodes
-        node.children = freeNode;
-        freeNode += 2;
+        node.children = m_freeNode;
+        m_freeNode += 2;
 
         // Split faces in half and build each side recursively
-        buildRecursive(node.children + 0, faces, leftCount);
-        buildRecursive(node.children + 1, faces + leftCount, rightCount);
+        BuildRecursive(node.children + 0, faces, leftCount);
+        BuildRecursive(node.children + 1, faces + leftCount, rightCount);
     }
 }
 
-bool AABBTree::intersectRay(Ray& ray, unsigned int* faceIndex) const {
+bool AABBTree::IntersectRay(Ray& ray, unsigned int* faceIndex) const
+{
     float distance = ray.getDistance();
-    traceRecursive(0, ray, faceIndex);
+    TraceRecursive(0, ray, faceIndex);
     return ray.getDistance() < distance;
 }
 
-void AABBTree::traceRecursive(unsigned int nodeIndex, Ray& ray, unsigned int* faceIndex) const {
-    auto& node = nodes.at(nodeIndex);
-    if (node.faces != nullptr) {
-        traceLeafNode(node, ray, faceIndex);
-    }
-    else {
-        traceInnerNode(node, ray, faceIndex);
-    }
-}
+void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
+{
+    struct StackEntry
+    {
+        unsigned int node;
+        float dist;
+    };
 
-void AABBTree::traceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex) const {
-    float distance;
+    StackEntry stack[50];
+    stack[0].node = 0;
+    stack[0].dist = 0.0f;
 
-    for (unsigned int i = 0; i < node.numFaces; ++i) {
-        auto verts = modelFaces.at(node.faces[i]).vertices;
-        if (!ray.intersectTriangle(verts, &distance)) {
+    float max = std::numeric_limits<float>::max();
+
+    unsigned int stackCount = 1;
+    while (!!stackCount) {
+        // Pop node from back
+        StackEntry& e = stack[--stackCount];
+
+        // Ignore if another node has already come closer
+        if (e.dist >= ray.getDistance())
             continue;
-        }
 
-        if (distance < ray.getDistance()) {
-            ray.setHitPoint(distance);
+        const Node& node = m_nodes.at(e.node);
+        if (!node.numFaces)
+        {
+            // Find closest node
+            auto& leftChild = m_nodes.at(node.children + 0);
+            auto& rightChild = m_nodes.at(node.children + 1);
 
-            if (faceIndex) {
-                *faceIndex = node.faces[i];
+            float dist[2] = { max, max };
+            ray.intersectBoundingBox(leftChild.bounds, &dist[0]);
+            ray.intersectBoundingBox(rightChild.bounds, &dist[1]);
+
+            unsigned int closest = dist[1] < dist[0]; // 0 or 1
+            unsigned int furthest = closest ^ 1;
+
+            if (dist[furthest] < ray.getDistance())
+            {
+                StackEntry& n = stack[stackCount++];
+                n.node = node.children + furthest;
+                n.dist = dist[furthest];
+            }
+
+            if (dist[closest] < ray.getDistance())
+            {
+                StackEntry& n = stack[stackCount++];
+                n.node = node.children + closest;
+                n.dist = dist[closest];
             }
         }
+        else
+            TraceLeafNode(node, ray, faceIndex);
     }
 }
 
-void AABBTree::traceInnerNode(const Node& node, Ray& ray, unsigned int* faceIndex) const {
-    auto& leftChild = nodes.at(node.children + 0);
-    auto& rightChild = nodes.at(node.children + 1);
+void AABBTree::TraceRecursive(unsigned int nodeIndex, Ray& ray, unsigned int* faceIndex) const {
+    auto& node = m_nodes.at(nodeIndex);
+    if (!!node.numFaces)
+        TraceLeafNode(node, ray, faceIndex);
+    else
+        TraceInnerNode(node, ray, faceIndex);
+}
+
+void AABBTree::TraceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex) const
+{
+    for (unsigned int i = node.startFace; i < node.startFace + node.numFaces; ++i)
+    {
+        auto& v0 = m_vertices[m_indices[i*3 + 0]];
+        auto& v1 = m_vertices[m_indices[i*3 + 1]];
+        auto& v2 = m_vertices[m_indices[i*3 + 2]];
+
+        float distance;
+        if (!ray.intersectTriangle(v0, v1, v2, &distance))
+            continue;
+
+        if (distance < ray.getDistance())
+        {
+            ray.setHitPoint(distance);
+
+            if (faceIndex)
+                *faceIndex = i;
+        }
+    }
+}
+
+void AABBTree::TraceInnerNode(const Node& node, Ray& ray, unsigned int* faceIndex) const
+{
+    auto& leftChild = m_nodes.at(node.children + 0);
+    auto& rightChild = m_nodes.at(node.children + 1);
 
     float max = std::numeric_limits<float>::max();
     float distance[2] = { max, max };
@@ -227,16 +388,13 @@ void AABBTree::traceInnerNode(const Node& node, Ray& ray, unsigned int* faceInde
     unsigned int closest = 0;
     unsigned int furthest = 1;
 
-    if (distance[1] < distance[0]) {
+    if (distance[1] < distance[0])
         std::swap(closest, furthest);
-    }
 
-    if (distance[closest] < ray.getDistance()) {
-        traceRecursive(node.children + closest, ray, faceIndex);
-    }
+    if (distance[closest] < ray.getDistance())
+        TraceRecursive(node.children + closest, ray, faceIndex);
 
-    if (distance[furthest] < ray.getDistance()) {
-        traceRecursive(node.children + furthest, ray, faceIndex);
-    }
+    if (distance[furthest] < ray.getDistance())
+        TraceRecursive(node.children + furthest, ray, faceIndex);
 }
 }

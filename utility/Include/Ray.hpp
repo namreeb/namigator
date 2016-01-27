@@ -19,6 +19,8 @@ class Ray {
     void setHitPoint(float distance);
 
     bool intersectTriangle(const Vector3* verts, float* distance = 0) const;
+    bool intersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance = 0) const;
+
     bool intersectBoundingBox(const BoundingBox& bbox, float* distance = 0) const;
 
     public:

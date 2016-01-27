@@ -2,6 +2,7 @@
 
 #include "parser/Include/parser.hpp"
 #include "utility/Include/MathHelper.hpp"
+#include "utility/Include/AABBTree.hpp"
 #include "RecastDetourBuild/Include/Common.hpp"
 
 #include "Recast.h"
@@ -507,6 +508,21 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
 
         RestoreAdtSpans(adtSpans);
+    }
+
+    // Write the bvh for every rasterized doodad
+    for (auto const& doodadId : rasterizedDoodads)
+    {
+        auto const doodad = m_continent->GetDoodad(doodadId);
+
+        // TODO: Check if it exists (open with lock) first
+
+        utility::BinaryStream bvhStream;
+
+        utility::AABBTree aabbTree(doodad->Vertices, doodad->Indices);
+        aabbTree.Serialize(bvhStream);
+
+        // Ok now the BVH is all ready to be written to disk
     }
 
     std::stringstream str;
