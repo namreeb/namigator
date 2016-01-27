@@ -624,9 +624,9 @@ std::string MeshBuilder::WmoMap() const
 
 void MeshBuilder::WriteMemoryUsage(std::ostream &o) const
 {
-	std::lock_guard<std::mutex> guard(m_mutex);
-	o << "ADTs remaining: " << m_pendingAdts.size() << std::endl;
+    std::lock_guard<std::mutex> guard(m_mutex);
+    o << "ADTs remaining: " << m_pendingAdts.size() << std::endl;
 
-	m_continent->WriteMemoryUsage(o);
+    m_continent->WriteMemoryUsage(o);
 }
 #endif

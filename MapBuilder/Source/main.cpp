@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
         }
 
         {
-			meshBuilder.SingleAdt(adtX, adtY);
-		
-			Worker worker(&meshBuilder);
+            meshBuilder.SingleAdt(adtX, adtY);
+        
+            Worker worker(&meshBuilder);
             std::cout << "Building " << continent << " (" << adtX << ", " << adtY << ")..." << std::endl;
         }
 
@@ -109,16 +109,16 @@ int main(int argc, char *argv[])
     while (true)
     {
 #ifdef _DEBUG
-		volatile bool writeMemoryUsage = false;
+        volatile bool writeMemoryUsage = false;
 
-		if (writeMemoryUsage)
-		{
-			auto const adtMap = meshBuilder.AdtMap();
-			auto const adtReferencesMap = meshBuilder.AdtReferencesMap();
-			auto const wmoMap = meshBuilder.WmoMap();
+        if (writeMemoryUsage)
+        {
+            auto const adtMap = meshBuilder.AdtMap();
+            auto const adtReferencesMap = meshBuilder.AdtReferencesMap();
+            auto const wmoMap = meshBuilder.WmoMap();
 
-			meshBuilder.WriteMemoryUsage(std::cout);
-		}
+            meshBuilder.WriteMemoryUsage(std::cout);
+        }
 #endif
 
         bool done = true;

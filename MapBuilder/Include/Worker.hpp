@@ -14,8 +14,8 @@ class Worker
     private:
         MeshBuilder * const m_meshBuilder;
 
-		const bool m_wmo;
-		bool m_shutdownRequested;
+        const bool m_wmo;
+        bool m_shutdownRequested;
         bool m_isRunning;
 
         std::thread m_thread;

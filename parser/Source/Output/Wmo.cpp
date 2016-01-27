@@ -90,18 +90,18 @@ void Wmo::WriteGlobalObjFile(const std::string &continentName) const
 
 unsigned int Wmo::MemoryUsage() const
 {
-	unsigned int ret = sizeof(Wmo);
+    unsigned int ret = sizeof(Wmo);
 
-	ret += Vertices.size() * sizeof(utility::Vertex);
-	ret += Indices.size() * sizeof(int);
-	
-	ret += LiquidVertices.size() * sizeof(utility::Vertex);
-	ret += LiquidIndices.size() * sizeof(int);
+    ret += Vertices.size() * sizeof(utility::Vertex);
+    ret += Indices.size() * sizeof(int);
+    
+    ret += LiquidVertices.size() * sizeof(utility::Vertex);
+    ret += LiquidIndices.size() * sizeof(int);
 
-	ret += DoodadVertices.size() * sizeof(utility::Vertex);
-	ret += DoodadIndices.size() * sizeof(int);
+    ret += DoodadVertices.size() * sizeof(utility::Vertex);
+    ret += DoodadIndices.size() * sizeof(int);
 
-	return ret;
+    return ret;
 }
 #endif
 }

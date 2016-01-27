@@ -55,7 +55,7 @@ class Continent
         void UnloadDoodad(unsigned int uniqueId);
 
 #ifdef _DEBUG
-		void WriteMemoryUsage(std::ostream &stream) const;
+        void WriteMemoryUsage(std::ostream &stream) const;
 #endif
 };
 }

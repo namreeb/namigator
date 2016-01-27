@@ -40,6 +40,6 @@ class MeshBuilder
         std::string AdtReferencesMap() const;
         std::string WmoMap() const;
 
-		void WriteMemoryUsage(std::ostream &stream) const;
+        void WriteMemoryUsage(std::ostream &stream) const;
 #endif
 };

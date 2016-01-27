@@ -36,9 +36,9 @@ class Wmo
         std::set<std::pair<int, int>> Adts;
 
 #ifdef _DEBUG
-		void WriteGlobalObjFile(const std::string &continentName) const;
+        void WriteGlobalObjFile(const std::string &continentName) const;
 
-		unsigned int MemoryUsage() const;
+        unsigned int MemoryUsage() const;
 #endif
 };
 }
