@@ -20,7 +20,7 @@ class MeshBuilder
         void AddReference(int adtX, int adtY);
 
     public:
-        MeshBuilder(const std::string &dataPath, const std::string &outputPath, std::string &continentName);
+        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &continentName);
 
         void SingleAdt(int adtX, int adtY);
         bool GetNextAdt(int &adtX, int &adtY);

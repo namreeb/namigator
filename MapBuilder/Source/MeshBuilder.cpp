@@ -191,7 +191,7 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, co
 }
 }
 
-MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, std::string &continentName) : m_outputPath(outputPath)
+MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &continentName) : m_outputPath(outputPath)
 {
     parser::Parser::Initialize(dataPath.c_str());
 
