@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
         {
             meshBuilder.SingleAdt(adtX, adtY);
         
-            Worker worker(&meshBuilder);
             std::cout << "Building " << continent << " (" << adtX << ", " << adtY << ")..." << std::endl;
+            Worker worker(&meshBuilder);
         }
 
         std::cout << "Finished.";
@@ -93,18 +93,13 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-#ifdef _WIN32
-#ifdef _DEBUG
-    if (jobs > 4)
-        std::cerr << "WARNING!  Running more than 4 jobs in 32 bit mode has been shown to fail due to memory fragmentation" << std::endl;
-#endif
-#endif
-
     // once we reach here it is the usual case of generating an entire continent
     std::vector<std::unique_ptr<Worker>> workers(jobs);
 
     for (auto &worker : workers)
         worker.reset(new Worker(&meshBuilder));
+
+    auto const start = time(NULL);
 
     while (true)
     {
@@ -134,6 +129,14 @@ int main(int argc, char *argv[])
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+
+    auto const stop = time(NULL);
+
+    auto const runTime = stop - start;
+    auto const adts = meshBuilder.AdtCount();
+    auto const secPerAdt = runTime / adts;
+    
+    std::cout << "Finished " << continent << " (" << adts << " ADTs) in " << runTime << " seconds." << std::endl;
 
     return EXIT_SUCCESS;
 }

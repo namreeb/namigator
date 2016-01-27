@@ -26,6 +26,8 @@ class MeshBuilder
     public:
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &continentName);
 
+        int AdtCount() const;
+
         void SingleAdt(int adtX, int adtY);
         bool GetNextAdt(int &adtX, int &adtY);
         

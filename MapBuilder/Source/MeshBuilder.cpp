@@ -214,6 +214,18 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
         }
 }
 
+int MeshBuilder::AdtCount() const
+{
+    int ret = 0;
+
+    for (int y = 0; y < 64; ++y)
+        for (int x = 0; x < 64; ++x)
+            if (m_continent->HasAdt(x, y))
+                ++ret;
+
+    return ret;
+}
+
 void MeshBuilder::SingleAdt(int adtX, int adtY)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
