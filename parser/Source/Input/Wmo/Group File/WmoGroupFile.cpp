@@ -43,7 +43,7 @@ WmoGroupFile::WmoGroupFile(const std::string &path) : WowFile(path)
     if (mopyOffset < 0)
         THROW("No MOPY chunk");
 
-    MaterialsChunk.reset(new MOPY(mopyOffset, Reader));
+    MaterialsChunk.reset(new MOPY(mopyOffset, Reader.get()));
 
     // MOVI
 
@@ -52,7 +52,7 @@ WmoGroupFile::WmoGroupFile(const std::string &path) : WowFile(path)
     if (moviOffset < 0)
         THROW("No MOVI chunk");
 
-    IndicesChunk.reset(new MOVI(moviOffset, Reader));
+    IndicesChunk.reset(new MOVI(moviOffset, Reader.get()));
 
     // MOVT
 
@@ -61,14 +61,14 @@ WmoGroupFile::WmoGroupFile(const std::string &path) : WowFile(path)
     if (movtOffset < 0)
         THROW("No MOVT chunk");
 
-    VerticesChunk.reset(new MOVT(movtOffset, Reader));
+    VerticesChunk.reset(new MOVT(movtOffset, Reader.get()));
 
     // MLIQ
 
     const long mliqOffset = GetChunkLocation("MLIQ", 0x58);
 
     // not guarunteed to be present
-    LiquidChunk.reset((mliqOffset >= 0 ? new MLIQ(mliqOffset, Reader) : nullptr));
+    LiquidChunk.reset((mliqOffset >= 0 ? new MLIQ(mliqOffset, Reader.get()) : nullptr));
 }
 }
 }

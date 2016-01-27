@@ -36,17 +36,17 @@ AdtFile::AdtFile(const std::string &path) : WowFile(path), m_hasMCLQ(false)
     if ((m_version = Reader->Read<unsigned int>()) != ADT_VERSION)
         THROW("ADT version is incorrect");
 
-    MHDR header(GetChunkLocation("MHDR", Reader->GetPosition()), Reader);
+    MHDR header(GetChunkLocation("MHDR", Reader->GetPosition()), Reader.get());
 
     if (m_hasMH2O = !!header.Offsets.Mh2oOffset)
-        m_liquidChunk = std::unique_ptr<MH2O>(new MH2O(header.Offsets.Mh2oOffset + 0x14, Reader));
+        m_liquidChunk = std::unique_ptr<MH2O>(new MH2O(header.Offsets.Mh2oOffset + 0x14, Reader.get()));
 
     long currMcnk = GetChunkLocation("MCNK");
 
     for (int y = 0; y < 16; ++y)
         for (int x = 0; x < 16; ++x)
         {
-            m_chunks[y][x].reset(new MCNK(currMcnk, Reader));
+            m_chunks[y][x].reset(new MCNK(currMcnk, Reader.get()));
             currMcnk += 8 + m_chunks[y][x]->Size;
 
             if (m_chunks[y][x]->HasWater)
@@ -58,7 +58,7 @@ AdtFile::AdtFile(const std::string &path) : WowFile(path), m_hasMCLQ(false)
 
     if (mmdxLocation >= 0)
     {
-        MMDX doodadNamesChunk(mmdxLocation, Reader);
+        MMDX doodadNamesChunk(mmdxLocation, Reader.get());
         m_doodadNames = std::move(doodadNamesChunk.DoodadNames);
     }
 
@@ -69,7 +69,7 @@ AdtFile::AdtFile(const std::string &path) : WowFile(path), m_hasMCLQ(false)
 
     if (mwmoLocation >= 0)
     {
-        MWMO wmoNamesChunk(mwmoLocation, Reader);
+        MWMO wmoNamesChunk(mwmoLocation, Reader.get());
         m_wmoNames = std::move(wmoNamesChunk.WmoNames);
     }
 
@@ -77,11 +77,11 @@ AdtFile::AdtFile(const std::string &path) : WowFile(path), m_hasMCLQ(false)
 
     // MDDF
     const long mddfLocation = GetChunkLocation("MDDF", header.Offsets.MddfOffset + 0x14);
-    m_doodadChunk = mddfLocation < 0 ? nullptr : std::unique_ptr<MDDF>(new MDDF(mddfLocation, Reader));
+    m_doodadChunk = mddfLocation < 0 ? nullptr : std::unique_ptr<MDDF>(new MDDF(mddfLocation, Reader.get()));
 
     // MODF
     const long modfLocation = GetChunkLocation("MODF", header.Offsets.ModfOffset + 0x14);
-    m_wmoChunk = modfLocation < 0 ? nullptr : std::unique_ptr<MODF>(new MODF(modfLocation, Reader));
+    m_wmoChunk = modfLocation < 0 ? nullptr : std::unique_ptr<MODF>(new MODF(modfLocation, Reader.get()));
 }
 }
 }

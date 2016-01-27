@@ -3,8 +3,7 @@
 #include "utility/Include/BinaryStream.hpp"
 
 #include <string>
-
-#define FILE_DUMP_BUFFER_SIZE    4096
+#include <memory>
 
 namespace parser
 {
@@ -13,13 +12,13 @@ namespace input
 class WowFile
 {
     protected:
+		std::unique_ptr<utility::BinaryStream> Reader;
+
         long GetAnyChunkLocation(long startLoc);
+		long GetChunkLocation(const std::string &chunkName, int startLoc = 0);
 
     public:
-        utility::BinaryStream *const Reader;
         WowFile(const std::string &path);
-
-        long GetChunkLocation(const std::string &chunkName, int startLoc = 0);
 };
 }
 }

@@ -204,9 +204,9 @@ WmoRootFile::WmoRootFile(const std::string &path, const WmoParserInfo *info) : W
 
     // Doodads...
 
-    MODS doodadSetsChunk(information.DoodadSetsCount, modsLoc, Reader);
-    MODN doodadNamesChunk(information.DoodadNamesCount, modnLoc, Reader);
-    MODD doodadChunk(moddLoc, Reader);
+    MODS doodadSetsChunk(information.DoodadSetsCount, modsLoc, Reader.get());
+    MODN doodadNamesChunk(information.DoodadNamesCount, modnLoc, Reader.get());
+    MODD doodadChunk(moddLoc, Reader.get());
 
     std::vector<std::unique_ptr<WmoDoodad>> finalDoodads(doodadChunk.Count);
 
