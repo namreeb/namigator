@@ -200,8 +200,8 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
 
     memset(m_adtReferences, 0, sizeof(m_adtReferences));
 
-    for (int y = 0; y < 64; ++y)
-        for (int x = 0; x < 64; ++x)
+    for (int y = 63; !!y; --y)
+        for (int x = 63; !!x; --x)
         {
             if (!m_continent->HasAdt(x, y))
                 continue;
