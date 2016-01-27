@@ -14,8 +14,8 @@ class Worker
     private:
         MeshBuilder * const m_meshBuilder;
 
-        bool m_shutdownRequested;
-        bool m_wmo;
+		const bool m_wmo;
+		bool m_shutdownRequested;
         bool m_isRunning;
 
         std::thread m_thread;
@@ -23,11 +23,8 @@ class Worker
         void Work();
 
     public:
-        Worker(MeshBuilder *meshBuilder);
+        Worker(MeshBuilder *meshBuilder, bool globalWmo = false);
         ~Worker();
-
-        void EnqueueGlobalWMO();
-        void Begin();
 
         bool IsRunning() const;
 };

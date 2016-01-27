@@ -67,10 +67,10 @@ int main(int argc, char *argv[])
         }
 
         {
-            Worker worker(&meshBuilder);
-            meshBuilder.SingleAdt(adtX, adtY);
+			meshBuilder.SingleAdt(adtX, adtY);
+		
+			Worker worker(&meshBuilder);
             std::cout << "Building " << continent << " (" << adtX << ", " << adtY << ")..." << std::endl;
-            worker.Begin();
         }
 
         std::cout << "Finished.";
@@ -89,9 +89,7 @@ int main(int argc, char *argv[])
     // if the continent is a single wmo, we have no use for multiple threads
     if (meshBuilder.IsGlobalWMO())
     {
-        Worker worker(&meshBuilder);
-        worker.EnqueueGlobalWMO();
-
+        Worker worker(&meshBuilder, true);
         return EXIT_SUCCESS;
     }
 
@@ -108,15 +106,19 @@ int main(int argc, char *argv[])
     for (auto &worker : workers)
         worker.reset(new Worker(&meshBuilder));
 
-    for (auto &worker : workers)
-        worker->Begin();
-
     while (true)
     {
 #ifdef _DEBUG
-        auto const adtMap = meshBuilder.AdtMap();
-        auto const adtReferencesMap = meshBuilder.AdtReferencesMap();
-        auto const wmoMap = meshBuilder.WmoMap();
+		volatile bool writeMemoryUsage = false;
+
+		if (writeMemoryUsage)
+		{
+			auto const adtMap = meshBuilder.AdtMap();
+			auto const adtReferencesMap = meshBuilder.AdtReferencesMap();
+			auto const wmoMap = meshBuilder.WmoMap();
+
+			meshBuilder.WriteMemoryUsage(std::cout);
+		}
 #endif
 
         bool done = true;

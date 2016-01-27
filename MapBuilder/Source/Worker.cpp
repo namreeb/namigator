@@ -12,7 +12,7 @@
 #include <sstream>
 #include <exception>
 
-Worker::Worker(MeshBuilder *meshBuilder) : m_meshBuilder(meshBuilder), m_shutdownRequested(false), m_wmo(false), m_isRunning(false) {}
+Worker::Worker(MeshBuilder *meshBuilder, bool globalWmo) : m_meshBuilder(meshBuilder), m_shutdownRequested(false), m_wmo(globalWmo), m_isRunning(false), m_thread(&Worker::Work, this) {}
 
 Worker::~Worker()
 {
@@ -70,16 +70,6 @@ void Worker::Work()
 #endif
 
     m_isRunning = false;
-}
-
-void Worker::EnqueueGlobalWMO()
-{
-    m_wmo = true;
-}
-
-void Worker::Begin()
-{
-    m_thread = std::thread(&Worker::Work, this);
 }
 
 bool Worker::IsRunning() const
