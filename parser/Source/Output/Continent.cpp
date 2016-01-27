@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 namespace parser
 {
@@ -67,7 +68,9 @@ bool Continent::IsWmoLoaded(unsigned int uniqueId) const
 
 void Continent::InsertWmo(unsigned int uniqueId, const Wmo *wmo)
 {
-    std::lock_guard<std::mutex> guard(m_wmoMutex);
+	assert(!!wmo);
+
+	std::lock_guard<std::mutex> guard(m_wmoMutex);
 
     if (m_loadedWmos[uniqueId])
     {
@@ -142,4 +145,61 @@ void Continent::UnloadDoodad(unsigned int uniqueId)
     std::lock_guard<std::mutex> guard(m_doodadMutex);
     m_loadedDoodads.erase(uniqueId);
 }
+
+#ifdef _DEBUG
+void Continent::WriteMemoryUsage(std::ostream &o) const
+{
+	{
+		std::lock_guard<std::mutex> guard(m_wmoMutex);
+		o << "WMOs: " << m_loadedWmos.size() << std::endl;
+
+		std::vector<std::pair<const Wmo *, unsigned int>> wmoMemoryUsage;
+		wmoMemoryUsage.reserve(m_loadedWmos.size());
+
+		for (auto i = m_loadedWmos.cbegin(); i != m_loadedWmos.cend(); i++)
+		{
+			const Wmo *wmo = i->second.get();
+
+			wmoMemoryUsage.push_back({ wmo, wmo->MemoryUsage() });
+		}
+
+		std::sort(wmoMemoryUsage.begin(), wmoMemoryUsage.end(), [](const std::pair<const Wmo *, unsigned int> &a, const std::pair<const Wmo *, unsigned int> &b) { return a.second > b.second; });
+
+		for (auto const &wmoUsage : wmoMemoryUsage)
+			o << "0x" << std::hex << std::uppercase << reinterpret_cast<unsigned long>(wmoUsage.first) << ": " << std::dec << wmoUsage.second << std::endl;
+	}
+
+	{
+		std::lock_guard<std::mutex> guard(m_doodadMutex);
+		o << "Doodads: " << m_loadedDoodads.size() << std::endl;
+
+		std::vector<std::pair<const Doodad *, unsigned int>> doodadMemoryUsage;
+		doodadMemoryUsage.reserve(m_loadedDoodads.size());
+
+		for (auto i = m_loadedDoodads.cbegin(); i != m_loadedDoodads.cend(); i++)
+		{
+			const Doodad *doodad = i->second.get();
+
+			doodadMemoryUsage.push_back({ doodad, 0 });
+		}
+
+		std::sort(doodadMemoryUsage.begin(), doodadMemoryUsage.end(), [](const std::pair<const Doodad *, unsigned int> &a, const std::pair<const Doodad *, unsigned int> &b) { return a.second > b.second; });
+
+		for (auto const &doodadUsage : doodadMemoryUsage)
+			o << "0x" << std::hex << std::uppercase << reinterpret_cast<unsigned long>(doodadUsage.first) << ": " << std::dec << doodadUsage.second << std::endl;
+	}
+
+	{
+		std::lock_guard<std::mutex> guard(m_adtMutex);
+		
+		int count = 0;
+		for (int y = 0; y < 64; ++y)
+			for (int x = 0; x < 64; ++x)
+				if (m_adts[y][x])
+					++count;
+
+		o << "ADTs: " << count << " size = " << (count * sizeof(Adt)) << std::endl;
+	}
+}
+#endif
 }

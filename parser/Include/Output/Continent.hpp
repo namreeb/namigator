@@ -10,6 +10,10 @@
 #include <map>
 #include <set>
 
+#ifdef _DEBUG
+#include <ostream>
+#endif
+
 namespace parser
 {
 class Continent
@@ -49,5 +53,9 @@ class Continent
         void InsertDoodad(unsigned int uniqueId, Doodad *doodad);
         const Doodad *GetDoodad(unsigned int uniqueId) const;
         void UnloadDoodad(unsigned int uniqueId);
+
+#ifdef _DEBUG
+		void WriteMemoryUsage(std::ostream &stream) const;
+#endif
 };
 }

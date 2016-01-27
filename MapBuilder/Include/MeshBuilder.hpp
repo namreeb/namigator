@@ -7,6 +7,10 @@
 #include <string>
 #include <mutex>
 
+#ifdef _DEBUG
+#include <ostream>
+#endif
+
 class MeshBuilder
 {
     private:
@@ -35,5 +39,7 @@ class MeshBuilder
         std::string AdtMap() const;
         std::string AdtReferencesMap() const;
         std::string WmoMap() const;
+
+		void WriteMemoryUsage(std::ostream &stream) const;
 #endif
 };

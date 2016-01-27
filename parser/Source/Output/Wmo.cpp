@@ -34,6 +34,7 @@ void Wmo::AmmendAdtSet(const std::vector<utility::Vertex> &vertices)
     }
 }
 
+#ifdef _DEBUG
 void Wmo::WriteGlobalObjFile(const std::string &continentName) const
 {
     std::stringstream ss;
@@ -86,4 +87,21 @@ void Wmo::WriteGlobalObjFile(const std::string &continentName) const
 
     out.close();
 }
+
+unsigned int Wmo::MemoryUsage() const
+{
+	unsigned int ret = sizeof(Wmo);
+
+	ret += Vertices.size() * sizeof(utility::Vertex);
+	ret += Indices.size() * sizeof(int);
+	
+	ret += LiquidVertices.size() * sizeof(utility::Vertex);
+	ret += LiquidIndices.size() * sizeof(int);
+
+	ret += DoodadVertices.size() * sizeof(utility::Vertex);
+	ret += DoodadIndices.size() * sizeof(int);
+
+	return ret;
+}
+#endif
 }
