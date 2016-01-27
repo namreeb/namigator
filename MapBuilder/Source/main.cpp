@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
     // if the continent is a single wmo, we have no use for multiple threads
     if (meshBuilder.IsGlobalWMO())
     {
+        std::cout << "Building global WMO for " << continent << "..." << std::endl;
         Worker worker(&meshBuilder, true);
         return EXIT_SUCCESS;
     }
