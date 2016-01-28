@@ -2,8 +2,6 @@
 
 #include "MeshBuilder.hpp"
 
-#include "parser/Include/Output/Wmo.hpp"
-
 #include <thread>
 #include <list>
 #include <mutex>

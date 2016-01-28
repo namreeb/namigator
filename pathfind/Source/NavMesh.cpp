@@ -12,7 +12,7 @@
 
 namespace pathfind
 {
-NavMesh::NavMesh(const std::string &dataPath, const std::string &continentName) : m_dataPath(dataPath), m_continentName(continentName)
+NavMesh::NavMesh(const std::string &dataPath, const std::string &MapName) : m_dataPath(dataPath), m_MapName(MapName)
 {
     dtNavMeshParams params;
 
@@ -49,7 +49,7 @@ bool NavMesh::LoadFile(const std::string &filename, unsigned char **data, int *s
 bool NavMesh::LoadTile(int x, int y)
 {
     std::stringstream str;
-    str << m_dataPath << "\\" << m_continentName << "_" << x << "_" << y << ".map";
+    str << m_dataPath << "\\" << m_MapName << "_" << x << "_" << y << ".map";
 
     unsigned char *buff;
     int size;
@@ -63,7 +63,7 @@ bool NavMesh::LoadTile(int x, int y)
 bool NavMesh::LoadGlobalWMO()
 {
     std::stringstream str;
-    str << m_dataPath << "\\" << m_continentName << ".map";
+    str << m_dataPath << "\\" << m_MapName << ".map";
 
     unsigned char *buff;
     int size;

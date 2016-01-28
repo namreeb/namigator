@@ -1,6 +1,7 @@
 #pragma once
 
-#include "parser/Include/Output/Continent.hpp"
+#include "parser/Include/Map/Map.hpp"
+
 #include "utility/Include/LinearAlgebra.hpp"
 
 #include <vector>
@@ -15,21 +16,21 @@
 class MeshBuilder
 {
     private:
-        std::unique_ptr<parser::Continent> m_continent;
+        std::unique_ptr<parser::Map> m_map;
         const std::string m_outputPath;
 
         std::vector<std::pair<int, int>> m_pendingAdts;
         int m_adtReferences[64][64];
 
-        std::set<unsigned int> m_bvhWmos;
-        std::set<unsigned int> m_bvhDoodads;
+        std::set<std::string> m_bvhWmos;
+        std::set<std::string> m_bvhDoodads;
 
         mutable std::mutex m_mutex;
 
         void AddReference(int adtX, int adtY);
 
     public:
-        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &continentName);
+        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName);
 
         int AdtCount() const;
 

@@ -13,10 +13,10 @@ namespace utility
 {
 struct Quaternion
 {
-    float W;
     float X;
     float Y;
     float Z;
+    float W;
 
     Quaternion(float x = 0.0, float y = 0.0, float z = 0.0, float w = 0.0);
 

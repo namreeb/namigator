@@ -32,3 +32,4 @@
 /RecastDetourBuild/Debug
 /RecastDetourBuild/Release
 /RecastDetourBuild/*.user
+/*.opendb

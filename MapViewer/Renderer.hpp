@@ -81,6 +81,9 @@ class Renderer
         void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
+        bool HasWmo(unsigned int id) const;
+        bool HasDoodad(unsigned int id) const;
+
         void Render() const;
 
         void SetWireframe(bool enabled);

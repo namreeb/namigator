@@ -1,6 +1,9 @@
 #include "MeshBuilder.hpp"
 #include "Worker.hpp"
 
+#include "parser/Include/Adt/Adt.hpp"
+#include "parser/Include/Wmo/WmoInstance.hpp"
+
 #include "utility/Include/Directory.hpp"
 
 #include <boost/program_options.hpp>
@@ -12,13 +15,13 @@
 
 int main(int argc, char *argv[])
 {
-    std::string dataPath, continent, outputPath;
+    std::string dataPath, map, outputPath;
     int adtX, adtY, jobs;
 
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
         ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value(".")->required(),           "data folder")
-        ("continent,c", boost::program_options::value<std::string>(&continent)->required(),                         "continent")
+        ("map,m", boost::program_options::value<std::string>(&map)->required(),                                     "map")
         ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps")->required(), "output path")
         ("adtX,x", boost::program_options::value<int>(&adtX),                                                       "adt x")
         ("adtY,y", boost::program_options::value<int>(&adtY),                                                       "adt y")
@@ -56,13 +59,13 @@ int main(int argc, char *argv[])
 
     utility::Directory::Create(outputPath + "\\BVH");
 
-    MeshBuilder meshBuilder(dataPath, outputPath, continent);
+    MeshBuilder meshBuilder(dataPath, outputPath, map);
 
     if (vm.count("adtX") && vm.count("adtY"))
     {
         if (meshBuilder.IsGlobalWMO())
         {
-            std::cerr << "ERROR: Specified continent has no ADTs" << std::endl;
+            std::cerr << "ERROR: Specified Map has no ADTs" << std::endl;
             std::cerr << desc << std::endl;
 
             return EXIT_FAILURE;
@@ -71,7 +74,7 @@ int main(int argc, char *argv[])
         {
             meshBuilder.SingleAdt(adtX, adtY);
         
-            std::cout << "Building " << continent << " (" << adtX << ", " << adtY << ")..." << std::endl;
+            std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
             Worker worker(&meshBuilder);
         }
 
@@ -88,15 +91,15 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // if the continent is a single wmo, we have no use for multiple threads
+    // if the Map is a single wmo, we have no use for multiple threads
     if (meshBuilder.IsGlobalWMO())
     {
-        std::cout << "Building global WMO for " << continent << "..." << std::endl;
+        std::cout << "Building global WMO for " << map << "..." << std::endl;
         Worker worker(&meshBuilder, true);
         return EXIT_SUCCESS;
     }
 
-    // once we reach here it is the usual case of generating an entire continent
+    // once we reach here it is the usual case of generating an entire Map
     std::vector<std::unique_ptr<Worker>> workers(jobs);
 
     for (auto &worker : workers)
@@ -139,7 +142,7 @@ int main(int argc, char *argv[])
     auto const adts = meshBuilder.AdtCount();
     auto const secPerAdt = runTime / adts;
     
-    std::cout << "Finished " << continent << " (" << adts << " ADTs) in " << runTime << " seconds." << std::endl;
+    std::cout << "Finished " << map << " (" << adts << " ADTs) in " << runTime << " seconds." << std::endl;
 
     return EXIT_SUCCESS;
 }

@@ -218,6 +218,16 @@ void Renderer::AddMesh(const std::vector<utility::Vertex> &vertices, const std::
     InsertBuffer(m_meshBuffers, MeshColor, vertices, indices);
 }
 
+bool Renderer::HasWmo(unsigned int id) const
+{
+    return m_wmos.find(id) != m_wmos.end();
+}
+
+bool Renderer::HasDoodad(unsigned int id) const
+{
+    return m_doodads.find(id) != m_doodads.end();
+}
+
 void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
     if (!vertices.size() || !indices.size())

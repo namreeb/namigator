@@ -1,8 +1,13 @@
 #include "Renderer.hpp"
 #include "CommonControl.hpp"
+
 #include "parser/Include/parser.hpp"
-#include "parser/Include/Output/Continent.hpp"
+#include "parser/Include/Map/Map.hpp"
+#include "parser/Include/Adt/Adt.hpp"
+#include "parser/Include/Wmo/WmoInstance.hpp"
+
 #include "utility/Include/Directory.hpp"
+
 #include "pathfind/Include/NavMesh.hpp"
 
 #include "resource.h"
@@ -12,6 +17,7 @@
 #include <windowsx.h>
 #include <sstream>
 #include <cassert>
+#include <vector>
 
 #define START_X             100
 #define START_Y             100
@@ -30,7 +36,7 @@ HWND gGuiWindow, gControlWindow;
 
 std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<CommonControl> gControls;
-std::unique_ptr<parser::Continent> gContinent;
+std::unique_ptr<parser::Map> gMap;
 std::unique_ptr<pathfind::NavMesh> gNavMesh;
 
 int gMovingUp = 0;
@@ -192,7 +198,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
 enum Controls : int
 {
-    ContinentsCombo,
+    MapsCombo,
     ADTX,
     ADTY,
     LoadADT,
@@ -267,31 +273,39 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
         nullptr);
 }
 
-void GetContinentName(const std::string &inName, std::string &outName)
+void GetMapName(const std::string &inName, std::string &outName)
 {
     outName = inName.substr(inName.find(' ') + 1);
     outName = outName.substr(0, outName.find('('));
     outName.erase(std::remove(outName.begin(), outName.end(), ' '));
 }
 
-void ChangeContinent(const std::string &cn)
+void ChangeMap(const std::string &cn)
 {
-    std::string continentName;
+    std::string MapName;
 
-    GetContinentName(cn, continentName);
+    GetMapName(cn, MapName);
 
-    if (gContinent)
+    if (gMap)
         gRenderer->ClearBuffers();
 
-    gContinent.reset(new parser::Continent(continentName));
-    gNavMesh.reset(new pathfind::NavMesh(".\\Maps", continentName));
+    gMap.reset(new parser::Map(MapName));
+    gNavMesh.reset(new pathfind::NavMesh(".\\Maps", MapName));
 
-    // if the loaded continent has no ADTs, but instead a global WMO, load it now
-    if (auto wmo = gContinent->GetGlobalWmo())
+    // if the loaded Map has no ADTs, but instead a global WMO, load it now
+    if (auto wmo = gMap->GetGlobalWmoInstance())
     {
-        gRenderer->AddWmo(0, wmo->Vertices, wmo->Indices);
-        gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
-        gRenderer->AddDoodad(0, wmo->DoodadVertices, wmo->DoodadIndices);
+        std::vector<utility::Vertex> vertices;
+        std::vector<int> indices;
+
+        wmo->BuildTriangles(vertices, indices);
+        gRenderer->AddWmo(0, vertices, indices);
+
+        wmo->BuildLiquidTriangles(vertices, indices);
+        gRenderer->AddLiquid(vertices, indices);
+
+        wmo->BuildDoodadTriangles(vertices, indices);
+        gRenderer->AddDoodad(0, vertices, indices);
 
         const float cx = (wmo->Bounds.MaxCorner.X + wmo->Bounds.MinCorner.X) / 2.f;
         const float cy = (wmo->Bounds.MaxCorner.Y + wmo->Bounds.MinCorner.Y) / 2.f;
@@ -319,18 +333,18 @@ void ChangeContinent(const std::string &cn)
 
 void LoadADTFromGUI()
 {
-    // if we have not yet loaded the continent, do so now
-    if (!gContinent)
-        ChangeContinent(gControls->GetText(Controls::ContinentsCombo));
+    // if we have not yet loaded the Map, do so now
+    if (!gMap)
+        ChangeMap(gControls->GetText(Controls::MapsCombo));
 
-    // if the current continent has only a global WMO, do nothing further
-    if (gContinent->GetGlobalWmo())
+    // if the current Map has only a global WMO, do nothing further
+    if (gMap->GetGlobalWmoInstance())
         return;
 
     auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
     auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
 
-    auto const adt = gContinent->LoadAdt(adtX, adtY);
+    auto const adt = gMap->GetAdt(adtX, adtY);
 
     for (int x = 0; x < 16; ++x)
         for (int y = 0; y < 16; ++y)
@@ -342,22 +356,43 @@ void LoadADTFromGUI()
 
             for (auto &d : chunk->m_doodads)
             {
-                auto const doodad = gContinent->GetDoodad(d);
+                if (gRenderer->HasDoodad(d))
+                    continue;
+
+                auto const doodad = gMap->GetDoodadInstance(d);
 
                 assert(doodad);
 
-                gRenderer->AddDoodad(d, doodad->Vertices, doodad->Indices);
+                std::vector<utility::Vertex> vertices;
+                std::vector<int> indices;
+
+                doodad->BuildTriangles(vertices, indices);
+                gRenderer->AddDoodad(d, vertices, indices);
             }
 
             for (auto &w : chunk->m_wmos)
             {
-                auto const wmo = gContinent->GetWmo(w);
+                if (gRenderer->HasWmo(w))
+                    continue;
+
+                auto const wmo = gMap->GetWmoInstance(w);
 
                 assert(wmo);
 
-                gRenderer->AddWmo(w, wmo->Vertices, wmo->Indices);
-                gRenderer->AddDoodad(w, wmo->DoodadVertices, wmo->DoodadIndices);
-                gRenderer->AddLiquid(wmo->LiquidVertices, wmo->LiquidIndices);
+                std::vector<utility::Vertex> vertices;
+                std::vector<int> indices;
+
+                wmo->BuildTriangles(vertices, indices);
+                gRenderer->AddWmo(w, vertices, indices);
+
+                wmo->BuildLiquidTriangles(vertices, indices);
+                gRenderer->AddLiquid(vertices, indices);
+
+                if (gRenderer->HasDoodad(w))
+                    continue;
+
+                wmo->BuildDoodadTriangles(vertices, indices);
+                gRenderer->AddDoodad(w, vertices, indices);
             }
         }
 
@@ -412,27 +447,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // set up and initialize our Windows common control API for the control window
     gControls.reset(new CommonControl(gControlWindow));
 
-    gControls->AddLabel(L"Select Continent:", 10, 12);
+    gControls->AddLabel(L"Select Map:", 10, 12);
 
-    std::vector<std::wstring> continents;
-    continents.push_back(L"000 Azeroth");
-    continents.push_back(L"001 Kalimdor");
-    continents.push_back(L"013 Test");
-    continents.push_back(L"025 Scott Test");
-    continents.push_back(L"029 Test");
-    continents.push_back(L"030 PVPZone01 (Alterac Valley)");
-    continents.push_back(L"033 Shadowfang");
-    continents.push_back(L"034 StormwindJail (Stockades)");
-    //continents.push_back(L"035 StormwindPrison");
-    continents.push_back(L"036 DeadminesInstance");
-    continents.push_back(L"037 PVPZone02 (Azshara Crater)");
-    continents.push_back(L"043 WailingCaverns");
-    continents.push_back(L"489 PVPzone03 (Warsong Gulch)");
-    continents.push_back(L"529 PVPzone04 (Arathi Basin)");
-    continents.push_back(L"530 Expansion01 (Outland");
-    continents.push_back(L"571 Northrend");
+    std::vector<std::wstring> Maps;
+    Maps.push_back(L"000 Azeroth");
+    Maps.push_back(L"001 Kalimdor");
+    Maps.push_back(L"013 Test");
+    Maps.push_back(L"025 Scott Test");
+    Maps.push_back(L"029 Test");
+    Maps.push_back(L"030 PVPZone01 (Alterac Valley)");
+    Maps.push_back(L"033 Shadowfang");
+    Maps.push_back(L"034 StormwindJail (Stockades)");
+    //Maps.push_back(L"035 StormwindPrison");
+    Maps.push_back(L"036 DeadminesInstance");
+    Maps.push_back(L"037 PVPZone02 (Azshara Crater)");
+    Maps.push_back(L"043 WailingCaverns");
+    Maps.push_back(L"489 PVPzone03 (Warsong Gulch)");
+    Maps.push_back(L"529 PVPzone04 (Arathi Basin)");
+    Maps.push_back(L"530 Expansion01 (Outland");
+    Maps.push_back(L"571 Northrend");
 
-    gControls->AddComboBox(Controls::ContinentsCombo, continents, 115, 10, ChangeContinent);
+    gControls->AddComboBox(Controls::MapsCombo, Maps, 115, 10, ChangeMap);
 
     gControls->AddLabel(L"X:", 10, 35);
     gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);

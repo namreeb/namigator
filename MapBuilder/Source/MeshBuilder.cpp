@@ -1,8 +1,13 @@
 #include "MeshBuilder.hpp"
 
 #include "parser/Include/parser.hpp"
+#include "parser/Include/Adt/Adt.hpp"
+#include "parser/Include/Adt/AdtChunk.hpp"
+
 #include "utility/Include/MathHelper.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/AABBTree.hpp"
+
 #include "RecastDetourBuild/Include/Common.hpp"
 
 #include "Recast.h"
@@ -187,19 +192,19 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, co
 }
 }
 
-MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &continentName) : m_outputPath(outputPath)
+MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName) : m_outputPath(outputPath)
 {
     parser::Parser::Initialize(dataPath.c_str());
 
     // this must follow the parser initialization
-    m_continent.reset(new parser::Continent(continentName));
+    m_map.reset(new parser::Map(mapName));
 
     memset(m_adtReferences, 0, sizeof(m_adtReferences));
 
     for (int y = 63; !!y; --y)
         for (int x = 63; !!x; --x)
         {
-            if (!m_continent->HasAdt(x, y))
+            if (!m_map->HasAdt(x, y))
                 continue;
 
             AddReference(x - 1, y - 1); AddReference(x - 0, y - 1); AddReference(x + 1, y - 1);
@@ -216,7 +221,7 @@ int MeshBuilder::AdtCount() const
 
     for (int y = 0; y < 64; ++y)
         for (int x = 0; x < 64; ++x)
-            if (m_continent->HasAdt(x, y))
+            if (m_map->HasAdt(x, y))
                 ++ret;
 
     return ret;
@@ -248,18 +253,18 @@ bool MeshBuilder::GetNextAdt(int &adtX, int &adtY)
 
 bool MeshBuilder::IsGlobalWMO() const
 {
-    return !!m_continent->GetGlobalWmo();
+    return !!m_map->GetGlobalWmoInstance();
 }
 
 void MeshBuilder::AddReference(int adtX, int adtY)
 {
-    if (m_continent->HasAdt(adtX, adtY))
+    if (m_map->HasAdt(adtX, adtY))
         ++m_adtReferences[adtY][adtX];
 }
 
 void MeshBuilder::RemoveReference(int adtX, int adtY)
 {
-    if (!m_continent->HasAdt(adtX, adtY))
+    if (!m_map->HasAdt(adtX, adtY))
         return;
 
     std::lock_guard<std::mutex> guard(m_mutex);
@@ -273,7 +278,7 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
             << std::setfill(' ') << std::setw(2) << adtY << ").  Unloading.\n";
         std::cout << str.str();
 #endif
-        auto const adt = m_continent->LoadAdt(adtX, adtY);
+        auto const adt = m_map->GetAdt(adtX, adtY);
 
         // check if there are any wmos or doodads we can now remove
         for (int y = 0; y < 16; ++y)
@@ -283,12 +288,13 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
                 
                 for (auto const &wmoId : chunk->m_wmos)
                 {
-                    if (!m_continent->IsWmoLoaded(wmoId))
+                    auto const wmo = m_map->GetWmoInstance(wmoId);
+
+                    if (!wmo)
                         continue;
 
                     bool unload = true;
 
-                    auto const wmo = m_continent->GetWmo(wmoId);
                     for (auto const &adt : wmo->Adts)
                         if (m_adtReferences[adt.second][adt.first] > 0)
                         {
@@ -297,17 +303,18 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
                         }
 
                     if (unload)
-                        m_continent->UnloadWmo(wmoId);
+                        m_map->UnloadWmoInstance(wmoId);
                 }
 
                 for (auto const &doodadId : chunk->m_doodads)
                 {
-                    if (!m_continent->IsDoodadLoaded(doodadId))
+                    auto const doodad = m_map->GetDoodadInstance(doodadId);
+
+                    if (!doodad)
                         continue;
 
                     bool unload = true;
 
-                    auto const doodad = m_continent->GetDoodad(doodadId);
                     for (auto const &adt : doodad->Adts)
                         if (m_adtReferences[adt.second][adt.first] > 0)
                         {
@@ -316,34 +323,34 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
                         }
 
                     if (unload)
-                        m_continent->UnloadDoodad(doodadId);
+                        m_map->UnloadDoodadInstance(doodadId);
                 }
             }
 
-        m_continent->UnloadAdt(adtX, adtY);       
+        m_map->UnloadAdt(adtX, adtY);
     }
 }
 
 bool MeshBuilder::GenerateAndSaveGlobalWMO()
 {
-    auto const wmo = m_continent->GetGlobalWmo();
+    auto const wmoInstance = m_map->GetGlobalWmoInstance();
 
-    assert(!!wmo);
+    assert(!!wmoInstance);
 
 //#ifdef _DEBUG
-//    wmo->WriteGlobalObjFile(m_continent->Name);
+//    wmo->WriteGlobalObjFile(m_Map->Name);
 //#endif
 
     rcConfig config;
     InitializeRecastConfig(config);
 
-    config.bmin[0] = -wmo->Bounds.MaxCorner.Y;
-    config.bmin[1] =  wmo->Bounds.MinCorner.Z;
-    config.bmin[2] = -wmo->Bounds.MaxCorner.X;
+    config.bmin[0] = -wmoInstance->Bounds.MaxCorner.Y;
+    config.bmin[1] =  wmoInstance->Bounds.MinCorner.Z;
+    config.bmin[2] = -wmoInstance->Bounds.MaxCorner.X;
 
-    config.bmax[0] = -wmo->Bounds.MinCorner.Y;
-    config.bmax[1] =  wmo->Bounds.MaxCorner.Z;
-    config.bmax[2] = -wmo->Bounds.MinCorner.X;
+    config.bmax[0] = -wmoInstance->Bounds.MinCorner.Y;
+    config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
+    config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
 
     config.bmin[0] -= config.borderSize * config.cs;
     config.bmin[2] -= config.borderSize * config.cs;
@@ -357,16 +364,22 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
     if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
         return false;
 
+    std::vector<utility::Vertex> vertices;
+    std::vector<int> indices;
+
     // wmo terrain
-    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::WMO))
+    wmoInstance->BuildTriangles(vertices, indices);
+    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
         return false;
 
     // wmo liquid
-    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
+    wmoInstance->BuildLiquidTriangles(vertices, indices);
+    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
         return false;
 
     // wmo doodads
-    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
+    wmoInstance->BuildDoodadTriangles(vertices, indices);
+    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
         return false;
 
     FilterGroundBeneathLiquid(*solid);
@@ -378,7 +391,7 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
 
     std::stringstream str;
 
-    str << m_outputPath << "\\" << m_continent->Name <<  ".map";
+    str << m_outputPath << "\\" << m_map->Name <<  ".map";
 
     return FinishMesh(ctx, config, 0, 0, str.str(), *solid);
 }
@@ -386,9 +399,9 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
 bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 {
     const parser::Adt *adts[9] = {
-        m_continent->LoadAdt(adtX - 1, adtY - 1), m_continent->LoadAdt(adtX - 0, adtY - 1), m_continent->LoadAdt(adtX + 1, adtY - 1),
-        m_continent->LoadAdt(adtX - 1, adtY - 0), m_continent->LoadAdt(adtX - 0, adtY - 0), m_continent->LoadAdt(adtX + 1, adtY - 0),
-        m_continent->LoadAdt(adtX - 1, adtY + 1), m_continent->LoadAdt(adtX - 0, adtY + 1), m_continent->LoadAdt(adtX + 1, adtY + 1),
+        m_map->GetAdt(adtX - 1, adtY - 1), m_map->GetAdt(adtX - 0, adtY - 1), m_map->GetAdt(adtX + 1, adtY - 1),
+        m_map->GetAdt(adtX - 1, adtY - 0), m_map->GetAdt(adtX - 0, adtY - 0), m_map->GetAdt(adtX + 1, adtY - 0),
+        m_map->GetAdt(adtX - 1, adtY + 1), m_map->GetAdt(adtX - 0, adtY + 1), m_map->GetAdt(adtX + 1, adtY + 1),
     };
 
     const parser::Adt *thisTile = adts[4];
@@ -450,24 +463,30 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
                     if (rasterizedWmos.find(wmoId) != rasterizedWmos.end())
                         continue;
 
-                    auto const wmo = m_continent->GetWmo(wmoId);
+                    auto const wmoInstance = m_map->GetWmoInstance(wmoId);
 
-                    if (!wmo)
+                    if (!wmoInstance)
                     {
                         std::stringstream str;
                         str << "Could not find required WMO ID = " << wmoId << " needed by ADT (" << adtX << ", " << adtY << ")\n";
                         std::cout << str.str();
                     }
 
-                    assert(wmo);
+                    assert(!!wmoInstance);
 
-                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->Vertices, wmo->Indices, AreaFlags::WMO))
+                    std::vector<utility::Vertex> vertices;
+                    std::vector<int> indices;
+
+                    wmoInstance->BuildTriangles(vertices, indices);
+                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
                         return false;
 
-                    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, wmo->LiquidVertices, wmo->LiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
+                    wmoInstance->BuildLiquidTriangles(vertices, indices);
+                    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
                         return false;
 
-                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, wmo->DoodadVertices, wmo->DoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
+                    wmoInstance->BuildDoodadTriangles(vertices, indices);
+                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
                         return false;
 
                     rasterizedWmos.insert(wmoId);
@@ -479,11 +498,15 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
                     if (rasterizedDoodads.find(doodadId) != rasterizedDoodads.end())
                         continue;
 
-                    auto const doodad = m_continent->GetDoodad(doodadId);
+                    auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
 
-                    assert(doodad);
+                    assert(!!doodadInstance);
 
-                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, doodad->Vertices, doodad->Indices, AreaFlags::Doodad))
+                    std::vector<utility::Vertex> vertices;
+                    std::vector<int> indices;
+
+                    doodadInstance->BuildTriangles(vertices, indices);
+                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::Doodad))
                         return false;
 
                     rasterizedDoodads.insert(doodadId);
@@ -517,35 +540,59 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         RestoreAdtSpans(adtSpans);
     }
 
-    // Write the bvh for every rasterized wmo
+    // Write the BVH for every new WMO
     for (auto const& wmoId : rasterizedWmos)
     {
-        if (m_bvhWmos.find(wmoId) != m_bvhWmos.end())
+        auto const wmo = m_map->GetWmoInstance(wmoId)->Model;
+
+        std::lock_guard<std::mutex> guard(m_mutex);
+
+        if (m_bvhWmos.find(wmo->FullPath) != m_bvhWmos.end())
             continue;
 
-        auto const wmo = m_continent->GetWmo(wmoId);
-
-        // FIXME - note that we are discarding doodad geometry here
         utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
 
         std::stringstream out;
-        out << m_outputPath << "\\BVH\\WMO_" << wmoId << ".bvh";
+        out << m_outputPath << "\\BVH\\WMO_" << wmo->FileName << ".bvh";
 
         std::ofstream o(out.str(), std::ofstream::binary);
         aabbTree.Serialize(o);
         o.close();
 
-        std::lock_guard<std::mutex> guard(m_mutex);
-        m_bvhDoodads.insert(wmoId);
+        m_bvhWmos.insert(wmo->FullPath);
+
+        // Also write BVH for any WMO-spawned doodads
+        for (auto const &doodadSet : wmo->DoodadSets)
+        {
+            for (auto const &wmoDoodad : doodadSet)
+            {
+                auto const doodad = wmoDoodad->Parent;
+
+                if (m_bvhDoodads.find(doodad->Name) != m_bvhDoodads.end())
+                    continue;
+
+                utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
+                
+                std::stringstream dout;
+                dout << m_outputPath << "\\BVH\\Doodad_" << doodad->Name << ".bvh";
+                std::ofstream doodadOut(dout.str(), std::ofstream::binary);
+                doodadTree.Serialize(doodadOut);
+                doodadOut.close();
+
+                m_bvhDoodads.insert(doodad->Name);
+            }
+        }
     }
 
-    // Write the bvh for every rasterized doodad
+    // Write the BVH for every new doodad
     for (auto const& doodadId : rasterizedDoodads)
     {
-        if (m_bvhDoodads.find(doodadId) != m_bvhDoodads.end())
-            continue;
+        auto const doodad = m_map->GetDoodadInstance(doodadId)->Model;
 
-        auto const doodad = m_continent->GetDoodad(doodadId);
+        std::lock_guard<std::mutex> guard(m_mutex);
+
+        if (m_bvhDoodads.find(doodad->Name) != m_bvhDoodads.end())
+            continue;
 
         utility::AABBTree aabbTree(doodad->Vertices, doodad->Indices);
 
@@ -556,13 +603,12 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         aabbTree.Serialize(o);
         o.close();
 
-        std::lock_guard<std::mutex> guard(m_mutex);
-        m_bvhDoodads.insert(doodadId);
+        m_bvhDoodads.insert(doodad->Name);
     }
 
     std::stringstream str;
 
-    str << m_outputPath << "\\" << m_continent->Name << "_" << adtX << "_" << adtY << ".map";
+    str << m_outputPath << "\\" << m_map->Name << "_" << adtX << "_" << adtY << ".map";
 
     return FinishMesh(ctx, config, adtX, adtY, str.str(), *solid);
 }
@@ -578,7 +624,7 @@ std::string MeshBuilder::AdtMap() const
     {
         for (int x = 1; x < 64; ++x)
         {
-            if (!m_continent->HasAdt(x, y))
+            if (!m_map->HasAdt(x, y))
             {
                 ret << " ";
                 continue;
@@ -612,7 +658,7 @@ std::string MeshBuilder::AdtReferencesMap() const
     {
         for (int x = 1; x < 64; ++x)
         {
-            if (m_continent->HasAdt(x, y))
+            if (m_map->HasAdt(x, y))
                 ret << m_adtReferences[y][x];
             else
                 ret << " ";
@@ -634,13 +680,13 @@ std::string MeshBuilder::WmoMap() const
     {
         for (int x = 1; x < 64; ++x)
         {
-            if (!m_continent->HasAdt(x, y) || !m_continent->IsAdtLoaded(x, y))
+            if (!m_map->HasAdt(x, y) || !m_map->IsAdtLoaded(x, y))
             {
                 ret << " ";
                 continue;
             }
 
-            auto const adt = m_continent->LoadAdt(x, y);
+            auto const adt = m_map->GetAdt(x, y);
             assert(!!adt);
 
             auto const count = adt->GetWmoCount();
@@ -662,6 +708,6 @@ void MeshBuilder::WriteMemoryUsage(std::ostream &o) const
     std::lock_guard<std::mutex> guard(m_mutex);
     o << "ADTs remaining: " << m_pendingAdts.size() << std::endl;
 
-    m_continent->WriteMemoryUsage(o);
+    m_map->WriteMemoryUsage(o);
 }
 #endif

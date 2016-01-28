@@ -1,4 +1,4 @@
-#include "Output/MpqManager.hpp"
+#include "MpqManager.hpp"
 #include "parser.hpp"
 
 namespace parser
