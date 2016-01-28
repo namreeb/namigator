@@ -528,7 +528,7 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         utility::BinaryStream bvhStream;
 
         utility::AABBTree aabbTree(doodad->Vertices, doodad->Indices);
-        aabbTree.Serialize(bvhStream);
+        //aabbTree.Serialize(bvhStream);
 
         // Ok now the BVH is all ready to be written to disk
     }

@@ -5,6 +5,7 @@
 #include "LinearAlgebra.hpp"
 #include "BoundingBox.hpp"
 
+#include <fstream>
 #include <vector>
 
 namespace utility
@@ -36,8 +37,8 @@ class AABBTree
 
         BoundingBox GetBoundingBox() const;
 
-        void Serialize(BinaryStream& stream) const;
-        bool Deserialize(BinaryStream& stream);
+        void Serialize(std::ostream& stream) const;
+        bool Deserialize(std::istream& stream);
 
     private:
         unsigned int PartitionMedian(Node& node, unsigned int* faces, unsigned int numFaces);

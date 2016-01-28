@@ -75,4 +75,16 @@ const Vector3& BoundingBox::getMinimum() const {
 const Vector3& BoundingBox::getMaximum() const {
     return MaxCorner;
 }
+
+std::ostream & operator << (std::ostream &o, const utility::BoundingBox &b)
+{
+    o << b.MinCorner << b.MaxCorner;
+    return o;
+}
+
+std::istream & operator >> (std::istream &i, utility::BoundingBox & b)
+{
+    i >> b.MinCorner >> b.MaxCorner;
+    return i;
+}
 }

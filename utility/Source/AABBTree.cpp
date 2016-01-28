@@ -1,5 +1,6 @@
 #include "AABBTree.hpp"
 
+#include <fstream>
 #include <algorithm>
 
 namespace utility
@@ -48,63 +49,72 @@ BoundingBox AABBTree::GetBoundingBox() const
     return m_nodes.front().bounds;
 }
 
-void AABBTree::Serialize(BinaryStream& stream) const
+void AABBTree::Serialize(std::ostream& stream) const
 {
-    stream.Write(uint32_t('BVH1'));
+    stream << (uint32_t)'BVH1';
 
-    stream.Write(uint32_t(m_vertices.size()));
+    stream << (uint32_t)m_vertices.size();
     for (const auto& vertex : m_vertices)
-        stream.Write(vertex);
+        stream << vertex;
 
-    stream.Write(uint32_t(m_indices.size()));
+    stream << (uint32_t)m_indices.size();
     for (const auto& index : m_indices)
-        stream.Write(int32_t(index));
+        stream << (int32_t)index;
 
-    stream.Write(uint32_t(m_nodes.size()));
+    stream << (uint32_t)m_nodes.size();
     for (const auto& node : m_nodes)
     {
-        stream.Write(uint8_t(node.numFaces));
+        stream << (uint8_t)node.numFaces;
         if (!!node.numFaces)
         {
             // Write leaf node
-            stream.Write(uint32_t(node.startFace));
+            stream << (uint32_t)node.startFace;
         }
         else
         {
             // Write inner node
-            stream.Write(uint32_t(node.children));
-            stream.Write(node.bounds);
+            stream << (uint32_t)node.children;
+            stream << node.bounds;
         }
     }
 }
 
-bool AABBTree::Deserialize(BinaryStream& stream)
+bool AABBTree::Deserialize(std::istream& stream)
 {
-    if (stream.Read<uint32_t>() != uint32_t('BVH1'))
+    uint32_t magic;
+    stream >> magic;
+    if (magic != (uint32_t)'BVH1')
         return false;
 
-    m_vertices.resize(size_t(stream.Read<uint32_t>()));
-    for (auto& vertex : m_vertices)
-        vertex = stream.Read<Vector3>();
+    uint32_t vertexCount;
+    stream >> vertexCount;
+    m_vertices.resize(vertexCount);
+    for (size_t i = 0; i < m_vertices.size(); ++i)
+        stream >> m_vertices[i];
 
-    m_indices.resize(size_t(stream.Read<uint32_t>()));
-    for (auto& index : m_indices)
-        index = stream.Read<int32_t>();
+    uint32_t indexCount;
+    stream >> indexCount;
+    m_indices.resize(indexCount);
+    for (size_t i = 0; i < m_indices.size(); ++i)
+        stream >> m_indices[i];
 
-    m_nodes.resize(size_t(stream.Read<uint32_t>()));
+    uint32_t nodeCount;
+    stream >> nodeCount;
+    m_nodes.resize(nodeCount);
     for (auto& node : m_nodes)
     {
-        node.numFaces = stream.Read<uint8_t>();
+        uint8_t numFaces;
+        stream >> numFaces;
+        node.numFaces = numFaces;
         if (!!node.numFaces)
         {
             // Read leaf node
-            node.startFace = stream.Read<uint32_t>();
+            stream >> node.startFace;
         }
         else
         {
             // Read inner node
-            node.children = stream.Read<uint32_t>();
-            node.bounds = stream.Read<BoundingBox>();
+            stream >> node.children >> node.bounds;
         }
     }
 

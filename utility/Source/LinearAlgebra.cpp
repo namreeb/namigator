@@ -318,4 +318,16 @@ Vector3 operator * (const Vector3 &vector, float multiplier)
 {
     return Vector3(vector.X*multiplier, vector.Y*multiplier, vector.Z*multiplier);
 }
+
+std::ostream & operator << (std::ostream &o, const Vector3 &v)
+{
+    o << v.X << v.Y << v.Z;
+    return o;
+}
+
+std::istream & operator >> (std::istream &i, Vector3 &v)
+{
+    i >> v.X >> v.Y >> v.Z;
+    return i;
+}
 }

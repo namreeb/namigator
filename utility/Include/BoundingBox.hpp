@@ -2,6 +2,8 @@
 
 #include "utility/Include/LinearAlgebra.hpp"
 
+#include <ostream>
+
 namespace utility
 {
 class BoundingBox
@@ -30,4 +32,8 @@ class BoundingBox
 
         Vector3 MinCorner, MaxCorner;
 };
+
+std::ostream & operator << (std::ostream&, const utility::BoundingBox &);
+std::istream & operator >> (std::istream&, utility::BoundingBox &);
+
 }
