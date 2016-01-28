@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    utility::Directory::Create(outputPath + "\\BVH");
+
     MeshBuilder meshBuilder(dataPath, outputPath, continent);
 
     if (vm.count("adtX") && vm.count("adtY"))

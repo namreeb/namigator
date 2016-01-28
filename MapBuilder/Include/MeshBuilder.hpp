@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <set>
 
 #ifdef _DEBUG
 #include <ostream>
@@ -17,9 +18,13 @@ class MeshBuilder
         std::unique_ptr<parser::Continent> m_continent;
         const std::string m_outputPath;
 
-        mutable std::mutex m_mutex;
         std::vector<std::pair<int, int>> m_pendingAdts;
         int m_adtReferences[64][64];
+
+        std::set<unsigned int> m_bvhWmos;
+        std::set<unsigned int> m_bvhDoodads;
+
+        mutable std::mutex m_mutex;
 
         void AddReference(int adtX, int adtY);
 

@@ -496,8 +496,7 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
     {
         std::vector<rcSpan *> adtSpans;
-
-        
+                
         adtSpans.reserve(solid->width*solid->height);
 
         for (int i = 0; i < solid->width * solid->height; ++i)
@@ -518,19 +517,47 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         RestoreAdtSpans(adtSpans);
     }
 
+    // Write the bvh for every rasterized wmo
+    for (auto const& wmoId : rasterizedWmos)
+    {
+        if (m_bvhWmos.find(wmoId) != m_bvhWmos.end())
+            continue;
+
+        auto const wmo = m_continent->GetWmo(wmoId);
+
+        // FIXME - note that we are discarding doodad geometry here
+        utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
+
+        std::stringstream out;
+        out << m_outputPath << "\\BVH\\WMO_" << wmoId << ".bvh";
+
+        std::ofstream o(out.str(), std::ofstream::binary);
+        aabbTree.Serialize(o);
+        o.close();
+
+        std::lock_guard<std::mutex> guard(m_mutex);
+        m_bvhDoodads.insert(wmoId);
+    }
+
     // Write the bvh for every rasterized doodad
     for (auto const& doodadId : rasterizedDoodads)
     {
+        if (m_bvhDoodads.find(doodadId) != m_bvhDoodads.end())
+            continue;
+
         auto const doodad = m_continent->GetDoodad(doodadId);
 
-        // TODO: Check if it exists (open with lock) first
-
-        utility::BinaryStream bvhStream;
-
         utility::AABBTree aabbTree(doodad->Vertices, doodad->Indices);
-        //aabbTree.Serialize(bvhStream);
 
-        // Ok now the BVH is all ready to be written to disk
+        std::stringstream out;
+        out << m_outputPath << "\\BVH\\Doodad_" << doodadId << ".bvh";
+
+        std::ofstream o(out.str(), std::ofstream::binary);
+        aabbTree.Serialize(o);
+        o.close();
+
+        std::lock_guard<std::mutex> guard(m_mutex);
+        m_bvhDoodads.insert(doodadId);
     }
 
     std::stringstream str;
