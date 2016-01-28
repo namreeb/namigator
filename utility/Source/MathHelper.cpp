@@ -116,12 +116,4 @@ void Convert::VerticesToWow(const float *input, int vertexCount, std::vector<uti
         }
     }
 }
-
-void Convert::ToShort(const std::vector<int> &input, std::vector<unsigned short> &output)
-{
-    output.resize(input.size());
-
-    for (size_t i = 0; i < input.size(); ++i)
-        output[i] = static_cast<unsigned short>(input[i]);
-}
 }

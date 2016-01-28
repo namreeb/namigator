@@ -30,16 +30,12 @@ bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, 
     std::vector<float> rastVert;
     utility::Convert::VerticesToRecast(vertices, rastVert);
 
-    std::vector<unsigned short> rastIndices;
-    utility::Convert::ToShort(indices, rastIndices);
-
     std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
 
-    // XXX FIXME - why on earth does recast take indices as ints here, but unsigned short elsewhere? o.O
     if (filterWalkable)
         rcClearUnwalkableTriangles(&ctx, slope, &rastVert[0], vertices.size(), &indices[0], indices.size() / 3, &areas[0]);
 
-    return rcRasterizeTriangles(&ctx, &rastVert[0], vertices.size(), &rastIndices[0], &areas[0], rastIndices.size() / 3, heightField);
+    return rcRasterizeTriangles(&ctx, &rastVert[0], vertices.size(), &indices[0], &areas[0], indices.size() / 3, heightField);
 }
 
 void FilterGroundBeneathLiquid(rcHeightfield &solid)

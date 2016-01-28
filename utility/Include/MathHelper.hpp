@@ -35,8 +35,5 @@ class Convert
 
         static void VerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output);
         static void VerticesToWow(const float *input, int vertexCount, std::vector<utility::Vertex> &output);
-
-        // XXX FIXME we maybe never need to change the indices from ushort to int in the first place?
-        static void ToShort(const std::vector<int> &input, std::vector<unsigned short> &output);
 };
 }
