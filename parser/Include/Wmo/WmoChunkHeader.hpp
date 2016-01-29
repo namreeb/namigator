@@ -1,13 +1,15 @@
 #pragma once
 
+#include <cstdint>
+
 namespace parser
 {
 namespace input
 {
 struct WmoChunkHeader
 {
-    unsigned int Type;
-    unsigned int Size;
+    std::uint32_t Type;
+    std::uint32_t Size;
 };
 }
 }

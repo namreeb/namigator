@@ -12,7 +12,7 @@ MCVT::MCVT(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
         THROW("Expected (but did not find) MCVT type");
 #endif
 
-    reader->ReadBytes((void *)&Heights, sizeof(float)*(8*8 + 9*9));
+    reader->ReadBytes(&Heights, sizeof(Heights));
 }
 }
 }

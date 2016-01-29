@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <thread>
+#include <cstdint>
 
 namespace parser
 {
@@ -13,7 +14,7 @@ namespace input
 {
 MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, reader)
 {
-    const long offsetFrom = Position + 8;
+    const size_t offsetFrom = Position + 8;
 
     for (int y = 0; y < 16; ++y)
         for (int x = 0; x < 16; ++x)
@@ -21,7 +22,6 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
             reader->SetPosition(offsetFrom + sizeof(MH2OHeader)*(y * 16 + x));
                 
             MH2OHeader header;
-
             reader->ReadBytes(&header, sizeof(header));
 
             if (header.LayerCount <= 0)
@@ -44,7 +44,7 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
                 memset(newLayer->Render, 0, sizeof(newLayer->Render));
                 memset(newLayer->Heights, 0, sizeof(newLayer->Heights));
 
-                std::vector<unsigned char> exists(instance.OffsetVertexData - instance.OffsetExistsBitmap);
+                std::vector<std::uint8_t> exists(instance.OffsetVertexData - instance.OffsetExistsBitmap);
                 std::vector<float> heightMap((instance.Width + 1)*(instance.Height + 1));
 
                 if (!exists.size())

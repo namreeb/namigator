@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 
 #define DEFAULT_BUFFER_LENGTH 4096
 
@@ -30,7 +31,7 @@ std::string BinaryStream::ReadCString()
 {
     std::string ret;
 
-    for (char c = Read<char>(); c != '\0'; c = Read<char>())
+    for (auto c = Read<std::int8_t>(); !!c; c = Read<std::int8_t>())
         ret += c;
 
     return ret;
@@ -38,8 +39,7 @@ std::string BinaryStream::ReadCString()
 
 void BinaryStream::ReadBytes(void *dest, size_t length)
 {
-    std::copy(&m_buffer[m_position], &m_buffer[m_position]+length, static_cast<char *>(dest));
-
+    memcpy(dest, &m_buffer[m_position], length);
     m_position += length;
 }
 

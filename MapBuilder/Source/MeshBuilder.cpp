@@ -24,6 +24,9 @@
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
+static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int type");
+static_assert(sizeof(float) == 4, "float must be a 32 bit type");
+
 namespace
 {
 bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
@@ -38,9 +41,9 @@ bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, 
     std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
 
     if (filterWalkable)
-        rcClearUnwalkableTriangles(&ctx, slope, &rastVert[0], vertices.size(), &indices[0], indices.size() / 3, &areas[0]);
+        rcClearUnwalkableTriangles(&ctx, slope, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], static_cast<int>(indices.size() / 3), &areas[0]);
 
-    return rcRasterizeTriangles(&ctx, &rastVert[0], vertices.size(), &indices[0], &areas[0], indices.size() / 3, heightField);
+    return rcRasterizeTriangles(&ctx, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], &areas[0], static_cast<int>(indices.size() / 3), heightField);
 }
 
 void FilterGroundBeneathLiquid(rcHeightfield &solid)

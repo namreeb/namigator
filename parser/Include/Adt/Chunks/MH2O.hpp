@@ -5,6 +5,7 @@
 #include "utility/Include/BinaryStream.hpp"
 
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -24,26 +25,26 @@ class MH2O : AdtChunk
     private:
         struct MH2OHeader
         {
-            int InstancesOffset;
-            int LayerCount;
-            int AttributesOffset;
+            std::int32_t InstancesOffset;
+            std::int32_t LayerCount;
+            std::int32_t AttributesOffset;
         };
 
         struct LiquidInstance
         {
-            unsigned short Type;
-            unsigned short Flags;
+            std::uint16_t Type;
+            std::uint16_t Flags;
 
             float MinHeight;
             float MaxHeight;
 
-            unsigned __int8 XOffset;
-            unsigned __int8 YOffset;
-            unsigned __int8 Width;
-            unsigned __int8 Height;
+            std::uint8_t XOffset;
+            std::uint8_t YOffset;
+            std::uint8_t Width;
+            std::uint8_t Height;
 
-            unsigned int OffsetExistsBitmap;
-            unsigned int OffsetVertexData;
+            std::uint32_t OffsetExistsBitmap;
+            std::uint32_t OffsetVertexData;
         };
 
     public:

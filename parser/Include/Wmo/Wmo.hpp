@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -19,17 +20,17 @@ class Wmo
         std::string FileName;
 
         std::vector<utility::Vertex> Vertices;
-        std::vector<int> Indices;
+        std::vector<std::int32_t> Indices;
 
         std::vector<utility::Vertex> LiquidVertices;
-        std::vector<int> LiquidIndices;
+        std::vector<std::int32_t> LiquidIndices;
 
         std::vector<std::vector<std::unique_ptr<const WmoDoodad>>> DoodadSets;
 
         Wmo(Map *map, const std::string &path);
 
 #ifdef _DEBUG
-        unsigned int MemoryUsage() const;
+        size_t MemoryUsage() const;
 #endif
 };
 }

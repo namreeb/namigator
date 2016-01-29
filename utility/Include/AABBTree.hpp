@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <vector>
+#include <cstdint>
 
 namespace utility
 {
@@ -17,8 +18,8 @@ class AABBTree
         {
             union
             {
-                unsigned int children = 0;
-                unsigned int startFace;
+                std::uint32_t children = 0;
+                std::uint32_t startFace;
             };
 
             unsigned int numFaces = 0;

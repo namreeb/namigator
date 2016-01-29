@@ -9,6 +9,7 @@
 #include <sstream>
 #include <fstream>
 #include <cassert>
+#include <cstdint>
 
 namespace pathfind
 {
@@ -74,7 +75,7 @@ bool NavMesh::LoadGlobalWMO()
     return m_navMesh.addTile(buff, size, DT_TILE_FREE_DATA, 0, nullptr) == DT_SUCCESS;
 }
 
-void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices)
+void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices)
 {
     auto const tile = m_navMesh.getTileAt(x, y, 0);
 
@@ -106,9 +107,9 @@ void NavMesh::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertic
                 vertices.push_back({ -vert[2], -vert[0], vert[1] });
             }
 
-            indices.push_back(vertices.size() - 3);
-            indices.push_back(vertices.size() - 2);
-            indices.push_back(vertices.size() - 1);
+            indices.push_back(static_cast<std::int32_t>(vertices.size() - 3));
+            indices.push_back(static_cast<std::int32_t>(vertices.size() - 2));
+            indices.push_back(static_cast<std::int32_t>(vertices.size() - 1));
         }
     }
 }

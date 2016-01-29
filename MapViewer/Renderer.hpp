@@ -32,7 +32,7 @@ class Renderer
         {
             CComPtr<ID3D11Buffer> VertexBuffer;
             CComPtr<ID3D11Buffer> IndexBuffer;
-            unsigned int IndexCount;
+            size_t IndexCount;
         };
 
         const HWND m_window;

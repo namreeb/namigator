@@ -18,6 +18,7 @@
 #include <sstream>
 #include <cassert>
 #include <vector>
+#include <cstdint>
 
 #define START_X             100
 #define START_Y             100
@@ -317,7 +318,7 @@ void ChangeMap(const std::string &cn)
         if (gNavMesh->LoadGlobalWMO())
         {
             std::vector<utility::Vertex> meshVertices;
-            std::vector<int> meshIndices;
+            std::vector<std::int32_t> meshIndices;
             gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices);
 
             assert(!!meshVertices.size() && !!meshIndices.size());
@@ -399,7 +400,7 @@ void LoadADTFromGUI()
     if (gNavMesh->LoadTile(adtX, adtY))
     {
         std::vector<utility::Vertex> meshVertices;
-        std::vector<int> meshIndices;
+        std::vector<std::int32_t> meshIndices;
         gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices);
 
         assert(!!meshVertices.size() && !!meshIndices.size());
@@ -512,5 +513,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Sleep(5);
     };
 
-    return msg.wParam;
+    return static_cast<int>(msg.wParam);
 }

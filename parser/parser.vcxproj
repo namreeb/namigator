@@ -127,7 +127,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)Include;$(SolutionDir)stormlib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>utility.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
@@ -142,7 +142,6 @@
     <ClCompile Include="Source\Adt\Chunks\MODF.cpp" />
     <ClCompile Include="Source\Adt\Chunks\MWMO.cpp" />
     <ClCompile Include="Source\Adt\Chunks\Subchunks\MCLQ.cpp" />
-    <ClCompile Include="Source\Adt\Chunks\Subchunks\MCNR.cpp" />
     <ClCompile Include="Source\Adt\Chunks\Subchunks\MCVT.cpp" />
     <ClCompile Include="Source\Doodad\Doodad.cpp" />
     <ClCompile Include="Source\Doodad\DoodadInstance.cpp" />
@@ -173,7 +172,6 @@
     <ClInclude Include="Include\Adt\Chunks\MODF.hpp" />
     <ClInclude Include="Include\Adt\Chunks\MWMO.hpp" />
     <ClInclude Include="Include\Adt\Chunks\Subchunks\MCLQ.hpp" />
-    <ClInclude Include="Include\Adt\Chunks\Subchunks\MCNR.hpp" />
     <ClInclude Include="Include\Adt\Chunks\Subchunks\MCVT.hpp" />
     <ClInclude Include="Include\Doodad\Doodad.hpp" />
     <ClInclude Include="Include\Doodad\DoodadPlacement.hpp" />

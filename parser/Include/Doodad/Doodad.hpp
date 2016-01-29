@@ -21,7 +21,7 @@ class Doodad
         Doodad(const std::string &path);
 
 #ifdef _DEBUG
-        unsigned int MemoryUsage() const;
+        size_t MemoryUsage() const;
 #endif
 };
 }

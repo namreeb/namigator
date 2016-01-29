@@ -1,13 +1,13 @@
 #include "Adt/AdtChunk.hpp"
 #include "Adt/Chunks/Subchunks/MCVT.hpp"
 #include "Adt/Chunks/Subchunks/MCLQ.hpp"
-#include "Adt/Chunks/Subchunks/MCNR.hpp"
 
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -23,33 +23,33 @@ const unsigned int HoleFlags[4][4] =
 
 struct MCNKInfo
 {
-    unsigned int Flags;
-    unsigned int IndexX;
-    unsigned int IndexY;
-    unsigned int LayersCount;
-    unsigned int DoodadReferencesCount;
-    unsigned int HeightOffset;
-    unsigned int NormalOffset;
-    unsigned int LayerOffset;
-    unsigned int ReferencesOffset;
-    unsigned int AlphaOffset;
-    unsigned int AlphaSize;
-    unsigned int ShadowSize;
-    unsigned int ShadowOffset;
-    unsigned int AreaId;
-    unsigned int MapObjReferencesCount;
-    unsigned int Holes;
-    unsigned int Unknown[4];
-    unsigned int PredTex;
-    unsigned int EffectDoodadCount;
-    unsigned int SoundEmittersOffset;
-    unsigned int SoundEmittersCount;
-    unsigned int LiquidOffset;
-    unsigned int LiquidSize;
+    std::uint32_t Flags;
+    std::uint32_t IndexX;
+    std::uint32_t IndexY;
+    std::uint32_t LayersCount;
+    std::uint32_t DoodadReferencesCount;
+    std::uint32_t HeightOffset;
+    std::uint32_t NormalOffset;
+    std::uint32_t LayerOffset;
+    std::uint32_t ReferencesOffset;
+    std::uint32_t AlphaOffset;
+    std::uint32_t AlphaSize;
+    std::uint32_t ShadowSize;
+    std::uint32_t ShadowOffset;
+    std::uint32_t AreaId;
+    std::uint32_t MapObjReferencesCount;
+    std::uint32_t Holes;
+    std::uint32_t Unknown[4];
+    std::uint32_t PredTex;
+    std::uint32_t EffectDoodadCount;
+    std::uint32_t SoundEmittersOffset;
+    std::uint32_t SoundEmittersCount;
+    std::uint32_t LiquidOffset;
+    std::uint32_t LiquidSize;
     float Position[3];
-    unsigned int ColorValueOffset;
-    unsigned int Properties;
-    unsigned int EffectId;
+    std::uint32_t ColorValueOffset;
+    std::uint32_t Properties;
+    std::uint32_t EffectId;
 };
 
 class MCNK : public AdtChunk
@@ -61,7 +61,7 @@ class MCNK : public AdtChunk
         bool HasHoles;
         bool HasWater;
 
-        unsigned int WaterType;
+        std::uint32_t WaterType;
         unsigned int AreaId;
 
         float Height;

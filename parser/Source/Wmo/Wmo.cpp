@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -74,7 +75,7 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
         // this is necessary because the indices will change as non-collideable vertices are discarded.
         // it also has the side-effect of ensuring we have no duplicate vertices
 
-        std::map<unsigned short, int> indexMap;
+        std::map<std::int16_t, int> indexMap;
 
         // process each triangle in the current group file
         for (int i = 0; i < groupFiles[g]->MaterialsChunk->TriangleCount; ++i)
@@ -87,7 +88,7 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
             // note: we need to check if this vertex has already been added as part of another triangle
             for (int j = 0; j < 3; ++j)
             {
-                const unsigned short vertexIndex = groupFiles[g]->IndicesChunk->Indices[i * 3 + j];
+                auto const vertexIndex = groupFiles[g]->IndicesChunk->Indices[i * 3 + j];
 
                 // this vertex has already been added.  add it's index to this triangle also
                 if (indexMap.find(vertexIndex) != indexMap.end())
@@ -97,10 +98,10 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
                 }
 
                 // add a mapping for the vertex's old index to its position in the new vertex list (aka its new index)
-                indexMap[vertexIndex] = Vertices.size();
+                indexMap[vertexIndex] = static_cast<int>(Vertices.size());
 
                 // add the index
-                Indices.push_back(Vertices.size());
+                Indices.push_back(static_cast<std::int32_t>(Vertices.size()));
 
                 // add the vertex
                 Vertices.push_back(groupFiles[g]->VerticesChunk->Vertices[vertexIndex]);
@@ -132,13 +133,13 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
                 LiquidVertices.push_back(v3);
                 LiquidVertices.push_back(v4);
 
-                LiquidIndices.push_back(LiquidVertices.size() - 4);
-                LiquidIndices.push_back(LiquidVertices.size() - 3);
-                LiquidIndices.push_back(LiquidVertices.size() - 2);
+                LiquidIndices.push_back(static_cast<std::int32_t>(LiquidVertices.size() - 4));
+                LiquidIndices.push_back(static_cast<std::int32_t>(LiquidVertices.size() - 3));
+                LiquidIndices.push_back(static_cast<std::int32_t>(LiquidVertices.size() - 2));
 
-                LiquidIndices.push_back(LiquidVertices.size() - 2);
-                LiquidIndices.push_back(LiquidVertices.size() - 3);
-                LiquidIndices.push_back(LiquidVertices.size() - 1);
+                LiquidIndices.push_back(static_cast<std::int32_t>(LiquidVertices.size() - 2));
+                LiquidIndices.push_back(static_cast<std::int32_t>(LiquidVertices.size() - 3));
+                LiquidIndices.push_back(static_cast<std::int32_t>(LiquidVertices.size() - 1));
             }
     }
 
@@ -170,9 +171,9 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
 }
 
 #ifdef _DEBUG
-unsigned int Wmo::MemoryUsage() const
+size_t Wmo::MemoryUsage() const
 {
-    unsigned int ret = sizeof(Wmo);
+    size_t ret = sizeof(Wmo);
 
     ret += FullPath.length();
     ret += FileName.length();

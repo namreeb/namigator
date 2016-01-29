@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <algorithm>
+#include <cstdint>
+#include <cassert>
 
 namespace utility
 {
@@ -51,29 +53,29 @@ BoundingBox AABBTree::GetBoundingBox() const
 
 void AABBTree::Serialize(std::ostream& stream) const
 {
-    stream << (uint32_t)'BVH1';
+    stream << (std::uint32_t)'BVH1';
 
-    stream << (uint32_t)m_vertices.size();
+    stream << (std::uint32_t)m_vertices.size();
     for (const auto& vertex : m_vertices)
         stream << vertex;
 
-    stream << (uint32_t)m_indices.size();
+    stream << (std::uint32_t)m_indices.size();
     for (const auto& index : m_indices)
         stream << (int32_t)index;
 
-    stream << (uint32_t)m_nodes.size();
+    stream << (std::uint32_t)m_nodes.size();
     for (const auto& node : m_nodes)
     {
         stream << (uint8_t)node.numFaces;
         if (!!node.numFaces)
         {
             // Write leaf node
-            stream << (uint32_t)node.startFace;
+            stream << node.startFace;
         }
         else
         {
             // Write inner node
-            stream << (uint32_t)node.children;
+            stream << (std::uint32_t)node.children;
             stream << node.bounds;
         }
     }
@@ -81,24 +83,24 @@ void AABBTree::Serialize(std::ostream& stream) const
 
 bool AABBTree::Deserialize(std::istream& stream)
 {
-    uint32_t magic;
+    std::uint32_t magic;
     stream >> magic;
-    if (magic != (uint32_t)'BVH1')
+    if (magic != (std::uint32_t)'BVH1')
         return false;
 
-    uint32_t vertexCount;
+    std::uint32_t vertexCount;
     stream >> vertexCount;
     m_vertices.resize(vertexCount);
     for (size_t i = 0; i < m_vertices.size(); ++i)
         stream >> m_vertices[i];
 
-    uint32_t indexCount;
+    std::uint32_t indexCount;
     stream >> indexCount;
     m_indices.resize(indexCount);
     for (size_t i = 0; i < m_indices.size(); ++i)
         stream >> m_indices[i];
 
-    uint32_t nodeCount;
+    std::uint32_t nodeCount;
     stream >> nodeCount;
     m_nodes.resize(nodeCount);
     for (auto& node : m_nodes)
@@ -273,7 +275,8 @@ void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsig
 
     if (numFaces <= maxFacesPerLeaf)
     {
-        node.startFace = faces - m_faceIndices.data();
+        node.startFace = static_cast<std::uint32_t>(faces - m_faceIndices.data());
+        assert(node.startFace == (faces - m_faceIndices.data()));   // verify no truncation
         node.numFaces = numFaces;
     }
     else
@@ -364,7 +367,7 @@ void AABBTree::TraceRecursive(unsigned int nodeIndex, Ray& ray, unsigned int* fa
 
 void AABBTree::TraceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex) const
 {
-    for (unsigned int i = node.startFace; i < node.startFace + node.numFaces; ++i)
+    for (auto i = node.startFace; i < node.startFace + node.numFaces; ++i)
     {
         auto& v0 = m_vertices[m_indices[i*3 + 0]];
         auto& v1 = m_vertices[m_indices[i*3 + 1]];

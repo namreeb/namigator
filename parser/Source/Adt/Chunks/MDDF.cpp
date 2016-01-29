@@ -12,11 +12,10 @@ MDDF::MDDF(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     if (!Size)
         return;
 
-    const unsigned int count = Size / sizeof(DoodadPlacement);
-    Doodads.resize(count);
+    Doodads.resize(Size / sizeof(DoodadPlacement));
 
     reader->SetPosition(position + 8);
-    reader->ReadBytes(&Doodads[0], sizeof(DoodadPlacement) * count);
+    reader->ReadBytes(&Doodads[0], sizeof(DoodadPlacement) * Doodads.size());
 }
 }
 }

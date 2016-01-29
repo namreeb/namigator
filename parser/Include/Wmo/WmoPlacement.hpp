@@ -4,22 +4,24 @@
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/BoundingBox.hpp"
 
+#include <cstdint>
+
 namespace parser
 {
 namespace input
 {
 struct WmoPlacement
 {
-    unsigned int NameId;
-    unsigned int UniqueId;
+    std::uint32_t NameId;
+    std::uint32_t UniqueId;
     utility::Vertex BasePosition;
     utility::Vector3 Orientation;
     utility::Vertex MaxCorner;
     utility::Vertex MinCorner;
-    unsigned short Flags;
-    unsigned short DoodadSet;
-    unsigned short NameSet;
-    unsigned short _pad;
+    std::uint16_t Flags;
+    std::uint16_t DoodadSet;
+    std::uint16_t NameSet;
+    std::uint16_t _pad;
 
     void GetBoundingBox(utility::BoundingBox &bounds) const
     {

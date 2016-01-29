@@ -107,7 +107,7 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 
         std::vector<char> inFileData(SFileGetFileSize(fileHandle, nullptr));
 
-        if (!SFileReadFile(fileHandle, &inFileData[0], inFileData.size(), nullptr, nullptr))
+        if (!SFileReadFile(fileHandle, &inFileData[0], static_cast<DWORD>(inFileData.size()), nullptr, nullptr))
             THROW("Error in SFileReadFile").ErrorCode();
 
         return new utility::BinaryStream(inFileData);

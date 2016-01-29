@@ -132,7 +132,6 @@ Adt::Adt(Map *map, int adtX, int adtY)
             int vertCount = 0;
 
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
-            chunk->m_surfaceNormals = std::move(mapChunk->Normals);
 
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mapChunk->MinZ);
@@ -210,13 +209,13 @@ Adt::Adt(Map *map, int adtX, int adtY)
                     Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 1]);
                     Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, layer->Heights[y + 1][x + 1]);
 
-                    chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                    chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                    chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                    chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 4));
+                    chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 2));
+                    chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 3));
 
-                    chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                    chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
-                    chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                    chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 2));
+                    chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 1));
+                    chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 3));
                 }
         }
 
@@ -267,13 +266,13 @@ Adt::Adt(Map *map, int adtX, int adtY)
                         Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
                         Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
 
-                        chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 4);
-                        chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                        chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                        chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 4));
+                        chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 2));
+                        chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 3));
 
-                        chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 2);
-                        chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 1);
-                        chunk->m_liquidIndices.push_back(chunk->m_liquidVertices.size() - 3);
+                        chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 2));
+                        chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 1));
+                        chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 3));
                     }
             }
 
@@ -392,7 +391,7 @@ void Adt::WriteObjFile() const
 
     std::ofstream out(ss.str());
 
-    unsigned int indexOffset = 1;
+    size_t indexOffset = 1;
     std::set<unsigned int> dumpedWmos;
     std::set<unsigned int> dumpedDoodads;
 

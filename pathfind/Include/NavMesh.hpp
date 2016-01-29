@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace pathfind
 {
@@ -25,6 +26,6 @@ class NavMesh
         bool LoadTile(int x, int y);
         bool LoadGlobalWMO();
 
-        void GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices);
+        void GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices);
 };
 }

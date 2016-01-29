@@ -41,7 +41,7 @@ utility::Vertex WmoInstance::TransformVertex(const utility::Vertex &vertex) cons
     return Origin + utility::Vertex::Transform(vertex, TransformMatrix);
 }
 
-void WmoInstance::BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const
+void WmoInstance::BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const
 {
     vertices.clear();
     vertices.reserve(Model->Vertices.size());
@@ -55,7 +55,7 @@ void WmoInstance::BuildTriangles(std::vector<utility::Vertex> &vertices, std::ve
         vertices.push_back(TransformVertex(vertex));
 }
 
-void WmoInstance::BuildLiquidTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const
+void WmoInstance::BuildLiquidTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const
 {
     vertices.clear();
     vertices.reserve(Model->LiquidVertices.size());
@@ -69,7 +69,7 @@ void WmoInstance::BuildLiquidTriangles(std::vector<utility::Vertex> &vertices, s
         vertices.push_back(TransformVertex(vertex));
 }
 
-void WmoInstance::BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const
+void WmoInstance::BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const
 {
     vertices.clear();
     indices.clear();
@@ -103,7 +103,7 @@ void WmoInstance::BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, s
             vertices.push_back(TransformVertex(vertex));
 
         for (auto i : doodadIndices)
-            indices.push_back(indexOffset + i);
+            indices.push_back(static_cast<std::int32_t>(indexOffset + i));
 
         indexOffset += doodadVertices.size();
     }
@@ -118,7 +118,7 @@ void WmoInstance::WriteGlobalObjFile(const std::string &MapName) const
 
     std::ofstream out(ss.str());
 
-    unsigned int indexOffset = 1;
+    size_t indexOffset = 1;
 
     out << "# wmo vertices" << std::endl;
 

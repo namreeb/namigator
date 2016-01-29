@@ -4,7 +4,7 @@
 
 #include "utility/Include/BinaryStream.hpp"
 
-#include <Windows.h>
+#include <cstdint>
 
 namespace parser
 {
@@ -14,7 +14,7 @@ class MCLQ : AdtChunk
 {
     public:
         float Heights[9][9];
-        BYTE RenderMap[8][8];
+        std::uint8_t RenderMap[8][8];
 
         float Altitude;
         float BaseHeight;

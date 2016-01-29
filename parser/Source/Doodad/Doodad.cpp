@@ -68,9 +68,9 @@ Doodad::Doodad(const std::string &path) : Name(GetRealModelPath(path))
 }
 
 #ifdef _DEBUG
-unsigned int Doodad::MemoryUsage() const
+size_t Doodad::MemoryUsage() const
 {
-    unsigned int ret = sizeof(Doodad);
+    size_t ret = sizeof(Doodad);
 
     ret += Vertices.size() * sizeof(Vertices[0]);
     ret += Indices.size() * sizeof(Indices[0]);

@@ -5,6 +5,8 @@
 
 #include <vector>
 
+static_assert(sizeof(char) == 1, "char must be 8 bits");
+
 namespace parser
 {
 namespace input

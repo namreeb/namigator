@@ -25,7 +25,6 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
         return;
 
     MCNKInfo information;
-
     reader->ReadBytes(&information, sizeof(information));
 
     Height = information.Position[2];
@@ -67,10 +66,8 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
     // these x and y correspond to rows and columns (respectively) of the current chunk
 
     MCVT heightChunk(Position + information.HeightOffset, reader);
-    MCNR normalChunk(Position + information.NormalOffset, reader);
 
     Positions.reserve(VertexCount);
-    Normals.reserve(VertexCount);
 
     for (int i = 0; i < VertexCount; ++i)
     {
@@ -89,10 +86,6 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
         Positions.push_back({ information.Position[0] - (y*quadSize) - innerOffset,
                               information.Position[1] - (x*quadSize) - innerOffset,
                               z });
-
-        Normals.push_back({ normalChunk.Entries[i].Normal[0] / 127.f,
-                            normalChunk.Entries[i].Normal[1] / 127.f,
-                            normalChunk.Entries[i].Normal[2] / 127.f });
     }
 
     if (HasWater = information.LiquidSize > 8)

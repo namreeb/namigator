@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <cstdint>
 
 namespace parser
 {
@@ -13,12 +14,12 @@ namespace input
 {
 struct DoodadPlacement
 {
-    unsigned int NameId;
-    unsigned int UniqueId;
+    std::uint32_t NameId;
+    std::uint32_t UniqueId;
     utility::Vertex BasePosition;
     utility::Vector3 Orientation;
-    unsigned short Scale;
-    unsigned short Flags;
+    std::uint16_t Scale;
+    std::uint16_t Flags;
 
     void GetOrigin(utility::Vertex &vertex) const
     {

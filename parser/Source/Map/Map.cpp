@@ -190,16 +190,16 @@ void Map::WriteMemoryUsage(std::ostream &o) const
         std::lock_guard<std::mutex> guard(m_wmoMutex);
         o << "WMOs: " << m_loadedWmos.size() << std::endl;
 
-        std::vector<std::pair<const Wmo *, unsigned int>> wmoMemoryUsage;
+        std::vector<std::pair<const Wmo *, size_t>> wmoMemoryUsage;
         wmoMemoryUsage.reserve(m_loadedWmos.size());
 
         for (auto const &wmo : m_loadedWmos)
             wmoMemoryUsage.push_back({ wmo.get(), wmo->MemoryUsage() });
 
-        std::sort(wmoMemoryUsage.begin(), wmoMemoryUsage.end(), [](const std::pair<const Wmo *, unsigned int> &a, const std::pair<const Wmo *, unsigned int> &b) { return a.second > b.second; });
+        std::sort(wmoMemoryUsage.begin(), wmoMemoryUsage.end(), [](const std::pair<const Wmo *, size_t> &a, const std::pair<const Wmo *, size_t> &b) { return a.second > b.second; });
 
         for (auto const &wmoUsage : wmoMemoryUsage)
-            o << "0x" << std::hex << std::uppercase << reinterpret_cast<unsigned long>(wmoUsage.first) << ": " << std::dec << wmoUsage.second << std::endl;
+            o << "0x" << std::hex << std::uppercase << wmoUsage.first << ": " << std::dec << wmoUsage.second << std::endl;
     }
 
     // FIXME - TODO - add wmo instances
@@ -208,16 +208,16 @@ void Map::WriteMemoryUsage(std::ostream &o) const
         std::lock_guard<std::mutex> guard(m_doodadMutex);
         o << "Doodads: " << m_loadedDoodads.size() << std::endl;
 
-        std::vector<std::pair<const Doodad *, unsigned int>> doodadMemoryUsage;
+        std::vector<std::pair<const Doodad *, size_t>> doodadMemoryUsage;
         doodadMemoryUsage.reserve(m_loadedDoodads.size());
 
         for (auto const &doodad : m_loadedDoodads)
             doodadMemoryUsage.push_back({ doodad.get(), doodad->MemoryUsage() });
 
-        std::sort(doodadMemoryUsage.begin(), doodadMemoryUsage.end(), [](const std::pair<const Doodad *, unsigned int> &a, const std::pair<const Doodad *, unsigned int> &b) { return a.second > b.second; });
+        std::sort(doodadMemoryUsage.begin(), doodadMemoryUsage.end(), [](const std::pair<const Doodad *, size_t> &a, const std::pair<const Doodad *, size_t> &b) { return a.second > b.second; });
 
         for (auto const &doodadUsage : doodadMemoryUsage)
-            o << "0x" << std::hex << std::uppercase << reinterpret_cast<unsigned long>(doodadUsage.first) << ": " << std::dec << doodadUsage.second << std::endl;
+            o << "0x" << std::hex << std::uppercase << doodadUsage.first << ": " << std::dec << doodadUsage.second << std::endl;
     }
 
     // FIXME - TODO - add doodad instances

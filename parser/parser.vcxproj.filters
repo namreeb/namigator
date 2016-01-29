@@ -37,9 +37,6 @@
     <ClCompile Include="Source\Adt\Chunks\Subchunks\MCLQ.cpp">
       <Filter>Source\Adt\Chunks\Subchunks</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Adt\Chunks\Subchunks\MCNR.cpp">
-      <Filter>Source\Adt\Chunks\Subchunks</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Adt\Chunks\Subchunks\MCVT.cpp">
       <Filter>Source\Adt\Chunks\Subchunks</Filter>
     </ClCompile>
@@ -118,9 +115,6 @@
       <Filter>Include\Adt\Chunks</Filter>
     </ClInclude>
     <ClInclude Include="Include\Adt\Chunks\Subchunks\MCLQ.hpp">
-      <Filter>Include\Adt\Chunks\Subchunks</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Adt\Chunks\Subchunks\MCNR.hpp">
       <Filter>Include\Adt\Chunks\Subchunks</Filter>
     </ClInclude>
     <ClInclude Include="Include\Adt\Chunks\Subchunks\MCVT.hpp">

@@ -1,30 +1,32 @@
 #pragma once
 
+#include <cstdint>
+
 namespace parser
 {
 namespace input
 {
 struct MOHD
 {
-    unsigned int TexturesCount;
-    int WMOGroupFilesCount;
-    unsigned int PortalsCount;
-    unsigned int LightsCount;
-    unsigned int DoodadNamesCount;
-    unsigned int DoodadDefsCount;
-    unsigned int DoodadSetsCount;
+    std::uint32_t TexturesCount;
+    std::int32_t WMOGroupFilesCount;
+    std::uint32_t PortalsCount;
+    std::uint32_t LightsCount;
+    std::uint32_t DoodadNamesCount;
+    std::uint32_t DoodadDefsCount;
+    std::uint32_t DoodadSetsCount;
 
-    unsigned char ColR;
-    unsigned char ColG;
-    unsigned char ColB;
-    unsigned char ColX;
+    std::uint8_t ColR;
+    std::uint8_t ColG;
+    std::uint8_t ColB;
+    std::uint8_t ColX;
 
-    unsigned int WMOId;
+    std::uint32_t WMOId;
 
     float BoundingBox1[3];
     float BoundingBox2[3];
 
-    unsigned int Unknown;
+    std::uint32_t Unknown;
 };
 }
 }

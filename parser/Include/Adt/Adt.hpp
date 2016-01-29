@@ -10,6 +10,7 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -18,12 +19,10 @@ struct AdtChunk
     bool m_holeMap[8][8];
 
     std::vector<utility::Vertex> m_terrainVertices;
-    std::vector<int> m_terrainIndices;
-
-    std::vector<utility::Vector3> m_surfaceNormals;
+    std::vector<std::int32_t> m_terrainIndices;
 
     std::vector<utility::Vertex> m_liquidVertices;
-    std::vector<int> m_liquidIndices;
+    std::vector<std::int32_t> m_liquidIndices;
 
     // set of unique wmo identifiers present in this chunk
     std::set<unsigned int> m_wmos;

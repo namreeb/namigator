@@ -19,7 +19,7 @@ MLIQ::MLIQ(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupCh
     for (unsigned int y = 0; y <= Height; ++y)
         for (unsigned int x = 0; x <= Width; ++x)
         {
-            groupFileStream->Read<unsigned int>();  // unknown
+            groupFileStream->Slide(4);      // unknown
             Heights->Set(y, x, groupFileStream->Read<float>());
         }
 }

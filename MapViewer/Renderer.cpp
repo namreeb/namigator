@@ -238,7 +238,7 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
     ZERO(vertexBufferDesc);
 
     vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    vertexBufferDesc.ByteWidth = sizeof(ColoredVertex) * vertices.size();
+    vertexBufferDesc.ByteWidth = static_cast<decltype(vertexBufferDesc.ByteWidth)>(sizeof(ColoredVertex) * vertices.size());
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
@@ -293,7 +293,7 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
     ZERO(indexBufferDesc);
 
     indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    indexBufferDesc.ByteWidth = sizeof(int) * indices.size();
+    indexBufferDesc.ByteWidth = static_cast<decltype(indexBufferDesc.ByteWidth)>(sizeof(int) * indices.size());
     indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
@@ -345,7 +345,7 @@ void Renderer::Render() const
             m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(m_terrainBuffers[i].IndexCount, 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_terrainBuffers[i].IndexCount), 0, 0);
         }
 
     // draw wmos
@@ -357,7 +357,7 @@ void Renderer::Render() const
             m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(m_wmoBuffers[i].IndexCount, 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_wmoBuffers[i].IndexCount), 0, 0);
         }
 
     // draw doodads
@@ -369,7 +369,7 @@ void Renderer::Render() const
             m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(m_doodadBuffers[i].IndexCount, 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_doodadBuffers[i].IndexCount), 0, 0);
         }
 
     if (m_renderLiquid || m_renderMesh)
@@ -386,7 +386,7 @@ void Renderer::Render() const
                 m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(m_liquidBuffers[i].IndexCount, 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_liquidBuffers[i].IndexCount), 0, 0);
             }
 
         // draw meshes (also with alpha blending)
@@ -398,7 +398,7 @@ void Renderer::Render() const
                 m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(m_meshBuffers[i].IndexCount, 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_meshBuffers[i].IndexCount), 0, 0);
             }
 
         m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);

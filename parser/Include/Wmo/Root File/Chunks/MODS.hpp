@@ -3,6 +3,9 @@
 #include "Wmo/Root File/WmoRootChunk.hpp"
 
 #include <vector>
+#include <cstdint>
+
+static_assert(sizeof(char) == 1, "char must be 8 bits");
 
 namespace parser
 {
@@ -12,10 +15,10 @@ struct DoodadSetInfo
 {
     public:
         char Name[20];
-        unsigned int FirstDoodadIndex;
-        unsigned int DoodadCount;
+        std::uint32_t FirstDoodadIndex;
+        std::uint32_t DoodadCount;
     private:
-        unsigned int _unknown;
+        std::uint32_t _unknown;
 };
 
 class MODS : WmoRootChunk
