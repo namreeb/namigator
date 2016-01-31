@@ -33,3 +33,11 @@
 /RecastDetourBuild/Release
 /RecastDetourBuild/*.user
 /*.opendb
+/x64
+/MapViewer/x64/Debug
+/RecastDetourBuild/x64/Debug
+/parser/x64/Debug
+/pathfind/x64/Debug
+/utility/x64/Debug
+/maps.VC.db
+/ipch/STORMLIB_VS15-5647bf9b/*.ipch

@@ -129,8 +129,6 @@ Adt::Adt(Map *map, int adtX, int adtY)
 
             AdtChunk *const chunk = new AdtChunk();
 
-            int vertCount = 0;
-
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
 
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
@@ -285,7 +283,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
             const WmoInstance *wmoInstance;
 
             // ensure that the instance has been loaded
-            if (!(wmoInstance = map->GetWmoInstance(wmoDefinition.UniqueId)))
+            if ((wmoInstance = map->GetWmoInstance(wmoDefinition.UniqueId)) == nullptr)
             {
                 utility::BoundingBox bounds;
                 wmoDefinition.GetBoundingBox(bounds);
@@ -342,7 +340,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
             const DoodadInstance *doodadInstance;
 
             // ensure that the instance has been loaded
-            if (!(doodadInstance = map->GetDoodadInstance(doodadDefinition.UniqueId)))
+            if ((doodadInstance = map->GetDoodadInstance(doodadDefinition.UniqueId)) == nullptr)
             {
                 utility::Vertex origin;
                 doodadDefinition.GetOrigin(origin);

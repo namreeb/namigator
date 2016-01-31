@@ -16,7 +16,7 @@ MODN::MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream
     {
         unsigned char nextByte;
 
-        while (!(nextByte = reader->Read<unsigned char>()))
+        while ((nextByte = reader->Read<unsigned char>()) == 0)
             ++currOffset;
 
         std::string currFileName = reader->ReadCString();

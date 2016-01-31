@@ -84,7 +84,7 @@ void Convert::VerticesToWow(const float *input, int vertexCount, std::vector<uti
 {
     output.resize(vertexCount);
 
-    float minX, minY, minZ, maxX, maxY, maxZ;
+    float minX = 0.f, minY = 0.f, minZ = 0.f, maxX = 0.f, maxY = 0.f, maxZ = 0.f;
 
     for (int i = 0; i < vertexCount; ++i)
     {

@@ -298,8 +298,8 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
 
                     bool unload = true;
 
-                    for (auto const &adt : wmo->Adts)
-                        if (m_adtReferences[adt.second][adt.first] > 0)
+                    for (auto const &a : wmo->Adts)
+                        if (m_adtReferences[a.second][a.first] > 0)
                         {
                             unload = false;
                             break;
@@ -318,8 +318,8 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
 
                     bool unload = true;
 
-                    for (auto const &adt : doodad->Adts)
-                        if (m_adtReferences[adt.second][adt.first] > 0)
+                    for (auto const &a : doodad->Adts)
+                        if (m_adtReferences[a.second][a.first] > 0)
                         {
                             unload = false;
                             break;

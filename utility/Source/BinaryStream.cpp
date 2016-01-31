@@ -72,7 +72,7 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t &result
 
 bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLoc, size_t &result) const
 {
-    size_t p;
+    size_t p = 0;
 
     // find first chunk of any type
     for (size_t i = startLoc; i < m_buffer.size(); ++i)

@@ -29,7 +29,7 @@ MWMO::MWMO(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     {
         WmoNames.push_back(std::string(p));
 
-        if (!(p = strchr(p, '\0')))
+        if ((p = strchr(p, '\0')) == nullptr)
             break;
 
         p++;

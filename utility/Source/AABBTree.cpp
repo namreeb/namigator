@@ -207,7 +207,7 @@ unsigned int AABBTree::PartitionMedian(Node& node, unsigned int* faces, unsigned
     return numFaces / 2;
 }
 
-unsigned int AABBTree::PartitionSurfaceArea(Node& node, unsigned int* faces, unsigned int numFaces)
+unsigned int AABBTree::PartitionSurfaceArea(Node& /*node*/, unsigned int* faces, unsigned int numFaces)
 {
     unsigned int bestAxis = 0;
     unsigned int bestIndex = 0;
@@ -276,7 +276,7 @@ void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsig
     if (numFaces <= maxFacesPerLeaf)
     {
         node.startFace = static_cast<std::uint32_t>(faces - m_faceIndices.data());
-        assert(node.startFace == (faces - m_faceIndices.data()));   // verify no truncation
+        assert(node.startFace == static_cast<std::size_t>(faces - m_faceIndices.data()));   // verify no truncation
         node.numFaces = numFaces;
     }
     else
