@@ -84,7 +84,8 @@ class Renderer
         bool HasWmo(unsigned int id) const;
         bool HasDoodad(unsigned int id) const;
 
-        void Render() const;
+        void Render();
+        void HandleMousePicking(int x, int y);
 
         void SetWireframe(bool enabled);
         void SetRenderADT(bool enabled) { m_renderADT = enabled; }

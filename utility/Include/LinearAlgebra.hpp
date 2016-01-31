@@ -120,6 +120,9 @@ class Matrix
         static Matrix CreateViewMatrix(const utility::Vertex &eye, const utility::Vertex &target, const Vector3 &up);
         static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
 
+        float ComputeDeterminant() const;
+        Matrix ComputeInverse() const;
+
         friend Matrix operator * (const Matrix &a, const Matrix &b);
 
         void PopulateArray(float *out) const

@@ -18,12 +18,16 @@ class Camera
         utility::Vector3 m_right;
 
         utility::Matrix m_viewMatrix;
+        utility::Matrix m_projMatrix;
 
         void UpdateViewMatrix();
 
         bool m_mousePanning;
         int m_mousePanX;
         int m_mousePanY;
+
+        float m_screenWidth;
+        float m_screenHeight;
 
     public:
         Camera();
@@ -49,5 +53,13 @@ class Camera
         void UpdateMousePan(int newX, int newY);
         void GetMousePanStart(int &x, int &y) const;
 
+        void UpdateProjection(float width, float height);
+
+        utility::Vector3 ProjectPoint(const utility::Vector3& pos) const;
+        utility::Vector3 UnprojectPoint(const utility::Vector3& pos) const;
+
+        const utility::Vector3& GetPosition() const { return m_position; }
+        const utility::Vector3& GetForward() const { return m_forward; }
         const utility::Matrix& GetViewMatrix() const { return m_viewMatrix; }
+        const utility::Matrix& GetProjMatrix() const { return m_projMatrix; }
 };

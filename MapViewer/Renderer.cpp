@@ -14,6 +14,9 @@
 
 #include "pixelShader.hpp"
 #include "vertexShader.hpp"
+#include <utility/Include/Ray.hpp>
+
+#include <sstream>
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 #define ThrowIfFail(x) if (FAILED(x)) throw "Renderer initialization error"
@@ -308,27 +311,25 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
     buffer.push_back({ vertexBuffer, indexBuffer, indices.size() });
 }
 
-void Renderer::Render() const
+void Renderer::Render()
 {
     // clear the back buffer to a deep blue
     m_deviceContext->ClearRenderTargetView(m_backBuffer, BackgroundColor);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-
-    D3D11_VIEWPORT viewport;
-    UINT viewportCount = 1;
-
-    m_deviceContext->RSGetViewports(&viewportCount, &viewport);
-
-    float aspect = viewport.Width / viewport.Height;
-    auto proj = utility::Matrix::CreateProjectionMatrix(PI / 4.f, aspect, 1.f, 10000.f);
 
     struct VSConstants {
         float viewMatrix[16];
         float projMatrix[16];
     } constants;
 
-    proj.PopulateArray(constants.projMatrix);
+    D3D11_VIEWPORT viewport;
+    UINT viewportCount = 1;
+
+    m_deviceContext->RSGetViewports(&viewportCount, &viewport);
+    m_camera.UpdateProjection(viewport.Width, viewport.Height);
+
     m_camera.GetViewMatrix().PopulateArray(constants.viewMatrix);
+    m_camera.GetProjMatrix().PopulateArray(constants.projMatrix);
 
     m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &constants, 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer.p);
@@ -432,4 +433,40 @@ void Renderer::SetWireframe(bool enabled)
     m_rasterizerState.Release();
     ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
     m_deviceContext->RSSetState(m_rasterizerState);
+}
+
+void Renderer::HandleMousePicking(int x, int y)
+{
+    std::stringstream ss;
+
+    auto mat = m_camera.GetViewMatrix() * m_camera.GetProjMatrix();
+    mat.Print(ss);
+
+    ss << mat.ComputeDeterminant();
+
+    auto inv = mat.ComputeInverse();
+    inv.Print(ss);
+
+    //utility::Vector3 nearPosition;
+    //nearPosition.X = static_cast<float>(x);
+    //nearPosition.Y = static_cast<float>(y);
+    //nearPosition.Z = 0.0f;
+
+    //nearPosition = m_camera.UnprojectPoint(nearPosition);
+
+    //utility::Vector3 farPosition;
+    //farPosition.X = static_cast<float>(x);
+    //farPosition.Y = static_cast<float>(y);
+    //farPosition.Z = 1.0f;
+
+    //farPosition = m_camera.UnprojectPoint(farPosition);
+
+    //utility::Ray ray(nearPosition, farPosition);
+
+    //utility::Vector3 dir = ray.getVector();
+
+    //std::stringstream ss;
+    //ss << "X: " << dir.X << " Y: " << dir.Y << " Z: " << dir.Z << std::endl;
+
+    OutputDebugStringA(ss.str().c_str());
 }

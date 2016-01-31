@@ -108,3 +108,32 @@ void Camera::GetMousePanStart(int &x, int &y) const
     x = m_mousePanX;
     y = m_mousePanY;
 }
+
+void Camera::UpdateProjection(float width, float height)
+{
+    m_screenWidth = width;
+    m_screenHeight = height;
+    m_projMatrix = utility::Matrix::CreateProjectionMatrix(PI / 4.f, width / height, 1.f, 10000.f);
+}
+
+utility::Vector3 Camera::ProjectPoint(const utility::Vector3& pos) const
+{
+    utility::Vector3 position = pos;
+    position = utility::Vector3::Transform(position, m_viewMatrix);
+    position = utility::Vector3::Transform(position, m_projMatrix);
+
+    position.X = (1.0f + position.X) * m_screenWidth / 2.0f;
+    position.Y = (1.0f - position.Y) * m_screenHeight / 2.0f;
+    return position;
+}
+
+utility::Vector3 Camera::UnprojectPoint(const utility::Vector3& pos) const
+{
+    utility::Vector3 position = pos;
+    position.X = 2.0f * position.X / m_screenWidth - 1.0f;
+    position.Y = 1.0f - 2.0f * position.Y / m_screenHeight;
+
+    position = utility::Vector3::Transform(position, m_projMatrix.ComputeInverse());
+    position = utility::Vector3::Transform(position, m_viewMatrix.ComputeInverse());
+    return position;
+}
