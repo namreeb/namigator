@@ -30,9 +30,11 @@ class Renderer
 
         struct GeometryBuffer
         {
-            CComPtr<ID3D11Buffer> VertexBuffer;
-            CComPtr<ID3D11Buffer> IndexBuffer;
-            size_t IndexCount;
+            std::vector<ColoredVertex> VertexBufferCpu;
+            std::vector<int> IndexBufferCpu;
+
+            CComPtr<ID3D11Buffer> VertexBufferGpu;
+            CComPtr<ID3D11Buffer> IndexBufferGpu;
         };
 
         const HWND m_window;

@@ -26,8 +26,14 @@ class Camera
         int m_mousePanX;
         int m_mousePanY;
 
-        float m_screenWidth;
-        float m_screenHeight;
+        float m_viewportX;
+        float m_viewportY;
+
+        float m_viewportWidth;
+        float m_viewportHeight;
+
+        float m_viewportMinDepth;
+        float m_viewportMaxDepth;
 
     public:
         Camera();
@@ -53,7 +59,7 @@ class Camera
         void UpdateMousePan(int newX, int newY);
         void GetMousePanStart(int &x, int &y) const;
 
-        void UpdateProjection(float width, float height);
+        void UpdateProjection(float vpX, float vpY, float width, float height, float minDepth, float maxDepth);
 
         utility::Vector3 ProjectPoint(const utility::Vector3& pos) const;
         utility::Vector3 UnprojectPoint(const utility::Vector3& pos) const;

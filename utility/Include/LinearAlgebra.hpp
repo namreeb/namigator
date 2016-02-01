@@ -120,6 +120,8 @@ class Matrix
         static Matrix CreateViewMatrix(const utility::Vertex &eye, const utility::Vertex &target, const Vector3 &up);
         static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
 
+        Matrix Transposed() const;
+
         float ComputeDeterminant() const;
         Matrix ComputeInverse() const;
 

@@ -7,22 +7,22 @@
 
 namespace utility
 {
-void Ray::setHitPoint(float distance) {
+void Ray::SetHitPoint(float distance) {
     assert(distance >= 0.0f);
     assert(distance <= 1.0f);
 
     m_hitDistance = distance;
 }
 
-bool Ray::intersectTriangle(const Vector3* verts, float* distance) const {
-    return intersectTriangle(verts[0], verts[1], verts[2], distance);
+bool Ray::IntersectTriangle(const Vector3* verts, float* distance) const {
+    return IntersectTriangle(verts[0], verts[1], verts[2], distance);
 }
 
-bool Ray::intersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance) const {
+bool Ray::IntersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance) const {
     // To increase precision for very small world scales
-    const float upscaleFactor = 10.0f;
+    const float upscaleFactor = 1.0f;
 
-    Vector3 rayDir = getDirection() * upscaleFactor;
+    Vector3 rayDir = GetDirection() * upscaleFactor;
     Vector3 v0 = p0 * upscaleFactor;
     Vector3 v1 = p1 * upscaleFactor - v0;
     Vector3 v2 = p2 * upscaleFactor - v0;
@@ -54,13 +54,13 @@ bool Ray::intersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3&
     }
 
     if (distance) {
-        *distance = d / getLength();
+        *distance = d / GetLength();
     }
     return true;
 }
 
-bool Ray::intersectBoundingBox(const BoundingBox& bbox, float* distance) const {
-    Vector3 rayDir = getDirection();
+bool Ray::IntersectBoundingBox(const BoundingBox& bbox, float* distance) const {
+    Vector3 rayDir = GetDirection();
     Vector3 invDir{
         /* x = */ 1.0f / rayDir.X,
         /* y = */ 1.0f / rayDir.Y,
@@ -91,7 +91,7 @@ bool Ray::intersectBoundingBox(const BoundingBox& bbox, float* distance) const {
     }
 
     if (distance) {
-        *distance = tmin / getLength();
+        *distance = tmin / GetLength();
     }
     return true;
 }
