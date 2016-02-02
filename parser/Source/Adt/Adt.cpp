@@ -288,13 +288,10 @@ Adt::Adt(Map *map, int adtX, int adtY)
                 utility::BoundingBox bounds;
                 wmoDefinition.GetBoundingBox(bounds);
 
-                utility::Vertex origin;
-                wmoDefinition.GetOrigin(origin);
-
                 utility::Matrix transformMatrix;
                 wmoDefinition.GetTransformMatrix(transformMatrix);
 
-                wmoInstance = new WmoInstance(wmo, wmoDefinition.DoodadSet, bounds, origin, transformMatrix);
+                wmoInstance = new WmoInstance(wmo, wmoDefinition.DoodadSet, bounds, transformMatrix);
                 map->InsertWmoInstance(wmoDefinition.UniqueId, wmoInstance);
             }
 
@@ -342,13 +339,10 @@ Adt::Adt(Map *map, int adtX, int adtY)
             // ensure that the instance has been loaded
             if ((doodadInstance = map->GetDoodadInstance(doodadDefinition.UniqueId)) == nullptr)
             {
-                utility::Vertex origin;
-                doodadDefinition.GetOrigin(origin);
-
                 utility::Matrix transformMatrix;
                 doodadDefinition.GetTransformMatrix(transformMatrix);
 
-                doodadInstance = new DoodadInstance(doodad, origin, transformMatrix);
+                doodadInstance = new DoodadInstance(doodad, transformMatrix);
                 map->InsertDoodadInstance(doodadDefinition.UniqueId, doodadInstance);
             }
 

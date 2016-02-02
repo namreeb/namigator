@@ -19,7 +19,6 @@ class WmoInstance
 
     public:
         const utility::BoundingBox Bounds;
-        const utility::Vertex Origin;
         const utility::Matrix TransformMatrix;
         const unsigned short DoodadSet;
 
@@ -27,7 +26,7 @@ class WmoInstance
 
         std::set<std::pair<int, int>> Adts;
 
-        WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility::BoundingBox &bounds, const utility::Vertex &origin, const utility::Matrix &transformMatrix);
+        WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility::BoundingBox &bounds, const utility::Matrix &transformMatrix);
 
         utility::Vertex TransformVertex(const utility::Vertex &vertex) const;
         void BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const;

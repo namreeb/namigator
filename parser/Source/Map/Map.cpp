@@ -71,13 +71,10 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
     utility::BoundingBox bounds;
     placement.GetBoundingBox(bounds);
 
-    utility::Vertex origin;
-    placement.GetOrigin(origin);
-
     utility::Matrix transformMatrix;
     placement.GetTransformMatrix(transformMatrix);
 
-    m_globalWmo.reset(new WmoInstance(GetWmo(wmoName), placement.DoodadSet, bounds, origin, transformMatrix));
+    m_globalWmo.reset(new WmoInstance(GetWmo(wmoName), placement.DoodadSet, bounds, transformMatrix));
 }
 
 bool Map::HasAdt(int x, int y) const

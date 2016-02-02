@@ -10,8 +10,7 @@
 
 namespace parser
 {
-WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility::BoundingBox &bounds, const utility::Vertex &origin, const utility::Matrix &transformMatrix)
-    : Bounds(bounds), Origin(origin), TransformMatrix(transformMatrix), DoodadSet(doodadSet), Model(wmo)
+WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility::BoundingBox &bounds, const utility::Matrix &transformMatrix) : Bounds(bounds), TransformMatrix(transformMatrix), DoodadSet(doodadSet), Model(wmo)
 {
     std::vector<utility::Vertex> vertices;
     std::vector<int> indices;
@@ -38,7 +37,7 @@ void WmoInstance::AmmendAdtSet(const std::vector<utility::Vertex> &vertices)
 
 utility::Vertex WmoInstance::TransformVertex(const utility::Vertex &vertex) const
 {
-    return Origin + utility::Vertex::Transform(vertex, TransformMatrix);
+    return utility::Vertex::Transform(vertex, TransformMatrix);
 }
 
 void WmoInstance::BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const

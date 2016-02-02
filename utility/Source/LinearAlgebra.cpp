@@ -186,9 +186,9 @@ Matrix Matrix::CreateTranslationMatrix(const utility::Vertex &position)
             ret[y][x] = 0.f;
 
     ret[0][0] = ret[1][1] = ret[2][2] = ret[3][3] = 1.f;
-    ret[3][0] = position.X;
-    ret[3][1] = position.Y;
-    ret[3][2] = position.Z;
+    ret[0][3] = position.X;
+    ret[1][3] = position.Y;
+    ret[2][3] = position.Z;
 
     return ret;
 }

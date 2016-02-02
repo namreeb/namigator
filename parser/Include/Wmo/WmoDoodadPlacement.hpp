@@ -18,7 +18,7 @@ struct WmoDoodadPlacement
 
     void GetTransformMatrix(utility::Matrix &matrix) const
     {
-        matrix = utility::Matrix::CreateScalingMatrix(Scale) * utility::Matrix::CreateFromQuaternion(Orientation);
+        matrix = utility::Matrix::CreateTranslationMatrix(Position) * utility::Matrix::CreateScalingMatrix(Scale) * utility::Matrix::CreateFromQuaternion(Orientation);
     }
 };
 }

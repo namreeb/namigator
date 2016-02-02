@@ -10,8 +10,7 @@
 
 namespace parser
 {
-DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Vertex &origin, const utility::Matrix &transformMatrix)
-    : Origin(origin), TransformMatrix(transformMatrix), Model(doodad)
+DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Matrix &transformMatrix) : TransformMatrix(transformMatrix), Model(doodad)
 {
     std::vector<utility::Vertex> vertices;
     std::vector<int> indices;
@@ -34,7 +33,7 @@ DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Vertex &orig
 
 utility::Vertex DoodadInstance::TransformVertex(const utility::Vertex &vertex) const
 {
-    return Origin + utility::Vertex::Transform(vertex, TransformMatrix);
+    return utility::Vertex::Transform(vertex, TransformMatrix);
 }
 
 void DoodadInstance::BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const

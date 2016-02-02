@@ -165,7 +165,7 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
             utility::Matrix transformMatrix;
             placement.GetTransformMatrix(transformMatrix);
 
-            DoodadSets[i].push_back(std::unique_ptr<const WmoDoodad>(new WmoDoodad(map->GetDoodad(name), placement.Position, transformMatrix)));
+            DoodadSets[i].push_back(std::unique_ptr<const WmoDoodad>(new WmoDoodad(map->GetDoodad(name), transformMatrix)));
         }
     }
 }

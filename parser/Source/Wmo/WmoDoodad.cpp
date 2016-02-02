@@ -7,12 +7,11 @@
 
 namespace parser
 {
-WmoDoodad::WmoDoodad(const Doodad *doodad, const utility::Vertex &origin, const utility::Matrix &transformMatrix)
-    : Parent(doodad), Origin(origin), TransformMatrix(transformMatrix) {}
+WmoDoodad::WmoDoodad(const Doodad *doodad, const utility::Matrix &transformMatrix) : Parent(doodad), TransformMatrix(transformMatrix) {}
 
 utility::Vertex WmoDoodad::TransformVertex(const utility::Vertex &vertex) const
 {
-    return Origin + utility::Vertex::Transform(vertex, TransformMatrix);
+    return utility::Vertex::Transform(vertex, TransformMatrix);
 }
 
 void WmoDoodad::BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const

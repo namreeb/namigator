@@ -14,7 +14,6 @@ namespace parser
 class DoodadInstance
 {
     public:
-        const utility::Vertex Origin;
         const utility::Matrix TransformMatrix;
 
         std::set<std::pair<int, int>> Adts;
@@ -24,7 +23,7 @@ class DoodadInstance
         float MinZ;
         float MaxZ;
 
-        DoodadInstance(const Doodad *doodad, const utility::Vertex &origin, const utility::Matrix &transformMatrix);
+        DoodadInstance(const Doodad *doodad, const utility::Matrix &transformMatrix);
 
         utility::Vertex TransformVertex(const utility::Vertex &vertex) const;
         void BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const;
