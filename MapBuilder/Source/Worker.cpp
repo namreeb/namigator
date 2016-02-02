@@ -3,7 +3,6 @@
 
 #include <thread>
 #include <chrono>
-#include <queue>
 #include <mutex>
 #include <utility>
 #include <cassert>

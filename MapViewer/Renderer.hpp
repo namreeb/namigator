@@ -8,7 +8,7 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include <dxgi1_3.h>
-#include <set>
+#include <unordered_set>
 #include <atlbase.h>
 
 class Renderer
@@ -59,8 +59,8 @@ class Renderer
         std::vector<GeometryBuffer> m_doodadBuffers;
         std::vector<GeometryBuffer> m_meshBuffers;
 
-        std::set<unsigned int> m_wmos;
-        std::set<unsigned int> m_doodads;
+        std::unordered_set<unsigned int> m_wmos;
+        std::unordered_set<unsigned int> m_doodads;
 
         bool m_renderADT;
         bool m_renderLiquid;

@@ -8,9 +8,8 @@
 #include <string>
 #include <list>
 #include <vector>
-#include <set>
+#include <unordered_set>
 #include <memory>
-#include <cstdint>
 
 namespace parser
 {
@@ -19,16 +18,10 @@ struct AdtChunk
     bool m_holeMap[8][8];
 
     std::vector<utility::Vertex> m_terrainVertices;
-    std::vector<std::int32_t> m_terrainIndices;
+    std::vector<int> m_terrainIndices;
 
     std::vector<utility::Vertex> m_liquidVertices;
-    std::vector<std::int32_t> m_liquidIndices;
-
-    // set of unique wmo identifiers present in this chunk
-    std::set<unsigned int> m_wmos;
-
-    // set of unique doodad identifiers present in this chunk
-    std::set<unsigned int> m_doodads;
+    std::vector<int> m_liquidIndices;
 };
 
 class Map;
@@ -45,13 +38,10 @@ class Adt
 
         utility::BoundingBox Bounds;
 
+        std::unordered_set<unsigned int> WmoInstances;
+        std::unordered_set<unsigned int> DoodadInstances;
+
         Adt(Map *map, int x, int y);
-
-#ifdef _DEBUG
-        void WriteObjFile() const;
-        size_t GetWmoCount() const;
-#endif
-
         const AdtChunk *GetChunk(int chunkX, int chunkY) const;
 };
 }

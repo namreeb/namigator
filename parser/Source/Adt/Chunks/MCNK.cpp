@@ -32,7 +32,8 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
     memset(HoleMap, 0, sizeof(bool)*8*8);
 
     // holes
-    if (HasHoles = !!information.Holes)
+    HasHoles = !!information.Holes;
+    if (HasHoles)
     {
         for (int y = 0; y < 4; ++y)
             for (int x = 0; x < 4; ++x)
@@ -88,7 +89,8 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
                               z });
     }
 
-    if (HasWater = information.LiquidSize > 8)
+    HasWater = information.LiquidSize > 8;
+    if (HasWater)
         LiquidChunk.reset(new MCLQ(Position + information.LiquidOffset, reader));
 }
 }

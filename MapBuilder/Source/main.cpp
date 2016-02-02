@@ -49,15 +49,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!utility::Directory::Exists(outputPath))
-    {
-        std::cerr << "ERROR: " << outputPath << " does not exist." << std::endl;
-        std::cerr << "Current directory: " << utility::Directory::Current() << std::endl;
-
-        return EXIT_FAILURE;
-    }
-
+    utility::Directory::Create(outputPath);
     utility::Directory::Create(outputPath + "\\BVH");
+    utility::Directory::Create(outputPath + "\\Nav");
 
     MeshBuilder meshBuilder(dataPath, outputPath, map);
 
@@ -95,7 +89,11 @@ int main(int argc, char *argv[])
     if (meshBuilder.IsGlobalWMO())
     {
         std::cout << "Building global WMO for " << map << "..." << std::endl;
-        Worker worker(&meshBuilder, true);
+        {
+            Worker worker(&meshBuilder, true);
+        }
+
+        meshBuilder.SaveMap();
         return EXIT_SUCCESS;
     }
 
@@ -109,19 +107,6 @@ int main(int argc, char *argv[])
 
     while (true)
     {
-#ifdef _DEBUG
-        volatile bool writeMemoryUsage = false;
-
-        if (writeMemoryUsage)
-        {
-            auto const adtMap = meshBuilder.AdtMap();
-            auto const adtReferencesMap = meshBuilder.AdtReferencesMap();
-            auto const wmoMap = meshBuilder.WmoMap();
-
-            meshBuilder.WriteMemoryUsage(std::cout);
-        }
-#endif
-
         bool done = true;
         for (auto &worker : workers)
             if (worker->IsRunning())
@@ -135,6 +120,8 @@ int main(int argc, char *argv[])
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+
+    meshBuilder.SaveMap();
 
     auto const stop = time(NULL);
 

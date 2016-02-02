@@ -7,6 +7,7 @@
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/AABBTree.hpp"
+#include "utility/Include/Directory.hpp"
 
 #include "RecastDetourBuild/Include/Common.hpp"
 
@@ -20,7 +21,7 @@
 #include <mutex>
 #include <iomanip>
 #include <vector>
-#include <queue>
+#include <unordered_set>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -114,7 +115,7 @@ using SmartContourSetPtr = std::unique_ptr<rcContourSet, decltype(&rcFreeContour
 using SmartPolyMeshPtr = std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)>;
 using SmartPolyMeshDetailPtr = std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)>;
 
-bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, const std::string &outputFile, rcHeightfield &solid)
+bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, std::ofstream &out, rcHeightfield &solid)
 {
     // initialize compact height field
     SmartCompactHeightFieldPtr chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
@@ -185,9 +186,9 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, co
     if (!dtCreateNavMeshData(&params, &outData, &outDataSize))
         return false;
 
-    std::ofstream out(outputFile, std::ofstream::binary | std::ofstream::trunc);
+    const std::int32_t outSize = static_cast<std::int32_t>(outDataSize);
+    out.write(reinterpret_cast<const char *>(&outSize), sizeof(outSize));
     out.write(reinterpret_cast<const char *>(outData), outDataSize);
-    out.close();
 
     dtFree(outData);
 
@@ -216,6 +217,8 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
 
             m_pendingAdts.push_back({ x, y });
         }
+
+    utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
 }
 
 int MeshBuilder::AdtCount() const
@@ -265,6 +268,63 @@ void MeshBuilder::AddReference(int adtX, int adtY)
         ++m_adtReferences[adtY][adtX];
 }
 
+void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    if (m_bvhWmos.find(wmo->FileName) != m_bvhWmos.end())
+        return;
+
+    utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
+
+    std::stringstream out;
+    out << m_outputPath << "\\BVH\\WMO_" << wmo->FileName << ".bvh";
+
+    std::ofstream o(out.str(), std::ofstream::binary);
+    aabbTree.Serialize(o);
+
+    m_bvhWmos.insert(wmo->FileName);
+
+    const std::uint32_t doodadSetCount = static_cast<std::uint32_t>(wmo->DoodadSets.size());
+    o.write(reinterpret_cast<const char *>(&doodadSetCount), sizeof(doodadSetCount));
+
+    // Also write BVH for any WMO-spawned doodads
+    for (auto const &doodadSet : wmo->DoodadSets)
+    {
+        const std::uint32_t doodadSetSize = static_cast<std::uint32_t>(doodadSet.size());
+        o.write(reinterpret_cast<const char *>(&doodadSetSize), sizeof(doodadSetSize));
+
+        for (auto const &wmoDoodad : doodadSet)
+        {
+            auto const doodad = wmoDoodad->Parent;
+
+            o << wmoDoodad->TransformMatrix;
+            o << wmoDoodad->Bounds;
+            o << std::left << std::setw(64) << std::setfill('\000') << doodad->FileName;
+
+            if (m_bvhDoodads.find(doodad->FileName) != m_bvhDoodads.end())
+                continue;
+
+            SerializeDoodad(doodad);
+        }
+    }
+}
+
+void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
+{
+    if (m_bvhDoodads.find(doodad->FileName) != m_bvhDoodads.end())
+        return;
+
+    utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
+
+    std::stringstream dout;
+    dout << m_outputPath << "\\BVH\\Doodad_" << doodad->FileName << ".bvh";
+    std::ofstream doodadOut(dout.str(), std::ofstream::binary);
+    doodadTree.Serialize(doodadOut);
+
+    m_bvhDoodads.insert(doodad->FileName);
+}
+
 void MeshBuilder::RemoveReference(int adtX, int adtY)
 {
     if (!m_map->HasAdt(adtX, adtY))
@@ -281,54 +341,6 @@ void MeshBuilder::RemoveReference(int adtX, int adtY)
             << std::setfill(' ') << std::setw(2) << adtY << ").  Unloading.\n";
         std::cout << str.str();
 #endif
-        auto const adt = m_map->GetAdt(adtX, adtY);
-
-        // check if there are any wmos or doodads we can now remove
-        for (int y = 0; y < 16; ++y)
-            for (int x = 0; x < 16; ++x)
-            {
-                auto const chunk = adt->GetChunk(x, y);
-                
-                for (auto const &wmoId : chunk->m_wmos)
-                {
-                    auto const wmo = m_map->GetWmoInstance(wmoId);
-
-                    if (!wmo)
-                        continue;
-
-                    bool unload = true;
-
-                    for (auto const &a : wmo->Adts)
-                        if (m_adtReferences[a.second][a.first] > 0)
-                        {
-                            unload = false;
-                            break;
-                        }
-
-                    if (unload)
-                        m_map->UnloadWmoInstance(wmoId);
-                }
-
-                for (auto const &doodadId : chunk->m_doodads)
-                {
-                    auto const doodad = m_map->GetDoodadInstance(doodadId);
-
-                    if (!doodad)
-                        continue;
-
-                    bool unload = true;
-
-                    for (auto const &a : doodad->Adts)
-                        if (m_adtReferences[a.second][a.first] > 0)
-                        {
-                            unload = false;
-                            break;
-                        }
-
-                    if (unload)
-                        m_map->UnloadDoodadInstance(doodadId);
-                }
-            }
 
         m_map->UnloadAdt(adtX, adtY);
     }
@@ -340,9 +352,7 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
 
     assert(!!wmoInstance);
 
-//#ifdef _DEBUG
-//    wmo->WriteGlobalObjFile(m_Map->Name);
-//#endif
+    SerializeWmo(wmoInstance->Model);
 
     rcConfig config;
     InitializeRecastConfig(config);
@@ -393,10 +403,11 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
     rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
 
     std::stringstream str;
+    str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << m_map->Name << ".nav";
 
-    str << m_outputPath << "\\" << m_map->Name <<  ".map";
+    std::ofstream out(str.str(), std::ofstream::binary);
 
-    return FinishMesh(ctx, config, 0, 0, str.str(), *solid);
+    return FinishMesh(ctx, config, 0, 0, out, *solid);
 }
 
 bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
@@ -410,10 +421,6 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     const parser::Adt *thisTile = adts[4];
 
     assert(!!thisTile);
-
-//#ifdef _DEBUG
-//    thisTile->WriteObjFile();
-//#endif
 
     rcConfig config;
     InitializeRecastConfig(config);
@@ -438,8 +445,8 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
         return false;
 
-    std::set<int> rasterizedWmos;
-    std::set<int> rasterizedDoodads;
+    std::unordered_set<unsigned int> rasterizedWmos;
+    std::unordered_set<unsigned int> rasterizedDoodads;
 
     for (int i = 0; i < sizeof(adts) / sizeof(adts[0]); ++i)
     {
@@ -459,62 +466,62 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
                 // liquid
                 if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
                     return false;
-
-                // wmos (and included doodads and liquid)
-                for (auto const &wmoId : chunk->m_wmos)
-                {
-                    if (rasterizedWmos.find(wmoId) != rasterizedWmos.end())
-                        continue;
-
-                    auto const wmoInstance = m_map->GetWmoInstance(wmoId);
-
-                    if (!wmoInstance)
-                    {
-                        std::stringstream str;
-                        str << "Could not find required WMO ID = " << wmoId << " needed by ADT (" << adtX << ", " << adtY << ")\n";
-                        std::cout << str.str();
-                    }
-
-                    assert(!!wmoInstance);
-
-                    std::vector<utility::Vertex> vertices;
-                    std::vector<int> indices;
-
-                    wmoInstance->BuildTriangles(vertices, indices);
-                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
-                        return false;
-
-                    wmoInstance->BuildLiquidTriangles(vertices, indices);
-                    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
-                        return false;
-
-                    wmoInstance->BuildDoodadTriangles(vertices, indices);
-                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
-                        return false;
-
-                    rasterizedWmos.insert(wmoId);
-                }
-
-                // doodads
-                for (auto const &doodadId : chunk->m_doodads)
-                {
-                    if (rasterizedDoodads.find(doodadId) != rasterizedDoodads.end())
-                        continue;
-
-                    auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
-
-                    assert(!!doodadInstance);
-
-                    std::vector<utility::Vertex> vertices;
-                    std::vector<int> indices;
-
-                    doodadInstance->BuildTriangles(vertices, indices);
-                    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::Doodad))
-                        return false;
-
-                    rasterizedDoodads.insert(doodadId);
-                }
             }
+
+        // wmos (and included doodads and liquid)
+        for (auto const &wmoId : adts[i]->WmoInstances)
+        {
+            if (rasterizedWmos.find(wmoId) != rasterizedWmos.end())
+                continue;
+
+            auto const wmoInstance = m_map->GetWmoInstance(wmoId);
+
+            if (!wmoInstance)
+            {
+                std::stringstream str;
+                str << "Could not find required WMO ID = " << wmoId << " needed by ADT (" << adtX << ", " << adtY << ")\n";
+                std::cout << str.str();
+            }
+
+            assert(!!wmoInstance);
+
+            std::vector<utility::Vertex> vertices;
+            std::vector<int> indices;
+
+            wmoInstance->BuildTriangles(vertices, indices);
+            if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
+                return false;
+
+            wmoInstance->BuildLiquidTriangles(vertices, indices);
+            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
+                return false;
+
+            wmoInstance->BuildDoodadTriangles(vertices, indices);
+            if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
+                return false;
+
+            rasterizedWmos.insert(wmoId);
+        }
+
+        // doodads
+        for (auto const &doodadId : adts[i]->DoodadInstances)
+        {
+            if (rasterizedDoodads.find(doodadId) != rasterizedDoodads.end())
+                continue;
+
+            auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
+
+            assert(!!doodadInstance);
+
+            std::vector<utility::Vertex> vertices;
+            std::vector<int> indices;
+
+            doodadInstance->BuildTriangles(vertices, indices);
+            if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::Doodad))
+                return false;
+
+            rasterizedDoodads.insert(doodadId);
+        }
     }
 
     FilterGroundBeneathLiquid(*solid);
@@ -545,172 +552,48 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
     // Write the BVH for every new WMO
     for (auto const& wmoId : rasterizedWmos)
-    {
-        auto const wmo = m_map->GetWmoInstance(wmoId)->Model;
+        SerializeWmo(m_map->GetWmoInstance(wmoId)->Model);
 
+    {
         std::lock_guard<std::mutex> guard(m_mutex);
 
-        if (m_bvhWmos.find(wmo->FullPath) != m_bvhWmos.end())
-            continue;
-
-        utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
-
-        std::stringstream out;
-        out << m_outputPath << "\\BVH\\WMO_" << wmo->FileName << ".bvh";
-
-        std::ofstream o(out.str(), std::ofstream::binary);
-        aabbTree.Serialize(o);
-        o.close();
-
-        m_bvhWmos.insert(wmo->FullPath);
-
-        // Also write BVH for any WMO-spawned doodads
-        for (auto const &doodadSet : wmo->DoodadSets)
-        {
-            for (auto const &wmoDoodad : doodadSet)
-            {
-                auto const doodad = wmoDoodad->Parent;
-
-                if (m_bvhDoodads.find(doodad->Name) != m_bvhDoodads.end())
-                    continue;
-
-                utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
-                
-                std::stringstream dout;
-                dout << m_outputPath << "\\BVH\\Doodad_" << doodad->Name << ".bvh";
-                std::ofstream doodadOut(dout.str(), std::ofstream::binary);
-                doodadTree.Serialize(doodadOut);
-                doodadOut.close();
-
-                m_bvhDoodads.insert(doodad->Name);
-            }
-        }
-    }
-
-    // Write the BVH for every new doodad
-    for (auto const& doodadId : rasterizedDoodads)
-    {
-        auto const doodad = m_map->GetDoodadInstance(doodadId)->Model;
-
-        std::lock_guard<std::mutex> guard(m_mutex);
-
-        if (m_bvhDoodads.find(doodad->Name) != m_bvhDoodads.end())
-            continue;
-
-        utility::AABBTree aabbTree(doodad->Vertices, doodad->Indices);
-
-        std::stringstream out;
-        out << m_outputPath << "\\BVH\\Doodad_" << doodadId << ".bvh";
-
-        std::ofstream o(out.str(), std::ofstream::binary);
-        aabbTree.Serialize(o);
-        o.close();
-
-        m_bvhDoodads.insert(doodad->Name);
+        // Write the BVH for every new doodad
+        for (auto const& doodadId : rasterizedDoodads)
+            SerializeDoodad(m_map->GetDoodadInstance(doodadId)->Model);
     }
 
     std::stringstream str;
+    str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(2) << std::setfill('0') << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
 
-    str << m_outputPath << "\\" << m_map->Name << "_" << adtX << "_" << adtY << ".map";
+    std::ofstream out(str.str(), std::ofstream::binary);
 
-    return FinishMesh(ctx, config, adtX, adtY, str.str(), *solid);
-}
+    const std::uint32_t wmoInstanceCount = static_cast<std::uint32_t>(thisTile->WmoInstances.size());
+    out.write(reinterpret_cast<const char *>(&wmoInstanceCount), sizeof(wmoInstanceCount));
 
-#ifdef _DEBUG
-std::string MeshBuilder::AdtMap() const
-{
-    std::lock_guard<std::mutex> guard(m_mutex);
-
-    std::stringstream ret;
-
-    for (int y = 1; y < 64; ++y)
+    for (auto const &wmoId : thisTile->WmoInstances)
     {
-        for (int x = 1; x < 64; ++x)
-        {
-            if (!m_map->HasAdt(x, y))
-            {
-                ret << " ";
-                continue;
-            }
-
-            bool pending = false;
-
-            for (auto const &adt : m_pendingAdts)
-                if (adt.first == x && adt.second == y)
-                {
-                    pending = true;
-                    break;
-                }
-
-            ret << (pending ? "X" : ".");
-        }
-
-        ret << "\n";
+        const std::uint32_t id32 = static_cast<std::uint32_t>(wmoId);
+        out.write(reinterpret_cast<const char *>(&id32), sizeof(id32));
     }
 
-    return ret.str();
-}
+    const std::uint32_t doodadInstanceCount = static_cast<std::uint32_t>(thisTile->DoodadInstances.size());
+    out.write(reinterpret_cast<const char *>(&doodadInstanceCount), sizeof(doodadInstanceCount));
 
-std::string MeshBuilder::AdtReferencesMap() const
-{
-    std::lock_guard<std::mutex> guard(m_mutex);
-
-    std::stringstream ret;
-
-    for (int y = 1; y < 64; ++y)
+    for (auto const &doodadId : thisTile->DoodadInstances)
     {
-        for (int x = 1; x < 64; ++x)
-        {
-            if (m_map->HasAdt(x, y))
-                ret << m_adtReferences[y][x];
-            else
-                ret << " ";
-        }
-
-        ret << "\n";
+        const std::uint32_t id32 = static_cast<std::uint32_t>(doodadId);
+        out.write(reinterpret_cast<const char *>(&id32), sizeof(id32));
     }
 
-    return ret.str();
+    return FinishMesh(ctx, config, adtX, adtY, out, *solid);
 }
 
-std::string MeshBuilder::WmoMap() const
+void MeshBuilder::SaveMap() const
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    std::stringstream filename;
+    filename << m_outputPath << "\\" << m_map->Name << ".map";
 
-    std::stringstream ret;
+    std::ofstream out(filename.str(), std::ofstream::binary);
 
-    for (int y = 1; y < 64; ++y)
-    {
-        for (int x = 1; x < 64; ++x)
-        {
-            if (!m_map->HasAdt(x, y) || !m_map->IsAdtLoaded(x, y))
-            {
-                ret << " ";
-                continue;
-            }
-
-            auto const adt = m_map->GetAdt(x, y);
-            assert(!!adt);
-
-            auto const count = adt->GetWmoCount();
-
-            if (count > 9)
-                ret << "X";
-            else
-                ret << count;
-        }
-
-        ret << "\n";
-    }
-
-    return ret.str();
+    m_map->Serialize(out);
 }
-
-void MeshBuilder::WriteMemoryUsage(std::ostream &o) const
-{
-    std::lock_guard<std::mutex> guard(m_mutex);
-    o << "ADTs remaining: " << m_pendingAdts.size() << std::endl;
-
-    m_map->WriteMemoryUsage(o);
-}
-#endif

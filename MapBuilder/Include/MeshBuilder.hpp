@@ -1,17 +1,14 @@
 #pragma once
 
 #include "parser/Include/Map/Map.hpp"
+#include "parser/Include/Wmo/Wmo.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
 
 #include <vector>
 #include <string>
 #include <mutex>
-#include <set>
-
-#ifdef _DEBUG
-#include <ostream>
-#endif
+#include <unordered_set>
 
 class MeshBuilder
 {
@@ -22,12 +19,15 @@ class MeshBuilder
         std::vector<std::pair<int, int>> m_pendingAdts;
         int m_adtReferences[64][64];
 
-        std::set<std::string> m_bvhWmos;
-        std::set<std::string> m_bvhDoodads;
+        std::unordered_set<std::string> m_bvhWmos;
+        std::unordered_set<std::string> m_bvhDoodads;
 
         mutable std::mutex m_mutex;
 
         void AddReference(int adtX, int adtY);
+
+        void SerializeWmo(const parser::Wmo *wmo);
+        void SerializeDoodad(const parser::Doodad *doodad);
 
     public:
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName);
@@ -43,11 +43,5 @@ class MeshBuilder
         bool GenerateAndSaveGlobalWMO();
         bool GenerateAndSaveTile(int adtX, int adtY);
 
-#ifdef _DEBUG
-        std::string AdtMap() const;
-        std::string AdtReferencesMap() const;
-        std::string WmoMap() const;
-
-        void WriteMemoryUsage(std::ostream &stream) const;
-#endif
+        void SaveMap() const;
 };

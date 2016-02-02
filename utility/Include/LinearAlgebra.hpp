@@ -119,14 +119,18 @@ class Matrix
         static Matrix CreateTranslationMatrix(const utility::Vertex &position);
         static Matrix CreateViewMatrix(const utility::Vertex &eye, const utility::Vertex &target, const Vector3 &up);
         static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
+        static Matrix CreateFromArray(const float *in, int count);
 
         friend Matrix operator * (const Matrix &a, const Matrix &b);
+        friend std::ostream & operator << (std::ostream &, const Matrix &);
 
         void PopulateArray(float *out) const
         {
             memcpy(out, &m_matrix[0], m_matrix.size()*sizeof(float));
         }
 };
+
+std::ostream & operator << (std::ostream &, const Matrix &);
 
 template <typename Vector>
 Vector takeMinimum(const Vector& a, const Vector& b) {

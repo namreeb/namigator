@@ -16,8 +16,7 @@ struct WmoPlacement
     std::uint32_t UniqueId;
     utility::Vertex BasePosition;
     utility::Vector3 Orientation;
-    utility::Vertex MaxCorner;
-    utility::Vertex MinCorner;
+    utility::BoundingBox Bounds;
     std::uint16_t Flags;
     std::uint16_t DoodadSet;
     std::uint16_t NameSet;
@@ -25,10 +24,20 @@ struct WmoPlacement
 
     void GetBoundingBox(utility::BoundingBox &bounds) const
     {
-        constexpr float mid = 32.f * utility::MathHelper::AdtSize;
+        utility::Vertex minCorner, maxCorner;
 
-        const utility::Vertex maxCorner(mid - MaxCorner.Z, mid - MaxCorner.X, MaxCorner.Y);
-        const utility::Vertex minCorner(mid - MinCorner.Z, mid - MinCorner.X, MinCorner.Y);
+        if (UniqueId == 0xFFFFFFFF)
+        {
+            minCorner = { Bounds.MinCorner.Z, Bounds.MinCorner.X, Bounds.MinCorner.Y };
+            maxCorner = { Bounds.MaxCorner.Z, Bounds.MaxCorner.Y, Bounds.MaxCorner.Y };
+        }
+        else
+        {
+            constexpr float mid = 32.f * utility::MathHelper::AdtSize;
+
+            minCorner = { mid - Bounds.MaxCorner.Z, mid - Bounds.MaxCorner.X, Bounds.MinCorner.Y };
+            maxCorner = { mid - Bounds.MinCorner.Z, mid - Bounds.MinCorner.X, Bounds.MaxCorner.Y };
+        }
 
         bounds = utility::BoundingBox(minCorner, maxCorner);
     }
@@ -41,7 +50,11 @@ struct WmoPlacement
         const float rotY = utility::Convert::ToRadians(Orientation.X);
         const float rotZ = utility::Convert::ToRadians(Orientation.Y + 180.f);
 
-        matrix = utility::Matrix::CreateTranslationMatrix({ mid - BasePosition.Z, mid - BasePosition.X, BasePosition.Y }) *
+        auto const translationMatrix = UniqueId == 0xFFFFFFFF ?
+            utility::Matrix::CreateTranslationMatrix({ BasePosition.Z, BasePosition.X, BasePosition.Y }) :
+            utility::Matrix::CreateTranslationMatrix({ mid - BasePosition.Z, mid - BasePosition.X, BasePosition.Y });
+
+        matrix = translationMatrix *
                  utility::Matrix::CreateRotationX(rotX) *
                  utility::Matrix::CreateRotationY(rotY) *
                  utility::Matrix::CreateRotationZ(rotZ);

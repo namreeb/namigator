@@ -2,33 +2,104 @@
 #include "Wmo/WmoInstance.hpp"
 
 #include "utility/Include/MathHelper.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <vector>
+#include <algorithm>
 #include <set>
+
+#ifdef _DEBUG
+#include <iomanip>
+#include <iostream>
+#endif
 
 namespace parser
 {
+namespace
+{
+    void UpdateBounds(utility::BoundingBox &bounds, const utility::Vertex &vertex)
+    {
+        bounds.MinCorner.X = std::min(bounds.MinCorner.X, vertex.X);
+        bounds.MaxCorner.X = std::max(bounds.MaxCorner.X, vertex.X);
+        bounds.MinCorner.Y = std::min(bounds.MinCorner.Y, vertex.Y);
+        bounds.MaxCorner.Y = std::max(bounds.MaxCorner.Y, vertex.Y);
+        bounds.MinCorner.Z = std::min(bounds.MinCorner.Z, vertex.Z);
+        bounds.MaxCorner.Z = std::max(bounds.MaxCorner.Z, vertex.Z);
+    }
+}
+
 WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility::BoundingBox &bounds, const utility::Matrix &transformMatrix) : Bounds(bounds), TransformMatrix(transformMatrix), DoodadSet(doodadSet), Model(wmo)
 {
     std::vector<utility::Vertex> vertices;
     std::vector<int> indices;
 
     BuildTriangles(vertices, indices);
-    AmmendAdtSet(vertices);
 
-    BuildLiquidTriangles(vertices, indices);
-    AmmendAdtSet(vertices);
-
-    BuildDoodadTriangles(vertices, indices);
-    AmmendAdtSet(vertices);
-}
-
-void WmoInstance::AmmendAdtSet(const std::vector<utility::Vertex> &vertices)
-{
     for (auto const &v : vertices)
     {
+#ifdef _DEBUG
+        if (v.X < Bounds.MinCorner.X ||
+            v.X > Bounds.MaxCorner.X ||
+            v.Y < Bounds.MinCorner.Y ||
+            v.Y > Bounds.MaxCorner.Y)
+        {
+            std::stringstream str;
+            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " loaded WMO " << wmo->FileName << " with incorrect bounding box" << std::endl;
+            std::cout << str.str();
+        }
+#endif
+
+        UpdateBounds(Bounds, v);
+
+        int adtX, adtY;
+        utility::Convert::WorldToAdt(v, adtX, adtY);
+        Adts.insert({ adtX, adtY });
+    }
+
+    BuildLiquidTriangles(vertices, indices);
+
+    for (auto const &v : vertices)
+    {
+#ifdef _DEBUG
+        if (v.X < Bounds.MinCorner.X ||
+            v.X > Bounds.MaxCorner.X ||
+            v.Y < Bounds.MinCorner.Y ||
+            v.Y > Bounds.MaxCorner.Y)
+        {
+            std::stringstream str;
+            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " loaded WMO " << wmo->FileName << " with incorrect bounding box" << std::endl;
+            std::cout << str.str();
+        }
+#endif
+
+        UpdateBounds(Bounds, v);
+
+        int adtX, adtY;
+        utility::Convert::WorldToAdt(v, adtX, adtY);
+        Adts.insert({ adtX, adtY });
+    }
+
+    BuildDoodadTriangles(vertices, indices);
+
+    for (auto const &v : vertices)
+    {
+#ifdef _DEBUG
+        if (v.X < Bounds.MinCorner.X ||
+            v.X > Bounds.MaxCorner.X ||
+            v.Y < Bounds.MinCorner.Y ||
+            v.Y > Bounds.MaxCorner.Y)
+        {
+            std::stringstream str;
+            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " loaded WMO " << wmo->FileName << " with incorrect bounding box" << std::endl;
+            std::cout << str.str();
+        }
+#endif
+
+        UpdateBounds(Bounds, v);
+
         int adtX, adtY;
         utility::Convert::WorldToAdt(v, adtX, adtY);
         Adts.insert({ adtX, adtY });
@@ -107,70 +178,4 @@ void WmoInstance::BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, s
         indexOffset += doodadVertices.size();
     }
 }
-
-#ifdef _DEBUG
-void WmoInstance::WriteGlobalObjFile(const std::string &MapName) const
-{
-    std::stringstream ss;
-
-    ss << MapName << ".obj";
-
-    std::ofstream out(ss.str());
-
-    size_t indexOffset = 1;
-
-    out << "# wmo vertices" << std::endl;
-
-    std::vector<utility::Vertex> vertices;
-    std::vector<int> indices;
-
-    BuildTriangles(vertices, indices);
-
-    for (auto const &vertex : vertices)
-        out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-    out << "# wmo indices" << std::endl;
-    for (size_t i = 0; i < indices.size(); i += 3)
-        out << "f " << indexOffset + indices[i + 0]
-            << " "  << indexOffset + indices[i + 1]
-            << " "  << indexOffset + indices[i + 2] << std::endl;
-
-    indexOffset += vertices.size();
-
-    out << "# wmo liquid vertices" << std::endl;
-
-    BuildLiquidTriangles(vertices, indices);
-
-    for (auto const &vertex : vertices)
-        out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-    out << "# wmo liquid incices" << std::endl;
-    for (size_t i = 0; i < indices.size(); i += 3)
-        out << "f " << indexOffset + indices[i + 0]
-            << " "  << indexOffset + indices[i + 1]
-            << " "  << indexOffset + indices[i + 2] << std::endl;
-
-    indexOffset += vertices.size();
-
-    out << "# wmo doodad vertices" << std::endl;
-
-    BuildDoodadTriangles(vertices, indices);
-
-    for (auto const &vertex : vertices)
-        out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-    out << "# wmo doodad indices" << std::endl;
-    for (size_t i = 0; i < indices.size(); i += 3)
-        out << "f " << indexOffset + indices[i + 0]
-            << " "  << indexOffset + indices[i + 1]
-            << " "  << indexOffset + indices[i + 2] << std::endl;
-
-    out.close();
-}
-
-unsigned int WmoInstance::MemoryUsage() const
-{
-    return sizeof(WmoInstance);
-}
-#endif
 }

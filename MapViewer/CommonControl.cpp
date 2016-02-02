@@ -155,8 +155,6 @@ void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, 
     for (auto &s : items)
         SendMessage(control, CB_ADDSTRING, (WPARAM)0, (LPARAM)s.c_str());
 
-    SendMessage(control, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-
     m_controls.emplace(id, control);
     m_comboBoxHandlers.emplace(id, handler);
 }

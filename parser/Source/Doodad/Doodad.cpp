@@ -21,9 +21,12 @@ std::string GetRealModelPath(const std::string &path)
 }
 }
 
-Doodad::Doodad(const std::string &path) : Name(GetRealModelPath(path))
+Doodad::Doodad(const std::string &path)
 {
-    std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(Name));
+    FileName = path.substr(path.rfind('\\') + 1);
+    FileName = FileName.substr(0, FileName.rfind('.'));
+
+    std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(GetRealModelPath(path)));
 
     if (reader->Read<unsigned int>() != Magic)
         THROW("Invalid doodad file");
@@ -66,16 +69,4 @@ Doodad::Doodad(const std::string &path) : Name(GetRealModelPath(path))
     for (auto i = 0; i < indexCount; ++i)
         Indices.push_back(reader->Read<unsigned short>());
 }
-
-#ifdef _DEBUG
-size_t Doodad::MemoryUsage() const
-{
-    size_t ret = sizeof(Doodad);
-
-    ret += Vertices.size() * sizeof(Vertices[0]);
-    ret += Indices.size() * sizeof(Indices[0]);
-
-    return ret;
-}
-#endif
 }

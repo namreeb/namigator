@@ -4,11 +4,10 @@
 #include <memory>
 #include <string>
 #include <map>
+#include <set>
 #include <vector>
-
-#ifdef _DEBUG
 #include <ostream>
-#endif
+#include <cstdint>
 
 namespace parser
 {
@@ -48,20 +47,14 @@ class Map
         const Wmo *GetWmo(const std::string &name);
 
         void InsertWmoInstance(unsigned int uniqueId, const WmoInstance *wmo);
-        void UnloadWmoInstance(unsigned int uniqueId);
         const WmoInstance *GetWmoInstance(unsigned int uniqueId) const;
         const WmoInstance *GetGlobalWmoInstance() const;
 
         const Doodad *GetDoodad(const std::string &name);
 
         void InsertDoodadInstance(unsigned int uniqueId, const DoodadInstance *doodad);
-        void UnloadDoodadInstance(unsigned int uniqueId);
         const DoodadInstance *GetDoodadInstance(unsigned int uniqueId) const;
 
-#ifdef _DEBUG
-        bool IsAdtLoaded(int x, int y) const;
-
-        void WriteMemoryUsage(std::ostream &stream) const;
-#endif
+        void Serialize(std::ostream& stream) const;
 };
 }

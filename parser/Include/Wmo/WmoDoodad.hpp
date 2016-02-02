@@ -3,6 +3,7 @@
 #include "parser/Include/Doodad/Doodad.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
+#include "utility/Include/BoundingBox.hpp"
 
 #include <vector>
 
@@ -13,6 +14,7 @@ class WmoDoodad
     public:
         const Doodad * const Parent;
         const utility::Matrix TransformMatrix;
+        utility::BoundingBox Bounds;
 
         WmoDoodad(const Doodad *doodad, const utility::Matrix &transformMatrix);
 

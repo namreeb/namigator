@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <ostream>
+#include <cassert>
 
 namespace utility
 {
@@ -235,6 +236,18 @@ Matrix Matrix::CreateProjectionMatrix(float fovy, float aspect, float zNear, flo
     return ret;
 }
 
+Matrix Matrix::CreateFromArray(const float *in, int count)
+{
+    const int len = static_cast<int>(sqrt(count));
+    assert(len*len == count);
+
+    Matrix ret(len, len);
+
+    memcpy(&ret.m_matrix[0], in, sizeof(float)*count);
+
+    return ret;
+}
+
 Matrix operator *(const Matrix &a, const Matrix &b)
 {
     if (a.m_columns != b.m_rows)
@@ -321,13 +334,19 @@ Vector3 operator * (const Vector3 &vector, float multiplier)
 
 std::ostream & operator << (std::ostream &o, const Vector3 &v)
 {
-    o << v.X << v.Y << v.Z;
+    o.write(reinterpret_cast<const char *>(&v), sizeof(v));
     return o;
 }
 
 std::istream & operator >> (std::istream &i, Vector3 &v)
 {
-    i >> v.X >> v.Y >> v.Z;
+    i.read(reinterpret_cast<char *>(&v), sizeof(v));
     return i;
+}
+
+std::ostream & operator << (std::ostream &o, const Matrix &m)
+{
+    o.write(reinterpret_cast<const char *>(&m.m_matrix[0]), sizeof(float) * m.m_matrix.size());
+    return o;
 }
 }

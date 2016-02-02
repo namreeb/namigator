@@ -21,7 +21,7 @@
 
 namespace parser
 {
-Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
+Wmo::Wmo(Map *map, const std::string &path)
 {
     FileName = path.substr(path.rfind('\\') + 1);
     FileName = FileName.substr(0, FileName.rfind('.'));
@@ -165,27 +165,11 @@ Wmo::Wmo(Map *map, const std::string &path) : FullPath(path)
             utility::Matrix transformMatrix;
             placement.GetTransformMatrix(transformMatrix);
 
-            DoodadSets[i].push_back(std::unique_ptr<const WmoDoodad>(new WmoDoodad(map->GetDoodad(name), transformMatrix)));
+            auto const doodad = map->GetDoodad(name);
+
+            if (!!doodad->Vertices.size() && !!doodad->Indices.size())
+                DoodadSets[i].push_back(std::unique_ptr<const WmoDoodad>(new WmoDoodad(doodad, transformMatrix)));
         }
     }
 }
-
-#ifdef _DEBUG
-size_t Wmo::MemoryUsage() const
-{
-    size_t ret = sizeof(Wmo);
-
-    ret += FullPath.length();
-    ret += FileName.length();
-
-    ret += Vertices.size() * sizeof(Vertices[0]);
-    ret += Indices.size() * sizeof(Indices[0]);
-    ret += LiquidVertices.size() * sizeof(LiquidVertices[0]);
-    ret += LiquidIndices.size() * sizeof(LiquidIndices[0]);
-    
-    ret += DoodadSets.size() * sizeof(DoodadSets[0]);
-
-    return ret;
-}
-#endif
 }

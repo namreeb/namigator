@@ -8,7 +8,7 @@
 
 #include "utility/Include/Directory.hpp"
 
-#include "pathfind/Include/NavMesh.hpp"
+#include "pathfind/Include/Map.hpp"
 
 #include "resource.h"
 
@@ -18,7 +18,6 @@
 #include <sstream>
 #include <cassert>
 #include <vector>
-#include <cstdint>
 
 #define START_X             100
 #define START_Y             100
@@ -38,7 +37,7 @@ HWND gGuiWindow, gControlWindow;
 std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<CommonControl> gControls;
 std::unique_ptr<parser::Map> gMap;
-std::unique_ptr<pathfind::NavMesh> gNavMesh;
+std::unique_ptr<pathfind::Map> gNavMesh;
 
 int gMovingUp = 0;
 int gMovingVertical = 0;
@@ -283,18 +282,18 @@ void GetMapName(const std::string &inName, std::string &outName)
 
 void ChangeMap(const std::string &cn)
 {
-    std::string MapName;
+    std::string mapName;
 
-    GetMapName(cn, MapName);
+    GetMapName(cn, mapName);
 
     if (gMap)
         gRenderer->ClearBuffers();
 
-    gMap.reset(new parser::Map(MapName));
-    gNavMesh.reset(new pathfind::NavMesh(".\\Maps", MapName));
+    gMap.reset(new parser::Map(mapName));
+    gNavMesh.reset(new pathfind::Map(".\\Maps", mapName));
 
-    // if the loaded Map has no ADTs, but instead a global WMO, load it now
-    if (auto wmo = gMap->GetGlobalWmoInstance())
+    // if the loaded map has no ADTs, but instead a global WMO, load it now
+    if (auto const wmo = gMap->GetGlobalWmoInstance())
     {
         std::vector<utility::Vertex> vertices;
         std::vector<int> indices;
@@ -308,21 +307,19 @@ void ChangeMap(const std::string &cn)
         wmo->BuildDoodadTriangles(vertices, indices);
         gRenderer->AddDoodad(0, vertices, indices);
 
-        const float cx = (wmo->Bounds.MaxCorner.X + wmo->Bounds.MinCorner.X) / 2.f;
-        const float cy = (wmo->Bounds.MaxCorner.Y + wmo->Bounds.MinCorner.Y) / 2.f;
-        const float cz = (wmo->Bounds.MaxCorner.Z + wmo->Bounds.MinCorner.Z) / 2.f;
+        auto const cx = (wmo->Bounds.MaxCorner.X + wmo->Bounds.MinCorner.X) / 2.f;
+        auto const cy = (wmo->Bounds.MaxCorner.Y + wmo->Bounds.MinCorner.Y) / 2.f;
+        auto const cz = (wmo->Bounds.MaxCorner.Z + wmo->Bounds.MinCorner.Z) / 2.f;
 
         gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
         gRenderer->m_camera.LookAt(cx, cy, cz);
 
-        if (gNavMesh->LoadGlobalWMO())
+        std::vector<utility::Vertex> meshVertices;
+        std::vector<int> meshIndices;
+        gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices);
+
+        if (!!meshVertices.size() && !!meshIndices.size())
         {
-            std::vector<utility::Vertex> meshVertices;
-            std::vector<std::int32_t> meshIndices;
-            gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices);
-
-            assert(!!meshVertices.size() && !!meshIndices.size());
-
             // raise the z values for each mesh vertex slightly to help visualize them
             for (size_t i = 0; i < meshVertices.size(); ++i)
                 meshVertices[i].Z += 0.3f;
@@ -354,48 +351,48 @@ void LoadADTFromGUI()
 
             gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
             gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
-
-            for (auto &d : chunk->m_doodads)
-            {
-                if (gRenderer->HasDoodad(d))
-                    continue;
-
-                auto const doodad = gMap->GetDoodadInstance(d);
-
-                assert(doodad);
-
-                std::vector<utility::Vertex> vertices;
-                std::vector<int> indices;
-
-                doodad->BuildTriangles(vertices, indices);
-                gRenderer->AddDoodad(d, vertices, indices);
-            }
-
-            for (auto &w : chunk->m_wmos)
-            {
-                if (gRenderer->HasWmo(w))
-                    continue;
-
-                auto const wmo = gMap->GetWmoInstance(w);
-
-                assert(wmo);
-
-                std::vector<utility::Vertex> vertices;
-                std::vector<int> indices;
-
-                wmo->BuildTriangles(vertices, indices);
-                gRenderer->AddWmo(w, vertices, indices);
-
-                wmo->BuildLiquidTriangles(vertices, indices);
-                gRenderer->AddLiquid(vertices, indices);
-
-                if (gRenderer->HasDoodad(w))
-                    continue;
-
-                wmo->BuildDoodadTriangles(vertices, indices);
-                gRenderer->AddDoodad(w, vertices, indices);
-            }
         }
+
+    for (auto &d : adt->DoodadInstances)
+    {
+        if (gRenderer->HasDoodad(d))
+            continue;
+
+        auto const doodad = gMap->GetDoodadInstance(d);
+
+        assert(doodad);
+
+        std::vector<utility::Vertex> vertices;
+        std::vector<int> indices;
+
+        doodad->BuildTriangles(vertices, indices);
+        gRenderer->AddDoodad(d, vertices, indices);
+    }
+
+    for (auto &w : adt->WmoInstances)
+    {
+        if (gRenderer->HasWmo(w))
+            continue;
+
+        auto const wmo = gMap->GetWmoInstance(w);
+
+        assert(wmo);
+
+        std::vector<utility::Vertex> vertices;
+        std::vector<int> indices;
+
+        wmo->BuildTriangles(vertices, indices);
+        gRenderer->AddWmo(w, vertices, indices);
+
+        wmo->BuildLiquidTriangles(vertices, indices);
+        gRenderer->AddLiquid(vertices, indices);
+
+        if (gRenderer->HasDoodad(w))
+            continue;
+
+        wmo->BuildDoodadTriangles(vertices, indices);
+        gRenderer->AddDoodad(w, vertices, indices);
+    }
 
     if (gNavMesh->LoadTile(adtX, adtY))
     {

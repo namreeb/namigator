@@ -55,14 +55,11 @@ struct MCNKInfo
 class MCNK : public AdtChunk
 {
     private:
-        static const int VertexCount = 9 * 9 + 8 * 8;
+        static constexpr int VertexCount = 9 * 9 + 8 * 8;
 
     public:
         bool HasHoles;
         bool HasWater;
-
-        std::uint32_t WaterType;
-        unsigned int AreaId;
 
         float Height;
         float MinZ;
@@ -70,7 +67,6 @@ class MCNK : public AdtChunk
 
         bool HoleMap[8][8];
         std::vector<utility::Vertex> Positions;
-        std::vector<utility::Vector3> Normals;
 
         std::unique_ptr<MCLQ> LiquidChunk;
 

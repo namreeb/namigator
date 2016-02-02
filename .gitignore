@@ -41,3 +41,9 @@
 /utility/x64/Debug
 /maps.VC.db
 /ipch/STORMLIB_VS15-5647bf9b/*.ipch
+/MapBuilder/x64/Release
+/MapViewer/x64/Release
+/RecastDetourBuild/x64/Release
+/parser/x64/Release
+/pathfind/x64/Release
+/utility/x64/Release

@@ -12,15 +12,17 @@
 #include <memory>
 #include <sstream>
 #include <fstream>
+#include <ostream>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#include <cstdint>
 
 namespace parser
 {
 Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
 {
-    std::string file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
+    auto const file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(file));
 
@@ -30,7 +32,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
 
     reader->SetPosition(mphdLocation + 8);
 
-    auto const hasTerrain = !(reader->Read<unsigned int>() & 0x1);
+    m_hasTerrain = !(reader->Read<unsigned int>() & 0x1);
 
     size_t mainLocation;
     if (!reader->GetChunkLocation("MAIN", mainLocation))
@@ -50,7 +52,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
         }
 
     // for worlds with terrain, parsing stops here.  else, load single wmo
-    if (hasTerrain)
+    if (m_hasTerrain)
         return;
 
     size_t mwmoLocation;
@@ -103,10 +105,13 @@ void Map::UnloadAdt(int x, int y)
 
 const Wmo *Map::GetWmo(const std::string &name)
 {
+    auto filename = name.substr(name.rfind('\\') + 1);
+    filename = filename.substr(0, filename.rfind('.'));
+
     std::lock_guard<std::mutex> guard(m_wmoMutex);
     
     for (auto const &wmo : m_loadedWmos)
-        if (wmo->FullPath == name)
+        if (wmo->FileName == filename)
             return wmo.get();
 
     auto ret = new Wmo(this, name);
@@ -118,12 +123,6 @@ void Map::InsertWmoInstance(unsigned int uniqueId, const WmoInstance *wmo)
 {
     std::lock_guard<std::mutex> guard(m_wmoMutex);
     m_loadedWmoInstances[uniqueId].reset(wmo);
-}
-
-void Map::UnloadWmoInstance(unsigned int uniqueId)
-{
-    std::lock_guard<std::mutex> guard(m_wmoMutex);
-    m_loadedWmoInstances.erase(uniqueId);
 }
 
 const WmoInstance *Map::GetWmoInstance(unsigned int uniqueId) const
@@ -142,10 +141,13 @@ const WmoInstance *Map::GetGlobalWmoInstance() const
 
 const Doodad *Map::GetDoodad(const std::string &name)
 {
+    auto filename = name.substr(name.rfind('\\') + 1);
+    filename = filename.substr(0, filename.rfind('.'));
+
     std::lock_guard<std::mutex> guard(m_doodadMutex);
 
     for (auto const &doodad : m_loadedDoodads)
-        if (doodad->Name.substr(0, doodad->Name.rfind('.')) == name.substr(0, name.rfind('.')))
+        if (doodad->FileName == filename)
             return doodad.get();
 
     auto ret = new Doodad(name);
@@ -159,12 +161,6 @@ void Map::InsertDoodadInstance(unsigned int uniqueId, const DoodadInstance *dood
     m_loadedDoodadInstances[uniqueId].reset(doodad);
 }
 
-void Map::UnloadDoodadInstance(unsigned int uniqueId)
-{
-    std::lock_guard<std::mutex> guard(m_doodadMutex);
-    m_loadedDoodadInstances.erase(uniqueId);
-}
-
 const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
 {
     std::lock_guard<std::mutex> guard(m_doodadMutex);
@@ -174,62 +170,65 @@ const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
     return itr == m_loadedDoodadInstances.end() ? nullptr : itr->second.get();
 }
 
-#ifdef _DEBUG
-bool Map::IsAdtLoaded(int x, int y) const
+void Map::Serialize(std::ostream& stream) const
 {
-    std::lock_guard<std::mutex> guard(m_adtMutex);
-    return !!m_adts[y][x];
-}
+    const std::uint32_t magic = 'MAP1';
+    stream.write(reinterpret_cast<const char *>(&magic), sizeof(magic));
 
-void Map::WriteMemoryUsage(std::ostream &o) const
-{
+    if (!m_hasTerrain)
     {
-        std::lock_guard<std::mutex> guard(m_wmoMutex);
-        o << "WMOs: " << m_loadedWmos.size() << std::endl;
+        stream << (std::uint8_t)0;
 
-        std::vector<std::pair<const Wmo *, size_t>> wmoMemoryUsage;
-        wmoMemoryUsage.reserve(m_loadedWmos.size());
+        auto const wmo = GetGlobalWmoInstance();
 
-        for (auto const &wmo : m_loadedWmos)
-            wmoMemoryUsage.push_back({ wmo.get(), wmo->MemoryUsage() });
+        const std::uint32_t id = 0xFFFFFFFF;
+        stream.write(reinterpret_cast<const char *>(&id), sizeof(id));
 
-        std::sort(wmoMemoryUsage.begin(), wmoMemoryUsage.end(), [](const std::pair<const Wmo *, size_t> &a, const std::pair<const Wmo *, size_t> &b) { return a.second > b.second; });
+        const std::uint16_t doodadSet = static_cast<std::uint16_t>(wmo->DoodadSet);
+        stream.write(reinterpret_cast<const char *>(&doodadSet), sizeof(doodadSet));
 
-        for (auto const &wmoUsage : wmoMemoryUsage)
-            o << "0x" << std::hex << std::uppercase << wmoUsage.first << ": " << std::dec << wmoUsage.second << std::endl;
+        stream << wmo->TransformMatrix;
+        stream << wmo->Bounds;
+        stream << std::left << std::setw(64) << std::setfill('\000') << wmo->Model->FileName;
+
+        return;
     }
 
-    // FIXME - TODO - add wmo instances
+    stream << (std::uint8_t)1;
+
+    {
+        std::lock_guard<std::mutex> guard(m_wmoMutex);
+
+        const std::uint32_t wmoInstanceCount = static_cast<std::uint32_t>(m_loadedWmoInstances.size());
+        stream.write(reinterpret_cast<const char *>(&wmoInstanceCount), sizeof(wmoInstanceCount));
+
+        for (auto const &wmo : m_loadedWmoInstances)
+        {
+            const std::uint32_t id = static_cast<std::uint32_t>(wmo.first);
+            const std::uint16_t doodadSet = static_cast<std::uint16_t>(wmo.second->DoodadSet);
+
+            stream.write(reinterpret_cast<const char *>(&id), sizeof(id));
+            stream.write(reinterpret_cast<const char *>(&doodadSet), sizeof(doodadSet));
+            stream << wmo.second->TransformMatrix;
+            stream << wmo.second->Bounds;
+            stream << std::left << std::setw(64) << std::setfill('\000') << wmo.second->Model->FileName;
+        }
+    }
 
     {
         std::lock_guard<std::mutex> guard(m_doodadMutex);
-        o << "Doodads: " << m_loadedDoodads.size() << std::endl;
 
-        std::vector<std::pair<const Doodad *, size_t>> doodadMemoryUsage;
-        doodadMemoryUsage.reserve(m_loadedDoodads.size());
+        const std::uint32_t doodadInstanceCount = static_cast<std::uint32_t>(m_loadedDoodadInstances.size());
+        stream.write(reinterpret_cast<const char *>(&doodadInstanceCount), sizeof(doodadInstanceCount));
 
-        for (auto const &doodad : m_loadedDoodads)
-            doodadMemoryUsage.push_back({ doodad.get(), doodad->MemoryUsage() });
-
-        std::sort(doodadMemoryUsage.begin(), doodadMemoryUsage.end(), [](const std::pair<const Doodad *, size_t> &a, const std::pair<const Doodad *, size_t> &b) { return a.second > b.second; });
-
-        for (auto const &doodadUsage : doodadMemoryUsage)
-            o << "0x" << std::hex << std::uppercase << doodadUsage.first << ": " << std::dec << doodadUsage.second << std::endl;
-    }
-
-    // FIXME - TODO - add doodad instances
-
-    {
-        std::lock_guard<std::mutex> guard(m_adtMutex);
-        
-        int count = 0;
-        for (int y = 0; y < 64; ++y)
-            for (int x = 0; x < 64; ++x)
-                if (m_adts[y][x])
-                    ++count;
-
-        o << "ADTs: " << count << " size = " << (count * sizeof(Adt)) << std::endl;
+        for (auto const &doodad : m_loadedDoodadInstances)
+        {
+            const std::uint32_t id = static_cast<std::uint32_t>(doodad.first);
+            stream.write(reinterpret_cast<const char *>(&id), sizeof(id));
+            stream << doodad.second->TransformMatrix;
+            stream << doodad.second->Bounds;
+            stream << std::left << std::setw(64) << std::setfill('\000') << doodad.second->Model->FileName;
+        }
     }
 }
-#endif
 }

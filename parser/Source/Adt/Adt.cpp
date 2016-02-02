@@ -279,11 +279,11 @@ Adt::Adt(Map *map, int adtX, int adtY)
     if (wmoChunk)
         for (auto const &wmoDefinition : wmoChunk->Wmos)
         {
-            auto wmo = map->GetWmo(wmoNames[wmoDefinition.NameId]);
+            auto const wmo = map->GetWmo(wmoNames[wmoDefinition.NameId]);
             const WmoInstance *wmoInstance;
 
             // ensure that the instance has been loaded
-            if ((wmoInstance = map->GetWmoInstance(wmoDefinition.UniqueId)) == nullptr)
+            if ((wmoInstance = map->GetWmoInstance(static_cast<unsigned int>(wmoDefinition.UniqueId))) == nullptr)
             {
                 utility::BoundingBox bounds;
                 wmoDefinition.GetBoundingBox(bounds);
@@ -292,35 +292,17 @@ Adt::Adt(Map *map, int adtX, int adtY)
                 wmoDefinition.GetTransformMatrix(transformMatrix);
 
                 wmoInstance = new WmoInstance(wmo, wmoDefinition.DoodadSet, bounds, transformMatrix);
-                map->InsertWmoInstance(wmoDefinition.UniqueId, wmoInstance);
+                map->InsertWmoInstance(static_cast<unsigned int>(wmoDefinition.UniqueId), wmoInstance);
             }
 
             assert(!!wmo && !!wmoInstance);
 
-            std::vector<utility::Vertex> vertices;
-            std::vector<int> indices;
+            // if this wmo is really on this ADT, make note of it
+            if (wmoInstance->Adts.find(std::pair<int, int>(adtX, adtY)) != wmoInstance->Adts.cend())
+                WmoInstances.insert(static_cast<unsigned int>(wmoDefinition.UniqueId));
 
-            wmoInstance->BuildTriangles(vertices, indices);
-
-            // iterate over all vertices to determine which chunks have the wmo
-            // FIXME - this does not uses wmo liquid or doodad vertices, which perhaps it should?  or maybe we dont even need this?
-            for (auto const &vertex : vertices)
-            {
-                // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
-                // if it falls on the edge, always handle it the same way (<= in the min case on both axis)
-                if (vertex.X > Bounds.MaxCorner.X || vertex.X <= Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y <= Bounds.MinCorner.Y)
-                    continue;
-
-                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / utility::MathHelper::AdtChunkSize);
-                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / utility::MathHelper::AdtChunkSize);
-
-                assert(chunkX < 16 && chunkY < 16);
-
-                Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, vertex.Z);
-                Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, vertex.Z);
-
-                m_chunks[chunkY][chunkX]->m_wmos.insert(wmoDefinition.UniqueId);
-            }
+            Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, wmoInstance->Bounds.MinCorner.Z);
+            Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, wmoInstance->Bounds.MaxCorner.Z);
         }
 
     // Doodads
@@ -328,7 +310,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
     if (doodadChunk)
         for (auto const &doodadDefinition : doodadChunk->Doodads)
         {
-            auto doodad = map->GetDoodad(doodadNames[doodadDefinition.NameId]);
+            auto const doodad = map->GetDoodad(doodadNames[doodadDefinition.NameId]);
 
             // skip those doodads which have no collision geometry
             if (!doodad->Vertices.size() || !doodad->Indices.size())
@@ -337,186 +319,25 @@ Adt::Adt(Map *map, int adtX, int adtY)
             const DoodadInstance *doodadInstance;
 
             // ensure that the instance has been loaded
-            if ((doodadInstance = map->GetDoodadInstance(doodadDefinition.UniqueId)) == nullptr)
+            if ((doodadInstance = map->GetDoodadInstance(static_cast<unsigned int>(doodadDefinition.UniqueId))) == nullptr)
             {
                 utility::Matrix transformMatrix;
                 doodadDefinition.GetTransformMatrix(transformMatrix);
 
                 doodadInstance = new DoodadInstance(doodad, transformMatrix);
-                map->InsertDoodadInstance(doodadDefinition.UniqueId, doodadInstance);
+                map->InsertDoodadInstance(static_cast<unsigned int>(doodadDefinition.UniqueId), doodadInstance);
             }
 
             assert(!!doodad && !!doodadInstance);
 
-            std::vector<utility::Vertex> vertices;
-            std::vector<int> indices;
+            // if this doodad is really on this ADT, make note of it
+            if (doodadInstance->Adts.find(std::pair<int, int>(adtX, adtY)) != doodadInstance->Adts.cend())
+                DoodadInstances.insert(static_cast<unsigned int>(doodadDefinition.UniqueId));
 
-            doodadInstance->BuildTriangles(vertices, indices);
-
-            // iterate over all vertices to determine which chunks have the doodad
-            // FIXME - do we even need this?
-            for (auto const &vertex : vertices)
-            {
-                // if this vertex doesn't even fall on the adt, there is no way it can land on a chunk
-                if (vertex.X > Bounds.MaxCorner.X || vertex.X <= Bounds.MinCorner.X || vertex.Y > Bounds.MaxCorner.Y || vertex.Y <= Bounds.MinCorner.Y)
-                    continue;
-
-                const int chunkX = static_cast<int>((Bounds.MaxCorner.Y - vertex.Y) / utility::MathHelper::AdtChunkSize);
-                const int chunkY = static_cast<int>((Bounds.MaxCorner.X - vertex.X) / utility::MathHelper::AdtChunkSize);
-
-                assert(chunkX < 16 && chunkY < 16);
-
-                Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, vertex.Z);
-                Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, vertex.Z);
-
-                m_chunks[chunkY][chunkX]->m_doodads.insert(doodadDefinition.UniqueId);
-            }
+            Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, doodadInstance->Bounds.MinCorner.Z);
+            Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, doodadInstance->Bounds.MaxCorner.Z);
         }
 }
-
-#ifdef _DEBUG
-void Adt::WriteObjFile() const
-{
-    std::stringstream ss;
-
-    ss << m_map->Name << "_" << X  << "_" << Y << ".obj";
-
-    std::ofstream out(ss.str());
-
-    size_t indexOffset = 1;
-    std::set<unsigned int> dumpedWmos;
-    std::set<unsigned int> dumpedDoodads;
-
-    for (int y = 0; y < 16; ++y)
-        for (int x = 0; x < 16; ++x)
-        {
-            auto chunk = m_chunks[y][x].get();
-
-            // terrain vertices
-            out << "# terrain vertices (" << chunk->m_terrainVertices.size() << ")" << std::endl;
-            for (unsigned int i = 0; i < chunk->m_terrainVertices.size(); ++i)
-                out << "v " << -chunk->m_terrainVertices[i].Y
-                    << " "  <<  chunk->m_terrainVertices[i].Z
-                    << " "  << -chunk->m_terrainVertices[i].X << std::endl;
-
-            // terrain indices
-            out << "# terrain indices (" << chunk->m_terrainIndices.size() << ")" << std::endl;
-            for (unsigned int i = 0; i < chunk->m_terrainIndices.size(); i += 3)
-                out << "f " << indexOffset + chunk->m_terrainIndices[i]
-                    << " "  << indexOffset + chunk->m_terrainIndices[i+1]
-                    << " "  << indexOffset + chunk->m_terrainIndices[i+2] << std::endl;
-
-            indexOffset += chunk->m_terrainVertices.size();
-
-            // water vertices
-            out << "# water vertices (" << chunk->m_liquidVertices.size() << ")" << std::endl;
-            for (unsigned int i = 0; i < chunk->m_liquidVertices.size(); ++i)
-                out << "v " << -chunk->m_liquidVertices[i].Y
-                    << " "  <<  chunk->m_liquidVertices[i].Z
-                    << " "  << -chunk->m_liquidVertices[i].X << std::endl;
-
-            // water indices
-            out << "# water indices (" << chunk->m_liquidIndices.size() << ")" << std::endl;
-            for (unsigned int i = 0; i < chunk->m_liquidIndices.size(); i += 3)
-                out << "f " << indexOffset + chunk->m_liquidIndices[i]   << " "
-                            << indexOffset + chunk->m_liquidIndices[i+1] << " "
-                            << indexOffset + chunk->m_liquidIndices[i+2] << std::endl;
-
-            indexOffset += chunk->m_liquidVertices.size();
-
-            // wmo vertices and indices
-            out << "# wmo vertices / indices (including liquids and doodads)" << std::endl;
-            for (auto id = chunk->m_wmos.cbegin(); id != chunk->m_wmos.cend(); ++id)
-            {
-                // if this wmo has already been dumped as part of another chunk, skip it
-                if (dumpedWmos.find(*id) != dumpedWmos.end())
-                    continue;
-
-                dumpedWmos.insert(*id);
-
-                auto wmoInstance = m_map->GetWmoInstance(*id);
-                std::vector<utility::Vertex> vertices;
-                std::vector<int> indices;
-
-                wmoInstance->BuildTriangles(vertices, indices);
-
-                for (auto const &vertex : vertices)
-                    out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-                for (size_t i = 0; i < indices.size(); i+=3)
-                    out << "f " << indexOffset + indices[i]   << " " 
-                                << indexOffset + indices[i+1] << " "
-                                << indexOffset + indices[i+2] << std::endl;
-
-                indexOffset += vertices.size();
-
-                wmoInstance->BuildLiquidTriangles(vertices, indices);
-
-                for (auto const &vertex : vertices)
-                    out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-                for (unsigned int i = 0; i < indices.size(); i+=3)
-                    out << "f " << indexOffset + indices[i]   << " " 
-                                << indexOffset + indices[i+1] << " "
-                                << indexOffset + indices[i+2] << std::endl;
-
-                indexOffset += vertices.size();
-
-                wmoInstance->BuildDoodadTriangles(vertices, indices);
-
-                for (auto const &vertex : vertices)
-                    out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-                for (unsigned int i = 0; i < indices.size(); i+=3)
-                    out << "f " << indexOffset + indices[i]   << " " 
-                                << indexOffset + indices[i+1] << " "
-                                << indexOffset + indices[i+2] << std::endl;
-
-                indexOffset += vertices.size();
-            }
-
-            // doodad vertices
-            out << "# doodad vertices" << std::endl;
-            for (auto id = chunk->m_doodads.cbegin(); id != chunk->m_doodads.cend(); ++id)
-            {
-                // if this wmo has already been dumped as part of another chunk, skip it
-                if (dumpedDoodads.find(*id) != dumpedDoodads.end())
-                    continue;
-
-                dumpedDoodads.insert(*id);
-
-                const DoodadInstance *doodadInstance = m_map->GetDoodadInstance(*id);
-                std::vector<utility::Vertex> vertices;
-                std::vector<int> indices;
-
-                doodadInstance->BuildTriangles(vertices, indices);
-
-                for (auto const &vertex : vertices)
-                    out << "v " << -vertex.Y << " " << vertex.Z << " " << -vertex.X << std::endl;
-
-                for (size_t i = 0; i < indices.size(); i+=3)
-                    out << "f " << indexOffset + indices[i]   << " " 
-                                << indexOffset + indices[i+1] << " "
-                                << indexOffset + indices[i+2] << std::endl;
-
-                indexOffset += vertices.size();
-            }
-        }
-
-    out.close();
-}
-
-size_t Adt::GetWmoCount() const
-{
-    std::set<unsigned int> wmos;
-
-    for (int chunkY = 0; chunkY < 16; ++chunkY)
-        for (int chunkX = 0; chunkX < 16; ++chunkX)
-            wmos.insert(m_chunks[chunkY][chunkX]->m_wmos.cbegin(), m_chunks[chunkY][chunkX]->m_wmos.cend());
-
-    return wmos.size();
-}
-#endif
 
 const AdtChunk *Adt::GetChunk(const int chunkX, const int chunkY) const
 {

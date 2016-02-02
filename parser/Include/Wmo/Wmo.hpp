@@ -16,7 +16,6 @@ namespace parser
 class Wmo
 {
     public:
-        const std::string FullPath;
         std::string FileName;
 
         std::vector<utility::Vertex> Vertices;
@@ -28,9 +27,5 @@ class Wmo
         std::vector<std::vector<std::unique_ptr<const WmoDoodad>>> DoodadSets;
 
         Wmo(Map *map, const std::string &path);
-
-#ifdef _DEBUG
-        size_t MemoryUsage() const;
-#endif
 };
 }
