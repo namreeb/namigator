@@ -108,3 +108,41 @@ void Camera::GetMousePanStart(int &x, int &y) const
     x = m_mousePanX;
     y = m_mousePanY;
 }
+
+void Camera::UpdateProjection(float vpX, float vpY, float width, float height, float minDepth, float maxDepth)
+{
+    m_viewportX = vpX;
+    m_viewportY = vpY;
+
+    m_viewportWidth = width;
+    m_viewportHeight = height;
+
+    m_viewportMinDepth = minDepth;
+    m_viewportMaxDepth = maxDepth;
+
+    m_projMatrix = utility::Matrix::CreateProjectionMatrix(PI / 4.f, width / height, 1.f, 10000.f);
+}
+
+utility::Vector3 Camera::ProjectPoint(const utility::Vector3& pos) const
+{
+    utility::Vector3 position = pos;
+    position = utility::Vector3::Transform(position, m_viewMatrix.Transposed());
+    position = utility::Vector3::Transform(position, m_projMatrix.Transposed());
+
+    position.X = m_viewportX + (1.0f + position.X) * m_viewportWidth / 2.0f;
+    position.Y = m_viewportY + (1.0f - position.Y) * m_viewportHeight / 2.0f;
+    position.Z = m_viewportMinDepth + position.Z * (m_viewportMaxDepth - m_viewportMinDepth);
+    return position;
+}
+
+utility::Vector3 Camera::UnprojectPoint(const utility::Vector3& pos) const
+{
+    utility::Vector3 position = pos;
+    position.X = 2.0f * (position.X - m_viewportX) / m_viewportWidth - 1.0f;
+    position.Y = 1.0f - 2.0f * (position.Y - m_viewportY) / m_viewportHeight;
+    position.Z = (position.Z - m_viewportMinDepth) / (m_viewportMaxDepth - m_viewportMinDepth);
+
+    position = utility::Vector3::Transform(position, m_projMatrix.ComputeInverse().Transposed());
+    position = utility::Vector3::Transform(position, m_viewMatrix.ComputeInverse().Transposed());
+    return position;
+}

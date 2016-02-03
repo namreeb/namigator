@@ -254,6 +254,75 @@ Matrix operator *(const Matrix &a, const Matrix &b)
     return ret;
 }
 
+Matrix Matrix::Transposed() const
+{
+    const Matrix& m = *this;
+    Matrix ret(m_rows, m_columns);
+
+    for (int r = 0; r < m_rows; ++r)
+        for (int c = 0; c < m_columns; ++c)
+            ret[r][c] = m[c][r];
+    return ret;
+}
+
+namespace
+{
+    float Determinant3x3(const Matrix& m, int col0, int col1, int col2, int row0, int row1, int row2)
+    {
+        return m[row0][col0] * (m[row1][col1] * m[row2][col2] - m[row2][col1] * m[row1][col2])
+            - m[row0][col1] * (m[row1][col0] * m[row2][col2] - m[row2][col0] * m[row1][col2])
+            + m[row0][col2] * (m[row1][col0] * m[row2][col1] - m[row2][col0] * m[row1][col1]);
+    }
+}
+
+float Matrix::ComputeDeterminant() const
+{
+    if (m_columns != 4 || m_rows != 4)
+        THROW("Only 4x4 matrix is supported");
+
+    const Matrix& m = *this;
+
+    float det;
+    det  = m[0][0] * Determinant3x3(m, 1, 2, 3, 1, 2, 3);
+    det -= m[0][1] * Determinant3x3(m, 0, 2, 3, 1, 2, 3);
+    det += m[0][2] * Determinant3x3(m, 0, 1, 3, 1, 2, 3);
+    det -= m[0][3] * Determinant3x3(m, 0, 1, 2, 1, 2, 3);
+    return det;
+}
+
+Matrix Matrix::ComputeInverse() const
+{
+    if (m_columns != 4 || m_rows != 4)
+        THROW("Only 4x4 matrix is supported");
+
+    float det = ComputeDeterminant();
+    if (abs(det) < 1e-6f) {
+        THROW("Not invertible!");
+    }
+
+    det = 1.0f / det;
+    const Matrix& m = *this;
+
+    Matrix inv(4, 4);
+    inv[0][0] = Determinant3x3(m, 1, 2, 3, 1, 2, 3) * det;
+    inv[1][0] = -Determinant3x3(m, 0, 2, 3, 1, 2, 3) * det;
+    inv[2][0] = Determinant3x3(m, 0, 1, 3, 1, 2, 3) * det;
+    inv[3][0] = -Determinant3x3(m, 0, 1, 2, 1, 2, 3) * det;
+    inv[0][1] = -Determinant3x3(m, 1, 2, 3, 0, 2, 3) * det;
+    inv[1][1] = Determinant3x3(m, 0, 2, 3, 0, 2, 3) * det;
+    inv[2][1] = -Determinant3x3(m, 0, 1, 3, 0, 2, 3) * det;
+    inv[3][1] = Determinant3x3(m, 0, 1, 2, 0, 2, 3) * det;
+    inv[0][2] = Determinant3x3(m, 1, 2, 3, 0, 1, 3) * det;
+    inv[1][2] = -Determinant3x3(m, 0, 2, 3, 0, 1, 3) * det;
+    inv[2][2] = Determinant3x3(m, 0, 1, 3, 0, 1, 3) * det;
+    inv[3][2] = -Determinant3x3(m, 0, 1, 2, 0, 1, 3) * det;
+    inv[0][3] = -Determinant3x3(m, 1, 2, 3, 0, 1, 2) * det;
+    inv[1][3] = Determinant3x3(m, 0, 2, 3, 0, 1, 2) * det;
+    inv[2][3] = -Determinant3x3(m, 0, 1, 3, 0, 1, 2) * det;
+    inv[3][3] = Determinant3x3(m, 0, 1, 2, 0, 1, 2) * det;
+    return inv;
+}
+
 float Vector3::DotProduct(const Vector3 &a, const Vector3 &b)
 {
     return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
@@ -277,12 +346,13 @@ Vector3 Vector3::Transform(const Vector3 &position, const Matrix &matrix)
     vertexVector[0][0] = position.X;
     vertexVector[1][0] = position.Y;
     vertexVector[2][0] = position.Z;
-    vertexVector[3][0] = 1.f;
+    vertexVector[3][0] = 1.0f;
 
     // multiply matrix by column std::vector matrix
     const Matrix newVector = matrix * vertexVector;
 
-    return Vector3(newVector[0][0], newVector[1][0], newVector[2][0]);
+    float w = 1.0f / newVector[3][0];
+    return Vector3(newVector[0][0]*w, newVector[1][0]*w, newVector[2][0]*w);
 }
 
 Vector3 &Vector3::operator +=(const Vector3 & other)

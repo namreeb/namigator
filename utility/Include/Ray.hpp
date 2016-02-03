@@ -16,35 +16,35 @@ class Ray {
     ~Ray() = default;
 
     public:
-    void setHitPoint(float distance);
+    void SetHitPoint(float distance);
 
-    bool intersectTriangle(const Vector3* verts, float* distance = 0) const;
-    bool intersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance = 0) const;
+    bool IntersectTriangle(const Vector3* verts, float* distance = 0) const;
+    bool IntersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance = 0) const;
 
-    bool intersectBoundingBox(const BoundingBox& bbox, float* distance = 0) const;
+    bool IntersectBoundingBox(const BoundingBox& bbox, float* distance = 0) const;
 
     public:
-    float getLength() const {
-        return getVector().Length();
+    float GetLength() const {
+        return GetVector().Length();
     }
 
-    Vector3 getVector() const {
+    Vector3 GetVector() const {
         return m_endPoint - m_startPoint;
     }
 
-    Vector3 getDirection() const {
-        return Vector3::Normalize(getVector());
+    Vector3 GetDirection() const {
+        return Vector3::Normalize(GetVector());
     }
 
-    Vector3 getHitPoint() const {
-        return m_startPoint + getVector() * m_hitDistance;
+    Vector3 GetHitPoint() const {
+        return m_startPoint + GetVector() * m_hitDistance;
     }
 
-    bool hasHit() const {
+    bool HasHit() const {
         return m_hitDistance < 1.0f;
     }
 
-    float getDistance() const {
+    float GetDistance() const {
         return m_hitDistance;
     }
 

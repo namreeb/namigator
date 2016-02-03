@@ -1,11 +1,14 @@
 #include <vector>
 #include <cassert>
 #include <set>
+#include <sstream>
 
 #include <d3d11.h>
 #include <dxgi1_3.h>
 
 #include "Renderer.hpp"
+
+#include "utility/Include/Ray.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 
 // include the Direct3D Library file
@@ -249,6 +252,9 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
     D3D11_MAPPED_SUBRESOURCE ms;
     ThrowIfFail(m_deviceContext->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
 
+    std::vector<ColoredVertex> vertexBufferCpu;
+    vertexBufferCpu.reserve(vertices.size());
+
     {
         std::vector<utility::Vector3> normals;
         normals.resize(vertices.size());
@@ -267,9 +273,6 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
             normals[indices[i * 3 + 2]] += n;
         }
 
-        std::vector<ColoredVertex> coloredVertices;
-        coloredVertices.reserve(vertices.size());
-
         for (size_t i = 0; i < vertices.size(); ++i)
         {
             ColoredVertex vertex;
@@ -282,10 +285,10 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
             vertex.ny = n.Y;
             vertex.nz = n.Z;
 
-            coloredVertices.emplace_back(vertex);
+            vertexBufferCpu.emplace_back(vertex);
         }
 
-        memcpy(ms.pData, &coloredVertices[0], sizeof(ColoredVertex)*coloredVertices.size());
+        memcpy(ms.pData, &vertexBufferCpu[0], sizeof(ColoredVertex)*vertexBufferCpu.size());
     }
 
     m_deviceContext->Unmap(vertexBuffer, 0);
@@ -305,30 +308,35 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
     memcpy(ms.pData, &indices[0], sizeof(int)*indices.size());
     m_deviceContext->Unmap(indexBuffer, 0);
 
-    buffer.push_back({ vertexBuffer, indexBuffer, indices.size() });
+    GeometryBuffer geometry;
+    geometry.VertexBufferCpu = vertexBufferCpu;
+    geometry.IndexBufferCpu = indices;
+    geometry.VertexBufferGpu = vertexBuffer;
+    geometry.IndexBufferGpu = indexBuffer;
+    buffer.push_back(std::move(geometry));
 }
 
-void Renderer::Render() const
+void Renderer::Render()
 {
     // clear the back buffer to a deep blue
     m_deviceContext->ClearRenderTargetView(m_backBuffer, BackgroundColor);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-
-    D3D11_VIEWPORT viewport;
-    UINT viewportCount = 1;
-
-    m_deviceContext->RSGetViewports(&viewportCount, &viewport);
-
-    float aspect = viewport.Width / viewport.Height;
-    auto proj = utility::Matrix::CreateProjectionMatrix(PI / 4.f, aspect, 1.f, 10000.f);
 
     struct VSConstants {
         float viewMatrix[16];
         float projMatrix[16];
     } constants;
 
-    proj.PopulateArray(constants.projMatrix);
+    D3D11_VIEWPORT viewport;
+    UINT viewportCount = 1;
+
+    m_deviceContext->RSGetViewports(&viewportCount, &viewport);
+
+    m_camera.UpdateProjection(viewport.TopLeftX, viewport.TopLeftY,
+        viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
+
     m_camera.GetViewMatrix().PopulateArray(constants.viewMatrix);
+    m_camera.GetProjMatrix().PopulateArray(constants.projMatrix);
 
     m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &constants, 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer.p);
@@ -340,36 +348,36 @@ void Renderer::Render() const
     if (m_renderADT)
         for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_terrainBuffers[i].VertexBuffer };
+            ID3D11Buffer *const pBuffer[] = { m_terrainBuffers[i].VertexBufferGpu };
             m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_terrainBuffers[i].IndexCount), 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_terrainBuffers[i].IndexBufferCpu.size()), 0, 0);
         }
 
     // draw wmos
     if (m_renderWMO)
         for (size_t i = 0; i < m_wmoBuffers.size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_wmoBuffers[i].VertexBuffer };
+            ID3D11Buffer *const pBuffer[] = { m_wmoBuffers[i].VertexBufferGpu };
             m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_wmoBuffers[i].IndexCount), 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_wmoBuffers[i].IndexBufferCpu.size()), 0, 0);
         }
 
     // draw doodads
     if (m_renderDoodad)
         for (size_t i = 0; i < m_doodadBuffers.size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_doodadBuffers[i].VertexBuffer };
+            ID3D11Buffer *const pBuffer[] = { m_doodadBuffers[i].VertexBufferGpu };
             m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_doodadBuffers[i].IndexCount), 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_doodadBuffers[i].IndexBufferCpu.size()), 0, 0);
         }
 
     if (m_renderLiquid || m_renderMesh)
@@ -381,24 +389,24 @@ void Renderer::Render() const
         if (m_renderLiquid)
             for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_liquidBuffers[i].VertexBuffer };
+                ID3D11Buffer *const pBuffer[] = { m_liquidBuffers[i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_liquidBuffers[i].IndexCount), 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_liquidBuffers[i].IndexBufferCpu.size()), 0, 0);
             }
 
         // draw meshes (also with alpha blending)
         if (m_renderMesh)
             for (size_t i = 0; i < m_meshBuffers.size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_meshBuffers[i].VertexBuffer };
+                ID3D11Buffer *const pBuffer[] = { m_meshBuffers[i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_meshBuffers[i].IndexCount), 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_meshBuffers[i].IndexBufferCpu.size()), 0, 0);
             }
 
         m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);
@@ -432,4 +440,57 @@ void Renderer::SetWireframe(bool enabled)
     m_rasterizerState.Release();
     ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
     m_deviceContext->RSSetState(m_rasterizerState);
+}
+
+void Renderer::HandleMousePicking(int x, int y)
+{
+    utility::Vector3 nearPosition;
+    nearPosition.X = static_cast<float>(x);
+    nearPosition.Y = static_cast<float>(y);
+    nearPosition.Z = 0.0f;
+
+    nearPosition = m_camera.UnprojectPoint(nearPosition);
+
+    utility::Vector3 farPosition;
+    farPosition.X = static_cast<float>(x);
+    farPosition.Y = static_cast<float>(y);
+    farPosition.Z = 1.0f;
+
+    farPosition = m_camera.UnprojectPoint(farPosition);
+
+    utility::Ray ray(nearPosition, farPosition);
+
+    int faceIndex = -1;
+    int meshBuffer = -1;
+
+    for (size_t i = 0; i < m_meshBuffers.size(); ++i)
+    {
+        const auto& buffer = m_meshBuffers[i];
+        for (size_t j = 0; j < buffer.IndexBufferCpu.size() / 3; ++j)
+        {
+            const auto& v0 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 0]].vertex;
+            const auto& v1 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 1]].vertex;
+            const auto& v2 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 2]].vertex;
+
+            float distance = 1.0f;
+            if (ray.IntersectTriangle(v0, v1, v2, &distance) && distance < ray.GetDistance())
+            {
+                ray.SetHitPoint(distance);
+
+                meshBuffer = static_cast<int>(i);
+                faceIndex = static_cast<int>(j);
+            }
+        }
+    }
+
+    if (faceIndex != -1)
+    {
+        const auto& hit = ray.GetHitPoint();
+
+        std::stringstream ss;
+        ss << "Hit face index: " << faceIndex << " in mesh buffer: " << meshBuffer << std::endl;
+        ss << "Hit position: (X: " << hit.X << " Y: " << hit.Y << " Z: " << hit.Z << ")" << std::endl;
+
+        OutputDebugStringA(ss.str().c_str());
+    }
 }

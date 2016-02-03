@@ -144,6 +144,12 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             return TRUE;
         }
 
+        case WM_LBUTTONDOWN:
+        {
+            gRenderer->HandleMousePicking(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            return TRUE;
+        }
+
         case WM_RBUTTONDOWN:
         {
             POINT point;
