@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <cassert>
 
 namespace utility
 {
@@ -68,52 +69,46 @@ void Convert::WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY)
     adtY = static_cast<int>((mid - vertex.X) / MathHelper::AdtSize);
 }
 
+void Convert::VertexToRecast(const utility::Vertex &input, utility::Vertex &output)
+{
+    VertexToRecast(input, reinterpret_cast<float *>(&output));
+}
+
+void Convert::VertexToRecast(const utility::Vertex &input, float *output)
+{
+    assert(!!output);
+
+    // this is necessary in case input = output
+    const float x = input.X;
+
+    output[0] = -input.Y;
+    output[1] =  input.Z;
+    output[2] = -x;
+}
+
 void Convert::VerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output)
 {
     output.resize(input.size() * 3);
 
     for (size_t i = 0; i < input.size(); ++i)
-    {
-        output[i * 3 + 0] = -input[i].Y;
-        output[i * 3 + 1] =  input[i].Z;
-        output[i * 3 + 2] = -input[i].X;
-    }
+        VertexToRecast(input[i], &output[i * 3]);
+}
+
+void Convert::VertexToWow(const float *input, utility::Vertex &output)
+{
+    // this is necessary in case input = output
+    const float x = input[1];
+
+    output.X = -input[2];
+    output.Y = -input[0];
+    output.Z =  x;
 }
 
 void Convert::VerticesToWow(const float *input, int vertexCount, std::vector<utility::Vertex> &output)
 {
     output.resize(vertexCount);
 
-    float minX = 0.f, minY = 0.f, minZ = 0.f, maxX = 0.f, maxY = 0.f, maxZ = 0.f;
-
     for (int i = 0; i < vertexCount; ++i)
-    {
-        output[i].X = -input[i * 3 + 2];
-        output[i].Y = -input[i * 3 + 0];
-        output[i].Z =  input[i * 3 + 1];
-
-        if (i)
-        {
-            if (output[i].X < minX)
-                minX = output[i].X;
-            if (output[i].Y < minY)
-                minY = output[i].Y;
-            if (output[i].Z < minZ)
-                minZ = output[i].Z;
-
-            if (output[i].X > maxX)
-                maxX = output[i].X;
-            if (output[i].Y > maxY)
-                maxY = output[i].Y;
-            if (output[i].Z > maxZ)
-                maxZ = output[i].Z;
-        }
-        else
-        {
-            minX = maxX = output[i].X;
-            minY = maxY = output[i].Y;
-            minZ = maxZ = output[i].Z;
-        }
-    }
+        VertexToWow(&input[i * 3], output[i]);
 }
 }

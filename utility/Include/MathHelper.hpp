@@ -33,7 +33,11 @@ class Convert
 
         static void WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY);
 
+        static void VertexToRecast(const utility::Vertex &input, utility::Vertex &output);
+        static void VertexToRecast(const utility::Vertex &input, float *output);
         static void VerticesToRecast(const std::vector<utility::Vertex> &input, std::vector<float> &output);
+
+        static void VertexToWow(const float *input, utility::Vertex &output);
         static void VerticesToWow(const float *input, int vertexCount, std::vector<utility::Vertex> &output);
 };
 }
