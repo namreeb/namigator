@@ -280,7 +280,7 @@ void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
     std::stringstream out;
     out << m_outputPath << "\\BVH\\WMO_" << wmo->FileName << ".bvh";
 
-    std::ofstream o(out.str(), std::ofstream::binary);
+    std::ofstream o(out.str(), std::ofstream::binary|std::ofstream::trunc);
     aabbTree.Serialize(o);
 
     m_bvhWmos.insert(wmo->FileName);
@@ -302,9 +302,6 @@ void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
             o << wmoDoodad->Bounds;
             o << std::left << std::setw(64) << std::setfill('\000') << doodad->FileName;
 
-            if (m_bvhDoodads.find(doodad->FileName) != m_bvhDoodads.end())
-                continue;
-
             SerializeDoodad(doodad);
         }
     }
@@ -319,7 +316,7 @@ void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
 
     std::stringstream dout;
     dout << m_outputPath << "\\BVH\\Doodad_" << doodad->FileName << ".bvh";
-    std::ofstream doodadOut(dout.str(), std::ofstream::binary);
+    std::ofstream doodadOut(dout.str(), std::ofstream::binary|std::ofstream::trunc);
     doodadTree.Serialize(doodadOut);
 
     m_bvhDoodads.insert(doodad->FileName);
@@ -405,7 +402,7 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
     std::stringstream str;
     str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << m_map->Name << ".nav";
 
-    std::ofstream out(str.str(), std::ofstream::binary);
+    std::ofstream out(str.str(), std::ofstream::binary|std::ofstream::trunc);
 
     return FinishMesh(ctx, config, 0, 0, out, *solid);
 }
@@ -565,7 +562,7 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     std::stringstream str;
     str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(2) << std::setfill('0') << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
 
-    std::ofstream out(str.str(), std::ofstream::binary);
+    std::ofstream out(str.str(), std::ofstream::binary|std::ofstream::trunc);
 
     const std::uint32_t wmoInstanceCount = static_cast<std::uint32_t>(thisTile->WmoInstances.size());
     out.write(reinterpret_cast<const char *>(&wmoInstanceCount), sizeof(wmoInstanceCount));
@@ -593,7 +590,7 @@ void MeshBuilder::SaveMap() const
     std::stringstream filename;
     filename << m_outputPath << "\\" << m_map->Name << ".map";
 
-    std::ofstream out(filename.str(), std::ofstream::binary);
+    std::ofstream out(filename.str(), std::ofstream::binary|std::ofstream::trunc);
 
     m_map->Serialize(out);
 }

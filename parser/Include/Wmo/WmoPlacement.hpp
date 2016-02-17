@@ -50,6 +50,7 @@ struct WmoPlacement
         const float rotY = utility::Convert::ToRadians(Orientation.X);
         const float rotZ = utility::Convert::ToRadians(Orientation.Y + 180.f);
 
+        // 0xFFFFFFFF is the unique id used for a global WMO (a map which has no ADTs but instead spawns a single WMO)
         auto const translationMatrix = UniqueId == 0xFFFFFFFF ?
             utility::Matrix::CreateTranslationMatrix({ BasePosition.Z, BasePosition.X, BasePosition.Y }) :
             utility::Matrix::CreateTranslationMatrix({ mid - BasePosition.Z, mid - BasePosition.X, BasePosition.Y });
