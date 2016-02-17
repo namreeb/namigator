@@ -6,6 +6,7 @@
 #include "utility/Include/Exception.hpp"
 
 #include "Detour/Include/DetourNavMesh.h"
+#include "Detour/Include/DetourNavMeshQuery.h"
 
 #include <string>
 #include <sstream>
@@ -147,6 +148,9 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         // hard coded id for global WMO
         m_globalWmo = LoadWmoModel(0xFFFFFFFF);
     }
+
+    if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
+        THROW("dtNavMeshQuery::init failed");
 }
 
 std::shared_ptr<WmoModel> Map::LoadWmoModel(unsigned int id)
@@ -289,12 +293,38 @@ void Map::UnloadTile(int x, int y)
     m_tiles[x][y].reset(nullptr);
 }
 
-bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &stop, std::vector<utility::Vertex> &output) const
+bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output) const
 {
-    output.clear();
+    constexpr float extents[] = { 3.f, 5.f, 3.f };
 
-    output.push_back(start);
-    output.push_back(stop);
+    float recastStart[3];
+    float recastEnd[3];
+
+    utility::Convert::VertexToRecast(start, recastStart);
+    utility::Convert::VertexToRecast(end, recastEnd);
+
+    dtPolyRef startPolyRef, endPolyRef;
+    if (m_navQuery.findNearestPoly(recastStart, extents, &m_queryFilter, &startPolyRef, nullptr) != DT_SUCCESS)
+        return false;
+
+    if (m_navQuery.findNearestPoly(recastEnd, extents, &m_queryFilter, &endPolyRef, nullptr) != DT_SUCCESS)
+        return false;
+
+    dtPolyRef polyRefBuffer[MaxPathHops];
+    
+    int pathLength;
+    if (m_navQuery.findPath(startPolyRef, endPolyRef, recastStart, recastEnd, &m_queryFilter, polyRefBuffer, &pathLength, MaxPathHops) != DT_SUCCESS)
+        return false;
+
+    float pathBuffer[MaxPathHops*3];
+    if (m_navQuery.findStraightPath(recastStart, recastEnd, polyRefBuffer, pathLength, pathBuffer, nullptr, nullptr, &pathLength, MaxPathHops) != DT_SUCCESS)
+        return false;
+
+    output.clear();
+    output.resize(pathLength);
+
+    for (auto i = 0; i < pathLength; ++i)
+        utility::Convert::VertexToWow(&pathBuffer[i * 3], output[i]);
 
     return true;
 }

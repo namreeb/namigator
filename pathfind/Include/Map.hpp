@@ -9,6 +9,7 @@
 #include "utility/Include/Ray.hpp"
 
 #include "Detour/Include/DetourNavMesh.h"
+#include "Detour/Include/DetourNavMeshQuery.h"
 
 #include <string>
 #include <vector>
@@ -24,11 +25,15 @@ class Map
     friend class Tile;
 
     private:
+        static constexpr int MaxPathHops = 128;
+
         const std::string m_dataPath;
         const std::string m_mapName;
 
         dtNavMesh m_navMesh;
-
+        dtNavMeshQuery m_navQuery;
+        dtQueryFilter m_queryFilter;
+        
         std::unique_ptr<Tile> m_tiles[64][64];
         std::shared_ptr<WmoModel> m_globalWmo;
 
@@ -50,7 +55,7 @@ class Map
         bool LoadTile(int x, int y);
         void UnloadTile(int x, int y);
 
-        bool FindPath(const utility::Vertex &start, const utility::Vertex &stop, std::vector<utility::Vertex> &output) const;   // NOT IMPLEMENTED YET!
+        bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;
         bool FindHeights(float x, float y, std::vector<float> &output) const;                                                   // NOT IMPLEMENTED YET!
         bool RayCast(const utility::Ray &ray, utility::Vertex &collision) const;                                                // NOT IMPLEMENTED YET!
