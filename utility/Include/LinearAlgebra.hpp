@@ -121,6 +121,11 @@ class Matrix
         static Matrix CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar);
         static Matrix CreateFromArray(const float *in, int count);
 
+        Matrix Transposed() const;
+
+        float ComputeDeterminant() const;
+        Matrix ComputeInverse() const;
+
         friend Matrix operator * (const Matrix &a, const Matrix &b);
         friend std::ostream & operator << (std::ostream &, const Matrix &);
 

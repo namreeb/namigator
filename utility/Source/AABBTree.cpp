@@ -319,9 +319,9 @@ void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsig
 
 bool AABBTree::IntersectRay(Ray& ray, unsigned int* faceIndex) const
 {
-    float distance = ray.getDistance();
+    float distance = ray.GetDistance();
     TraceRecursive(0, ray, faceIndex);
-    return ray.getDistance() < distance;
+    return ray.GetDistance() < distance;
 }
 
 void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
@@ -344,7 +344,7 @@ void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
         StackEntry& e = stack[--stackCount];
 
         // Ignore if another node has already come closer
-        if (e.dist >= ray.getDistance())
+        if (e.dist >= ray.GetDistance())
             continue;
 
         const Node& node = m_nodes.at(e.node);
@@ -355,20 +355,20 @@ void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
             auto& rightChild = m_nodes.at(node.children + 1);
 
             float dist[2] = { max, max };
-            ray.intersectBoundingBox(leftChild.bounds, &dist[0]);
-            ray.intersectBoundingBox(rightChild.bounds, &dist[1]);
+            ray.IntersectBoundingBox(leftChild.bounds, &dist[0]);
+            ray.IntersectBoundingBox(rightChild.bounds, &dist[1]);
 
             unsigned int closest = dist[1] < dist[0]; // 0 or 1
             unsigned int furthest = closest ^ 1;
 
-            if (dist[furthest] < ray.getDistance())
+            if (dist[furthest] < ray.GetDistance())
             {
                 StackEntry& n = stack[stackCount++];
                 n.node = node.children + furthest;
                 n.dist = dist[furthest];
             }
 
-            if (dist[closest] < ray.getDistance())
+            if (dist[closest] < ray.GetDistance())
             {
                 StackEntry& n = stack[stackCount++];
                 n.node = node.children + closest;
@@ -397,12 +397,12 @@ void AABBTree::TraceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex
         auto& v2 = m_vertices[m_indices[i*3 + 2]];
 
         float distance;
-        if (!ray.intersectTriangle(v0, v1, v2, &distance))
+        if (!ray.IntersectTriangle(v0, v1, v2, &distance))
             continue;
 
-        if (distance < ray.getDistance())
+        if (distance < ray.GetDistance())
         {
-            ray.setHitPoint(distance);
+            ray.SetHitPoint(distance);
 
             if (faceIndex)
                 *faceIndex = i;
@@ -418,8 +418,8 @@ void AABBTree::TraceInnerNode(const Node& node, Ray& ray, unsigned int* faceInde
     float max = std::numeric_limits<float>::max();
     float distance[2] = { max, max };
 
-    ray.intersectBoundingBox(leftChild.bounds, &distance[0]);
-    ray.intersectBoundingBox(rightChild.bounds, &distance[1]);
+    ray.IntersectBoundingBox(leftChild.bounds, &distance[0]);
+    ray.IntersectBoundingBox(rightChild.bounds, &distance[1]);
 
     unsigned int closest = 0;
     unsigned int furthest = 1;
@@ -427,10 +427,10 @@ void AABBTree::TraceInnerNode(const Node& node, Ray& ray, unsigned int* faceInde
     if (distance[1] < distance[0])
         std::swap(closest, furthest);
 
-    if (distance[closest] < ray.getDistance())
+    if (distance[closest] < ray.GetDistance())
         TraceRecursive(node.children + closest, ray, faceIndex);
 
-    if (distance[furthest] < ray.getDistance())
+    if (distance[furthest] < ray.GetDistance())
         TraceRecursive(node.children + furthest, ray, faceIndex);
 }
 }
