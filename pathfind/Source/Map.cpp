@@ -4,6 +4,7 @@
 #include "RecastDetourBuild/Include/Common.hpp"
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/Exception.hpp"
+#include "utility/Include/Ray.hpp"
 
 #include "Detour/Include/DetourNavMesh.h"
 #include "Detour/Include/DetourNavMeshQuery.h"
@@ -16,6 +17,7 @@
 #include <vector>
 #include <iomanip>
 #include <list>
+#include <limits>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -336,9 +338,26 @@ bool Map::FindHeights(const utility::Vertex &position, std::vector<float> &outpu
 
 bool Map::FindHeights(float x, float y, std::vector<float> &output) const
 {
+    const utility::Vertex stop(x, y, std::numeric_limits<float>::lowest());
+    utility::Ray ray({ x, y, (std::numeric_limits<float>::max)() }, stop);
+
     output.clear();
-    x; y;
-    return true;
+
+    while (true)
+    {
+        auto const ret = RayCast(ray);
+
+        if (!ret)
+            break;
+
+        auto const &hitPoint = ray.GetHitPoint();
+
+        output.push_back(hitPoint.Z);
+
+        ray = utility::Ray(hitPoint, stop);
+    }
+
+    return output.size() > 0;
 }
 
 bool Map::RayCast(utility::Ray &ray) const

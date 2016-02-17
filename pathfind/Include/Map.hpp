@@ -57,7 +57,7 @@ class Map
 
         bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;
-        bool FindHeights(float x, float y, std::vector<float> &output) const;                                                   // NOT IMPLEMENTED YET!
+        bool FindHeights(float x, float y, std::vector<float> &output) const;
         bool RayCast(utility::Ray &ray) const;                                                                                  // NOT IMPLEMENTED YET!
 
         void GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const;
