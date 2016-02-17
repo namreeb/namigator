@@ -170,7 +170,7 @@ std::shared_ptr<WmoModel> Map::LoadWmoModel(unsigned int id)
         if (in.fail())
             THROW("Could not open WMO BVH file").ErrorCode();
 
-        model.reset(new WmoModel);
+        model = std::make_shared<WmoModel>();
 
         if (!model->m_aabbTree.Deserialize(in))
             THROW("Could not deserialize WMO").ErrorCode();
@@ -245,7 +245,7 @@ std::shared_ptr<DoodadModel> Map::LoadDoodadModel(const std::string &fileName)
         if (in.fail())
             return false;
 
-        model.reset(new DoodadModel);
+        model = std::make_shared<DoodadModel>();
 
         if (!model->m_aabbTree.Deserialize(in))
             THROW("Could not deserialize doodad").ErrorCode();
