@@ -341,9 +341,9 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
     return true;
 }
 
-bool Map::RayCast(const utility::Ray &ray, utility::Vertex &collision) const
+bool Map::RayCast(utility::Ray &ray) const
 {
-    ray; collision;
+    ray;
     return false;
 }
 
