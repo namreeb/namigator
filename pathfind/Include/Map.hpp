@@ -6,6 +6,7 @@
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/BoundingBox.hpp"
 #include "utility/Include/AABBTree.hpp"
+#include "utility/Include/Ray.hpp"
 
 #include "Detour/Include/DetourNavMesh.h"
 
@@ -52,7 +53,7 @@ class Map
         bool FindPath(const utility::Vertex &start, const utility::Vertex &stop, std::vector<utility::Vertex> &output) const;   // NOT IMPLEMENTED YET!
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;
         bool FindHeights(float x, float y, std::vector<float> &output) const;                                                   // NOT IMPLEMENTED YET!
-        bool RayCast(const utility::Vertex &start, const utility::Vertex &stop, utility::Vertex &collision) const;              // NOT IMPLEMENTED YET!
+        bool RayCast(const utility::Ray &ray, utility::Vertex &collision) const;                                                // NOT IMPLEMENTED YET!
 
         void GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const;
 };
