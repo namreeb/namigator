@@ -90,6 +90,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 
                 ins.m_doodadSet = static_cast<unsigned short>(wmo.m_doodadSet);
                 ins.m_transformMatrix = utility::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
+                ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = wmo.m_bounds;
                 ins.m_fileName = wmo.m_fileName;
 
@@ -110,6 +111,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
                 DoodadInstance ins;
 
                 ins.m_transformMatrix = utility::Matrix::CreateFromArray(doodad.m_transformMatrix, sizeof(doodad.m_transformMatrix) / sizeof(doodad.m_transformMatrix[0]));
+                ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = doodad.m_bounds;
                 ins.m_fileName = doodad.m_fileName;
 
@@ -126,6 +128,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 
         ins.m_doodadSet = static_cast<unsigned short>(globalWmo.m_doodadSet);
         ins.m_transformMatrix = utility::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
+        ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
         ins.m_bounds = globalWmo.m_bounds;
         ins.m_fileName = globalWmo.m_fileName;
 
