@@ -18,6 +18,8 @@
 #include <iomanip>
 #include <list>
 #include <limits>
+#include <algorithm>
+#include <unordered_set>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -132,7 +134,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         ins.m_bounds = globalWmo.m_bounds;
         ins.m_fileName = globalWmo.m_fileName;
 
-        m_wmoInstances.insert({ static_cast<int>(globalWmo.m_id), ins });
+        m_wmoInstances.insert({ GlobalWmoId, ins });
 
         std::stringstream str;
         str << m_dataPath << "\\Nav\\" << m_mapName << "\\" << m_mapName << ".nav";
@@ -150,8 +152,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         if (m_navMesh.addTile(buff, static_cast<int>(navMeshSize), DT_TILE_FREE_DATA, 0, nullptr) != DT_SUCCESS)
             THROW("dtNavMesh::addTile failed");
 
-        // hard coded id for global WMO
-        m_globalWmo = LoadWmoModel(0xFFFFFFFF);
+        m_globalWmo = LoadWmoModel(GlobalWmoId);
     }
 
     if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
@@ -365,8 +366,117 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
 
 bool Map::RayCast(utility::Ray &ray) const
 {
-    ray;
-    return false;
+    int x1, x2, y1, y2;
+
+    auto const start = ray.GetStartPoint();
+    auto const end = ray.GetEndPoint();
+
+    if (m_globalWmo)
+    {
+        auto const &wmoInstance = m_wmoInstances.at(GlobalWmoId);
+
+        if (!ray.IntersectBoundingBox(wmoInstance.m_bounds))
+            return false;
+
+        utility::Ray rayInverse(utility::Vertex::Transform(start, wmoInstance.m_inverseTransformMatrix),
+                                utility::Vertex::Transform(end,   wmoInstance.m_inverseTransformMatrix));
+
+        bool hit = false;
+
+        // does it intersect the global WMO itself?
+        if (m_globalWmo->m_aabbTree.IntersectRay(rayInverse))
+        {
+            hit = true;
+            ray.SetHitPoint(rayInverse.GetDistance());
+        }
+
+        // also check the doodads spawned by this WMO
+        for (auto const &doodad : m_globalWmo->m_loadedDoodadSets[wmoInstance.m_doodadSet])
+            if (doodad->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+            {
+                hit = true;
+                ray.SetHitPoint(rayInverse.GetDistance());
+            }
+
+        return hit;
+    }
+
+    utility::Convert::WorldToAdt(start, x1, y1);
+    utility::Convert::WorldToAdt(end, x2, y2);
+
+    const int xStart = (std::min)(x1, x2);
+    const int xStop  = (std::max)(x1, x2);
+    const int yStart = (std::min)(y1, y2);
+    const int yStop  = (std::max)(y1, y2);
+
+    std::unordered_set<unsigned int> testedDoodads;
+    std::unordered_set<unsigned int> testedWmos;
+
+    // for all tiles involved
+    for (int y = yStart; y <= yStop; ++y)
+        for (int x = xStart; x <= xStop; ++x)
+        {
+            auto const tile = m_tiles[x][y].get();
+
+            // check doodads for this tile
+            for (auto const doodad : tile->m_doodadInstances)
+            {
+                // if we've already tested it, skip it
+                if (testedDoodads.find(doodad) != testedDoodads.end())
+                    continue;
+
+                testedDoodads.insert(doodad);
+
+                auto const &doodadInstance = m_doodadInstances.at(doodad);
+
+                // skip collision check if the ray doesnt intersect this model's bounding box
+                if (!ray.IntersectBoundingBox(doodadInstance.m_bounds))
+                    continue;
+
+                auto const model = m_loadedDoodadModels.at(doodadInstance.m_fileName).lock();
+
+                utility::Ray rayInverse(utility::Vertex::Transform(start, doodadInstance.m_inverseTransformMatrix),
+                                        utility::Vertex::Transform(end,   doodadInstance.m_inverseTransformMatrix));
+
+                // if there is a hit and it is closer than any previous hits, save it
+                if (model->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+                    ray.SetHitPoint(rayInverse.GetDistance());
+            }
+
+            // check WMOs for this tile
+            for (auto const wmo : tile->m_wmoInstances)
+            {
+                // if we've already tested it, skip it
+                if (testedWmos.find(wmo) != testedWmos.end())
+                    continue;
+
+                testedWmos.insert(wmo);
+
+                auto const &wmoInstance = m_wmoInstances.at(wmo);
+
+                // skip collision check if the ray doesnt intersectthis model's bounding box
+                if (!ray.IntersectBoundingBox(wmoInstance.m_bounds))
+                    continue;
+
+                auto const model = m_loadedWmoModels.at(wmoInstance.m_fileName).lock();
+
+                utility::Ray rayInverse(utility::Vertex::Transform(start, wmoInstance.m_inverseTransformMatrix),
+                                        utility::Vertex::Transform(end,   wmoInstance.m_inverseTransformMatrix));
+
+                // first, check against the WMO itself
+
+                // if there is a hit and it is closer than any previous hits, save it
+                if (model->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+                    ray.SetHitPoint(rayInverse.GetDistance());
+
+                // second, check against the doodads from this WMO instance
+                for (auto const &doodad : model->m_loadedDoodadSets[wmoInstance.m_doodadSet])
+                    if (doodad->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+                        ray.SetHitPoint(rayInverse.GetDistance());
+            }
+        }
+
+    return true;
 }
 
 void Map::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const

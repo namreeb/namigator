@@ -26,6 +26,7 @@ class Map
 
     private:
         static constexpr int MaxPathHops = 128;
+        static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
 
         const std::string m_dataPath;
         const std::string m_mapName;
