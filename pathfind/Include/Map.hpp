@@ -34,7 +34,7 @@ class Map
         dtNavMeshQuery m_navQuery;
         dtQueryFilter m_queryFilter;
         
-        std::unique_ptr<Tile> m_tiles[64][64];
+        std::unique_ptr<const Tile> m_tiles[64][64];
         std::shared_ptr<WmoModel> m_globalWmo;
 
         std::unordered_map<unsigned int, WmoInstance> m_wmoInstances;
