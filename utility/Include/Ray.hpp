@@ -48,6 +48,14 @@ class Ray {
         return m_hitDistance;
     }
 
+    const Vector3 &GetStartPoint() {
+        return m_startPoint;
+    }
+
+    const Vector3 &GetEndPoint() {
+        return m_endPoint;
+    }
+
     private:
     Vector3 m_startPoint;
     Vector3 m_endPoint;
