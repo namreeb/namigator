@@ -25,5 +25,8 @@ class Tile
     public:
         Tile(Map *map, std::ifstream &in);
         ~Tile();
+
+        std::vector<unsigned int> m_wmoInstances;
+        std::vector<unsigned int> m_doodadInstances;
 };
 }
