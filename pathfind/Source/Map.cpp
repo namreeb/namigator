@@ -347,7 +347,7 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
 
     output.clear();
 
-    while (true)
+    for (;;)
     {
         auto const ret = RayCast(ray);
 
