@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
     auto const start = time(NULL);
 
-    while (true)
+    for (;;)
     {
         bool done = true;
         for (auto &worker : workers)
