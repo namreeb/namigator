@@ -48,11 +48,11 @@ class Ray {
         return m_hitDistance;
     }
 
-    const Vector3 &GetStartPoint() {
+    const Vector3 &GetStartPoint() const {
         return m_startPoint;
     }
 
-    const Vector3 &GetEndPoint() {
+    const Vector3 &GetEndPoint() const {
         return m_endPoint;
     }
 
