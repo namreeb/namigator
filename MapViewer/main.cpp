@@ -231,7 +231,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     wc.lpszClassName = L"DXWindow";
     wc.hIconSm = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
     wc.hIcon = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
-    wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
+    //wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
 
     RegisterClassEx(&wc);
 

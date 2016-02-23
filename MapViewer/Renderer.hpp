@@ -20,6 +20,9 @@ class Renderer
         static const float DoodadColor[4];
         static const float BackgroundColor[4];
         static const float MeshColor[4];
+        static const float SphereColor[4];
+        static const float LineColor[4];
+        static const float ArrowColor[4];
 
         struct ColoredVertex
         {
@@ -60,6 +63,9 @@ class Renderer
         std::vector<GeometryBuffer> m_wmoBuffers;
         std::vector<GeometryBuffer> m_doodadBuffers;
         std::vector<GeometryBuffer> m_meshBuffers;
+        std::vector<GeometryBuffer> m_sphereBuffers;
+        std::vector<GeometryBuffer> m_lineBuffers;
+        std::vector<GeometryBuffer> m_arrowBuffers;
 
         std::unordered_set<unsigned int> m_wmos;
         std::unordered_set<unsigned int> m_doodads;
@@ -69,8 +75,12 @@ class Renderer
         bool m_renderWMO;
         bool m_renderDoodad;
         bool m_renderMesh;
+        bool m_renderPathfind;
 
-        void InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        bool m_hasCurrentHit;
+        utility::Vertex m_currentHit;
+
+        void InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, bool genNormals = true);
 
     public:
         Renderer(HWND window);
@@ -82,6 +92,9 @@ class Renderer
         void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddSphere(const utility::Vertex& position, float size, int recursionLevel);
+        void AddLine(const utility::Vertex& start, const utility::Vertex& end);
+        void AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step);
 
         bool HasWmo(unsigned int id) const;
         bool HasDoodad(unsigned int id) const;

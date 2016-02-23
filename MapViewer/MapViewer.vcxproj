@@ -169,6 +169,7 @@
     <ClInclude Include="CommonControl.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SphereMesh.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MapViewer.rc" />
