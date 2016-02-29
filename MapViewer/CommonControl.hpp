@@ -32,4 +32,5 @@ class CommonControl
         void AddCheckBox(int id, const std::wstring &text, int x, int y, bool checked, std::function<void (bool)> handler);
 
         const std::string GetText(int id) const;
+        void Enable(int id, bool enabled) const;
 };

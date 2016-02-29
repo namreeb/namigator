@@ -332,6 +332,16 @@ void ChangeMap(const std::string &cn)
 
             gRenderer->AddMesh(meshVertices, meshIndices);
         }
+
+        gControls->Enable(Controls::ADTX, false);
+        gControls->Enable(Controls::ADTY, false);
+        gControls->Enable(Controls::LoadADT, false);
+    }
+    else
+    {
+        gControls->Enable(Controls::ADTX, true);
+        gControls->Enable(Controls::ADTY, true);
+        gControls->Enable(Controls::LoadADT, true);
     }
 }
 
@@ -480,6 +490,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     gControls->AddTextBox(Controls::ADTY, L"40", 25, 60, 75, 20);
 
     gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 57, 100, 25, LoadADTFromGUI);
+
+    gControls->Enable(Controls::ADTX, false);
+    gControls->Enable(Controls::ADTY, false);
+    gControls->Enable(Controls::LoadADT, false);
 
     gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 85, false, [](bool checked) { gRenderer->SetWireframe(checked); });
     gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 110, true, [](bool checked) { gRenderer->SetRenderADT(checked); });

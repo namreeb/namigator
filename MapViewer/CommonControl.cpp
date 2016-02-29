@@ -165,6 +165,7 @@ void CommonControl::AddButton(int id, const std::wstring &text, int x, int y, in
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
 
+    m_controls.emplace(id, control);
     m_buttonHandlers.emplace(id, handler);
 }
 
@@ -198,4 +199,13 @@ const std::string CommonControl::GetText(int id) const
     GetWindowTextA(control->second, &buffer[0], static_cast<int>(buffer.size()));
 
     return std::string(&buffer[0]);
+}
+
+void CommonControl::Enable(int id, bool enabled) const
+{
+    auto control = m_controls.find(id);
+
+    assert(control != m_controls.cend());
+
+    EnableWindow(control->second, static_cast<BOOL>(enabled));
 }
