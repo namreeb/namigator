@@ -31,7 +31,9 @@ void Worker::Work()
             // note that no further work should be added, but we delay shutting down the thread for simplicity
             if (m_wmo)
             {
-                m_meshBuilder->GenerateAndSaveGlobalWMO();
+                if (!m_meshBuilder->GenerateAndSaveGlobalWMO())
+                    std::cout << "Failed to build global WMO " << std::endl;
+
                 break;
             }
 
@@ -45,7 +47,14 @@ void Worker::Work()
                 << std::setfill(' ') << std::setw(2) << adtY << ")...\n";
             std::cout << str.str();
 
-            m_meshBuilder->GenerateAndSaveTile(adtX, adtY);
+            if (!m_meshBuilder->GenerateAndSaveTile(adtX, adtY))
+            {
+                std::stringstream error;
+                error << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
+                      << std::setfill(' ') << std::setw(2) << adtX << ", "
+                      << std::setfill(' ') << std::setw(2) << adtY << ")... FAILED!\n";
+                std::cout << error.str();
+            }
 
             // let the builder know that we are done with these up to nine tiles.  it will decide when to unload them
             for (int y = adtY - 1; y <= adtY + 1; ++y)

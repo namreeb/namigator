@@ -154,6 +154,18 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, st
     chf.reset(nullptr);
     cset.reset(nullptr);
 
+    // too many vertices?
+    if (polyMesh->nverts >= 0xFFFF)
+        return false;
+
+    for (int i = 0; i < polyMesh->npolys; ++i)
+    {
+        if (!polyMesh->areas[i])
+            continue;
+
+        polyMesh->flags[i] = static_cast<unsigned short>(PolyFlags::Walkable | polyMesh->areas[i]);
+    }
+
     dtNavMeshCreateParams params;
     ZERO(params);
 

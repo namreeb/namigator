@@ -54,7 +54,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
     params.orig[0] = tileSize;
     params.orig[1] = 0.f;
     params.orig[2] = tileSize;
-    params.tileHeight = params.tileWidth = RecastSettings::TileVoxelSize;
+    params.tileHeight = params.tileWidth = RecastSettings::TileSize;
     params.maxTiles = maxTiles;
     params.maxPolys = 1 << DT_POLY_BITS;
 
@@ -315,6 +315,11 @@ bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std
 
     if (m_navQuery.findNearestPoly(recastEnd, extents, &m_queryFilter, &endPolyRef, nullptr) != DT_SUCCESS)
         return false;
+
+    if (startPolyRef == endPolyRef)
+    {
+        std::cout << "This wasn't supposed to happen \\o/" << std::endl;
+    }
 
     dtPolyRef polyRefBuffer[MaxPathHops];
     

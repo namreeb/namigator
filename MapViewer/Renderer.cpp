@@ -28,11 +28,11 @@ const float Renderer::WmoColor[4]           = { 1.f, 0.95f, 0.f, 1.f };
 const float Renderer::DoodadColor[4]        = { 1.f, 0.f, 0.f, 1.f };
 const float Renderer::MeshColor[4]          = { 1.f, 1.f, 1.f, 0.75f };
 const float Renderer::BackgroundColor[4]    = { 0.f, 0.2f, 0.4f, 1.f };
-const float Renderer::SphereColor[4]        = { 0.8f, 0.2f, 0.4f, 0.75f };
-const float Renderer::LineColor[4]          = { 0.5f, 0.8f, 0.0f, 1.f };
-const float Renderer::ArrowColor[4] = { 0.5f, 0.8f, 0.0f, 1.f };
+const float Renderer::SphereColor[4]        = { 1.f, 0.5f, 0.25f, 0.75f };
+const float Renderer::LineColor[4]          = { 0.5f, 0.25f, 0.0f, 1.f };
+const float Renderer::ArrowColor[4]         = { 0.5f, 0.25f, 0.0f, 1.f };
 
-Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true), m_hasCurrentHit(false)
+Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true)
 {
     RECT wr;
     GetClientRect(window, &wr);
@@ -186,11 +186,15 @@ void Renderer::ClearBuffers()
     m_wmoBuffers.clear();
     m_doodadBuffers.clear();
     m_meshBuffers.clear();
+
+    ClearSprites();
+}
+
+void Renderer::ClearSprites()
+{
     m_sphereBuffers.clear();
     m_lineBuffers.clear();
     m_arrowBuffers.clear();
-
-    m_hasCurrentHit = false;
 }
 
 void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -293,6 +297,19 @@ void Renderer::AddArrows(const utility::Vertex& start, const utility::Vertex& en
         // Yeah I know, not very efficient...
         // Should change InsertBuffer to append verts + indices instead of allocating new buffers all the time.
         InsertBuffer(m_arrowBuffers, ArrowColor, transformedVerts, std::vector<int>{}, false);
+    }
+}
+
+void Renderer::AddPath(const std::vector<utility::Vertex> &path)
+{
+    assert(path.size() > 1);
+
+    for (size_t i = 0; i < path.size(); ++i)
+    {
+        AddSphere(path[i], 4.f);
+
+        if (!!i)
+            AddArrows(path[i - 1], path[i], 10.f);
     }
 }
 
@@ -569,7 +586,7 @@ void Renderer::SetWireframe(bool enabled)
     m_deviceContext->RSSetState(m_rasterizerState);
 }
 
-void Renderer::HandleMousePicking(int x, int y)
+bool Renderer::HitTest(int x, int y, utility::Vertex &out) const
 {
     utility::Vector3 nearPosition;
     nearPosition.X = static_cast<float>(x);
@@ -610,25 +627,9 @@ void Renderer::HandleMousePicking(int x, int y)
         }
     }
 
-    if (faceIndex != -1)
-    {
-        const auto& hit = ray.GetHitPoint();
+    if (faceIndex == -1)
+        return false;
 
-        AddSphere(hit, 6.0f, 2);
-
-        if (m_hasCurrentHit)
-        {
-            AddLine(m_currentHit, hit);
-            AddArrows(m_currentHit, hit, 10.f);
-        }
-
-        m_currentHit = hit;
-        m_hasCurrentHit = true;
-
-        std::stringstream ss;
-        ss << "Hit face index: " << faceIndex << " in mesh buffer: " << meshBuffer << std::endl;
-        ss << "Hit position: (X: " << hit.X << " Y: " << hit.Y << " Z: " << hit.Z << ")" << std::endl;
-
-        OutputDebugStringA(ss.str().c_str());
-    }
+    out = ray.GetHitPoint();
+    return true;
 }

@@ -44,6 +44,9 @@ int gMovingVertical = 0;
 int gMovingRight = 0;
 int gMovingForward = 0;
 
+bool gHasStart;
+utility::Vertex gStart;
+
 // this is the main message handler for the program
 LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -136,8 +139,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_MOUSEWHEEL:
         {
-            const short distance = static_cast<short>(wParam >> 16);
-
+            auto const distance = static_cast<short>(wParam >> 16);
             gRenderer->m_camera.MoveIn(0.1f * distance);
 
             return TRUE;
@@ -145,8 +147,35 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_LBUTTONDOWN:
         {
-            gRenderer->HandleMousePicking(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-            return TRUE;
+            utility::Vertex hit;
+            if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hit))
+            {
+                if (gHasStart)
+                {
+                    std::vector<utility::Vertex> path;
+
+                    if (gNavMesh->FindPath(gStart, hit, path))
+                    {
+                        gHasStart = false;
+                        gRenderer->ClearSprites();
+                        gRenderer->AddPath(path);
+
+                        return TRUE;
+                    }
+
+                    MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
+                }
+
+                gRenderer->ClearSprites();
+
+                gHasStart = true;
+                gStart = hit;
+                gRenderer->AddSphere(gStart, 6.f);
+
+                return TRUE;
+            }
+
+            break;
         }
 
         case WM_RBUTTONDOWN:
@@ -288,6 +317,8 @@ void GetMapName(const std::string &inName, std::string &outName)
 
 void ChangeMap(const std::string &cn)
 {
+    gHasStart = false;
+
     std::string mapName;
 
     GetMapName(cn, mapName);
@@ -447,6 +478,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         MessageBox(NULL, L"Maps folder does not exist", L"ERROR", 0);
         return EXIT_FAILURE;
     }
+
+    gHasStart = false;
 
     parser::Parser::Initialize(".\\Data");
 

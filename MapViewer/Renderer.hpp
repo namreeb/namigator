@@ -77,30 +77,28 @@ class Renderer
         bool m_renderMesh;
         bool m_renderPathfind;
 
-        bool m_hasCurrentHit;
-        utility::Vertex m_currentHit;
-
         void InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, bool genNormals = true);
 
     public:
         Renderer(HWND window);
 
         void ClearBuffers();
+        void ClearSprites();
 
         void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
-        void AddSphere(const utility::Vertex& position, float size, int recursionLevel);
+        void AddSphere(const utility::Vertex& position, float size, int recursionLevel = 2);
         void AddLine(const utility::Vertex& start, const utility::Vertex& end);
         void AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step);
+        void AddPath(const std::vector<utility::Vertex> &path);
 
         bool HasWmo(unsigned int id) const;
         bool HasDoodad(unsigned int id) const;
 
         void Render();
-        void HandleMousePicking(int x, int y);
 
         void SetWireframe(bool enabled);
         void SetRenderADT(bool enabled) { m_renderADT = enabled; }
@@ -108,6 +106,8 @@ class Renderer
         void SetRenderWMO(bool enabled) { m_renderWMO = enabled; }
         void SetRenderDoodad(bool enabled) { m_renderDoodad = enabled; }
         void SetRenderMesh(bool enabled) { m_renderMesh = enabled; }
+
+        bool HitTest(int x, int y, utility::Vertex &out) const;
 
         Camera m_camera;
 };

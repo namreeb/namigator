@@ -2,11 +2,14 @@
 
 enum AreaFlags : unsigned char
 {
-    ADT     = 1 << 1,
-    Liquid  = 1 << 2,
-    WMO     = 1 << 3,
-    Doodad  = 1 << 4,
+    Walkable    = 1 << 0,
+    ADT         = 1 << 1,
+    Liquid      = 1 << 2,
+    WMO         = 1 << 3,
+    Doodad      = 1 << 4,
 };
+
+using PolyFlags = AreaFlags;
 
 class RecastSettings
 {
