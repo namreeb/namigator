@@ -316,11 +316,6 @@ bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std
     if (m_navQuery.findNearestPoly(recastEnd, extents, &m_queryFilter, &endPolyRef, nullptr) != DT_SUCCESS)
         return false;
 
-    if (startPolyRef == endPolyRef)
-    {
-        std::cout << "This wasn't supposed to happen \\o/" << std::endl;
-    }
-
     dtPolyRef polyRefBuffer[MaxPathHops];
     
     int pathLength;
