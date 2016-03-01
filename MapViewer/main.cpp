@@ -150,27 +150,25 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             utility::Vertex hit;
             if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hit))
             {
+                gRenderer->ClearSprites();
+
                 if (gHasStart)
                 {
                     std::vector<utility::Vertex> path;
 
+                    gHasStart = false;
+
                     if (gNavMesh->FindPath(gStart, hit, path))
-                    {
-                        gHasStart = false;
-                        gRenderer->ClearSprites();
                         gRenderer->AddPath(path);
-
-                        return TRUE;
-                    }
-
-                    MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
+                    else
+                        MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
                 }
-
-                gRenderer->ClearSprites();
-
-                gHasStart = true;
-                gStart = hit;
-                gRenderer->AddSphere(gStart, 6.f);
+                else
+                {
+                    gHasStart = true;
+                    gStart = hit;
+                    gRenderer->AddSphere(gStart, 6.f);
+                }
 
                 return TRUE;
             }
