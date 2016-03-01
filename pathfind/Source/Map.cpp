@@ -299,7 +299,7 @@ void Map::UnloadTile(int x, int y)
     m_tiles[x][y].reset(nullptr);
 }
 
-bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output) const
+bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
 {
     constexpr float extents[] = { 3.f, 5.f, 3.f };
 
@@ -310,20 +310,28 @@ bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std
     utility::Convert::VertexToRecast(end, recastEnd);
 
     dtPolyRef startPolyRef, endPolyRef;
-    if (m_navQuery.findNearestPoly(recastStart, extents, &m_queryFilter, &startPolyRef, nullptr) != DT_SUCCESS)
+    if (!(m_navQuery.findNearestPoly(recastStart, extents, &m_queryFilter, &startPolyRef, nullptr) & DT_SUCCESS))
         return false;
 
-    if (m_navQuery.findNearestPoly(recastEnd, extents, &m_queryFilter, &endPolyRef, nullptr) != DT_SUCCESS)
+    if (startPolyRef == 0)
+        return false;
+
+    if (!(m_navQuery.findNearestPoly(recastEnd, extents, &m_queryFilter, &endPolyRef, nullptr) & DT_SUCCESS))
+        return false;
+
+    if (endPolyRef == 0)
         return false;
 
     dtPolyRef polyRefBuffer[MaxPathHops];
     
     int pathLength;
-    if (m_navQuery.findPath(startPolyRef, endPolyRef, recastStart, recastEnd, &m_queryFilter, polyRefBuffer, &pathLength, MaxPathHops) != DT_SUCCESS)
+    auto const findPathResult = m_navQuery.findPath(startPolyRef, endPolyRef, recastStart, recastEnd, &m_queryFilter, polyRefBuffer, &pathLength, MaxPathHops);
+    if (!(findPathResult & DT_SUCCESS) || (!allowPartial && !!(findPathResult & DT_PARTIAL_RESULT)))
         return false;
 
     float pathBuffer[MaxPathHops*3];
-    if (m_navQuery.findStraightPath(recastStart, recastEnd, polyRefBuffer, pathLength, pathBuffer, nullptr, nullptr, &pathLength, MaxPathHops) != DT_SUCCESS)
+    auto const findStraightPathResult = m_navQuery.findStraightPath(recastStart, recastEnd, polyRefBuffer, pathLength, pathBuffer, nullptr, nullptr, &pathLength, MaxPathHops);
+    if (!(findStraightPathResult & DT_SUCCESS) || (!allowPartial && !!(findStraightPathResult & DT_PARTIAL_RESULT)))
         return false;
 
     output.clear();

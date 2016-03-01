@@ -158,7 +158,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
                     gHasStart = false;
 
-                    if (gNavMesh->FindPath(gStart, hit, path))
+                    if (gNavMesh->FindPath(gStart, hit, path, false))
                         gRenderer->AddPath(path);
                     else
                         MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);

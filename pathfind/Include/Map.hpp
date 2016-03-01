@@ -56,7 +56,7 @@ class Map
         bool LoadTile(int x, int y);
         void UnloadTile(int x, int y);
 
-        bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output) const;
+        bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;
         bool FindHeights(float x, float y, std::vector<float> &output) const;
         bool RayCast(utility::Ray &ray) const;                                                                                  // NOT IMPLEMENTED YET!
