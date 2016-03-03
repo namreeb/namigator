@@ -578,7 +578,7 @@ void Renderer::SetWireframe(bool enabled)
     else
     {
         rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-        rasterizerDesc.CullMode = D3D11_CULL_NONE;
+        rasterizerDesc.CullMode = D3D11_CULL_BACK;
     }
 
     m_rasterizerState.Release();
