@@ -40,18 +40,6 @@ WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility
 
     for (auto const &v : vertices)
     {
-#ifdef _DEBUG
-        if (v.X < Bounds.MinCorner.X ||
-            v.X > Bounds.MaxCorner.X ||
-            v.Y < Bounds.MinCorner.Y ||
-            v.Y > Bounds.MaxCorner.Y)
-        {
-            std::stringstream str;
-            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " loaded WMO " << wmo->FileName << " with incorrect bounding box" << std::endl;
-            std::cout << str.str();
-        }
-#endif
-
         UpdateBounds(Bounds, v);
 
         int adtX, adtY;
@@ -63,18 +51,6 @@ WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility
 
     for (auto const &v : vertices)
     {
-#ifdef _DEBUG
-        if (v.X < Bounds.MinCorner.X ||
-            v.X > Bounds.MaxCorner.X ||
-            v.Y < Bounds.MinCorner.Y ||
-            v.Y > Bounds.MaxCorner.Y)
-        {
-            std::stringstream str;
-            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " loaded WMO " << wmo->FileName << " with incorrect bounding box" << std::endl;
-            std::cout << str.str();
-        }
-#endif
-
         UpdateBounds(Bounds, v);
 
         int adtX, adtY;
@@ -86,18 +62,6 @@ WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility
 
     for (auto const &v : vertices)
     {
-#ifdef _DEBUG
-        if (v.X < Bounds.MinCorner.X ||
-            v.X > Bounds.MaxCorner.X ||
-            v.Y < Bounds.MinCorner.Y ||
-            v.Y > Bounds.MaxCorner.Y)
-        {
-            std::stringstream str;
-            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " loaded WMO " << wmo->FileName << " with incorrect bounding box" << std::endl;
-            std::cout << str.str();
-        }
-#endif
-
         UpdateBounds(Bounds, v);
 
         int adtX, adtY;
