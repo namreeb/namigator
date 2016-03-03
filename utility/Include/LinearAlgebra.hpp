@@ -80,6 +80,7 @@ Vector3 operator * (float multiplier, const Vector3 &vector);
 Vector3 operator * (const Vector3& vector, float multiplier);
 std::ostream & operator << (std::ostream &, const Vector3 &);
 std::istream & operator >> (std::istream &, Vector3 &);
+bool operator == (const Vector3 &a, const Vector3 &b);
 
 typedef Vector3 Vertex;
 

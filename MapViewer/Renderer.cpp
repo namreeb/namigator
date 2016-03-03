@@ -186,6 +186,7 @@ void Renderer::ClearBuffers()
     m_wmoBuffers.clear();
     m_doodadBuffers.clear();
     m_meshBuffers.clear();
+    m_lineBuffers.clear();
 
     ClearSprites();
 }
@@ -193,7 +194,6 @@ void Renderer::ClearBuffers()
 void Renderer::ClearSprites()
 {
     m_sphereBuffers.clear();
-    m_lineBuffers.clear();
     m_arrowBuffers.clear();
 }
 
@@ -233,6 +233,11 @@ void Renderer::AddMesh(const std::vector<utility::Vertex> &vertices, const std::
     InsertBuffer(m_meshBuffers, MeshColor, vertices, indices);
 }
 
+void Renderer::AddLines(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    InsertBuffer(m_lineBuffers, LineColor, vertices, indices, false);
+}
+
 void Renderer::AddSphere(const utility::Vertex& position, float size, int recursionLevel)
 {
     auto transform = utility::Matrix::CreateTranslationMatrix(position)
@@ -245,12 +250,6 @@ void Renderer::AddSphere(const utility::Vertex& position, float size, int recurs
         vertex = utility::Vertex::Transform(vertex, transform);
 
     InsertBuffer(m_sphereBuffers, SphereColor, vertices, sphereMesh.GetIndices());
-}
-
-void Renderer::AddLine(const utility::Vertex& start, const utility::Vertex& end)
-{
-    std::vector<utility::Vertex> vertices{ start, end };
-    InsertBuffer(m_lineBuffers, LineColor, vertices, std::vector<int>{}, false);
 }
 
 void Renderer::AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step)
@@ -510,6 +509,7 @@ void Renderer::Render()
 
         // draw meshes (also with alpha blending)
         if (m_renderMesh)
+        {
             for (size_t i = 0; i < m_meshBuffers.size(); ++i)
             {
                 ID3D11Buffer *const pBuffer[] = { m_meshBuffers[i].VertexBufferGpu };
@@ -519,6 +519,16 @@ void Renderer::Render()
 
                 m_deviceContext->DrawIndexed(static_cast<UINT>(m_meshBuffers[i].IndexBufferCpu.size()), 0, 0);
             }
+
+            for (size_t i = 0; i < m_lineBuffers.size(); ++i)
+            {
+                ID3D11Buffer *const pBuffer[] = { m_lineBuffers[i].VertexBufferGpu };
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
+                m_deviceContext->IASetIndexBuffer(m_lineBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_lineBuffers[i].IndexBufferCpu.size()), 0, 0);
+            }
+        }
 
         // draw pathfind queries (also with alpha blending)
         if (m_renderPathfind)
@@ -531,15 +541,6 @@ void Renderer::Render()
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                 m_deviceContext->DrawIndexed(static_cast<UINT>(m_sphereBuffers[i].IndexBufferCpu.size()), 0, 0);
-            }
-
-            for (size_t i = 0; i < m_lineBuffers.size(); ++i)
-            {
-                ID3D11Buffer *const pBuffer[] = { m_lineBuffers[i].VertexBufferGpu };
-                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-                m_deviceContext->Draw(static_cast<UINT>(m_lineBuffers[i].VertexBufferCpu.size()), 0);
             }
 
             for (size_t i = 0; i < m_arrowBuffers.size(); ++i)

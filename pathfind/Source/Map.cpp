@@ -486,43 +486,4 @@ bool Map::RayCast(utility::Ray &ray) const
 
     return true;
 }
-
-void Map::GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const
-{
-    auto const tile = m_navMesh.getTileAt(x, y, 0);
-
-    unsigned int triCount = 0;
-
-    for (int i = 0; i < tile->header->detailMeshCount; ++i)
-        triCount += tile->detailMeshes[i].triCount;
-
-    vertices.reserve(3 * triCount);
-    indices.reserve(triCount);
-
-    for (int i = 0; i < tile->header->polyCount; ++i)
-    {
-        auto const p = &tile->polys[i];
-
-        if (p->areaAndtype == DT_POLYTYPE_OFFMESH_CONNECTION)
-            continue;
-
-        auto const pd = &tile->detailMeshes[i];
-
-        for (int j = 0; j < pd->triCount; ++j)
-        {
-            auto const t = &tile->detailTris[(pd->triBase + j) * 4];
-
-            for (int k = 0; k < 3; ++k)
-            {
-                auto const vert = t[k] < p->vertCount ? &tile->verts[p->verts[t[k]] * 3] : &tile->detailVerts[(pd->vertBase + t[k] - p->vertCount) * 3];
-
-                vertices.push_back({ -vert[2], -vert[0], vert[1] });
-            }
-
-            indices.push_back(static_cast<int>(vertices.size() - 3));
-            indices.push_back(static_cast<int>(vertices.size() - 2));
-            indices.push_back(static_cast<int>(vertices.size() - 1));
-        }
-    }
-}
 }

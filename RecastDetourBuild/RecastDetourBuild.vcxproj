@@ -68,7 +68,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST_ROOT);$(SolutionDir)recastnavigation\DebugUtils\Include;$(SolutionDir)recastnavigation\DetourTileCache\Include;</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST_ROOT);$(SolutionDir)recastnavigation\DebugUtils\Include;$(SolutionDir)recastnavigation\DetourTileCache\Include;</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST_ROOT);$(SolutionDir)recastnavigation\DebugUtils\Include;$(SolutionDir)recastnavigation\DetourTileCache\Include;</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST_ROOT);$(SolutionDir)recastnavigation\DebugUtils\Include;$(SolutionDir)recastnavigation\DetourTileCache\Include;</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -126,6 +137,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\recastnavigation\DebugUtils\Source\DebugDraw.cpp" />
+    <ClCompile Include="..\recastnavigation\DebugUtils\Source\DetourDebugDraw.cpp" />
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourAlloc.cpp" />
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourCommon.cpp" />
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMesh.cpp" />
@@ -144,6 +157,8 @@
     <ClCompile Include="..\recastnavigation\Recast\Source\RecastRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\recastnavigation\DebugUtils\Include\DebugDraw.h" />
+    <ClInclude Include="..\recastnavigation\DebugUtils\Include\DetourDebugDraw.h" />
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourAlloc.h" />
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourAssert.h" />
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourCommon.h" />

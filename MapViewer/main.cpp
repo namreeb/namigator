@@ -1,5 +1,6 @@
 #include "Renderer.hpp"
 #include "CommonControl.hpp"
+#include "DetourDebugDraw.hpp"
 
 #include "parser/Include/parser.hpp"
 #include "parser/Include/Map/Map.hpp"
@@ -9,6 +10,8 @@
 #include "utility/Include/Directory.hpp"
 
 #include "pathfind/Include/Map.hpp"
+
+#include "DebugUtils/Include/DetourDebugDraw.h"
 
 #include "resource.h"
 
@@ -349,18 +352,19 @@ void ChangeMap(const std::string &cn)
         gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
         gRenderer->m_camera.LookAt(cx, cy, cz);
 
-        std::vector<utility::Vertex> meshVertices;
-        std::vector<int> meshIndices;
-        gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices);
+        //std::vector<utility::Vertex> meshVertices;
+        //std::vector<int> meshIndices;
+        //std::vector<utility::Vertex> hardEdgeLines;
+        //gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices, hardEdgeLines);
 
-        if (!!meshVertices.size() && !!meshIndices.size())
-        {
-            // raise the z values for each mesh vertex slightly to help visualize them
-            for (size_t i = 0; i < meshVertices.size(); ++i)
-                meshVertices[i].Z += 0.3f;
+        //if (!!meshVertices.size() && !!meshIndices.size())
+        //{
+        //    // raise the z values for each mesh vertex slightly to help visualize them
+        //    for (size_t i = 0; i < meshVertices.size(); ++i)
+        //        meshVertices[i].Z += 0.3f;
 
-            gRenderer->AddMesh(meshVertices, meshIndices);
-        }
+        //    gRenderer->AddMesh(meshVertices, meshIndices);
+        //}
 
         gControls->Enable(Controls::ADTX, false);
         gControls->Enable(Controls::ADTY, false);
@@ -441,17 +445,24 @@ void LoadADTFromGUI()
 
     if (gNavMesh->LoadTile(adtX, adtY))
     {
-        std::vector<utility::Vertex> meshVertices;
-        std::vector<std::int32_t> meshIndices;
-        gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices);
+        DetourDebugDraw dd(gRenderer.get());
 
-        assert(!!meshVertices.size() && !!meshIndices.size());
+        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
 
-        // raise the z values for each mesh vertex slightly to help visualize them
-        for (size_t i = 0; i < meshVertices.size(); ++i)
-            meshVertices[i].Z += 0.3f;
+        //std::vector<utility::Vertex> meshVertices;
+        //std::vector<std::int32_t> meshIndices;
+        //std::vector<utility::Vertex> hardEdgeLines;
+        //gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices, hardEdgeLines);
 
-        gRenderer->AddMesh(meshVertices, meshIndices);
+        //assert(!!meshVertices.size() && !!meshIndices.size());
+
+        //// raise the z values for each mesh vertex slightly to help visualize them
+        //for (size_t i = 0; i < meshVertices.size(); ++i)
+        //    meshVertices[i].Z += 0.3f;
+
+        //gRenderer->AddMesh(meshVertices, meshIndices);
+        //for (size_t i = 0; i < hardEdgeLines.size(); i += 2)
+        //    gRenderer->AddLine(hardEdgeLines[i], hardEdgeLines[i + 1]);
     }
 
     const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;

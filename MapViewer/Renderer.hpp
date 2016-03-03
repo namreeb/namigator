@@ -90,8 +90,8 @@ class Renderer
         void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddLines(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddSphere(const utility::Vertex& position, float size, int recursionLevel = 2);
-        void AddLine(const utility::Vertex& start, const utility::Vertex& end);
         void AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step);
         void AddPath(const std::vector<utility::Vertex> &path);
 

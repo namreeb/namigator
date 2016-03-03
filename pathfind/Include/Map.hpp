@@ -61,6 +61,7 @@ class Map
         bool FindHeights(float x, float y, std::vector<float> &output) const;
         bool RayCast(utility::Ray &ray) const;                                                                                  // NOT IMPLEMENTED YET!
 
-        void GetTileGeometry(int x, int y, std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const;
+        const dtNavMesh &GetNavMesh() const { return m_navMesh; }
+        const dtNavMeshQuery &GetNavMeshQuery() const { return m_navQuery; }
 };
 }
