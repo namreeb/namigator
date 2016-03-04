@@ -28,7 +28,7 @@
 static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int type");
 static_assert(sizeof(float) == 4, "float must be a 32 bit type");
 
-#define DISABLE_AREA_FLAGS
+#define DISABLE_SELECTIVE_FILTERING
 
 namespace
 {
@@ -40,10 +40,6 @@ bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, 
 
     std::vector<float> rastVert;
     utility::Convert::VerticesToRecast(vertices, rastVert);
-
-#ifdef DISABLE_AREA_FLAGS
-    areaFlags = RC_WALKABLE_AREA;
-#endif
 
     std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
 
@@ -539,9 +535,9 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         }
     }
 
-#ifndef DISABLE_AREA_FLAGS
     FilterGroundBeneathLiquid(*solid);
 
+#ifndef DISABLE_SELECTIVE_FILTERING
     // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
     {
         std::vector<rcSpan *> adtSpans;
