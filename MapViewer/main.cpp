@@ -161,7 +161,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
                     gHasStart = false;
 
-                    if (gNavMesh->FindPath(gStart, hit, path, false))
+                    if (gNavMesh->FindPath(gStart, hit, path, true))
                         gRenderer->AddPath(path);
                     else
                         MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
@@ -448,21 +448,6 @@ void LoadADTFromGUI()
         DetourDebugDraw dd(gRenderer.get());
 
         duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
-
-        //std::vector<utility::Vertex> meshVertices;
-        //std::vector<std::int32_t> meshIndices;
-        //std::vector<utility::Vertex> hardEdgeLines;
-        //gNavMesh->GetTileGeometry(adtX, adtY, meshVertices, meshIndices, hardEdgeLines);
-
-        //assert(!!meshVertices.size() && !!meshIndices.size());
-
-        //// raise the z values for each mesh vertex slightly to help visualize them
-        //for (size_t i = 0; i < meshVertices.size(); ++i)
-        //    meshVertices[i].Z += 0.3f;
-
-        //gRenderer->AddMesh(meshVertices, meshIndices);
-        //for (size_t i = 0; i < hardEdgeLines.size(); i += 2)
-        //    gRenderer->AddLine(hardEdgeLines[i], hardEdgeLines[i + 1]);
     }
 
     const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;

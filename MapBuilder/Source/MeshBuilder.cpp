@@ -28,7 +28,7 @@
 static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int type");
 static_assert(sizeof(float) == 4, "float must be a 32 bit type");
 
-#define DISABLE_SELECTIVE_FILTERING
+//#define DISABLE_SELECTIVE_FILTERING
 
 namespace
 {
@@ -125,11 +125,7 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, st
     if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, config.walkableClimb, solid, *chf))
         return false;
 
-    //if (!rcErodeWalkableArea(&ctx, config.walkableRadius, *chf))
-    //    return false;
-
     // we use watershed partitioning only for now.  we also have the option of monotone and partition layers.  see Sample_TileMesh.cpp for more information.
-
     if (!rcBuildDistanceField(&ctx, *chf))
         return false;
 
