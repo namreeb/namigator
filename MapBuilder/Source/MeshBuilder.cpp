@@ -28,6 +28,8 @@
 static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int type");
 static_assert(sizeof(float) == 4, "float must be a 32 bit type");
 
+#define DISABLE_AREA_FLAGS
+
 namespace
 {
 bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
@@ -38,6 +40,10 @@ bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, 
 
     std::vector<float> rastVert;
     utility::Convert::VerticesToRecast(vertices, rastVert);
+
+#ifdef DISABLE_AREA_FLAGS
+    areaFlags = RC_WALKABLE_AREA;
+#endif
 
     std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
 
@@ -533,12 +539,13 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
         }
     }
 
+#ifndef DISABLE_AREA_FLAGS
     FilterGroundBeneathLiquid(*solid);
 
     // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
     {
         std::vector<rcSpan *> adtSpans;
-                
+
         adtSpans.reserve(solid->width*solid->height);
 
         for (int i = 0; i < solid->width * solid->height; ++i)
@@ -558,6 +565,11 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
 
         RestoreAdtSpans(adtSpans);
     }
+#else
+    rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+    rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+    rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+#endif
 
     // Write the BVH for every new WMO
     for (auto const& wmoId : rasterizedWmos)
