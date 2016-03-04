@@ -29,8 +29,8 @@ class RecastSettings
 
         static constexpr float TileSize = 533.f + (1.f / 3.f);
         static constexpr int VoxelWalkableRadius = static_cast<int>((WalkableRadius + 0.5f) / (TileSize / TileVoxelSize));
-        static constexpr int VoxelWalkableHeight = static_cast<int>((WalkableHeight + 0.5f) / RecastSettings::CellHeight);
-        static constexpr int VoxelWalkableClimb = static_cast<int>((WalkableClimb + 0.5f) / RecastSettings::CellHeight);
+        static constexpr int VoxelWalkableHeight = static_cast<int>(WalkableHeight / RecastSettings::CellHeight);
+        static constexpr int VoxelWalkableClimb = static_cast<int>(WalkableClimb / RecastSettings::CellHeight);
         static constexpr float CellSize = TileSize / TileVoxelSize;
 
         static_assert(VoxelWalkableRadius > 0, "VoxelWalkableRadius must be a positive integer");

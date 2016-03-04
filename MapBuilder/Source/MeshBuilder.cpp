@@ -29,7 +29,8 @@ static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int t
 static_assert(sizeof(float) == 4, "float must be a 32 bit type");
 
 //#define DISABLE_SELECTIVE_FILTERING
-#define MONOTONE_PARTITIONING
+//#define MONOTONE_PARTITIONING
+#define ERODE_WALKABLE_AREA
 
 namespace
 {
@@ -125,6 +126,11 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, st
 
     if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, config.walkableClimb, solid, *chf))
         return false;
+
+#ifdef ERODE_WALKABLE_AREA
+    if (!rcErodeWalkableArea(&ctx, config.walkableRadius, *chf))
+        return false;
+#endif
 
 #ifdef MONOTONE_PARTITIONING
     if (!rcBuildRegionsMonotone(&ctx, *chf, config.borderSize, config.minRegionArea, config.mergeRegionArea))
@@ -623,6 +629,18 @@ bool MeshBuilder::GenerateAndSaveGSet()
     config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
     config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
 
+    {
+        std::ofstream gsetOut(m_map->Name + ".gset", std::ofstream::trunc);
+
+        gsetOut << "s " << config.cs << " " << config.ch << " " << RecastSettings::WalkableHeight << " " << RecastSettings::WalkableRadius << " " << RecastSettings::WalkableClimb << " "
+                << RecastSettings::WalkableSlope << " " << RecastSettings::MinRegionSize << " " << RecastSettings::MergeRegionSize << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
+                << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
+                << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
+                << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
+
+        gsetOut << "f " << m_map->Name << ".obj" << std::endl;
+    }
+
     config.bmin[0] -= config.borderSize * config.cs;
     config.bmin[2] -= config.borderSize * config.cs;
     config.bmax[0] += config.borderSize * config.cs;
@@ -637,18 +655,6 @@ bool MeshBuilder::GenerateAndSaveGSet()
     utility::Convert::VerticesToRecast(vertices, recastVertices);
 
     assert(recastVertices.size() == vertices.size() * 3);
-
-    {
-        std::ofstream gsetOut(m_map->Name + ".gset", std::ofstream::trunc);
-
-        gsetOut << "s " << config.cs << " " << config.ch << " " << RecastSettings::WalkableHeight << " " << RecastSettings::WalkableRadius << " " << RecastSettings::WalkableClimb << " "
-                << RecastSettings::WalkableSlope << " " << config.minRegionArea << " " << config.mergeRegionArea << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
-                << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
-                << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
-                << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
-
-        gsetOut << "f " << m_map->Name << ".obj" << std::endl;
-    }
 
     int indexOffset = 1;
 
@@ -708,24 +714,24 @@ bool MeshBuilder::GenerateAndSaveGSet(int adtX, int adtY)
     config.bmax[1] =  tile->Bounds.MaxCorner.Z;
     config.bmax[2] = -tile->Bounds.MinCorner.X;
 
-    config.bmin[0] -= config.borderSize * config.cs;
-    config.bmin[2] -= config.borderSize * config.cs;
-    config.bmax[0] += config.borderSize * config.cs;
-    config.bmax[2] += config.borderSize * config.cs;
-
     auto const filename = m_map->Name + "_" + std::to_string(adtX) + "_" + std::to_string(adtY);
 
     {
         std::ofstream gsetOut(filename + ".gset", std::ofstream::trunc);
 
         gsetOut << "s " << config.cs << " " << config.ch << " " << RecastSettings::WalkableHeight << " " << RecastSettings::WalkableRadius << " " << RecastSettings::WalkableClimb << " "
-                << RecastSettings::WalkableSlope << " " << config.minRegionArea << " " << config.mergeRegionArea << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
+                << RecastSettings::WalkableSlope << " " << RecastSettings::MinRegionSize << " " << RecastSettings::MergeRegionSize << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
                 << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
                 << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
                 << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
 
         gsetOut << "f " << filename << ".obj" << std::endl;
     }
+
+    config.bmin[0] -= config.borderSize * config.cs;
+    config.bmin[2] -= config.borderSize * config.cs;
+    config.bmax[0] += config.borderSize * config.cs;
+    config.bmax[2] += config.borderSize * config.cs;
 
     std::ofstream objOut(filename + ".obj", std::ofstream::trunc);
 
