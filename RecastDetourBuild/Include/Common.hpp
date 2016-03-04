@@ -24,8 +24,8 @@ class RecastSettings
 
         static constexpr float MaxSimplificationError = 1.3f;
 
-        static constexpr int MinRegionSize = 2000;
-        static constexpr int MergeRegionSize = 6000;
+        static constexpr int MinRegionSize = 45;
+        static constexpr int MergeRegionSize = 75;
 
         static constexpr float TileSize = 533.f + (1.f / 3.f);
         static constexpr int VoxelWalkableRadius = static_cast<int>((WalkableRadius + 0.5f) / (TileSize / TileVoxelSize));

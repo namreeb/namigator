@@ -98,17 +98,17 @@ void InitializeRecastConfig(rcConfig &config)
     config.walkableClimb = RecastSettings::VoxelWalkableClimb;
     config.walkableHeight = RecastSettings::VoxelWalkableHeight;
     config.walkableRadius = RecastSettings::VoxelWalkableRadius;
-    config.maxEdgeLen = config.walkableRadius * 8;
+    config.maxEdgeLen = config.walkableRadius * 4;
     config.maxSimplificationError = RecastSettings::MaxSimplificationError;
-    config.minRegionArea = RecastSettings::MinRegionSize;
-    config.mergeRegionArea = RecastSettings::MergeRegionSize;
+    config.minRegionArea = RecastSettings::MinRegionSize*RecastSettings::MinRegionSize;
+    config.mergeRegionArea = RecastSettings::MergeRegionSize*RecastSettings::MergeRegionSize;
     config.maxVertsPerPoly = 6;
     config.tileSize = RecastSettings::TileVoxelSize;
     config.borderSize = config.walkableRadius + 3;
     config.width = config.tileSize + config.borderSize * 2;
     config.height = config.tileSize + config.borderSize * 2;
     config.detailSampleDist = 3.f;
-    config.detailSampleMaxError = 1.25f;
+    config.detailSampleMaxError = 0.75f;
 }
 
 using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
@@ -599,6 +599,255 @@ bool MeshBuilder::GenerateAndSaveTile(int adtX, int adtY)
     }
 
     return FinishMesh(ctx, config, adtX, adtY, out, *solid);
+}
+
+bool MeshBuilder::GenerateAndSaveGSet()
+{
+    auto const wmoInstance = m_map->GetGlobalWmoInstance();
+
+    assert(!!wmoInstance);
+
+    rcConfig config;
+    InitializeRecastConfig(config);
+
+    config.bmin[0] = -wmoInstance->Bounds.MaxCorner.Y;
+    config.bmin[1] =  wmoInstance->Bounds.MinCorner.Z;
+    config.bmin[2] = -wmoInstance->Bounds.MaxCorner.X;
+
+    config.bmax[0] = -wmoInstance->Bounds.MinCorner.Y;
+    config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
+    config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
+
+    config.bmin[0] -= config.borderSize * config.cs;
+    config.bmin[2] -= config.borderSize * config.cs;
+    config.bmax[0] += config.borderSize * config.cs;
+    config.bmax[2] += config.borderSize * config.cs;
+
+    std::vector<utility::Vertex> vertices;
+    std::vector<float> recastVertices;
+    std::vector<int> indices;
+
+    // wmo terrain
+    wmoInstance->BuildTriangles(vertices, indices);
+    utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+    assert(recastVertices.size() == vertices.size() * 3);
+
+    {
+        std::ofstream gsetOut(m_map->Name + ".gset", std::ofstream::trunc);
+
+        gsetOut << "s " << config.cs << " " << config.ch << " " << RecastSettings::WalkableHeight << " " << RecastSettings::WalkableRadius << " " << RecastSettings::WalkableClimb << " "
+                << RecastSettings::WalkableSlope << " " << config.minRegionArea << " " << config.mergeRegionArea << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
+                << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
+                << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
+                << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
+
+        gsetOut << "f " << m_map->Name << ".obj" << std::endl;
+    }
+
+    int indexOffset = 1;
+
+    std::ofstream objOut(m_map->Name + ".obj", std::ofstream::trunc);
+
+    objOut << "# wmo terrain" << std::endl;
+    for (size_t i = 0; i < vertices.size(); ++i)
+        objOut << "v " << recastVertices[i * 3 + 0] << " " << recastVertices[i * 3 + 1] << " " << recastVertices[i * 3 + 2] << std::endl;
+    for (size_t i = 0; i < indices.size(); i += 3)
+        objOut << "f " << (indexOffset + indices[i + 0]) << " " << (indexOffset + indices[i + 1]) << " " << (indexOffset + indices[i + 2]) << std::endl;
+
+    indexOffset += static_cast<int>(vertices.size());
+
+    // wmo liquid
+    wmoInstance->BuildLiquidTriangles(vertices, indices);
+    utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+    if (vertices.size() && indices.size())
+    {
+        objOut << "# wmo liquid" << std::endl;
+        for (size_t i = 0; i < vertices.size(); ++i)
+            objOut << "v " << recastVertices[i * 3 + 0] << " " << recastVertices[i * 3 + 1] << " " << recastVertices[i * 3 + 2] << std::endl;
+        for (size_t i = 0; i < indices.size(); i += 3)
+            objOut << "f " << (indexOffset + indices[i + 0]) << " " << (indexOffset + indices[i + 1]) << " " << (indexOffset + indices[i + 2]) << std::endl;
+
+        indexOffset += static_cast<int>(vertices.size());
+    }
+
+    // wmo doodads
+    wmoInstance->BuildDoodadTriangles(vertices, indices);
+    utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+    if (vertices.size() && indices.size())
+    {
+        objOut << "# wmo doodads" << std::endl;
+        for (size_t i = 0; i < vertices.size(); ++i)
+            objOut << "v " << recastVertices[i * 3 + 0] << " " << recastVertices[i * 3 + 1] << " " << recastVertices[i * 3 + 2] << std::endl;
+        for (size_t i = 0; i < indices.size(); i += 3)
+            objOut << "f " << (indexOffset + indices[i + 0]) << " " << (indexOffset + indices[i + 1]) << " " << (indexOffset + indices[i + 2]) << std::endl;
+    }
+
+    return true;
+}
+
+bool MeshBuilder::GenerateAndSaveGSet(int adtX, int adtY)
+{
+    auto const tile = m_map->GetAdt(adtX - 0, adtY - 0);
+
+    rcConfig config;
+    InitializeRecastConfig(config);
+
+    config.bmin[0] = -tile->Bounds.MaxCorner.Y;
+    config.bmin[1] =  tile->Bounds.MinCorner.Z;
+    config.bmin[2] = -tile->Bounds.MaxCorner.X;
+
+    config.bmax[0] = -tile->Bounds.MinCorner.Y;
+    config.bmax[1] =  tile->Bounds.MaxCorner.Z;
+    config.bmax[2] = -tile->Bounds.MinCorner.X;
+
+    config.bmin[0] -= config.borderSize * config.cs;
+    config.bmin[2] -= config.borderSize * config.cs;
+    config.bmax[0] += config.borderSize * config.cs;
+    config.bmax[2] += config.borderSize * config.cs;
+
+    auto const filename = m_map->Name + "_" + std::to_string(adtX) + "_" + std::to_string(adtY);
+
+    {
+        std::ofstream gsetOut(filename + ".gset", std::ofstream::trunc);
+
+        gsetOut << "s " << config.cs << " " << config.ch << " " << RecastSettings::WalkableHeight << " " << RecastSettings::WalkableRadius << " " << RecastSettings::WalkableClimb << " "
+                << RecastSettings::WalkableSlope << " " << config.minRegionArea << " " << config.mergeRegionArea << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
+                << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
+                << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
+                << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
+
+        gsetOut << "f " << filename << ".obj" << std::endl;
+    }
+
+    std::ofstream objOut(filename + ".obj", std::ofstream::trunc);
+
+    int indexOffset = 1;
+
+    // the mesh geometry can be rasterized into the height field stages, which is good for us
+    for (int y = 0; y < 16; ++y)
+        for (int x = 0; x < 16; ++x)
+        {
+            auto const chunk = tile->GetChunk(x, y);
+
+            std::vector<float> recastVertices;
+            utility::Convert::VerticesToRecast(chunk->m_terrainVertices, recastVertices);
+
+            if (recastVertices.size() && chunk->m_terrainIndices.size())
+            {
+                objOut << "# ADT terrain" << std::endl;
+                for (size_t i = 0; i < recastVertices.size(); i += 3)
+                    objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+                for (size_t i = 0; i < chunk->m_terrainIndices.size(); i += 3)
+                    objOut << "f " << (indexOffset + chunk->m_terrainIndices[i + 0])
+                           << " "  << (indexOffset + chunk->m_terrainIndices[i + 1])
+                           << " "  << (indexOffset + chunk->m_terrainIndices[i + 2]) << std::endl;
+            }
+
+            indexOffset += static_cast<int>(chunk->m_terrainVertices.size());
+
+            if (chunk->m_liquidVertices.size() && chunk->m_liquidIndices.size())
+            {
+                objOut << "# ADT liquid" << std::endl;
+
+                utility::Convert::VerticesToRecast(chunk->m_liquidVertices, recastVertices);
+                for (size_t i = 0; i < recastVertices.size(); i += 3)
+                    objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+                for (size_t i = 0; i < chunk->m_liquidIndices.size(); i += 3)
+                    objOut << "f " << (indexOffset + chunk->m_liquidIndices[i + 0])
+                           << " "  << (indexOffset + chunk->m_liquidIndices[i + 1])
+                           << " "  << (indexOffset + chunk->m_liquidIndices[i + 2]) << std::endl;
+                
+                indexOffset += static_cast<int>(chunk->m_liquidVertices.size());
+            }
+        }
+
+    // wmos (and included doodads and liquid)
+    for (auto const &wmoId : tile->WmoInstances)
+    {
+        auto const wmoInstance = m_map->GetWmoInstance(wmoId);
+
+        if (!wmoInstance)
+        {
+            std::stringstream str;
+            str << "Could not find required WMO ID = " << wmoId << " needed by ADT (" << adtX << ", " << adtY << ")\n";
+            std::cout << str.str();
+        }
+
+        assert(!!wmoInstance);
+
+        std::vector<utility::Vertex> vertices;
+        std::vector<float> recastVertices;
+        std::vector<int> indices;
+
+        wmoInstance->BuildTriangles(vertices, indices);
+        utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+        objOut << "# WMO terrain (" << wmoInstance->Model->FileName << ")" << std::endl;
+        for (size_t i = 0; i < recastVertices.size(); i += 3)
+            objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+        for (size_t i = 0; i < indices.size(); i += 3)
+            objOut << "f " << (indexOffset + indices[i + 0])
+                   << " "  << (indexOffset + indices[i + 1])
+                   << " "  << (indexOffset + indices[i + 2]) << std::endl;
+
+        indexOffset += static_cast<int>(vertices.size());
+
+        wmoInstance->BuildLiquidTriangles(vertices, indices);
+        utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+        objOut << "# WMO liquid (" << wmoInstance->Model->FileName << ")" << std::endl;
+        for (size_t i = 0; i < recastVertices.size(); i += 3)
+            objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+        for (size_t i = 0; i < indices.size(); i += 3)
+            objOut << "f " << (indexOffset + indices[i + 0])
+                   << " "  << (indexOffset + indices[i + 1])
+                   << " "  << (indexOffset + indices[i + 2]) << std::endl;
+
+        indexOffset += static_cast<int>(vertices.size());
+
+        wmoInstance->BuildDoodadTriangles(vertices, indices);
+        utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+        objOut << "# WMO doodads (" << wmoInstance->Model->FileName << ")" << std::endl;
+        for (size_t i = 0; i < recastVertices.size(); i += 3)
+            objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+        for (size_t i = 0; i < indices.size(); i += 3)
+            objOut << "f " << (indexOffset + indices[i + 0])
+                   << " "  << (indexOffset + indices[i + 1])
+                   << " "  << (indexOffset + indices[i + 2]) << std::endl;
+
+        indexOffset += static_cast<int>(vertices.size());
+    }
+
+    // doodads
+    for (auto const &doodadId : tile->DoodadInstances)
+    {
+        auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
+
+        assert(!!doodadInstance);
+
+        std::vector<utility::Vertex> vertices;
+        std::vector<float> recastVertices;
+        std::vector<int> indices;
+
+        doodadInstance->BuildTriangles(vertices, indices);
+        utility::Convert::VerticesToRecast(vertices, recastVertices);
+
+        objOut << "# Doodad (" << doodadInstance->Model->FileName << ")" << std::endl;
+        for (size_t i = 0; i < recastVertices.size(); i += 3)
+            objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+        for (size_t i = 0; i < indices.size(); i += 3)
+            objOut << "f " << (indexOffset + indices[i + 0])
+                   << " "  << (indexOffset + indices[i + 1])
+                   << " "  << (indexOffset + indices[i + 2]) << std::endl;
+
+        indexOffset += static_cast<int>(vertices.size());
+    }
+
+    return true;
 }
 
 void MeshBuilder::SaveMap() const

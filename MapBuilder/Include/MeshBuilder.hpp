@@ -43,5 +43,8 @@ class MeshBuilder
         bool GenerateAndSaveGlobalWMO();
         bool GenerateAndSaveTile(int adtX, int adtY);
 
+        bool GenerateAndSaveGSet();
+        bool GenerateAndSaveGSet(int adtX, int adtY);
+
         void SaveMap() const;
 };

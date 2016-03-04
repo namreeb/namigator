@@ -20,13 +20,14 @@ int main(int argc, char *argv[])
 
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
-        ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value(".")->required(),           "data folder")
-        ("map,m", boost::program_options::value<std::string>(&map)->required(),                                     "map")
-        ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps")->required(), "output path")
-        ("adtX,x", boost::program_options::value<int>(&adtX),                                                       "adt x")
-        ("adtY,y", boost::program_options::value<int>(&adtY),                                                       "adt y")
-        ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(8)->required(),                         "build jobs")
-        ("help,h",                                                                                                  "display help message");
+        ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value("."),           "data folder")
+        ("map,m", boost::program_options::value<std::string>(&map)->required(),                         "map")
+        ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps"), "output path")
+        ("adtX,x", boost::program_options::value<int>(&adtX),                                           "adt x")
+        ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
+        ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(8),                         "build jobs")
+        ("gset,g",                                                                                      "dump .gset file instead of mesh")
+        ("help,h",                                                                                      "display help message");
 
     boost::program_options::variables_map vm;
 
@@ -49,11 +50,44 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    MeshBuilder meshBuilder(dataPath, outputPath, map);
+
     utility::Directory::Create(outputPath);
+
+    if (vm.count("gset"))
+    {
+        if (meshBuilder.IsGlobalWMO())
+        {
+            if (!meshBuilder.GenerateAndSaveGSet())
+            {
+                std::cerr << "ERROR: Failed to save global .gset file" << std::endl;
+                return EXIT_FAILURE;
+            }
+
+            std::cout << "Global .gset file written succesfully" << std::endl;
+
+            return EXIT_SUCCESS;
+        }
+
+        if (!vm.count("adtX") || !vm.count("adtY"))
+        {
+            std::cerr << "ERROR: --gset requires --adtX and --adtY" << std::endl << std::endl;
+            std::cerr << desc << std::endl;
+
+            return EXIT_FAILURE;
+        }
+
+        if (!meshBuilder.GenerateAndSaveGSet(adtX, adtY))
+        {
+            std::cerr << "ERROR: Failed to save ADT (" << adtX << ", " << adtY << ") .gset file" << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
     utility::Directory::Create(outputPath + "\\BVH");
     utility::Directory::Create(outputPath + "\\Nav");
-
-    MeshBuilder meshBuilder(dataPath, outputPath, map);
 
     if (vm.count("adtX") && vm.count("adtY"))
     {
