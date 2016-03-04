@@ -301,7 +301,7 @@ void Map::UnloadTile(int x, int y)
 
 bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
 {
-    constexpr float extents[] = { 3.f, 5.f, 3.f };
+    constexpr float extents[] = { 20.f, 20.f, 20.f };
 
     float recastStart[3];
     float recastEnd[3];
