@@ -3,6 +3,7 @@
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/BoundingBox.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <cstdint>
 
@@ -33,7 +34,7 @@ struct WmoPlacement
         }
         else
         {
-            constexpr float mid = 32.f * utility::MathHelper::AdtSize;
+            constexpr float mid = 32.f * MeshSettings::AdtSize;
 
             minCorner = { mid - Bounds.MaxCorner.Z, mid - Bounds.MaxCorner.X, Bounds.MinCorner.Y };
             maxCorner = { mid - Bounds.MinCorner.Z, mid - Bounds.MinCorner.X, Bounds.MaxCorner.Y };
@@ -44,7 +45,7 @@ struct WmoPlacement
 
     void GetTransformMatrix(utility::Matrix &matrix) const
     {
-        constexpr float mid = 32.f * utility::MathHelper::AdtSize;
+        constexpr float mid = 32.f * MeshSettings::AdtSize;
 
         const float rotX = utility::Convert::ToRadians(Orientation.Z);
         const float rotY = utility::Convert::ToRadians(Orientation.X);

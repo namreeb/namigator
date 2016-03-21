@@ -169,6 +169,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Adt\Adt.hpp" />
     <ClInclude Include="Include\Adt\AdtChunk.hpp" />
+    <ClInclude Include="Include\Adt\AdtChunkLocation.hpp" />
     <ClInclude Include="Include\Adt\Chunks\MCNK.hpp" />
     <ClInclude Include="Include\Adt\Chunks\MDDF.hpp" />
     <ClInclude Include="Include\Adt\Chunks\MH2O.hpp" />

@@ -189,6 +189,9 @@
     <ClInclude Include="Include\Wmo\WmoDoodad.hpp">
       <Filter>Include\Wmo</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Adt\AdtChunkLocation.hpp">
+      <Filter>Include\Adt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">

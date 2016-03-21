@@ -4,11 +4,13 @@
 #include "parser/Include/Wmo/Wmo.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <vector>
 #include <string>
 #include <mutex>
 #include <unordered_set>
+#include <cstdint>
 
 class MeshBuilder
 {
@@ -16,35 +18,47 @@ class MeshBuilder
         std::unique_ptr<parser::Map> m_map;
         const std::string m_outputPath;
 
-        std::vector<std::pair<int, int>> m_pendingAdts;
-        int m_adtReferences[64][64];
+        std::vector<std::pair<int, int>> m_pendingTiles;
+        std::vector<int> m_chunkReferences; // this is a fixed size, but it is so big it can single-handedly overflow the stack
 
         std::unordered_set<std::string> m_bvhWmos;
         std::unordered_set<std::string> m_bvhDoodads;
 
         mutable std::mutex m_mutex;
 
-        void AddReference(int adtX, int adtY);
+        size_t m_startingTiles;
+        size_t m_completedTiles;
+
+        const int m_logLevel;
+
+        static void GetADT(int tileX, int tileY, int &adtX, int &adtY);
+
+        // these chunk values are "global" (that is, 0...256)
+        bool MapHasADTForChunk(int chunkX, int chunkY) const;
+
+        void AddChunkReference(int chunkX, int chunkY);
+        void RemoveChunkReference(int chunkX, int chunkY);
 
         void SerializeWmo(const parser::Wmo *wmo);
         void SerializeDoodad(const parser::Doodad *doodad);
 
     public:
-        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName);
+        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel);
 
-        int AdtCount() const;
+        int TotalTiles() const;
 
-        void SingleAdt(int adtX, int adtY);
-        bool GetNextAdt(int &adtX, int &adtY);
+        void SingleTile(int tileX, int tileY);
+        bool GetNextTile(int &tileX, int &tileY);
         
         bool IsGlobalWMO() const;
-        void RemoveReference(int adtX, int adtY);
 
         bool GenerateAndSaveGlobalWMO();
-        bool GenerateAndSaveTile(int adtX, int adtY);
+        bool GenerateAndSaveTile(int tileX, int tileY);
 
         bool GenerateAndSaveGSet();
-        bool GenerateAndSaveGSet(int adtX, int adtY);
+        bool GenerateAndSaveGSet(int tileX, int tileY);
 
         void SaveMap() const;
+
+        float PercentComplete() const;
 };

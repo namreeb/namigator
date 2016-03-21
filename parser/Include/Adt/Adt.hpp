@@ -8,8 +8,8 @@
 #include <string>
 #include <list>
 #include <vector>
-#include <unordered_set>
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -22,6 +22,12 @@ struct AdtChunk
 
     std::vector<utility::Vertex> m_liquidVertices;
     std::vector<int> m_liquidIndices;
+
+    std::vector<std::uint32_t> m_wmoInstances;
+    std::vector<std::uint32_t> m_doodadInstances;
+
+    float m_minZ;
+    float m_maxZ;
 };
 
 class Map;
@@ -37,9 +43,6 @@ class Adt
         const int Y;
 
         utility::BoundingBox Bounds;
-
-        std::unordered_set<unsigned int> WmoInstances;
-        std::unordered_set<unsigned int> DoodadInstances;
 
         Adt(Map *map, int x, int y);
         const AdtChunk *GetChunk(int chunkX, int chunkY) const;

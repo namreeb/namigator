@@ -9,8 +9,8 @@
 #include "Wmo/WmoDoodadPlacement.hpp"
 
 #include "utility/Include/BinaryStream.hpp"
-#include "utility/Include/MathHelper.hpp"
 #include "utility/Include/Exception.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <vector>
 #include <sstream>
@@ -113,7 +113,7 @@ Wmo::Wmo(Map *map, const std::string &path)
         if (!groupFiles[g]->LiquidChunk)
             continue;
 
-        constexpr float tileSize = utility::MathHelper::AdtSize / 128.f;
+        constexpr float tileSize = MeshSettings::AdtSize / 128.f;
         auto const liquidChunk = groupFiles[g]->LiquidChunk.get();
 
         const utility::Vertex baseVertex(liquidChunk->Base[0], liquidChunk->Base[1], liquidChunk->Base[2]);

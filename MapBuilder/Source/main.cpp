@@ -16,16 +16,17 @@
 int main(int argc, char *argv[])
 {
     std::string dataPath, map, outputPath;
-    int adtX, adtY, jobs;
+    int tileX, tileY, jobs, logLevel;
 
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
         ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value("."),           "data folder")
         ("map,m", boost::program_options::value<std::string>(&map)->required(),                         "map")
         ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps"), "output path")
-        ("adtX,x", boost::program_options::value<int>(&adtX),                                           "adt x")
-        ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
+        ("tileX,x", boost::program_options::value<int>(&tileX),                                         "tile x")
+        ("tileY,y", boost::program_options::value<int>(&tileY),                                         "tile y")
         ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(8),                         "build jobs")
+        ("logLevel,l", boost::program_options::value<int>(&logLevel)->default_value(3),                 "log level (0 = none, 1 = progress, 2 = warning, 3 = error)")
         ("gset,g",                                                                                      "dump .gset file instead of mesh")
         ("help,h",                                                                                      "display help message");
 
@@ -50,9 +51,11 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    MeshBuilder meshBuilder(dataPath, outputPath, map);
-
     utility::Directory::Create(outputPath);
+    utility::Directory::Create(outputPath + "\\BVH");
+    utility::Directory::Create(outputPath + "\\Nav");
+
+    MeshBuilder meshBuilder(dataPath, outputPath, map, logLevel);
 
     if (vm.count("gset"))
     {
@@ -69,27 +72,24 @@ int main(int argc, char *argv[])
             return EXIT_SUCCESS;
         }
 
-        if (!vm.count("adtX") || !vm.count("adtY"))
+        if (!vm.count("tileX") || !vm.count("tileY"))
         {
-            std::cerr << "ERROR: --gset requires --adtX and --adtY" << std::endl << std::endl;
+            std::cerr << "ERROR: --gset requires --tileX and --tileY" << std::endl << std::endl;
             std::cerr << desc << std::endl;
 
             return EXIT_FAILURE;
         }
 
-        if (!meshBuilder.GenerateAndSaveGSet(adtX, adtY))
+        if (!meshBuilder.GenerateAndSaveGSet(tileX, tileY))
         {
-            std::cerr << "ERROR: Failed to save ADT (" << adtX << ", " << adtY << ") .gset file" << std::endl;
+            std::cerr << "ERROR: Failed to save tile (" << tileX << ", " << tileY << ") .gset file" << std::endl;
             return EXIT_FAILURE;
         }
 
         return EXIT_SUCCESS;
     }
 
-    utility::Directory::Create(outputPath + "\\BVH");
-    utility::Directory::Create(outputPath + "\\Nav");
-
-    if (vm.count("adtX") && vm.count("adtY"))
+    if (vm.count("tileX") && vm.count("tileY"))
     {
         if (meshBuilder.IsGlobalWMO())
         {
@@ -100,9 +100,9 @@ int main(int argc, char *argv[])
         }
 
         {
-            meshBuilder.SingleAdt(adtX, adtY);
+            meshBuilder.SingleTile(tileX, tileY);
         
-            std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
+            std::cout << "Building " << map << " (" << tileX << ", " << tileY << ")..." << std::endl;
             Worker worker(&meshBuilder);
         }
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     for (auto &worker : workers)
         worker.reset(new Worker(&meshBuilder));
 
-    auto const start = time(NULL);
+    auto const start = time(nullptr);
 
     for (;;)
     {
@@ -157,13 +157,13 @@ int main(int argc, char *argv[])
 
     meshBuilder.SaveMap();
 
-    auto const stop = time(NULL);
+    auto const stop = time(nullptr);
 
     auto const runTime = stop - start;
-    auto const adts = meshBuilder.AdtCount();
-    auto const secPerAdt = runTime / adts;
+    auto const tiles = meshBuilder.TotalTiles();
+    auto const secPerAdt = runTime / tiles;
     
-    std::cout << "Finished " << map << " (" << adts << " ADTs) in " << runTime << " seconds." << std::endl;
+    std::cout << "Finished " << map << " (" << tiles << " tiles) in " << runTime << " seconds." << std::endl;
 
     return EXIT_SUCCESS;
 }

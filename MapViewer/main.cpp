@@ -12,6 +12,7 @@
 #include "pathfind/Include/Map.hpp"
 
 #include "DebugUtils/Include/DetourDebugDraw.h"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include "resource.h"
 
@@ -320,12 +321,15 @@ void ChangeMap(const std::string &cn)
 {
     gHasStart = false;
 
+    if (gMap)
+        gRenderer->ClearBuffers();
+
+    if (cn == "")
+        return;
+
     std::string mapName;
 
     GetMapName(cn, mapName);
-
-    if (gMap)
-        gRenderer->ClearBuffers();
 
     gMap.reset(new parser::Map(mapName));
     gNavMesh.reset(new pathfind::Map(".\\Maps", mapName));
@@ -351,20 +355,6 @@ void ChangeMap(const std::string &cn)
 
         gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
         gRenderer->m_camera.LookAt(cx, cy, cz);
-
-        //std::vector<utility::Vertex> meshVertices;
-        //std::vector<int> meshIndices;
-        //std::vector<utility::Vertex> hardEdgeLines;
-        //gNavMesh->GetTileGeometry(0, 0, meshVertices, meshIndices, hardEdgeLines);
-
-        //if (!!meshVertices.size() && !!meshIndices.size())
-        //{
-        //    // raise the z values for each mesh vertex slightly to help visualize them
-        //    for (size_t i = 0; i < meshVertices.size(); ++i)
-        //        meshVertices[i].Z += 0.3f;
-
-        //    gRenderer->AddMesh(meshVertices, meshIndices);
-        //}
 
         gControls->Enable(Controls::ADTX, false);
         gControls->Enable(Controls::ADTY, false);
@@ -393,62 +383,64 @@ void LoadADTFromGUI()
 
     auto const adt = gMap->GetAdt(adtX, adtY);
 
-    for (int x = 0; x < 16; ++x)
-        for (int y = 0; y < 16; ++y)
+    for (int x = 0; x < MeshSettings::ChunksPerAdt; ++x)
+        for (int y = 0; y < MeshSettings::ChunksPerAdt; ++y)
         {
             auto const chunk = adt->GetChunk(x, y);
 
             gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
             gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
+
+            for (auto &d : chunk->m_doodadInstances)
+            {
+                if (gRenderer->HasDoodad(d))
+                    continue;
+
+                auto const doodad = gMap->GetDoodadInstance(d);
+
+                assert(doodad);
+
+                std::vector<utility::Vertex> vertices;
+                std::vector<int> indices;
+
+                doodad->BuildTriangles(vertices, indices);
+                gRenderer->AddDoodad(d, vertices, indices);
+            }
+
+            for (auto &w : chunk->m_wmoInstances)
+            {
+                if (gRenderer->HasWmo(w))
+                    continue;
+
+                auto const wmo = gMap->GetWmoInstance(w);
+
+                assert(wmo);
+
+                std::vector<utility::Vertex> vertices;
+                std::vector<int> indices;
+
+                wmo->BuildTriangles(vertices, indices);
+                gRenderer->AddWmo(w, vertices, indices);
+
+                wmo->BuildLiquidTriangles(vertices, indices);
+                gRenderer->AddLiquid(vertices, indices);
+
+                if (gRenderer->HasDoodad(w))
+                    continue;
+
+                wmo->BuildDoodadTriangles(vertices, indices);
+                gRenderer->AddDoodad(w, vertices, indices);
+            }
         }
 
-    for (auto &d : adt->DoodadInstances)
-    {
-        if (gRenderer->HasDoodad(d))
-            continue;
+    for (auto y = adtY * MeshSettings::TilesPerADT; y < (adtY + 1)*MeshSettings::TilesPerADT; ++y)
+        for (auto x = adtX * MeshSettings::TilesPerADT; x < (adtX + 1)*MeshSettings::TilesPerADT; ++x)
+            if (gNavMesh->LoadTile(x, y))
+            {
+                DetourDebugDraw dd(gRenderer.get());
 
-        auto const doodad = gMap->GetDoodadInstance(d);
-
-        assert(doodad);
-
-        std::vector<utility::Vertex> vertices;
-        std::vector<int> indices;
-
-        doodad->BuildTriangles(vertices, indices);
-        gRenderer->AddDoodad(d, vertices, indices);
-    }
-
-    for (auto &w : adt->WmoInstances)
-    {
-        if (gRenderer->HasWmo(w))
-            continue;
-
-        auto const wmo = gMap->GetWmoInstance(w);
-
-        assert(wmo);
-
-        std::vector<utility::Vertex> vertices;
-        std::vector<int> indices;
-
-        wmo->BuildTriangles(vertices, indices);
-        gRenderer->AddWmo(w, vertices, indices);
-
-        wmo->BuildLiquidTriangles(vertices, indices);
-        gRenderer->AddLiquid(vertices, indices);
-
-        if (gRenderer->HasDoodad(w))
-            continue;
-
-        wmo->BuildDoodadTriangles(vertices, indices);
-        gRenderer->AddDoodad(w, vertices, indices);
-    }
-
-    if (gNavMesh->LoadTile(adtX, adtY))
-    {
-        DetourDebugDraw dd(gRenderer.get());
-
-        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
-    }
+                duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+            }
 
     const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
     const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;

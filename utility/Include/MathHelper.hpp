@@ -10,8 +10,6 @@ namespace utility
 class MathHelper
 {
     public:
-        static constexpr float AdtSize = 533.f + (1.f / 3.f);
-        static constexpr float AdtChunkSize = AdtSize / 16.f;
         static constexpr float Pi = 3.14159264f;
 
         static bool FaceTooSteep(const utility::Vertex &a, const utility::Vertex &b, const utility::Vertex &c, float degrees);
@@ -32,6 +30,9 @@ class Convert
         static float ToRadians(float degrees);
 
         static void WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY);
+        static void WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY, int &chunkX, int &chunkY);
+
+        static void ADTToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY);
 
         static void VertexToRecast(const utility::Vertex &input, utility::Vertex &output);
         static void VertexToRecast(const utility::Vertex &input, float *output);

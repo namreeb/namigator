@@ -157,11 +157,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\MeshBuilder.hpp" />
+    <ClInclude Include="Include\RecastContext.hpp" />
     <ClInclude Include="Include\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\MeshBuilder.cpp" />
+    <ClCompile Include="Source\RecastContext.cpp" />
     <ClCompile Include="Source\Worker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

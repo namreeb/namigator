@@ -20,7 +20,7 @@
 
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/Directory.hpp"
-#include "utility/Include/MathHelper.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -40,13 +40,13 @@ namespace parser
 Adt::Adt(Map *map, int adtX, int adtY)
     : X(adtX), Y(adtY), m_map(map),
       Bounds({
-            (32.f - (float)adtY - 1.f)*utility::MathHelper::AdtSize,
-            (32.f - (float)adtX - 1.f)*utility::MathHelper::AdtSize,
+            (32.f - static_cast<float>(adtY) - 1.f)*MeshSettings::AdtSize,
+            (32.f - static_cast<float>(adtX) - 1.f)*MeshSettings::AdtSize,
             std::numeric_limits<float>::max()
         },
         {
-            (32.f - (float)adtY)*utility::MathHelper::AdtSize,
-            (32.f - (float)adtX)*utility::MathHelper::AdtSize,
+            (32.f - static_cast<float>(adtY))*MeshSettings::AdtSize,
+            (32.f - static_cast<float>(adtX))*MeshSettings::AdtSize,
             std::numeric_limits<float>::lowest()
         })
 {
@@ -55,6 +55,9 @@ Adt::Adt(Map *map, int adtX, int adtY)
     ss << "World\\maps\\" << map->Name << "\\" << map->Name << "_" << adtX << "_" << adtY << ".adt";
 
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(ss.str()));
+
+    if (!reader)
+        THROW("Failed to open ADT");
 
     if (reader->Read<unsigned int>() != input::AdtChunkType::MVER)
         THROW("MVER does not begin ADT file");
@@ -130,6 +133,8 @@ Adt::Adt(Map *map, int adtX, int adtY)
             AdtChunk *const chunk = new AdtChunk();
 
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
+            chunk->m_minZ = mapChunk->MinZ;
+            chunk->m_maxZ = mapChunk->MaxZ;
 
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mapChunk->MinZ);
@@ -198,14 +203,23 @@ Adt::Adt(Map *map, int adtX, int adtY)
                     terrainVert = (y + 1) * 17 + (x + 1);
                     chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, layer->Heights[y + 1][x + 1] });
 
-                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 0][x + 0]);
                     Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, layer->Heights[y + 0][x + 0]);
-                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 0][x + 1]);
                     Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, layer->Heights[y + 0][x + 1]);
-                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 0]);
                     Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, layer->Heights[y + 1][x + 0]);
-                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 1]);
                     Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, layer->Heights[y + 1][x + 1]);
+                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 0][x + 0]);
+                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 0][x + 1]);
+                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 0]);
+                    Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, layer->Heights[y + 1][x + 1]);
+
+                    chunk->m_minZ = std::min(chunk->m_minZ, layer->Heights[y + 0][x + 0]);
+                    chunk->m_minZ = std::min(chunk->m_minZ, layer->Heights[y + 0][x + 1]);
+                    chunk->m_minZ = std::min(chunk->m_minZ, layer->Heights[y + 1][x + 0]);
+                    chunk->m_minZ = std::min(chunk->m_minZ, layer->Heights[y + 1][x + 1]);
+                    chunk->m_maxZ = std::max(chunk->m_maxZ, layer->Heights[y + 0][x + 0]);
+                    chunk->m_maxZ = std::max(chunk->m_maxZ, layer->Heights[y + 0][x + 1]);
+                    chunk->m_maxZ = std::max(chunk->m_maxZ, layer->Heights[y + 1][x + 0]);
+                    chunk->m_maxZ = std::max(chunk->m_maxZ, layer->Heights[y + 1][x + 1]);
 
                     chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 4));
                     chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 2));
@@ -255,14 +269,23 @@ Adt::Adt(Map *map, int adtX, int adtY)
                         terrainVert = (y + 1) * 17 + (x + 1);
                         chunk->m_liquidVertices.push_back({ chunk->m_terrainVertices[terrainVert].X, chunk->m_terrainVertices[terrainVert].Y, mclqBlock->Heights[y + 1][x + 1] });
 
-                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 0][x + 0]);
                         Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mclqBlock->Heights[y + 0][x + 0]);
-                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 0][x + 1]);
                         Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mclqBlock->Heights[y + 0][x + 1]);
-                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 0]);
                         Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mclqBlock->Heights[y + 1][x + 0]);
-                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
                         Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
+                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 0][x + 0]);
+                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 0][x + 1]);
+                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 0]);
+                        Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mclqBlock->Heights[y + 1][x + 1]);
+
+                        chunk->m_minZ = std::min(chunk->m_minZ, mclqBlock->Heights[y + 0][x + 0]);
+                        chunk->m_minZ = std::min(chunk->m_minZ, mclqBlock->Heights[y + 0][x + 1]);
+                        chunk->m_minZ = std::min(chunk->m_minZ, mclqBlock->Heights[y + 1][x + 0]);
+                        chunk->m_minZ = std::min(chunk->m_minZ, mclqBlock->Heights[y + 1][x + 1]);
+                        chunk->m_maxZ = std::max(chunk->m_maxZ, mclqBlock->Heights[y + 0][x + 0]);
+                        chunk->m_maxZ = std::max(chunk->m_maxZ, mclqBlock->Heights[y + 0][x + 1]);
+                        chunk->m_maxZ = std::max(chunk->m_maxZ, mclqBlock->Heights[y + 1][x + 0]);
+                        chunk->m_maxZ = std::max(chunk->m_maxZ, mclqBlock->Heights[y + 1][x + 1]);
 
                         chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 4));
                         chunk->m_liquidIndices.push_back(static_cast<std::int32_t>(chunk->m_liquidVertices.size() - 2));
@@ -297,9 +320,15 @@ Adt::Adt(Map *map, int adtX, int adtY)
 
             assert(!!wmo && !!wmoInstance);
 
-            // if this wmo is really on this ADT, make note of it
-            if (wmoInstance->Adts.find(std::pair<int, int>(adtX, adtY)) != wmoInstance->Adts.cend())
-                WmoInstances.insert(static_cast<unsigned int>(wmoDefinition.UniqueId));
+            for (auto const &chunk : wmoInstance->AdtChunks)
+            {
+                if (chunk.AdtX != X || chunk.AdtY != Y)
+                    continue;
+
+                m_chunks[chunk.ChunkY][chunk.ChunkX]->m_wmoInstances.push_back(wmoDefinition.UniqueId);
+                m_chunks[chunk.ChunkY][chunk.ChunkX]->m_minZ = std::min(m_chunks[chunk.ChunkY][chunk.ChunkX]->m_minZ, wmoInstance->Bounds.MinCorner.Z);
+                m_chunks[chunk.ChunkY][chunk.ChunkX]->m_maxZ = std::max(m_chunks[chunk.ChunkY][chunk.ChunkX]->m_maxZ, wmoInstance->Bounds.MaxCorner.Z);
+            }
 
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, wmoInstance->Bounds.MinCorner.Z);
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, wmoInstance->Bounds.MaxCorner.Z);
@@ -330,9 +359,15 @@ Adt::Adt(Map *map, int adtX, int adtY)
 
             assert(!!doodad && !!doodadInstance);
 
-            // if this doodad is really on this ADT, make note of it
-            if (doodadInstance->Adts.find(std::pair<int, int>(adtX, adtY)) != doodadInstance->Adts.cend())
-                DoodadInstances.insert(static_cast<unsigned int>(doodadDefinition.UniqueId));
+            for (auto const &chunk : doodadInstance->AdtChunks)
+            {
+                if (chunk.AdtX != X || chunk.AdtY != Y)
+                    continue;
+
+                m_chunks[chunk.ChunkY][chunk.ChunkX]->m_doodadInstances.push_back(doodadDefinition.UniqueId);
+                m_chunks[chunk.ChunkY][chunk.ChunkX]->m_minZ = std::min(m_chunks[chunk.ChunkY][chunk.ChunkX]->m_minZ, doodadInstance->Bounds.MinCorner.Z);
+                m_chunks[chunk.ChunkY][chunk.ChunkX]->m_maxZ = std::max(m_chunks[chunk.ChunkY][chunk.ChunkX]->m_maxZ, doodadInstance->Bounds.MaxCorner.Z);
+            }
 
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, doodadInstance->Bounds.MinCorner.Z);
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, doodadInstance->Bounds.MaxCorner.Z);

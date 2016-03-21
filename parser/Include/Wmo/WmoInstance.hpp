@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser/Include/Wmo/Wmo.hpp"
+#include "parser/Include/Adt/AdtChunkLocation.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/BoundingBox.hpp"
@@ -20,7 +21,7 @@ class WmoInstance
 
         const Wmo * const Model;
 
-        std::set<std::pair<int, int>> Adts;
+        std::set<AdtChunkLocation> AdtChunks;
 
         const unsigned short DoodadSet;
 
@@ -29,6 +30,6 @@ class WmoInstance
         utility::Vertex TransformVertex(const utility::Vertex &vertex) const;
         void BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const;
         void BuildLiquidTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const;
-        void BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const;     // note: this assembles the triangles from all doodads in this wmo into one collection
+        void BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, std::vector<std::int32_t> &indices) const;    // note: this assembles the triangles from all doodads in this wmo into one collection
 };
 }

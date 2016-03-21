@@ -3,7 +3,7 @@
 #include "ADT/Chunks/MCNK.hpp"
 #include "ADT/Chunks/Subchunks/MCLQ.hpp"
 
-#include "utility/Include/MathHelper.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <limits>
 
@@ -60,7 +60,7 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
         *  When you go down, your ingame X goes down, but the ADT file Y goes up.
         *  When you go right, your ingame Y goes down, but the ADT file X goes up.
         */
-    constexpr float quadSize = utility::MathHelper::AdtSize / 128.f;
+    constexpr float quadSize = MeshSettings::AdtSize / 128.f;
 
     // Information.IndexX and Information.IndexY specify the colum and row (respectively) of the chunk in the tile
     // Information.Position specifies the top left corner of the current chunk (using in-game coords)

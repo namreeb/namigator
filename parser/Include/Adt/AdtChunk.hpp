@@ -2,6 +2,8 @@
 
 #include "utility/Include/BinaryStream.hpp"
 
+#include <unordered_set>
+
 namespace parser
 {
 namespace input
@@ -41,6 +43,9 @@ class AdtChunk
         const size_t Position;
         unsigned int Size;
         unsigned int Type;
+
+        std::unordered_set<unsigned int> WmoInstances;
+        std::unordered_set<unsigned int> DoodadInstances;
 
         AdtChunk(size_t position, utility::BinaryStream *reader);
 };

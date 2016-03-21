@@ -48,13 +48,13 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 {
     dtNavMeshParams params;
 
-    constexpr float tileSize = -32.f * RecastSettings::TileSize;
-    constexpr int maxTiles = 64 * 64;
+    constexpr float tileSize = -32.f * MeshSettings::AdtSize;
+    constexpr int maxTiles = MeshSettings::TileCount * MeshSettings::TileCount;
 
     params.orig[0] = tileSize;
     params.orig[1] = 0.f;
     params.orig[2] = tileSize;
-    params.tileHeight = params.tileWidth = RecastSettings::TileSize;
+    params.tileHeight = params.tileWidth = MeshSettings::TileSize;
     params.maxTiles = maxTiles;
     params.maxPolys = 1 << DT_POLY_BITS;
 
@@ -281,8 +281,8 @@ bool Map::LoadTile(int x, int y)
 
     std::stringstream str;
     str << m_dataPath << "\\Nav\\" << m_mapName << "\\"
-        << std::setfill('0') << std::setw(2) << x << "_"
-        << std::setfill('0') << std::setw(2) << y << ".nav";
+        << std::setfill('0') << std::setw(4) << x << "_"
+        << std::setfill('0') << std::setw(4) << y << ".nav";
 
     std::ifstream in(str.str(), std::ifstream::binary);
 

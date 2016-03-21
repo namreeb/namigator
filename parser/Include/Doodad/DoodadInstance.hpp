@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser/Include/Doodad/Doodad.hpp"
+#include "parser/Include/Adt/AdtChunkLocation.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/BoundingBox.hpp"
@@ -16,7 +17,7 @@ class DoodadInstance
         const utility::Matrix TransformMatrix;
         utility::BoundingBox Bounds;
 
-        std::set<std::pair<int, int>> Adts;
+        std::set<AdtChunkLocation> AdtChunks;
 
         const Doodad * const Model;
 

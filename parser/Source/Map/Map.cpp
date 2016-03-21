@@ -26,6 +26,9 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
 
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(file));
 
+    if (!reader)
+        THROW("WDT open failed");
+
     size_t mphdLocation;
     if (!reader->GetChunkLocation("MPHD", mphdLocation))
         THROW("MPHD not found");
@@ -43,12 +46,12 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
     for (int y = 0; y < 64; ++y)
         for (int x = 0; x < 64; ++x)
         {
-            const int flag = reader->Read<int>();
+            auto const flag = reader->Read<int>();
 
             // skip async object
             reader->Slide(4);
 
-            m_hasAdt[y][x] = !!(flag & 1);
+            m_hasAdt[x][y] = !!(flag & 1);
         }
 
     // for worlds with terrain, parsing stops here.  else, load single wmo
@@ -81,26 +84,28 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
 
 bool Map::HasAdt(int x, int y) const
 {
-    return m_hasAdt[y][x];
+    return m_hasAdt[x][y];
 }
 
 const Adt *Map::GetAdt(int x, int y)
 {
+    assert(x >= 0 && y >= 0 && x < 64 && y < 64);
+
     std::lock_guard<std::mutex> guard(m_adtMutex);
 
-    if (!m_hasAdt[y][x])
+    if (!m_hasAdt[x][y])
         return nullptr;
 
-    if (!m_adts[y][x])
-        m_adts[y][x].reset(new Adt(this, x, y));
+    if (!m_adts[x][y])
+        m_adts[x][y].reset(new Adt(this, x, y));
 
-    return m_adts[y][x].get();
+    return m_adts[x][y].get();
 }
 
 void Map::UnloadAdt(int x, int y)
 {
     std::lock_guard<std::mutex> guard(m_adtMutex);
-    m_adts[y][x].reset(nullptr);
+    m_adts[x][y].reset(nullptr);
 }
 
 const Wmo *Map::GetWmo(const std::string &name)

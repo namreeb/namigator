@@ -11,6 +11,8 @@
 #include "Detour/Include/DetourNavMesh.h"
 #include "Detour/Include/DetourNavMeshQuery.h"
 
+#include "RecastDetourBuild/Include/Common.hpp"
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -35,7 +37,7 @@ class Map
         dtNavMeshQuery m_navQuery;
         dtQueryFilter m_queryFilter;
         
-        std::unique_ptr<const Tile> m_tiles[64][64];
+        std::unique_ptr<const Tile> m_tiles[MeshSettings::TileCount][MeshSettings::TileCount];
         std::shared_ptr<WmoModel> m_globalWmo;
 
         std::unordered_map<unsigned int, WmoInstance> m_wmoInstances;

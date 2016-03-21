@@ -1,6 +1,8 @@
 #include "MeshBuilder.hpp"
 #include "Worker.hpp"
 
+#include "RecastDetourBuild/Include/Common.hpp"
+
 #include <thread>
 #include <chrono>
 #include <mutex>
@@ -37,36 +39,38 @@ void Worker::Work()
                 break;
             }
 
-            int adtX, adtY;
-            if (!m_meshBuilder->GetNextAdt(adtX, adtY))
+            int tileX, tileY;
+            if (!m_meshBuilder->GetNextTile(tileX, tileY))
                 break;
+
+            auto const adtX = tileX / MeshSettings::TilesPerADT;
+            auto const adtY = tileY / MeshSettings::TilesPerADT;
+            auto const x = tileX % MeshSettings::TilesPerADT;
+            auto const y = tileY % MeshSettings::TilesPerADT;
 
             std::stringstream str;
             str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
                 << std::setfill(' ') << std::setw(2) << adtX << ", "
-                << std::setfill(' ') << std::setw(2) << adtY << ")...\n";
+                << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
+                << x << ", " << y << ") ... " << std::setprecision(3) << m_meshBuilder->PercentComplete() << "%\n";
             std::cout << str.str();
 
-            if (!m_meshBuilder->GenerateAndSaveTile(adtX, adtY))
+            if (!m_meshBuilder->GenerateAndSaveTile(tileX, tileY))
             {
                 std::stringstream error;
                 error << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
                       << std::setfill(' ') << std::setw(2) << adtX << ", "
-                      << std::setfill(' ') << std::setw(2) << adtY << ")... FAILED!\n";
+                      << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
+                      << x << ", " << y << ")... FAILED!\n";
                 std::cout << error.str();
             }
-
-            // let the builder know that we are done with these up to nine tiles.  it will decide when to unload them
-            for (int y = adtY - 1; y <= adtY + 1; ++y)
-                for (int x = adtX - 1; x <= adtX + 1; ++x)
-                    m_meshBuilder->RemoveReference(x, y);
         } while (!m_shutdownRequested);
     }
     catch (std::exception const &e)
     {
         std::stringstream s;
 
-        s << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << e.what() << "\n";
+        s << "\nThread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << e.what() << "\n";
 
         std::cerr << s.str();
     }

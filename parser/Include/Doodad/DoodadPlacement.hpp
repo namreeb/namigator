@@ -2,6 +2,7 @@
 
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <string>
 #include <algorithm>
@@ -23,7 +24,7 @@ struct DoodadPlacement
 
     void GetTransformMatrix(utility::Matrix &matrix) const
     {
-        constexpr float mid = 32.f * utility::MathHelper::AdtSize;
+        constexpr float mid = 32.f * MeshSettings::AdtSize;
 
         const float rotX = utility::Convert::ToRadians(Orientation.Z);
         const float rotY = utility::Convert::ToRadians(Orientation.X);

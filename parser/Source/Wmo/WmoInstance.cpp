@@ -1,5 +1,6 @@
 #include "Wmo/Wmo.hpp"
 #include "Wmo/WmoInstance.hpp"
+#include "Adt/AdtChunkLocation.hpp"
 
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
@@ -20,7 +21,7 @@ namespace parser
 {
 namespace
 {
-    void UpdateBounds(utility::BoundingBox &bounds, const utility::Vertex &vertex)
+    void UpdateBounds(utility::BoundingBox &bounds, const utility::Vertex &vertex, std::set<AdtChunkLocation> &adtChunks)
     {
         bounds.MinCorner.X = std::min(bounds.MinCorner.X, vertex.X);
         bounds.MaxCorner.X = std::max(bounds.MaxCorner.X, vertex.X);
@@ -28,6 +29,10 @@ namespace
         bounds.MaxCorner.Y = std::max(bounds.MaxCorner.Y, vertex.Y);
         bounds.MinCorner.Z = std::min(bounds.MinCorner.Z, vertex.Z);
         bounds.MaxCorner.Z = std::max(bounds.MaxCorner.Z, vertex.Z);
+
+        int adtX, adtY, chunkX, chunkY;
+        utility::Convert::WorldToAdt(vertex, adtX, adtY, chunkX, chunkY);
+        adtChunks.insert({ static_cast<std::uint8_t>(adtX), static_cast<std::uint8_t>(adtY), static_cast<std::uint8_t>(chunkX), static_cast<std::uint8_t>(chunkY) });
     }
 }
 
@@ -39,35 +44,17 @@ WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const utility
     BuildTriangles(vertices, indices);
 
     for (auto const &v : vertices)
-    {
-        UpdateBounds(Bounds, v);
-
-        int adtX, adtY;
-        utility::Convert::WorldToAdt(v, adtX, adtY);
-        Adts.insert({ adtX, adtY });
-    }
+        UpdateBounds(Bounds, v, AdtChunks);
 
     BuildLiquidTriangles(vertices, indices);
 
     for (auto const &v : vertices)
-    {
-        UpdateBounds(Bounds, v);
-
-        int adtX, adtY;
-        utility::Convert::WorldToAdt(v, adtX, adtY);
-        Adts.insert({ adtX, adtY });
-    }
+        UpdateBounds(Bounds, v, AdtChunks);
 
     BuildDoodadTriangles(vertices, indices);
 
     for (auto const &v : vertices)
-    {
-        UpdateBounds(Bounds, v);
-
-        int adtX, adtY;
-        utility::Convert::WorldToAdt(v, adtX, adtY);
-        Adts.insert({ adtX, adtY });
-    }
+        UpdateBounds(Bounds, v, AdtChunks);
 }
 
 utility::Vertex WmoInstance::TransformVertex(const utility::Vertex &vertex) const

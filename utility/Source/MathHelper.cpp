@@ -1,6 +1,8 @@
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/MathHelper.hpp"
 
+#include "RecastDetourBuild/Include/Common.hpp"
+
 #include <algorithm>
 #include <vector>
 #include <cassert>
@@ -63,10 +65,30 @@ float Convert::ToRadians(float degrees)
 
 void Convert::WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY)
 {
-    constexpr float mid = 32.f * MathHelper::AdtSize;
+    constexpr float mid = 32.f * MeshSettings::AdtSize;
 
-    adtX = static_cast<int>((mid - vertex.Y) / MathHelper::AdtSize);
-    adtY = static_cast<int>((mid - vertex.X) / MathHelper::AdtSize);
+    adtX = static_cast<int>((mid - vertex.Y) / MeshSettings::AdtSize);
+    adtY = static_cast<int>((mid - vertex.X) / MeshSettings::AdtSize);
+}
+
+// chunk (0, 0) is at the top left (northwest) corner.  east = x+, south = y+
+void Convert::WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY, int &chunkX, int &chunkY)
+{
+    WorldToAdt(vertex, adtX, adtY);
+
+    float nwCornerX, nwCornerY;
+    ADTToWorldNorthwestCorner(adtX, adtY, nwCornerX, nwCornerY);
+
+    chunkX = static_cast<int>((nwCornerY - vertex.Y) / MeshSettings::AdtChunkSize);
+    chunkY = static_cast<int>((nwCornerX - vertex.X) / MeshSettings::AdtChunkSize);
+
+    assert(chunkX >= 0 && chunkY >= 0 && chunkX < 16 && chunkY < 16);
+}
+
+void Convert::ADTToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY)
+{
+    worldX = (32.f - adtY) * MeshSettings::AdtSize;
+    worldY = (32.f - adtX) * MeshSettings::AdtSize;
 }
 
 void Convert::VertexToRecast(const utility::Vertex &input, utility::Vertex &output)

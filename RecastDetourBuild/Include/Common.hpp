@@ -11,28 +11,47 @@ enum AreaFlags : unsigned char
 
 using PolyFlags = AreaFlags;
 
-class RecastSettings
+class MeshSettings
 {
     public:
-        static constexpr int TileVoxelSize = 1000;
+        static constexpr int ChunksPerTile = 4;
+        static constexpr int TileVoxelSize = 450;
 
-        static constexpr float CellHeight = 0.4f;
-        static constexpr float WalkableHeight = 1.6f;   // agent height in world units (yards)
-        static constexpr float WalkableRadius = 0.3f;   // narrowest allowable hallway in world units (yards)
-        static constexpr float WalkableSlope = 50.f;    // maximum walkable slope, in degrees
-        static constexpr float WalkableClimb = 1.f;     // maximum 'step' height for which slope is ignored (yards)
+        static constexpr float CellHeight = 0.5f;
+        static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
+        static constexpr float WalkableRadius = 0.3f;           // narrowest allowable hallway in world units (yards)
+        static constexpr float WalkableSlope = 50.f;            // maximum walkable slope, in degrees
+        static constexpr float WalkableClimb = 1.f;             // maximum 'step' height for which slope is ignored (yards)
+        static constexpr float DetailSampleDistance = 3.f;      // heightfield detail mesh sample distance (yards)
+        static constexpr float DetailSampleMaxError = 0.75f;    // maximum distance detail mesh surface should deviate from heightfield (yards)
 
-        static constexpr float MaxSimplificationError = 1.3f;
+        // NOTE: If Recast warns "Walk towards polygon center failed to reach center", try lowering this value
+        static constexpr float MaxSimplificationError = 0.5f;
 
-        static constexpr int MinRegionSize = 45;
-        static constexpr int MergeRegionSize = 75;
+        static constexpr int MinRegionSize = 1600;
+        static constexpr int MergeRegionSize = 400;
+        static constexpr int VerticesPerPolygon = 6;
 
-        static constexpr float TileSize = 533.f + (1.f / 3.f);
-        static constexpr int VoxelWalkableRadius = static_cast<int>((WalkableRadius + 0.5f) / (TileSize / TileVoxelSize));
-        static constexpr int VoxelWalkableHeight = static_cast<int>(WalkableHeight / RecastSettings::CellHeight);
-        static constexpr int VoxelWalkableClimb = static_cast<int>(WalkableClimb / RecastSettings::CellHeight);
+        // Nothing below here should ever have to change
+
+        static constexpr int Adts = 64;
+        static constexpr int ChunksPerAdt = 16;
+        static constexpr int TilesPerADT = ChunksPerAdt / ChunksPerTile;
+        static constexpr int TileCount = Adts * TilesPerADT;
+        static constexpr int ChunkCount = Adts * ChunksPerAdt;
+
+        static constexpr float AdtSize = 533.f + (1.f / 3.f);
+        static constexpr float AdtChunkSize = AdtSize / ChunksPerAdt;
+
+        static constexpr float TileSize = AdtChunkSize * ChunksPerTile;
         static constexpr float CellSize = TileSize / TileVoxelSize;
+        static constexpr int VoxelWalkableRadius = static_cast<int>(WalkableRadius / CellSize);
+        static constexpr int VoxelWalkableHeight = static_cast<int>(WalkableHeight / CellHeight);
+        static constexpr int VoxelWalkableClimb = static_cast<int>(WalkableClimb / CellHeight);
 
+        static_assert(WalkableRadius > CellSize, "CellSize must be able to approximate walkable radius");
+        static_assert(WalkableHeight > CellSize, "CellSize must be able to approximate walkable height");
+        static_assert(ChunksPerAdt % ChunksPerTile == 0, "Chunks per tile must divide chunks per ADT (16)");
         static_assert(VoxelWalkableRadius > 0, "VoxelWalkableRadius must be a positive integer");
         static_assert(VoxelWalkableHeight > 0, "VoxelWalkableHeight must be a positive integer");
         static_assert(VoxelWalkableClimb >= 0, "VoxelWalkableClimb must be non-negative integer");
