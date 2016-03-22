@@ -139,6 +139,8 @@
   <ItemGroup>
     <ClCompile Include="..\recastnavigation\DebugUtils\Source\DebugDraw.cpp" />
     <ClCompile Include="..\recastnavigation\DebugUtils\Source\DetourDebugDraw.cpp" />
+    <ClCompile Include="..\recastnavigation\DetourTileCache\Source\DetourTileCache.cpp" />
+    <ClCompile Include="..\recastnavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp" />
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourAlloc.cpp" />
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourCommon.cpp" />
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourNavMesh.cpp" />
@@ -159,6 +161,8 @@
   <ItemGroup>
     <ClInclude Include="..\recastnavigation\DebugUtils\Include\DebugDraw.h" />
     <ClInclude Include="..\recastnavigation\DebugUtils\Include\DetourDebugDraw.h" />
+    <ClInclude Include="..\recastnavigation\DetourTileCache\Include\DetourTileCache.h" />
+    <ClInclude Include="..\recastnavigation\DetourTileCache\Include\DetourTileCacheBuilder.h" />
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourAlloc.h" />
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourAssert.h" />
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourCommon.h" />

@@ -14,8 +14,8 @@ using PolyFlags = AreaFlags;
 class MeshSettings
 {
     public:
-        static constexpr int ChunksPerTile = 4;
-        static constexpr int TileVoxelSize = 450;
+        static constexpr int ChunksPerTile = 1;
+        static constexpr int TileVoxelSize = 32;
 
         static constexpr float CellHeight = 0.5f;
         static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
@@ -45,12 +45,11 @@ class MeshSettings
 
         static constexpr float TileSize = AdtChunkSize * ChunksPerTile;
         static constexpr float CellSize = TileSize / TileVoxelSize;
-        static constexpr int VoxelWalkableRadius = static_cast<int>(WalkableRadius / CellSize);
+        //static constexpr int VoxelWalkableRadius = static_cast<int>(0.5f + WalkableRadius / CellSize);
+        static constexpr int VoxelWalkableRadius = 1;
         static constexpr int VoxelWalkableHeight = static_cast<int>(WalkableHeight / CellHeight);
         static constexpr int VoxelWalkableClimb = static_cast<int>(WalkableClimb / CellHeight);
 
-        static_assert(WalkableRadius > CellSize, "CellSize must be able to approximate walkable radius");
-        static_assert(WalkableHeight > CellSize, "CellSize must be able to approximate walkable height");
         static_assert(ChunksPerAdt % ChunksPerTile == 0, "Chunks per tile must divide chunks per ADT (16)");
         static_assert(VoxelWalkableRadius > 0, "VoxelWalkableRadius must be a positive integer");
         static_assert(VoxelWalkableHeight > 0, "VoxelWalkableHeight must be a positive integer");

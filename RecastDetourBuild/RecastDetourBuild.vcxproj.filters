@@ -27,6 +27,12 @@
     <Filter Include="Header Files\DebugUtils">
       <UniqueIdentifier>{568bbd1d-1911-4350-8a27-40d13f12408f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\DetourTileCache">
+      <UniqueIdentifier>{2446ffe8-b7c8-4925-b5ae-9213b7d3f346}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DetourTileCache">
+      <UniqueIdentifier>{387c4807-35db-4afd-9675-02b3dd5f72f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\recastnavigation\Detour\Source\DetourAlloc.cpp">
@@ -83,6 +89,12 @@
     <ClCompile Include="..\recastnavigation\DebugUtils\Source\DetourDebugDraw.cpp">
       <Filter>Source Files\DebugUtils</Filter>
     </ClCompile>
+    <ClCompile Include="..\recastnavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp">
+      <Filter>Source Files\DetourTileCache</Filter>
+    </ClCompile>
+    <ClCompile Include="..\recastnavigation\DetourTileCache\Source\DetourTileCache.cpp">
+      <Filter>Source Files\DetourTileCache</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\recastnavigation\Detour\Include\DetourAlloc.h">
@@ -129,6 +141,12 @@
     </ClInclude>
     <ClInclude Include="..\recastnavigation\DebugUtils\Include\DetourDebugDraw.h">
       <Filter>Header Files\DebugUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\recastnavigation\DetourTileCache\Include\DetourTileCache.h">
+      <Filter>Header Files\DetourTileCache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\recastnavigation\DetourTileCache\Include\DetourTileCacheBuilder.h">
+      <Filter>Header Files\DetourTileCache</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -11,9 +11,12 @@
 #include "utility/Include/Directory.hpp"
 
 #include "RecastDetourBuild/Include/Common.hpp"
+#include "RecastDetourBuild/Include/TileCacheCompressor.hpp"
 
-#include "Recast.h"
-#include "DetourNavMeshBuilder.h"
+#include "recastnavigation/Recast/Include/Recast.h"
+#include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
+#include "recastnavigation/Detour/Include/DetourAlloc.h"
+#include "recastnavigation/DetourTileCache/Include/DetourTileCacheBuilder.h"
 
 #include <cassert>
 #include <string>
@@ -168,10 +171,13 @@ void InitializeRecastConfig(rcConfig &config)
 }
 
 using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
+using SmartHeightFieldLayerSetPtr = std::unique_ptr<rcHeightfieldLayerSet, decltype(&rcFreeHeightfieldLayerSet)>;
 using SmartCompactHeightFieldPtr = std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)>;
 using SmartContourSetPtr = std::unique_ptr<rcContourSet, decltype(&rcFreeContourSet)>;
 using SmartPolyMeshPtr = std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)>;
 using SmartPolyMeshDetailPtr = std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)>;
+
+static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
 bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, std::ofstream &out, rcHeightfield &solid)
 {
@@ -183,86 +189,50 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, st
 
     SelectivelyEnforceWalkableClimb(*chf, config.walkableClimb);
 
-    if (!rcBuildDistanceField(&ctx, *chf))
+    SmartHeightFieldLayerSetPtr lset(rcAllocHeightfieldLayerSet(), rcFreeHeightfieldLayerSet);
+
+    // NOTE: check if using walkableHeight here causes problems with ADTs ignoring slope
+    if (!rcBuildHeightfieldLayers(&ctx, *chf, config.borderSize, config.walkableHeight, *lset))
         return false;
 
-    if (!rcBuildRegions(&ctx, *chf, config.borderSize, config.minRegionArea, config.mergeRegionArea))
-        return false;
-
-    SmartContourSetPtr cset(rcAllocContourSet(), rcFreeContourSet);
-
-    if (!rcBuildContours(&ctx, *chf, config.maxSimplificationError, config.maxEdgeLen, *cset))
-        return false;
-
-    assert(!!cset->nconts);
-
-    SmartPolyMeshPtr polyMesh(rcAllocPolyMesh(), rcFreePolyMesh);
-
-    if (!rcBuildPolyMesh(&ctx, *cset, config.maxVertsPerPoly, *polyMesh))
-        return false;
-
-    SmartPolyMeshDetailPtr polyMeshDetail(rcAllocPolyMeshDetail(), rcFreePolyMeshDetail);
-
-    if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist, config.detailSampleMaxError, *polyMeshDetail))
-        return false;
-
-    chf.reset(nullptr);
-    cset.reset(nullptr);
-
-    // too many vertices?
-    if (polyMesh->nverts >= 0xFFFF)
+    for (int i = 0; i < lset->nlayers; ++i)
     {
-        std::stringstream str;
-        str << "Too many mesh vertices produces for tile (" << tileX << ", " << tileY << ")" << std::endl;
-        std::cout << str.str();
-        return false;
+        auto const layer = &lset->layers[i];
+
+        // Store header
+        dtTileCacheLayerHeader header;
+        header.magic = DT_TILECACHE_MAGIC;
+        header.version = DT_TILECACHE_VERSION;
+
+        // Tile layer location in the navmesh.
+        header.tx = tileX;
+        header.ty = tileY;
+        header.tlayer = i;
+        memcpy(header.bmin, layer->bmin, sizeof(header.bmin));
+        memcpy(header.bmax, layer->bmax, sizeof(header.bmax));
+
+        // Tile info.
+        header.width = static_cast<unsigned char>(layer->width);
+        header.height = static_cast<unsigned char>(layer->height);
+        header.minx = static_cast<unsigned char>(layer->minx);
+        header.maxx = static_cast<unsigned char>(layer->maxx);
+        header.miny = static_cast<unsigned char>(layer->miny);
+        header.maxy = static_cast<unsigned char>(layer->maxy);
+        header.hmin = static_cast<unsigned short>(layer->hmin);
+        header.hmax = static_cast<unsigned short>(layer->hmax);
+
+        NullCompressor comp;
+        unsigned char *data;
+        int dataSize;
+
+        if (dtStatusFailed(dtBuildTileCacheLayer(&comp, &header, layer->heights, layer->areas, layer->cons, &data, &dataSize)))
+            return false;
+
+        out << dataSize;
+        out.write(reinterpret_cast<const char *>(data), dataSize);
+
+        dtFree(data);
     }
-
-    for (int i = 0; i < polyMesh->npolys; ++i)
-    {
-        if (!polyMesh->areas[i])
-            continue;
-
-        polyMesh->flags[i] = static_cast<unsigned short>(PolyFlags::Walkable | polyMesh->areas[i]);
-    }
-
-    dtNavMeshCreateParams params;
-    ZERO(params);
-
-    params.verts = polyMesh->verts;
-    params.vertCount = polyMesh->nverts;
-    params.polys = polyMesh->polys;
-    params.polyAreas = polyMesh->areas;
-    params.polyFlags = polyMesh->flags;
-    params.polyCount = polyMesh->npolys;
-    params.nvp = polyMesh->nvp;
-    params.detailMeshes = polyMeshDetail->meshes;
-    params.detailVerts = polyMeshDetail->verts;
-    params.detailVertsCount = polyMeshDetail->nverts;
-    params.detailTris = polyMeshDetail->tris;
-    params.detailTriCount = polyMeshDetail->ntris;
-    params.walkableHeight = MeshSettings::WalkableHeight;
-    params.walkableRadius = MeshSettings::WalkableRadius;
-    params.walkableClimb = MeshSettings::WalkableClimb;
-    params.tileX = tileX;
-    params.tileY = tileY;
-    params.tileLayer = 0;
-    memcpy(params.bmin, polyMesh->bmin, sizeof(polyMesh->bmin));
-    memcpy(params.bmax, polyMesh->bmax, sizeof(polyMesh->bmax));
-    params.cs = config.cs;
-    params.ch = config.ch;
-    params.buildBvTree = true;
-
-    unsigned char *outData;
-    int outDataSize;
-    if (!dtCreateNavMeshData(&params, &outData, &outDataSize))
-        return false;
-
-    const std::int32_t outSize = static_cast<std::int32_t>(outDataSize);
-    out.write(reinterpret_cast<const char *>(&outSize), sizeof(outSize));
-    out.write(reinterpret_cast<const char *>(outData), outDataSize);
-
-    dtFree(outData);
 
     return true;
 }

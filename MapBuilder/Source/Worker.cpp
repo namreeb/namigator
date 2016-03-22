@@ -57,12 +57,14 @@ void Worker::Work()
 
             if (!m_meshBuilder->GenerateAndSaveTile(tileX, tileY))
             {
+                // XXX FIXME - the code changes here are only temporary
                 std::stringstream error;
                 error << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
                       << std::setfill(' ') << std::setw(2) << adtX << ", "
                       << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
-                      << x << ", " << y << ")... FAILED!\n";
+                      << x << ", " << y << ")... FAILED!  cell size = " << MeshSettings::CellSize << " voxels = " << MeshSettings::TileVoxelSize << "\n";
                 std::cout << error.str();
+                exit(1);
             }
         } while (!m_shutdownRequested);
     }
