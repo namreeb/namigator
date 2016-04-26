@@ -10,6 +10,7 @@
 
 #include "Detour/Include/DetourNavMesh.h"
 #include "Detour/Include/DetourNavMeshQuery.h"
+#include "DetourTileCache/Include/DetourTileCache.h"
 
 #include "RecastDetourBuild/Include/Common.hpp"
 
@@ -34,6 +35,7 @@ class Map
         const std::string m_mapName;
 
         dtNavMesh m_navMesh;
+        dtTileCache m_tileCache;
         dtNavMeshQuery m_navQuery;
         dtQueryFilter m_queryFilter;
         

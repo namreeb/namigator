@@ -56,7 +56,7 @@ class MeshBuilder
         bool GenerateAndSaveTile(int tileX, int tileY);
 
         bool GenerateAndSaveGSet();
-        bool GenerateAndSaveGSet(int tileX, int tileY);
+        //bool GenerateAndSaveGSet(int tileX, int tileY);
 
         void SaveMap() const;
 

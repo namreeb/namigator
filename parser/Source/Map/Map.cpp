@@ -9,6 +9,8 @@
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 
+#include "RecastDetourBuild/Include/Common.hpp"
+
 #include <memory>
 #include <sstream>
 #include <fstream>
@@ -84,12 +86,14 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
 
 bool Map::HasAdt(int x, int y) const
 {
+    assert(x >= 0 && y >= 0 && x < MeshSettings::Adts && y < MeshSettings::Adts);
+
     return m_hasAdt[x][y];
 }
 
 const Adt *Map::GetAdt(int x, int y)
 {
-    assert(x >= 0 && y >= 0 && x < 64 && y < 64);
+    assert(x >= 0 && y >= 0 && x < MeshSettings::Adts && y < MeshSettings::Adts);
 
     std::lock_guard<std::mutex> guard(m_adtMutex);
 

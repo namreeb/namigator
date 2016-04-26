@@ -48,12 +48,12 @@ void Worker::Work()
             auto const x = tileX % MeshSettings::TilesPerADT;
             auto const y = tileY % MeshSettings::TilesPerADT;
 
-            std::stringstream str;
-            str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
-                << std::setfill(' ') << std::setw(2) << adtX << ", "
-                << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
-                << x << ", " << y << ") ... " << std::setprecision(3) << m_meshBuilder->PercentComplete() << "%\n";
-            std::cout << str.str();
+            //std::stringstream str;
+            //str << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
+            //    << std::setfill(' ') << std::setw(2) << adtX << ", "
+            //    << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
+            //    << x << ", " << y << ") ... " << std::setprecision(3) << m_meshBuilder->PercentComplete() << "%\n";
+            //std::cout << str.str();
 
             if (!m_meshBuilder->GenerateAndSaveTile(tileX, tileY))
             {

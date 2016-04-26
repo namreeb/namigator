@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -39,6 +40,32 @@ static_assert(sizeof(float) == 4, "float must be a 32 bit type");
 
 namespace
 {
+void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::vector<std::pair<int, int>> &chunks)
+{
+    chunks.clear();
+    
+    constexpr float ChunksPerTile = MeshSettings::TileSize / MeshSettings::AdtChunkSize;
+
+    // NOTE: these are global chunk coordinates, not ADT or tile
+    auto const startX = static_cast<int>((tileX - 1) * ChunksPerTile);
+    auto const startY = static_cast<int>((tileY - 1) * ChunksPerTile);
+    auto const stopX = static_cast<int>((tileX + 1) * ChunksPerTile);
+    auto const stopY = static_cast<int>((tileY + 1) * ChunksPerTile);
+
+    for (auto y = startY; y <= stopY; ++y)
+        for (auto x = startX; x <= stopX; ++x)
+        {
+            auto const adtX = x / MeshSettings::ChunksPerAdt;
+            auto const adtY = y / MeshSettings::ChunksPerAdt;
+
+            if (adtX < 0 || adtY < 0 || adtX >= MeshSettings::Adts || adtY >= MeshSettings::Adts)
+                continue;
+
+            if (map->HasAdt(adtX, adtY))
+                chunks.push_back({ x, y });
+        }
+}
+
 bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
                const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
 {
@@ -249,24 +276,12 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     for (int y = MeshSettings::TileCount - 1; !!y; --y)
         for (int x = MeshSettings::TileCount - 1; !!x; --x)
         {
-            // if there is no ADT for this tile, do nothing
-            if (!MapHasADTForChunk(x*MeshSettings::ChunksPerTile, y*MeshSettings::ChunksPerTile))
-                continue;
+            std::vector<std::pair<int, int>> chunks;
+            ComputeRequiredChunks(m_map.get(), x, y, chunks);
 
-            auto const startX = x * MeshSettings::ChunksPerTile - 1;
-            auto const startY = y * MeshSettings::ChunksPerTile - 1;
-            auto const stopX = startX + MeshSettings::ChunksPerTile + 2;
-            auto const stopY = startY + MeshSettings::ChunksPerTile + 2;
-
-            for (auto chunkY = startY; chunkY < stopY; ++chunkY)
-                for (auto chunkX = startX; chunkX < stopX; ++chunkX)
-                {
-                    if (chunkX < 0 || chunkY < 0 || chunkX >= MeshSettings::ChunkCount || chunkY >= MeshSettings::ChunkCount)
-                        continue;
-
-                    if (MapHasADTForChunk(chunkX, chunkY))
-                        AddChunkReference(chunkX, chunkY);
-                }
+            for (auto chunk : chunks)
+                if (MapHasADTForChunk(chunk.first, chunk.second))
+                    AddChunkReference(chunk.first, chunk.second);
 
             m_pendingTiles.push_back({ x, y });
         }
@@ -499,45 +514,35 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
     std::vector<const parser::AdtChunk *> chunks;
     std::vector<std::pair<int, int>> chunkPositions;
 
-    chunks.reserve((MeshSettings::ChunksPerTile + 2) * (MeshSettings::ChunksPerTile + 2));
-    chunkPositions.reserve((MeshSettings::ChunksPerTile + 2) * (MeshSettings::ChunksPerTile + 2));
+    ComputeRequiredChunks(m_map.get(), tileX, tileY, chunkPositions);
+
+    chunks.reserve(chunkPositions.size());
+    for (auto const chunkPosition : chunkPositions)
     {
-        // NOTE: these are global chunk coordinates, not ADT or tile
-        auto const startX = tileX * MeshSettings::ChunksPerTile - 1;
-        auto const startY = tileY * MeshSettings::ChunksPerTile - 1;
-        auto const stopX = startX + MeshSettings::ChunksPerTile + 2;
-        auto const stopY = startY + MeshSettings::ChunksPerTile + 2;
+        auto const adtX = chunkPosition.first / MeshSettings::ChunksPerAdt;
+        auto const adtY = chunkPosition.second / MeshSettings::ChunksPerAdt;
 
-        for (auto y = startY; y < stopY; ++y)
-            for (auto x = startX; x < stopX; ++x)
-            {
-                auto const adtX = x / MeshSettings::ChunksPerAdt;
-                auto const adtY = y / MeshSettings::ChunksPerAdt;
-                auto const adt = m_map->GetAdt(adtX, adtY);
+        assert(adtX >= 0 && adtY >= 0 && adtX < MeshSettings::Adts && adtY < MeshSettings::Adts);
 
-                if (!adt)
-                    continue;
+        auto const adt = m_map->GetAdt(adtX, adtY);
+        auto const chunk = adt->GetChunk(chunkPosition.first % MeshSettings::ChunksPerAdt, chunkPosition.second % MeshSettings::ChunksPerAdt);
 
-                auto const chunk = adt->GetChunk(x % MeshSettings::ChunksPerAdt, y % MeshSettings::ChunksPerAdt);
+        minZ = std::min(minZ, chunk->m_minZ);
+        maxZ = std::max(maxZ, chunk->m_maxZ);
 
-                minZ = std::min(minZ, chunk->m_minZ);
-                maxZ = std::max(maxZ, chunk->m_maxZ);
-
-                chunks.push_back(adt->GetChunk(x % MeshSettings::ChunksPerAdt, y % MeshSettings::ChunksPerAdt));
-                chunkPositions.push_back({ x, y });
-            }
+        chunks.push_back(chunk);
     }
 
     rcConfig config;
     InitializeRecastConfig(config);
     
-    config.bmin[0] = (tileX * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+    config.bmin[0] = tileX * MeshSettings::TileSize - 32.f * MeshSettings::AdtSize;
     config.bmin[1] = minZ;
-    config.bmin[2] = (tileY * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+    config.bmin[2] = tileY * MeshSettings::TileSize - 32.f * MeshSettings::AdtSize;
 
-    config.bmax[0] = ((tileX + 1) * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+    config.bmax[0] = (tileX + 1) * MeshSettings::TileSize - 32.f * MeshSettings::AdtSize;
     config.bmax[1] = maxZ;
-    config.bmax[2] = ((tileY + 1) * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+    config.bmax[2] = (tileY + 1) * MeshSettings::TileSize - 32.f * MeshSettings::AdtSize;
 
     config.bmin[0] -= config.borderSize * config.cs;
     config.bmin[2] -= config.borderSize * config.cs;
@@ -775,189 +780,189 @@ bool MeshBuilder::GenerateAndSaveGSet()
     return true;
 }
 
-bool MeshBuilder::GenerateAndSaveGSet(int tileX, int tileY)
-{
-    std::vector<const parser::AdtChunk *> chunks;
-    float minZ = std::numeric_limits<float>::lowest(), maxZ = std::numeric_limits<float>::max();
-
-    {
-        // NOTE: these are global chunk coordinates, not ADT or tile
-        auto const startX = tileX * MeshSettings::ChunksPerTile - 1;
-        auto const startY = tileY * MeshSettings::ChunksPerTile - 1;
-        auto const stopX = startX + MeshSettings::ChunksPerTile + 2;
-        auto const stopY = startY + MeshSettings::ChunksPerTile + 2;
-
-        for (auto y = startY; y < stopY; ++y)
-            for (auto x = startX; x < stopX; ++x)
-            {
-                auto const adtX = x / MeshSettings::ChunksPerAdt;
-                auto const adtY = y / MeshSettings::ChunksPerAdt;
-                auto const adt = m_map->GetAdt(adtX, adtY);
-
-                if (!adt)
-                    continue;
-
-                auto const chunk = adt->GetChunk(x % MeshSettings::ChunksPerAdt, y % MeshSettings::ChunksPerAdt);
-
-                minZ = std::min(minZ, chunk->m_minZ);
-                maxZ = std::max(maxZ, chunk->m_maxZ);
-
-                chunks.push_back(adt->GetChunk(x % MeshSettings::ChunksPerAdt, y % MeshSettings::ChunksPerAdt));
-            }
-    }
-
-    rcConfig config;
-    InitializeRecastConfig(config);
-
-    config.bmin[0] = (tileX * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
-    config.bmin[1] = minZ;
-    config.bmin[2] = (tileY * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
-
-    config.bmax[0] = ((tileX + 1) * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
-    config.bmax[1] = maxZ;
-    config.bmax[2] = ((tileY + 1) * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
-
-    auto const filename = m_map->Name + "_" + std::to_string(tileX) + "_" + std::to_string(tileY);
-
-    {
-        std::ofstream gsetOut(filename + ".gset", std::ofstream::trunc);
-
-        gsetOut << "s " << config.cs << " " << config.ch << " " << MeshSettings::WalkableHeight << " " << MeshSettings::WalkableRadius << " " << MeshSettings::WalkableClimb << " "
-                << MeshSettings::WalkableSlope << " " << MeshSettings::MinRegionSize << " " << MeshSettings::MergeRegionSize << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
-                << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
-                << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
-                << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
-
-        gsetOut << "f " << filename << ".obj" << std::endl;
-    }
-
-    config.bmin[0] -= config.borderSize * config.cs;
-    config.bmin[2] -= config.borderSize * config.cs;
-    config.bmax[0] += config.borderSize * config.cs;
-    config.bmax[2] += config.borderSize * config.cs;
-
-    std::ofstream objOut(filename + ".obj", std::ofstream::trunc);
-
-    int indexOffset = 1;
-
-    // the mesh geometry can be rasterized into the height field stages, which is good for us
-    for (auto const &chunk : chunks)
-    {
-        std::vector<float> recastVertices;
-        utility::Convert::VerticesToRecast(chunk->m_terrainVertices, recastVertices);
-
-        if (recastVertices.size() && chunk->m_terrainIndices.size())
-        {
-            objOut << "# ADT terrain" << std::endl;
-            for (size_t i = 0; i < recastVertices.size(); i += 3)
-                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
-            for (size_t i = 0; i < chunk->m_terrainIndices.size(); i += 3)
-                objOut << "f " << (indexOffset + chunk->m_terrainIndices[i + 0])
-                        << " "  << (indexOffset + chunk->m_terrainIndices[i + 1])
-                        << " "  << (indexOffset + chunk->m_terrainIndices[i + 2]) << std::endl;
-        }
-
-        indexOffset += static_cast<int>(chunk->m_terrainVertices.size());
-
-        if (chunk->m_liquidVertices.size() && chunk->m_liquidIndices.size())
-        {
-            objOut << "# ADT liquid" << std::endl;
-
-            utility::Convert::VerticesToRecast(chunk->m_liquidVertices, recastVertices);
-            for (size_t i = 0; i < recastVertices.size(); i += 3)
-                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
-            for (size_t i = 0; i < chunk->m_liquidIndices.size(); i += 3)
-                objOut << "f " << (indexOffset + chunk->m_liquidIndices[i + 0])
-                        << " "  << (indexOffset + chunk->m_liquidIndices[i + 1])
-                        << " "  << (indexOffset + chunk->m_liquidIndices[i + 2]) << std::endl;
-                
-            indexOffset += static_cast<int>(chunk->m_liquidVertices.size());
-        }
-
-        // wmos (and included doodads and liquid)
-        for (auto const &wmoId : chunk->m_wmoInstances)
-        {
-            auto const wmoInstance = m_map->GetWmoInstance(wmoId);
-
-            if (!wmoInstance)
-            {
-                std::stringstream str;
-                str << "Could not find required WMO ID = " << wmoId << " needed by tile (" << tileX << ", " << tileY << ")\n";
-                std::cout << str.str();
-            }
-
-            assert(!!wmoInstance);
-
-            std::vector<utility::Vertex> vertices;
-            std::vector<int> indices;
-
-            wmoInstance->BuildTriangles(vertices, indices);
-            utility::Convert::VerticesToRecast(vertices, recastVertices);
-
-            objOut << "# WMO terrain (" << wmoInstance->Model->FileName << ")" << std::endl;
-            for (size_t i = 0; i < recastVertices.size(); i += 3)
-                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
-            for (size_t i = 0; i < indices.size(); i += 3)
-                objOut << "f " << (indexOffset + indices[i + 0])
-                << " " << (indexOffset + indices[i + 1])
-                << " " << (indexOffset + indices[i + 2]) << std::endl;
-
-            indexOffset += static_cast<int>(vertices.size());
-
-            wmoInstance->BuildLiquidTriangles(vertices, indices);
-            utility::Convert::VerticesToRecast(vertices, recastVertices);
-
-            objOut << "# WMO liquid (" << wmoInstance->Model->FileName << ")" << std::endl;
-            for (size_t i = 0; i < recastVertices.size(); i += 3)
-                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
-            for (size_t i = 0; i < indices.size(); i += 3)
-                objOut << "f " << (indexOffset + indices[i + 0])
-                << " " << (indexOffset + indices[i + 1])
-                << " " << (indexOffset + indices[i + 2]) << std::endl;
-
-            indexOffset += static_cast<int>(vertices.size());
-
-            wmoInstance->BuildDoodadTriangles(vertices, indices);
-            utility::Convert::VerticesToRecast(vertices, recastVertices);
-
-            objOut << "# WMO doodads (" << wmoInstance->Model->FileName << ")" << std::endl;
-            for (size_t i = 0; i < recastVertices.size(); i += 3)
-                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
-            for (size_t i = 0; i < indices.size(); i += 3)
-                objOut << "f " << (indexOffset + indices[i + 0])
-                << " " << (indexOffset + indices[i + 1])
-                << " " << (indexOffset + indices[i + 2]) << std::endl;
-
-            indexOffset += static_cast<int>(vertices.size());
-        }
-
-        // doodads
-        for (auto const &doodadId : chunk->m_doodadInstances)
-        {
-            auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
-
-            assert(!!doodadInstance);
-
-            std::vector<utility::Vertex> vertices;
-            std::vector<int> indices;
-
-            doodadInstance->BuildTriangles(vertices, indices);
-            utility::Convert::VerticesToRecast(vertices, recastVertices);
-
-            objOut << "# Doodad (" << doodadInstance->Model->FileName << ")" << std::endl;
-            for (size_t i = 0; i < recastVertices.size(); i += 3)
-                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
-            for (size_t i = 0; i < indices.size(); i += 3)
-                objOut << "f " << (indexOffset + indices[i + 0])
-                << " " << (indexOffset + indices[i + 1])
-                << " " << (indexOffset + indices[i + 2]) << std::endl;
-
-            indexOffset += static_cast<int>(vertices.size());
-        }
-    }
-
-    return true;
-}
+//bool MeshBuilder::GenerateAndSaveGSet(int tileX, int tileY)
+//{
+//    std::vector<const parser::AdtChunk *> chunks;
+//    float minZ = std::numeric_limits<float>::lowest(), maxZ = std::numeric_limits<float>::max();
+//
+//    {
+//        // NOTE: these are global chunk coordinates, not ADT or tile
+//        auto const startX = tileX * MeshSettings::ChunksPerTile - 1;
+//        auto const startY = tileY * MeshSettings::ChunksPerTile - 1;
+//        auto const stopX = startX + MeshSettings::ChunksPerTile + 2;
+//        auto const stopY = startY + MeshSettings::ChunksPerTile + 2;
+//
+//        for (auto y = startY; y < stopY; ++y)
+//            for (auto x = startX; x < stopX; ++x)
+//            {
+//                auto const adtX = x / MeshSettings::ChunksPerAdt;
+//                auto const adtY = y / MeshSettings::ChunksPerAdt;
+//                auto const adt = m_map->GetAdt(adtX, adtY);
+//
+//                if (!adt)
+//                    continue;
+//
+//                auto const chunk = adt->GetChunk(x % MeshSettings::ChunksPerAdt, y % MeshSettings::ChunksPerAdt);
+//
+//                minZ = std::min(minZ, chunk->m_minZ);
+//                maxZ = std::max(maxZ, chunk->m_maxZ);
+//
+//                chunks.push_back(adt->GetChunk(x % MeshSettings::ChunksPerAdt, y % MeshSettings::ChunksPerAdt));
+//            }
+//    }
+//
+//    rcConfig config;
+//    InitializeRecastConfig(config);
+//
+//    config.bmin[0] = (tileX * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+//    config.bmin[1] = minZ;
+//    config.bmin[2] = (tileY * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+//
+//    config.bmax[0] = ((tileX + 1) * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+//    config.bmax[1] = maxZ;
+//    config.bmax[2] = ((tileY + 1) * MeshSettings::ChunksPerTile) * MeshSettings::AdtChunkSize - 32.f * MeshSettings::AdtSize;
+//
+//    auto const filename = m_map->Name + "_" + std::to_string(tileX) + "_" + std::to_string(tileY);
+//
+//    {
+//        std::ofstream gsetOut(filename + ".gset", std::ofstream::trunc);
+//
+//        gsetOut << "s " << config.cs << " " << config.ch << " " << MeshSettings::WalkableHeight << " " << MeshSettings::WalkableRadius << " " << MeshSettings::WalkableClimb << " "
+//                << MeshSettings::WalkableSlope << " " << MeshSettings::MinRegionSize << " " << MeshSettings::MergeRegionSize << " " << (config.cs * config.maxEdgeLen) << " " << config.maxSimplificationError << " "
+//                << config.maxVertsPerPoly << " " << config.detailSampleDist << " " << config.detailSampleMaxError << " " << 0 << " "
+//                << config.bmin[0] << " " << config.bmin[1] << " " << config.bmin[2] << " "
+//                << config.bmax[0] << " " << config.bmax[1] << " " << config.bmax[2] << " " << config.tileSize << std::endl;
+//
+//        gsetOut << "f " << filename << ".obj" << std::endl;
+//    }
+//
+//    config.bmin[0] -= config.borderSize * config.cs;
+//    config.bmin[2] -= config.borderSize * config.cs;
+//    config.bmax[0] += config.borderSize * config.cs;
+//    config.bmax[2] += config.borderSize * config.cs;
+//
+//    std::ofstream objOut(filename + ".obj", std::ofstream::trunc);
+//
+//    int indexOffset = 1;
+//
+//    // the mesh geometry can be rasterized into the height field stages, which is good for us
+//    for (auto const &chunk : chunks)
+//    {
+//        std::vector<float> recastVertices;
+//        utility::Convert::VerticesToRecast(chunk->m_terrainVertices, recastVertices);
+//
+//        if (recastVertices.size() && chunk->m_terrainIndices.size())
+//        {
+//            objOut << "# ADT terrain" << std::endl;
+//            for (size_t i = 0; i < recastVertices.size(); i += 3)
+//                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+//            for (size_t i = 0; i < chunk->m_terrainIndices.size(); i += 3)
+//                objOut << "f " << (indexOffset + chunk->m_terrainIndices[i + 0])
+//                        << " "  << (indexOffset + chunk->m_terrainIndices[i + 1])
+//                        << " "  << (indexOffset + chunk->m_terrainIndices[i + 2]) << std::endl;
+//        }
+//
+//        indexOffset += static_cast<int>(chunk->m_terrainVertices.size());
+//
+//        if (chunk->m_liquidVertices.size() && chunk->m_liquidIndices.size())
+//        {
+//            objOut << "# ADT liquid" << std::endl;
+//
+//            utility::Convert::VerticesToRecast(chunk->m_liquidVertices, recastVertices);
+//            for (size_t i = 0; i < recastVertices.size(); i += 3)
+//                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+//            for (size_t i = 0; i < chunk->m_liquidIndices.size(); i += 3)
+//                objOut << "f " << (indexOffset + chunk->m_liquidIndices[i + 0])
+//                        << " "  << (indexOffset + chunk->m_liquidIndices[i + 1])
+//                        << " "  << (indexOffset + chunk->m_liquidIndices[i + 2]) << std::endl;
+//                
+//            indexOffset += static_cast<int>(chunk->m_liquidVertices.size());
+//        }
+//
+//        // wmos (and included doodads and liquid)
+//        for (auto const &wmoId : chunk->m_wmoInstances)
+//        {
+//            auto const wmoInstance = m_map->GetWmoInstance(wmoId);
+//
+//            if (!wmoInstance)
+//            {
+//                std::stringstream str;
+//                str << "Could not find required WMO ID = " << wmoId << " needed by tile (" << tileX << ", " << tileY << ")\n";
+//                std::cout << str.str();
+//            }
+//
+//            assert(!!wmoInstance);
+//
+//            std::vector<utility::Vertex> vertices;
+//            std::vector<int> indices;
+//
+//            wmoInstance->BuildTriangles(vertices, indices);
+//            utility::Convert::VerticesToRecast(vertices, recastVertices);
+//
+//            objOut << "# WMO terrain (" << wmoInstance->Model->FileName << ")" << std::endl;
+//            for (size_t i = 0; i < recastVertices.size(); i += 3)
+//                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+//            for (size_t i = 0; i < indices.size(); i += 3)
+//                objOut << "f " << (indexOffset + indices[i + 0])
+//                << " " << (indexOffset + indices[i + 1])
+//                << " " << (indexOffset + indices[i + 2]) << std::endl;
+//
+//            indexOffset += static_cast<int>(vertices.size());
+//
+//            wmoInstance->BuildLiquidTriangles(vertices, indices);
+//            utility::Convert::VerticesToRecast(vertices, recastVertices);
+//
+//            objOut << "# WMO liquid (" << wmoInstance->Model->FileName << ")" << std::endl;
+//            for (size_t i = 0; i < recastVertices.size(); i += 3)
+//                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+//            for (size_t i = 0; i < indices.size(); i += 3)
+//                objOut << "f " << (indexOffset + indices[i + 0])
+//                << " " << (indexOffset + indices[i + 1])
+//                << " " << (indexOffset + indices[i + 2]) << std::endl;
+//
+//            indexOffset += static_cast<int>(vertices.size());
+//
+//            wmoInstance->BuildDoodadTriangles(vertices, indices);
+//            utility::Convert::VerticesToRecast(vertices, recastVertices);
+//
+//            objOut << "# WMO doodads (" << wmoInstance->Model->FileName << ")" << std::endl;
+//            for (size_t i = 0; i < recastVertices.size(); i += 3)
+//                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+//            for (size_t i = 0; i < indices.size(); i += 3)
+//                objOut << "f " << (indexOffset + indices[i + 0])
+//                << " " << (indexOffset + indices[i + 1])
+//                << " " << (indexOffset + indices[i + 2]) << std::endl;
+//
+//            indexOffset += static_cast<int>(vertices.size());
+//        }
+//
+//        // doodads
+//        for (auto const &doodadId : chunk->m_doodadInstances)
+//        {
+//            auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
+//
+//            assert(!!doodadInstance);
+//
+//            std::vector<utility::Vertex> vertices;
+//            std::vector<int> indices;
+//
+//            doodadInstance->BuildTriangles(vertices, indices);
+//            utility::Convert::VerticesToRecast(vertices, recastVertices);
+//
+//            objOut << "# Doodad (" << doodadInstance->Model->FileName << ")" << std::endl;
+//            for (size_t i = 0; i < recastVertices.size(); i += 3)
+//                objOut << "v " << recastVertices[i + 0] << " " << recastVertices[i + 1] << " " << recastVertices[i + 2] << std::endl;
+//            for (size_t i = 0; i < indices.size(); i += 3)
+//                objOut << "f " << (indexOffset + indices[i + 0])
+//                << " " << (indexOffset + indices[i + 1])
+//                << " " << (indexOffset + indices[i + 2]) << std::endl;
+//
+//            indexOffset += static_cast<int>(vertices.size());
+//        }
+//    }
+//
+//    return true;
+//}
 
 void MeshBuilder::SaveMap() const
 {

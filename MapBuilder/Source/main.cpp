@@ -80,11 +80,11 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        if (!meshBuilder.GenerateAndSaveGSet(tileX, tileY))
-        {
-            std::cerr << "ERROR: Failed to save tile (" << tileX << ", " << tileY << ") .gset file" << std::endl;
-            return EXIT_FAILURE;
-        }
+        //if (!meshBuilder.GenerateAndSaveGSet(tileX, tileY))
+        //{
+        //    std::cerr << "ERROR: Failed to save tile (" << tileX << ", " << tileY << ") .gset file" << std::endl;
+        //    return EXIT_FAILURE;
+        //}
 
         return EXIT_SUCCESS;
     }
@@ -139,6 +139,8 @@ int main(int argc, char *argv[])
 
     auto const start = time(nullptr);
 
+    auto lastStatus = static_cast<time_t>(0);
+
     for (;;)
     {
         bool done = true;
@@ -153,6 +155,19 @@ int main(int argc, char *argv[])
             break;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        auto const now = time(nullptr);
+
+        // every 10 seconds, output current status
+        if (now - lastStatus >= 10)
+        {
+            std::stringstream str;
+
+            str << "% Complete: " << meshBuilder.PercentComplete() << "\n";
+            std::cout << str.str();
+
+            lastStatus = now;
+        }
     }
 
     meshBuilder.SaveMap();

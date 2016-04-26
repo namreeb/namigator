@@ -37,13 +37,20 @@ Tile::Tile(Map *map, std::ifstream &in) : m_map(map)
         m_doodads.push_back(m_map->LoadDoodadModel(static_cast<unsigned int>(doodadId)));
     }
 
-    std::int32_t navMeshSize;
-    in.read(reinterpret_cast<char *>(&navMeshSize), sizeof(navMeshSize));
+    do
+    {
+        std::int32_t navMeshSize;
+        in.read(reinterpret_cast<char *>(&navMeshSize), sizeof(navMeshSize));
 
-    m_tileData.resize(static_cast<size_t>(navMeshSize));
-    in.read(reinterpret_cast<char *>(&m_tileData[0]), navMeshSize);
+        if (in.fail())
+            break;
 
-    assert(m_map->m_navMesh.addTile(&m_tileData[0], static_cast<int>(navMeshSize), 0, 0, &m_ref) == DT_SUCCESS);
+        m_tileData.resize(static_cast<size_t>(navMeshSize));
+        in.read(reinterpret_cast<char *>(&m_tileData[0]), navMeshSize);
+
+        auto const result = m_map->m_tileCache.buildNavMeshTilesAt(0, 0, &m_map->m_navMesh);
+        assert(result == DT_SUCCESS);
+    } while (true);
 }
 
 Tile::~Tile()

@@ -14,8 +14,8 @@ using PolyFlags = AreaFlags;
 class MeshSettings
 {
     public:
-        static constexpr int ChunksPerTile = 1;
-        static constexpr int TileVoxelSize = 32;
+        static constexpr int TilesPerADT = 32;
+        static constexpr int TileVoxelSize = 56;
 
         static constexpr float CellHeight = 0.5f;
         static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
@@ -36,21 +36,20 @@ class MeshSettings
 
         static constexpr int Adts = 64;
         static constexpr int ChunksPerAdt = 16;
-        static constexpr int TilesPerADT = ChunksPerAdt / ChunksPerTile;
         static constexpr int TileCount = Adts * TilesPerADT;
         static constexpr int ChunkCount = Adts * ChunksPerAdt;
 
         static constexpr float AdtSize = 533.f + (1.f / 3.f);
         static constexpr float AdtChunkSize = AdtSize / ChunksPerAdt;
 
-        static constexpr float TileSize = AdtChunkSize * ChunksPerTile;
+        static constexpr float TileSize = AdtSize / TilesPerADT;
         static constexpr float CellSize = TileSize / TileVoxelSize;
-        //static constexpr int VoxelWalkableRadius = static_cast<int>(0.5f + WalkableRadius / CellSize);
-        static constexpr int VoxelWalkableRadius = 1;
+
+        static constexpr int VoxelWalkableRadius = static_cast<int>(WalkableRadius / CellSize);
         static constexpr int VoxelWalkableHeight = static_cast<int>(WalkableHeight / CellHeight);
         static constexpr int VoxelWalkableClimb = static_cast<int>(WalkableClimb / CellHeight);
 
-        static_assert(ChunksPerAdt % ChunksPerTile == 0, "Chunks per tile must divide chunks per ADT (16)");
+        static_assert(TileSize <= AdtSize, "Tiles cannot be larger than ADTs");
         static_assert(VoxelWalkableRadius > 0, "VoxelWalkableRadius must be a positive integer");
         static_assert(VoxelWalkableHeight > 0, "VoxelWalkableHeight must be a positive integer");
         static_assert(VoxelWalkableClimb >= 0, "VoxelWalkableClimb must be non-negative integer");
