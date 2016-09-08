@@ -14,8 +14,8 @@ using PolyFlags = AreaFlags;
 class MeshSettings
 {
     public:
-        static constexpr int TilesPerADT = 32;
-        static constexpr int TileVoxelSize = 56;
+        static constexpr int TilesPerADT = 32;                  // number of tile rows and columns per ADT
+        static constexpr int TileVoxelSize = 56;                // number of voxel rows and columns per tile
 
         static constexpr float CellHeight = 0.5f;
         static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
