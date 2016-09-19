@@ -14,7 +14,7 @@ using PolyFlags = AreaFlags;
 class MeshSettings
 {
     public:
-        static constexpr int TilesPerADT = 32;                  // number of tile rows and columns per ADT
+        static constexpr int TilesPerChunk = 3;                 // number of rows and columns of tiles per ADT MCNK chunk
         static constexpr int TileVoxelSize = 56;                // number of voxel rows and columns per tile
 
         static constexpr float CellHeight = 0.5f;
@@ -36,6 +36,7 @@ class MeshSettings
 
         static constexpr int Adts = 64;
         static constexpr int ChunksPerAdt = 16;
+        static constexpr int TilesPerADT = TilesPerChunk*ChunksPerAdt;
         static constexpr int TileCount = Adts * TilesPerADT;
         static constexpr int ChunkCount = Adts * ChunksPerAdt;
 
