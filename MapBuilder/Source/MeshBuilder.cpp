@@ -521,11 +521,13 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
     {
         auto const adtX = chunkPosition.first / MeshSettings::ChunksPerAdt;
         auto const adtY = chunkPosition.second / MeshSettings::ChunksPerAdt;
+        auto const chunkX = chunkPosition.first % MeshSettings::ChunksPerAdt;
+        auto const chunkY = chunkPosition.second % MeshSettings::ChunksPerAdt;
 
         assert(adtX >= 0 && adtY >= 0 && adtX < MeshSettings::Adts && adtY < MeshSettings::Adts);
 
         auto const adt = m_map->GetAdt(adtX, adtY);
-        auto const chunk = adt->GetChunk(chunkPosition.first % MeshSettings::ChunksPerAdt, chunkPosition.second % MeshSettings::ChunksPerAdt);
+        auto const chunk = adt->GetChunk(chunkX, chunkY);
 
         minZ = std::min(minZ, chunk->m_minZ);
         maxZ = std::max(maxZ, chunk->m_maxZ);
@@ -559,7 +561,7 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
     std::unordered_set<std::uint32_t> rasterizedWmos;
     std::unordered_set<std::uint32_t> rasterizedDoodads;
 
-    // the mesh geometry can be rasterized into the height field in stages, which is good for us
+    // incrementally rasterize mesh geometry into the height field, setting area flags as appropriate
     for (auto const &chunk : chunks)
     {
         // adt terrain
@@ -645,7 +647,6 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
 
 #ifndef DISABLE_SELECTIVE_FILTERING
         RestoreAdtSpans(adtSpans);
-
     }
 #endif
 
@@ -693,7 +694,7 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
     return result;
 }
 
-bool MeshBuilder::GenerateAndSaveGSet()
+bool MeshBuilder::GenerateAndSaveGSet() const
 {
     auto const wmoInstance = m_map->GetGlobalWmoInstance();
 

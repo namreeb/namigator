@@ -10,7 +10,6 @@
 #include <string>
 #include <mutex>
 #include <unordered_set>
-#include <cstdint>
 
 class MeshBuilder
 {
@@ -55,7 +54,7 @@ class MeshBuilder
         bool GenerateAndSaveGlobalWMO();
         bool GenerateAndSaveTile(int tileX, int tileY);
 
-        bool GenerateAndSaveGSet();
+        bool GenerateAndSaveGSet() const;
         //bool GenerateAndSaveGSet(int tileX, int tileY);
 
         void SaveMap() const;

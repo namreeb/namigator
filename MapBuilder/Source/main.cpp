@@ -111,9 +111,9 @@ int main(int argc, char *argv[])
     }
 
     // either both, or neither should be specified
-    if (vm.count("adtX") || vm.count("adtY"))
+    if (vm.count("tileX") || vm.count("tileY"))
     {
-        std::cerr << "ERROR: Must specify ADT X and Y" << std::endl;
+        std::cerr << "ERROR: Must specify tile X and Y" << std::endl;
         std::cerr << desc << std::endl;
 
         return EXIT_FAILURE;
