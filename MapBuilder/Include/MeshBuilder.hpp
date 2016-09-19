@@ -30,8 +30,6 @@ class MeshBuilder
 
         const int m_logLevel;
 
-        static void GetADT(int tileX, int tileY, int &adtX, int &adtY);
-
         // these chunk values are "global" (that is, 0...256)
         bool MapHasADTForChunk(int chunkX, int chunkY) const;
 
@@ -46,7 +44,7 @@ class MeshBuilder
 
         int TotalTiles() const;
 
-        void SingleTile(int tileX, int tileY);
+        void SingleADT(int tileX, int tileY);
         bool GetNextTile(int &tileX, int &tileY);
         
         bool IsGlobalWMO() const;

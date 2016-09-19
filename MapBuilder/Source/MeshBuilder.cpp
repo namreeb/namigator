@@ -303,12 +303,15 @@ int MeshBuilder::TotalTiles() const
     return ret * MeshSettings::TilesPerADT;
 }
 
-void MeshBuilder::SingleTile(int tileX, int tileY)
+void MeshBuilder::SingleADT(int adtX, int adtY)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
-    
+
     m_pendingTiles.clear();
-    m_pendingTiles.push_back({ tileX, tileY });
+
+    for (auto y = adtY * MeshSettings::TilesPerADT; y < (adtY + 1)*MeshSettings::TilesPerADT; ++y)
+        for (auto x = adtX * MeshSettings::TilesPerADT; x < (adtX + 1)*MeshSettings::TilesPerADT; ++x)
+            m_pendingTiles.push_back({ x, y });
 }
 
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
@@ -330,12 +333,6 @@ bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
 bool MeshBuilder::IsGlobalWMO() const
 {
     return !!m_map->GetGlobalWmoInstance();
-}
-
-void MeshBuilder::GetADT(int tileX, int tileY, int &adtX, int &adtY)
-{
-    adtX = tileX / MeshSettings::TilesPerADT;
-    adtY = tileY / MeshSettings::TilesPerADT;
 }
 
 bool MeshBuilder::MapHasADTForChunk(int chunkX, int chunkY) const
