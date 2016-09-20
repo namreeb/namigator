@@ -13,6 +13,8 @@
 #include <thread>
 #include <chrono>
 
+#define STATUS_INTERVAL_SECONDS     10
+
 int main(int argc, char *argv[])
 {
     std::string dataPath, map, outputPath;
@@ -55,87 +57,80 @@ int main(int argc, char *argv[])
     utility::Directory::Create(outputPath + "\\BVH");
     utility::Directory::Create(outputPath + "\\Nav");
 
+    std::unique_ptr<MeshBuilder> builder;
+    std::vector<std::unique_ptr<Worker>> workers;
+
     if (vm.count("adtX") && vm.count("adtY"))
     {
-        MeshBuilder singleBuilder(dataPath, outputPath, map, logLevel, adtX, adtY);
+        builder = std::make_unique<MeshBuilder>(dataPath, outputPath, map, logLevel, adtX, adtY);
 
-        if (singleBuilder.IsGlobalWMO())
+        if (builder->IsGlobalWMO())
         {
-            std::cerr << "ERROR: Specified Map has no ADTs" << std::endl;
+            std::cerr << "ERROR: Specified map has no ADTs" << std::endl;
             std::cerr << desc << std::endl;
 
             return EXIT_FAILURE;
         }
 
-        {
-            std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
-            Worker worker(&singleBuilder);
-        }
+        std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
 
-        std::cout << "Finished.";
-        return EXIT_SUCCESS;
+        workers.push_back(std::make_unique<Worker>(builder.get()));
     }
-
-    MeshBuilder meshBuilder(dataPath, outputPath, map, logLevel);
-
-    if (vm.count("gset"))
-    {
-        if (meshBuilder.IsGlobalWMO())
-        {
-            if (!meshBuilder.GenerateAndSaveGSet())
-            {
-                std::cerr << "ERROR: Failed to save global .gset file" << std::endl;
-                return EXIT_FAILURE;
-            }
-
-            std::cout << "Global .gset file written succesfully" << std::endl;
-
-            return EXIT_SUCCESS;
-        }
-
-        if (!vm.count("tileX") || !vm.count("tileY"))
-        {
-            std::cerr << "ERROR: --gset requires --tileX and --tileY" << std::endl << std::endl;
-            std::cerr << desc << std::endl;
-
-            return EXIT_FAILURE;
-        }
-
-        //if (!meshBuilder.GenerateAndSaveGSet(adtX, adtY))
-        //{
-        //    std::cerr << "ERROR: Failed to save ADT (" << adtX << ", " << adtY << ") .gset file" << std::endl;
-        //    return EXIT_FAILURE;
-        //}
-
-        return EXIT_SUCCESS;
-    }
-
     // either both, or neither should be specified
-    if (vm.count("tileX") || vm.count("tileY"))
+    else if (vm.count("adtX") || vm.count("adtY"))
     {
-        std::cerr << "ERROR: Must specify tile X and Y" << std::endl;
+        std::cerr << "ERROR: Must specify ADT X and Y" << std::endl;
         std::cerr << desc << std::endl;
 
         return EXIT_FAILURE;
     }
-
-    // if the Map is a single wmo, we have no use for multiple threads
-    if (meshBuilder.IsGlobalWMO())
+    else
     {
-        std::cout << "Building global WMO for " << map << "..." << std::endl;
+        builder = std::make_unique<MeshBuilder>(dataPath, outputPath, map, logLevel);
+
+        if (vm.count("gset"))
         {
-            Worker worker(&meshBuilder, true);
+            if (builder->IsGlobalWMO())
+            {
+                if (!builder->GenerateAndSaveGSet())
+                {
+                    std::cerr << "ERROR: Failed to save global .gset file" << std::endl;
+                    return EXIT_FAILURE;
+                }
+
+                std::cout << "Global .gset file written succesfully" << std::endl;
+
+                return EXIT_SUCCESS;
+            }
+
+            if (!vm.count("adtX") || !vm.count("adtY"))
+            {
+                std::cerr << "ERROR: --gset requires --adtX and --adtY" << std::endl << std::endl;
+                std::cerr << desc << std::endl;
+
+                return EXIT_FAILURE;
+            }
+
+            //if (!meshBuilder.GenerateAndSaveGSet(adtX, adtY))
+            //{
+            //    std::cerr << "ERROR: Failed to save ADT (" << adtX << ", " << adtY << ") .gset file" << std::endl;
+            //    return EXIT_FAILURE;
+            //}
+
+            return EXIT_SUCCESS;
         }
 
-        meshBuilder.SaveMap();
-        return EXIT_SUCCESS;
+        // if the Map is a single wmo, we have no use for multiple threads
+        if (builder->IsGlobalWMO())
+        {
+            std::cout << "Building global WMO for " << map << "..." << std::endl;
+
+            workers.push_back(std::make_unique<Worker>(builder.get(), true));
+        }
+        else
+            for (auto i = 0; i < jobs; ++i)
+                workers.push_back(std::make_unique<Worker>(builder.get(), false));
     }
-
-    // once we reach here it is the usual case of generating an entire Map
-    std::vector<std::unique_ptr<Worker>> workers(jobs);
-
-    for (auto &worker : workers)
-        worker.reset(new Worker(&meshBuilder));
 
     auto const start = time(nullptr);
 
@@ -144,7 +139,7 @@ int main(int argc, char *argv[])
     for (;;)
     {
         bool done = true;
-        for (auto &worker : workers)
+        for (auto const &worker : workers)
             if (worker->IsRunning())
             {
                 done = false;
@@ -158,26 +153,24 @@ int main(int argc, char *argv[])
 
         auto const now = time(nullptr);
 
-        // every 10 seconds, output current status
-        if (now - lastStatus >= 10)
+        // periodically output current status
+        if (now - lastStatus >= STATUS_INTERVAL_SECONDS)
         {
             std::stringstream str;
 
-            str << "% Complete: " << meshBuilder.PercentComplete() << "\n";
+            str << "% Complete: " << builder->PercentComplete() << "\n";
             std::cout << str.str();
 
             lastStatus = now;
         }
     }
 
-    meshBuilder.SaveMap();
+    builder->SaveMap();
 
     auto const stop = time(nullptr);
-
     auto const runTime = stop - start;
-    auto const tiles = meshBuilder.TotalTiles();
     
-    std::cout << "Finished " << map << " (" << tiles << " tiles) in " << runTime << " seconds." << std::endl;
+    std::cout << "Finished " << map << " (" << builder->TotalTiles() << " tiles) in " << runTime << " seconds." << std::endl;
 
     return EXIT_SUCCESS;
 }

@@ -330,7 +330,6 @@ int MeshBuilder::TotalTiles() const
     return ret * MeshSettings::TilesPerADT;
 }
 
-
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
