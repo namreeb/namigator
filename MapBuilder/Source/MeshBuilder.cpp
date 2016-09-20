@@ -291,6 +291,33 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
 }
 
+MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
+    : m_outputPath(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
+{
+    parser::Parser::Initialize(dataPath.c_str());
+
+    // this must follow the parser initialization
+    m_map = std::make_unique<parser::Map>(mapName);
+
+    for (auto y = adtY * MeshSettings::TilesPerADT; y < (adtY + 1)*MeshSettings::TilesPerADT; ++y)
+        for (auto x = adtX * MeshSettings::TilesPerADT; x < (adtX + 1)*MeshSettings::TilesPerADT; ++x)
+            m_pendingTiles.push_back({ x, y });
+
+    for (auto const &tile : m_pendingTiles)
+    {
+        std::vector<std::pair<int, int>> chunks;
+        ComputeRequiredChunks(m_map.get(), tile.first, tile.second, chunks);
+
+        for (auto chunk : chunks)
+            if (MapHasADTForChunk(chunk.first, chunk.second))
+                AddChunkReference(chunk.first, chunk.second);
+    }
+
+    m_startingTiles = m_pendingTiles.size();
+
+    utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
+}
+
 int MeshBuilder::TotalTiles() const
 {
     int ret = 0;
@@ -303,16 +330,6 @@ int MeshBuilder::TotalTiles() const
     return ret * MeshSettings::TilesPerADT;
 }
 
-void MeshBuilder::SingleADT(int adtX, int adtY)
-{
-    std::lock_guard<std::mutex> guard(m_mutex);
-
-    m_pendingTiles.clear();
-
-    for (auto y = adtY * MeshSettings::TilesPerADT; y < (adtY + 1)*MeshSettings::TilesPerADT; ++y)
-        for (auto x = adtX * MeshSettings::TilesPerADT; x < (adtX + 1)*MeshSettings::TilesPerADT; ++x)
-            m_pendingTiles.push_back({ x, y });
-}
 
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
 {

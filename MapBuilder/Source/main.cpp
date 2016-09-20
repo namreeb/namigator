@@ -55,6 +55,27 @@ int main(int argc, char *argv[])
     utility::Directory::Create(outputPath + "\\BVH");
     utility::Directory::Create(outputPath + "\\Nav");
 
+    if (vm.count("tileX") && vm.count("tileY"))
+    {
+        MeshBuilder singleBuilder(dataPath, outputPath, map, logLevel, adtX, adtY);
+
+        if (singleBuilder.IsGlobalWMO())
+        {
+            std::cerr << "ERROR: Specified Map has no ADTs" << std::endl;
+            std::cerr << desc << std::endl;
+
+            return EXIT_FAILURE;
+        }
+
+        {
+            std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
+            Worker worker(&singleBuilder);
+        }
+
+        std::cout << "Finished.";
+        return EXIT_SUCCESS;
+    }
+
     MeshBuilder meshBuilder(dataPath, outputPath, map, logLevel);
 
     if (vm.count("gset"))
@@ -86,27 +107,6 @@ int main(int argc, char *argv[])
         //    return EXIT_FAILURE;
         //}
 
-        return EXIT_SUCCESS;
-    }
-
-    if (vm.count("tileX") && vm.count("tileY"))
-    {
-        if (meshBuilder.IsGlobalWMO())
-        {
-            std::cerr << "ERROR: Specified Map has no ADTs" << std::endl;
-            std::cerr << desc << std::endl;
-
-            return EXIT_FAILURE;
-        }
-
-        {
-            meshBuilder.SingleADT(adtX, adtY);
-        
-            std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
-            Worker worker(&meshBuilder);
-        }
-
-        std::cout << "Finished.";
         return EXIT_SUCCESS;
     }
 
