@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     utility::Directory::Create(outputPath + "\\BVH");
     utility::Directory::Create(outputPath + "\\Nav");
 
-    if (vm.count("tileX") && vm.count("tileY"))
+    if (vm.count("adtX") && vm.count("adtY"))
     {
         MeshBuilder singleBuilder(dataPath, outputPath, map, logLevel, adtX, adtY);
 
