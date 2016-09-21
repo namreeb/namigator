@@ -271,7 +271,7 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     parser::Parser::Initialize(dataPath.c_str());
 
     // this must follow the parser initialization
-    m_map.reset(new parser::Map(mapName));
+    m_map = std::make_unique<parser::Map>(mapName);
 
     for (int y = MeshSettings::TileCount - 1; !!y; --y)
         for (int x = MeshSettings::TileCount - 1; !!x; --x)

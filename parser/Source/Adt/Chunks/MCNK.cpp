@@ -91,7 +91,7 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
 
     HasWater = information.LiquidSize > 8;
     if (HasWater)
-        LiquidChunk.reset(new MCLQ(Position + information.LiquidOffset, reader));
+        LiquidChunk = std::make_unique<MCLQ>(Position + information.LiquidOffset, reader);
 }
 }
 }

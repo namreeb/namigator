@@ -81,7 +81,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
     utility::Matrix transformMatrix;
     placement.GetTransformMatrix(transformMatrix);
 
-    m_globalWmo.reset(new WmoInstance(GetWmo(wmoName), placement.DoodadSet, bounds, transformMatrix));
+    m_globalWmo = std::make_unique<WmoInstance>(GetWmo(wmoName), placement.DoodadSet, bounds, transformMatrix);
 }
 
 bool Map::HasAdt(int x, int y) const
@@ -101,7 +101,7 @@ const Adt *Map::GetAdt(int x, int y)
         return nullptr;
 
     if (!m_adts[x][y])
-        m_adts[x][y].reset(new Adt(this, x, y));
+        m_adts[x][y] = std::make_unique<Adt>(this, x, y);
 
     return m_adts[x][y].get();
 }
@@ -109,7 +109,7 @@ const Adt *Map::GetAdt(int x, int y)
 void Map::UnloadAdt(int x, int y)
 {
     std::lock_guard<std::mutex> guard(m_adtMutex);
-    m_adts[x][y].reset(nullptr);
+    m_adts[x][y].reset();
 }
 
 const Wmo *Map::GetWmo(const std::string &name)

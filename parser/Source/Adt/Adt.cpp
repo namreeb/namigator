@@ -85,7 +85,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
     for (int y = 0; y < 16; ++y)
         for (int x = 0; x < 16; ++x)
         {
-            chunks[y][x].reset(new input::MCNK(currMcnk, reader.get()));
+            chunks[y][x] = std::make_unique<input::MCNK>(currMcnk, reader.get());
             currMcnk += 8 + chunks[y][x]->Size;
 
             if (chunks[y][x]->HasWater)

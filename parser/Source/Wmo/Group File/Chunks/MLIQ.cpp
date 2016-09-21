@@ -15,7 +15,7 @@ MLIQ::MLIQ(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupCh
 
     groupFileStream->Slide(2);
 
-    Heights.reset(new utility::Array2d<float>(Height + 1, Width + 1));
+    Heights = std::make_unique<utility::Array2d<float>>(Height + 1, Width + 1);
     for (unsigned int y = 0; y <= Height; ++y)
         for (unsigned int x = 0; x <= Width; ++x)
         {

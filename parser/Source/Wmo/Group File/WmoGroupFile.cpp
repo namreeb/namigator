@@ -27,21 +27,21 @@ WmoGroupFile::WmoGroupFile(const std::string &path)
     if (!reader->GetChunkLocation("MOPY", 0x58, mopyLocation))
         THROW("No MOPY chunk");
 
-    MaterialsChunk.reset(new MOPY(mopyLocation, reader.get()));
+    MaterialsChunk = std::make_unique<MOPY>(mopyLocation, reader.get());
 
     // MOVI
     size_t moviLocation;
     if (!reader->GetChunkLocation("MOVI", mopyLocation, moviLocation))
         THROW("No MOVI chunk");
 
-    IndicesChunk.reset(new MOVI(moviLocation, reader.get()));
+    IndicesChunk = std::make_unique<MOVI>(moviLocation, reader.get());
 
     // MOVT
     size_t movtLocation;
     if (!reader->GetChunkLocation("MOVT", moviLocation, movtLocation))
         THROW("No MOVT chunk");
 
-    VerticesChunk.reset(new MOVT(movtLocation, reader.get()));
+    VerticesChunk = std::make_unique<MOVT>(movtLocation, reader.get());
 
     // MLIQ -- not guarunteed to be present
     size_t mliqLocation;

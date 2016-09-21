@@ -331,8 +331,8 @@ void ChangeMap(const std::string &cn)
 
     GetMapName(cn, mapName);
 
-    gMap.reset(new parser::Map(mapName));
-    gNavMesh.reset(new pathfind::Map(".\\Maps", mapName));
+    gMap = std::make_unique<parser::Map>(mapName);
+    gNavMesh = std::make_unique<pathfind::Map>(".\\Maps", mapName);
 
     // if the loaded map has no ADTs, but instead a global WMO, load it now
     if (auto const wmo = gMap->GetGlobalWmoInstance())
@@ -475,10 +475,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     ShowWindow(gControlWindow, nCmdShow);
 
     // set up and initialize Direct3D
-    gRenderer.reset(new Renderer(gGuiWindow));
+    gRenderer = std::make_unique<Renderer>(gGuiWindow);
 
     // set up and initialize our Windows common control API for the control window
-    gControls.reset(new CommonControl(gControlWindow));
+    gControls = std::make_unique<CommonControl>(gControlWindow);
 
     gControls->AddLabel(L"Select Map:", 10, 12);
 

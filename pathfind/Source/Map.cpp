@@ -289,14 +289,14 @@ bool Map::LoadTile(int x, int y)
     if (in.fail())
         return false;
 
-    m_tiles[x][y].reset(new Tile(this, in));
+    m_tiles[x][y] = std::make_unique<Tile>(this, in);
 
     return true;
 }
 
 void Map::UnloadTile(int x, int y)
 {
-    m_tiles[x][y].reset(nullptr);
+    m_tiles[x][y].reset();
 }
 
 bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
