@@ -15,7 +15,7 @@ class MeshSettings
 {
     public:
         static constexpr int TilesPerChunk = 3;                 // number of rows and columns of tiles per ADT MCNK chunk
-        static constexpr int TileVoxelSize = 56;                // number of voxel rows and columns per tile
+        static constexpr int TileVoxelSize = 38;                // number of voxel rows and columns per tile
 
         static constexpr float CellHeight = 0.5f;
         static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
