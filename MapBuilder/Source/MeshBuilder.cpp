@@ -273,16 +273,27 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     // this must follow the parser initialization
     m_map = std::make_unique<parser::Map>(mapName);
 
-    for (int y = MeshSettings::TileCount - 1; !!y; --y)
-        for (int x = MeshSettings::TileCount - 1; !!x; --x)
+    // this build order should ensure that the tiles for one ADT finish before the next ADT begins (more or less)
+    for (int y = MeshSettings::Adts - 1; !!y; --y)
+        for (int x = MeshSettings::Adts - 1; !!x; --x)
         {
-            std::vector<std::pair<int, int>> chunks;
-            ComputeRequiredChunks(m_map.get(), x, y, chunks);
+            if (!m_map->HasAdt(x, y))
+                continue;
 
-            for (auto chunk : chunks)
-                AddChunkReference(chunk.first, chunk.second);
+            for (auto tileY = 0; tileY < MeshSettings::TilesPerADT; ++tileY)
+                for (auto tileX = 0; tileX < MeshSettings::TilesPerADT; ++tileX)
+                {
+                    std::vector<std::pair<int, int>> chunks;
+                    ComputeRequiredChunks(m_map.get(), x, y, chunks);
 
-            m_pendingTiles.push_back({ x, y });
+                    for (auto chunk : chunks)
+                        AddChunkReference(chunk.first, chunk.second);
+
+                    auto const globalTileX = x * MeshSettings::TilesPerADT + tileX;
+                    auto const globalTileY = y * MeshSettings::TilesPerADT + tileY;
+
+                    m_pendingTiles.push_back({ globalTileX, globalTileY });
+                }
         }
 
     m_startingTiles = m_pendingTiles.size();
@@ -325,7 +336,7 @@ int MeshBuilder::TotalTiles() const
             if (m_map->HasAdt(x, y))
                 ++ret;
 
-    return ret * MeshSettings::TilesPerADT;
+    return ret * MeshSettings::TilesPerADT * MeshSettings::TilesPerADT;
 }
 
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
@@ -335,11 +346,11 @@ bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
     if (m_pendingTiles.empty())
         return false;
 
-    auto const front = m_pendingTiles.back();
+    auto const back = m_pendingTiles.back();
     m_pendingTiles.pop_back();
 
-    tileX = front.first;
-    tileY = front.second;
+    tileX = back.first;
+    tileY = back.second;
 
     return true;
 }
