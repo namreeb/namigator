@@ -40,7 +40,7 @@ class MeshBuilder
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel);
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY);
 
-        int TotalTiles() const;
+        size_t TotalTiles() const;
 
         bool GetNextTile(int &tileX, int &tileY);
         

@@ -327,16 +327,9 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
 }
 
-int MeshBuilder::TotalTiles() const
+size_t MeshBuilder::TotalTiles() const
 {
-    int ret = 0;
-
-    for (int y = 0; y < MeshSettings::Adts; ++y)
-        for (int x = 0; x < MeshSettings::Adts; ++x)
-            if (m_map->HasAdt(x, y))
-                ++ret;
-
-    return ret * MeshSettings::TilesPerADT * MeshSettings::TilesPerADT;
+    return m_startingTiles;
 }
 
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
