@@ -280,8 +280,7 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
             ComputeRequiredChunks(m_map.get(), x, y, chunks);
 
             for (auto chunk : chunks)
-                if (MapHasADTForChunk(chunk.first, chunk.second))
-                    AddChunkReference(chunk.first, chunk.second);
+                AddChunkReference(chunk.first, chunk.second);
 
             m_pendingTiles.push_back({ x, y });
         }
@@ -309,8 +308,7 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
         ComputeRequiredChunks(m_map.get(), tile.first, tile.second, chunks);
 
         for (auto chunk : chunks)
-            if (MapHasADTForChunk(chunk.first, chunk.second))
-                AddChunkReference(chunk.first, chunk.second);
+            AddChunkReference(chunk.first, chunk.second);
     }
 
     m_startingTiles = m_pendingTiles.size();
@@ -349,14 +347,6 @@ bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
 bool MeshBuilder::IsGlobalWMO() const
 {
     return !!m_map->GetGlobalWmoInstance();
-}
-
-bool MeshBuilder::MapHasADTForChunk(int chunkX, int chunkY) const
-{
-    auto const adtX = chunkX / MeshSettings::ChunksPerAdt;
-    auto const adtY = chunkY / MeshSettings::ChunksPerAdt;
-
-    return m_map->HasAdt(adtX, adtY);
 }
 
 void MeshBuilder::AddChunkReference(int chunkX, int chunkY)

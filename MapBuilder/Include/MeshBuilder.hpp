@@ -30,9 +30,6 @@ class MeshBuilder
 
         const int m_logLevel;
 
-        // these chunk values are "global" (that is, 0...256)
-        bool MapHasADTForChunk(int chunkX, int chunkY) const;
-
         void AddChunkReference(int chunkX, int chunkY);
         void RemoveChunkReference(int chunkX, int chunkY);
 
