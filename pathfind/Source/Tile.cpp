@@ -55,6 +55,7 @@ Tile::Tile(Map *map, std::ifstream &in) : m_map(map)
 
 Tile::~Tile()
 {
-    assert(m_map->m_navMesh.removeTile(m_ref, nullptr, nullptr) == DT_SUCCESS);
+    auto const result = m_map->m_navMesh.removeTile(m_ref, nullptr, nullptr);
+    assert(result == DT_SUCCESS);
 }
 }

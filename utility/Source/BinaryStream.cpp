@@ -13,7 +13,7 @@ namespace utility
 {
 BinaryStream::BinaryStream(std::vector<char> &buffer) : m_buffer(std::move(buffer)), m_position(0L)
 {
-    assert(m_buffer.size());
+    assert(!!m_buffer.size());
 }
 
 BinaryStream::BinaryStream() : m_buffer(DEFAULT_BUFFER_LENGTH), m_position(0L) {}
