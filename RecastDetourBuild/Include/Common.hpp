@@ -32,6 +32,9 @@ class MeshSettings
         static constexpr int MergeRegionSize = 400;
         static constexpr int VerticesPerPolygon = 6;
 
+        static constexpr unsigned int FileSignature = 'NNAV';
+        static constexpr unsigned int FileVersion = '0001';
+
         // Nothing below here should ever have to change
 
         static constexpr int Adts = 64;

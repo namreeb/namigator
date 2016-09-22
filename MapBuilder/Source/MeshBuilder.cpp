@@ -30,6 +30,7 @@
 #include <iostream>
 #include <limits>
 #include <algorithm>
+#include <iterator>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -206,7 +207,7 @@ using SmartPolyMeshDetailPtr = std::unique_ptr<rcPolyMeshDetail, decltype(&rcFre
 
 static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
-bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, std::ofstream &out, rcHeightfield &solid)
+bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, rcHeightfield &solid, std::vector<unsigned char> &out)
 {
     // initialize compact height field
     SmartCompactHeightFieldPtr chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
@@ -221,6 +222,8 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, st
     // NOTE: check if using walkableHeight here causes problems with ADTs ignoring slope
     if (!rcBuildHeightfieldLayers(&ctx, *chf, config.borderSize, config.walkableHeight, *lset))
         return false;
+
+    out.clear();
 
     for (int i = 0; i < lset->nlayers; ++i)
     {
@@ -255,11 +258,19 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, st
         if (dtStatusFailed(dtBuildTileCacheLayer(&comp, &header, layer->heights, layer->areas, layer->cons, &data, &dataSize)))
             return false;
 
-        out << dataSize;
-        out.write(reinterpret_cast<const char *>(data), dataSize);
+        auto const oldSize = out.size();
+        auto const size = static_cast<std::uint32_t>(dataSize);
+
+        // make room for length and data
+        out.resize(oldSize + sizeof(std::uint32_t) + dataSize);
+
+        memcpy(&out[oldSize], &size, sizeof(std::uint32_t));
+        memcpy(&out[oldSize+sizeof(std::uint32_t)], data, size);
 
         dtFree(data);
     }
+
+    out.shrink_to_fit();
 
     return true;
 }
@@ -505,12 +516,13 @@ bool MeshBuilder::GenerateAndSaveGlobalWMO()
     rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
     rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
 
-    std::stringstream str;
-    str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << m_map->Name << ".nav";
+    std::vector<std::uint8_t> out;
 
-    std::ofstream out(str.str(), std::ofstream::binary|std::ofstream::trunc);
+    auto const ret = FinishMesh(ctx, config, 0, 0, *solid, out);
 
-    return FinishMesh(ctx, config, 0, 0, out, *solid);
+    // XXX FIXME TODO something needs to be done with this data here including serializing doodad ids
+
+    return ret;
 }
 
 bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
@@ -672,27 +684,32 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
             SerializeDoodad(m_map->GetDoodadInstance(doodadId)->Model);
     }
 
-    std::stringstream str;
-    str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(4) << std::setfill('0') << tileX << "_" << std::setw(4) << std::setfill('0') << tileY << ".nav";
+    std::vector<std::uint8_t> out;
+    auto const result = FinishMesh(ctx, config, tileX, tileY, *solid, out);
 
-    std::ofstream out(str.str(), std::ofstream::binary|std::ofstream::trunc);
+    auto const adtX = tileX / MeshSettings::TilesPerADT;
+    auto const adtY = tileY / MeshSettings::TilesPerADT;
+    auto const localTileX = tileX % MeshSettings::TilesPerADT;
+    auto const localTileY = tileY % MeshSettings::TilesPerADT;
 
-    if (out.fail())
-        return false;
+    auto adt = GetInProgressADT(adtX, adtY);
 
-    const std::uint32_t wmoInstanceCount = static_cast<std::uint32_t>(rasterizedWmos.size());
-    out.write(reinterpret_cast<const char *>(&wmoInstanceCount), sizeof(wmoInstanceCount));
+    adt->AddTile(localTileX, localTileY, rasterizedWmos, rasterizedDoodads, out);
 
-    for (auto const &wmoId : rasterizedWmos)
-        out.write(reinterpret_cast<const char *>(&wmoId), sizeof(wmoId));
+    if (adt->IsComplete())
+    {
+        std::stringstream str;
+        str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(2) << std::setfill('0')
+            << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
 
-    const std::uint32_t doodadInstanceCount = static_cast<std::uint32_t>(rasterizedDoodads.size());
-    out.write(reinterpret_cast<const char *>(&doodadInstanceCount), sizeof(doodadInstanceCount));
+        adt->Serialize(str.str());
 
-    for (auto const &doodadId : rasterizedDoodads)
-        out.write(reinterpret_cast<const char *>(&doodadId), sizeof(doodadId));
+        std::stringstream log;
+        log << "Finished " << m_map->Name << " ADT (" << adtX << ", " << adtY << ")";
+        std::cout << log.str() << std::endl;
 
-    auto const result = FinishMesh(ctx, config, tileX, tileY, out, *solid);
+        RemoveADT(adt);
+    }
 
     ++m_completedTiles;
     for (auto const &chunk : chunkPositions)
@@ -985,4 +1002,123 @@ void MeshBuilder::SaveMap() const
 float MeshBuilder::PercentComplete() const
 {
     return 100.f * (float(m_completedTiles) / float(m_startingTiles));
+}
+
+meshfiles::ADT* MeshBuilder::GetInProgressADT(int x, int y)
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    if (!m_adtsInProgress[{x, y}])
+        m_adtsInProgress[{x, y}] = std::make_unique<meshfiles::ADT>(x, y);
+
+    return m_adtsInProgress[{x, y}].get();
+}
+
+void MeshBuilder::RemoveADT(const meshfiles::ADT *adt)
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    for (auto const &a : m_adtsInProgress)
+        if (a.second.get() == adt)
+        {
+            m_adtsInProgress.erase(a.first);
+            return;
+        }
+}
+
+namespace meshfiles
+{
+void File::AddTile(int x, int y, const std::vector<std::uint8_t>& data)
+{
+    std::copy(data.cbegin(), data.cend(), std::back_inserter(m_tiles[{x, y}]));
+}
+
+ADT::ADT(int x, int y) : m_x(x), m_y(y) {}
+
+void ADT::AddTile(int x, int y, const std::unordered_set<std::uint32_t>& wmoIds,
+                  const std::unordered_set<std::uint32_t>& doodadIds, const std::vector<std::uint8_t>& tileData)
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    File::AddTile(x, y, tileData);
+
+    if (!wmoIds.empty())
+        std::copy(wmoIds.cbegin(), wmoIds.cend(), std::back_inserter(m_wmoIds[{x, y}]));
+
+    if (!doodadIds.empty())
+        std::copy(doodadIds.cbegin(), doodadIds.cend(), std::back_inserter(m_doodadIds[{x, y}]));
+}
+
+bool ADT::IsComplete() const
+{
+    return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT);
+}
+
+#define WRITE(o, p) o.write(reinterpret_cast<const char *>(&p), sizeof(p))
+
+void ADT::Serialize(const std::string &filename) const
+{
+    std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
+
+    if (out.fail())
+        throw std::exception("ADT serialization failed to open output file");
+
+    // signature
+    WRITE(out, MeshSettings::FileSignature);
+
+    // version
+    WRITE(out, MeshSettings::FileVersion);
+
+    // tile count
+    const std::uint32_t tileCount = static_cast<std::uint32_t>(m_tiles.size());
+    WRITE(out, tileCount);
+
+    for (auto const &tile : m_tiles)
+    {
+        // tile x
+        WRITE(out, tile.first.first);
+
+        // tile y
+        WRITE(out, tile.first.second);
+
+        // tile wmos
+        if (m_wmoIds.find(tile.first) == m_wmoIds.end())
+        {
+            const std::uint32_t zero = 0;
+            WRITE(out, zero);
+        }
+        else
+        {
+            auto const &wmos = m_wmoIds.at(tile.first);
+
+            const std::uint32_t wmoCount = static_cast<std::uint32_t>(wmos.size());
+            WRITE(out, wmoCount);
+
+            out.write(reinterpret_cast<const char *>(&wmos[0]), wmoCount);
+        }
+
+        // tile doodads
+        if (m_doodadIds.find(tile.first) == m_doodadIds.end())
+        {
+            const std::uint32_t zero = 0;
+            WRITE(out, zero);
+        }
+        else
+        {
+            auto const &doodads = m_doodadIds.at(tile.first);
+
+            const std::uint32_t doodadCount = static_cast<std::uint32_t>(doodads.size());
+            WRITE(out, doodadCount);
+
+            out.write(reinterpret_cast<const char *>(&doodads[0]), doodadCount);
+        }
+
+        // tile data length
+        const std::uint32_t tileSize = static_cast<std::uint32_t>(tile.second.size());
+        WRITE(out, tileSize);
+
+        // tile data
+        out.write(reinterpret_cast<const char *>(&tile.second[0]), tileSize);
+    }
+}
 }
