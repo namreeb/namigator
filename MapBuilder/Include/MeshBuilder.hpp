@@ -106,9 +106,6 @@ class MeshBuilder
         bool GenerateAndSaveGlobalWMO();
         bool BuildAndSerializeTile(int tileX, int tileY);
 
-        bool GenerateAndSaveGSet() const;
-        //bool GenerateAndSaveGSet(int tileX, int tileY);
-
         void SaveMap() const;
 
         float PercentComplete() const;

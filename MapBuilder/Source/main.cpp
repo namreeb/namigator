@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
         ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
         ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(8),                         "build jobs")
         ("logLevel,l", boost::program_options::value<int>(&logLevel)->default_value(3),                 "log level (0 = none, 1 = progress, 2 = warning, 3 = error)")
-        ("gset,g",                                                                                      "dump .gset file instead of mesh")
         ("help,h",                                                                                      "display help message");
 
     boost::program_options::variables_map vm;
@@ -87,38 +86,6 @@ int main(int argc, char *argv[])
     else
     {
         builder = std::make_unique<MeshBuilder>(dataPath, outputPath, map, logLevel);
-
-        if (vm.count("gset"))
-        {
-            if (builder->IsGlobalWMO())
-            {
-                if (!builder->GenerateAndSaveGSet())
-                {
-                    std::cerr << "ERROR: Failed to save global .gset file" << std::endl;
-                    return EXIT_FAILURE;
-                }
-
-                std::cout << "Global .gset file written succesfully" << std::endl;
-
-                return EXIT_SUCCESS;
-            }
-
-            if (!vm.count("adtX") || !vm.count("adtY"))
-            {
-                std::cerr << "ERROR: --gset requires --adtX and --adtY" << std::endl << std::endl;
-                std::cerr << desc << std::endl;
-
-                return EXIT_FAILURE;
-            }
-
-            //if (!meshBuilder.GenerateAndSaveGSet(adtX, adtY))
-            //{
-            //    std::cerr << "ERROR: Failed to save ADT (" << adtX << ", " << adtY << ") .gset file" << std::endl;
-            //    return EXIT_FAILURE;
-            //}
-
-            return EXIT_SUCCESS;
-        }
 
         // if the Map is a single wmo, we have no use for multiple threads
         if (builder->IsGlobalWMO())
