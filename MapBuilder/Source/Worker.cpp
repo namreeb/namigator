@@ -55,7 +55,7 @@ void Worker::Work()
             //    << x << ", " << y << ") ... " << std::setprecision(3) << m_meshBuilder->PercentComplete() << "%\n";
             //std::cout << str.str();
 
-            if (!m_meshBuilder->GenerateAndSaveTile(tileX, tileY))
+            if (!m_meshBuilder->BuildAndSerializeTile(tileX, tileY))
             {
                 // XXX FIXME - the code changes here are only temporary
                 std::stringstream error;
@@ -72,7 +72,7 @@ void Worker::Work()
     {
         std::stringstream s;
 
-        s << "\nThread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << e.what() << "\n";
+        s << "\nThread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << ": " << e.what() << "\n";
 
         std::cerr << s.str();
     }

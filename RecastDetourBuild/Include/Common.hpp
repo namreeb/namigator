@@ -14,8 +14,8 @@ using PolyFlags = AreaFlags;
 class MeshSettings
 {
     public:
-        static constexpr int TilesPerChunk = 3;                 // number of rows and columns of tiles per ADT MCNK chunk
-        static constexpr int TileVoxelSize = 38;                // number of voxel rows and columns per tile
+        static constexpr int TilesPerChunk = 1;                 // number of rows and columns of tiles per ADT MCNK chunk
+        static constexpr int TileVoxelSize = 112;               // number of voxel rows and columns per tile
 
         static constexpr float CellHeight = 0.5f;
         static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
@@ -34,6 +34,8 @@ class MeshSettings
 
         static constexpr unsigned int FileSignature = 'NNAV';
         static constexpr unsigned int FileVersion = '0001';
+        static constexpr unsigned int FileADT = 'ADT\0';
+        static constexpr unsigned int FileWMO = 'WMO\0';
 
         // Nothing below here should ever have to change
 

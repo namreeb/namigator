@@ -36,6 +36,7 @@
 
 static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int type");
 static_assert(sizeof(float) == 4, "float must be a 32 bit type");
+static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
 //#define DISABLE_SELECTIVE_FILTERING
 
@@ -198,6 +199,56 @@ void InitializeRecastConfig(rcConfig &config)
     config.detailSampleMaxError = MeshSettings::DetailSampleMaxError;
 }
 
+void SerializeWMOAndDoodadIDs(const std::unordered_set<std::uint32_t> &wmos, const std::unordered_set<std::uint32_t> &doodads, utility::BinaryStream &out)
+{
+    utility::BinaryStream result(sizeof(std::uint32_t)*(2 + wmos.size() + doodads.size()));
+
+    result << static_cast<std::uint32_t>(wmos.size());
+
+    for (auto const &wmo : wmos)
+        result << wmo;
+
+    result << static_cast<std::uint32_t>(doodads.size());
+
+    for (auto const &doodad : doodads)
+        result << doodad;
+
+    out = std::move(result);
+}
+
+void SerializeHeightField(const rcHeightfield &solid, utility::BinaryStream &out)
+{
+    out << solid.width << solid.height;
+
+    out.Write(&solid.bmin, sizeof(solid.bmin));
+    out.Write(&solid.bmax, sizeof(solid.bmax));
+
+    out << solid.cs << solid.ch;
+
+    // place holder for span count
+    auto const spanCount = out.GetPosition();
+    out << static_cast<std::uint32_t>(0);
+
+    // note that this might be storable in less space, since rcSpan is a bitfield struct
+    for (auto i = 0; i < solid.width*solid.height; ++i)
+    {
+        // place holder for the height of this column in the height field
+        auto const columnSize = out.GetPosition();
+        out << static_cast<std::uint32_t>(0);
+
+        for (const rcSpan *s = solid.spans[i]; !!s; s = s->next)
+            out << static_cast<std::uint32_t>(s->smin)
+                << static_cast<std::uint32_t>(s->smax)
+                << static_cast<std::uint32_t>(s->area);
+
+        auto const height = (out.GetPosition() - columnSize) / 3;
+
+        out.Write(columnSize, static_cast<std::uint32_t>(height));
+    }
+
+    out.Write(spanCount, static_cast<std::uint32_t>(out.GetPosition() - spanCount));
+}
+
 using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
 using SmartHeightFieldLayerSetPtr = std::unique_ptr<rcHeightfieldLayerSet, decltype(&rcFreeHeightfieldLayerSet)>;
 using SmartCompactHeightFieldPtr = std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)>;
@@ -205,9 +256,7 @@ using SmartContourSetPtr = std::unique_ptr<rcContourSet, decltype(&rcFreeContour
 using SmartPolyMeshPtr = std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)>;
 using SmartPolyMeshDetailPtr = std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)>;
 
-static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
-
-bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, rcHeightfield &solid, std::vector<unsigned char> &out)
+bool SerializeMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tileY, rcHeightfield &solid, utility::BinaryStream &out)
 {
     // initialize compact height field
     SmartCompactHeightFieldPtr chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
@@ -217,60 +266,87 @@ bool FinishMesh(rcContext &ctx, const rcConfig &config, int tileX, int tileY, rc
 
     SelectivelyEnforceWalkableClimb(*chf, config.walkableClimb);
 
-    SmartHeightFieldLayerSetPtr lset(rcAllocHeightfieldLayerSet(), rcFreeHeightfieldLayerSet);
-
-    // NOTE: check if using walkableHeight here causes problems with ADTs ignoring slope
-    if (!rcBuildHeightfieldLayers(&ctx, *chf, config.borderSize, config.walkableHeight, *lset))
+    if (!rcBuildDistanceField(&ctx, *chf))
         return false;
 
-    out.clear();
+    if (!rcBuildRegions(&ctx, *chf, config.borderSize, config.minRegionArea, config.mergeRegionArea))
+        return false;
 
-    for (int i = 0; i < lset->nlayers; ++i)
+    SmartContourSetPtr cset(rcAllocContourSet(), rcFreeContourSet);
+
+    if (!rcBuildContours(&ctx, *chf, config.maxSimplificationError, config.maxEdgeLen, *cset))
+        return false;
+
+    assert(!!cset->nconts);
+
+    SmartPolyMeshPtr polyMesh(rcAllocPolyMesh(), rcFreePolyMesh);
+
+    if (!rcBuildPolyMesh(&ctx, *cset, config.maxVertsPerPoly, *polyMesh))
+        return false;
+
+    SmartPolyMeshDetailPtr polyMeshDetail(rcAllocPolyMeshDetail(), rcFreePolyMeshDetail);
+
+    if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist, config.detailSampleMaxError, *polyMeshDetail))
+        return false;
+
+    chf.reset(nullptr);
+    cset.reset(nullptr);
+
+    // too many vertices?
+    if (polyMesh->nverts >= 0xFFFF)
     {
-        auto const layer = &lset->layers[i];
-
-        // Store header
-        dtTileCacheLayerHeader header;
-        header.magic = DT_TILECACHE_MAGIC;
-        header.version = DT_TILECACHE_VERSION;
-
-        // Tile layer location in the navmesh.
-        header.tx = tileX;
-        header.ty = tileY;
-        header.tlayer = i;
-        memcpy(header.bmin, layer->bmin, sizeof(header.bmin));
-        memcpy(header.bmax, layer->bmax, sizeof(header.bmax));
-
-        // Tile info.
-        header.width = static_cast<unsigned char>(layer->width);
-        header.height = static_cast<unsigned char>(layer->height);
-        header.minx = static_cast<unsigned char>(layer->minx);
-        header.maxx = static_cast<unsigned char>(layer->maxx);
-        header.miny = static_cast<unsigned char>(layer->miny);
-        header.maxy = static_cast<unsigned char>(layer->maxy);
-        header.hmin = static_cast<unsigned short>(layer->hmin);
-        header.hmax = static_cast<unsigned short>(layer->hmax);
-
-        NullCompressor comp;
-        unsigned char *data;
-        int dataSize;
-
-        if (dtStatusFailed(dtBuildTileCacheLayer(&comp, &header, layer->heights, layer->areas, layer->cons, &data, &dataSize)))
-            return false;
-
-        auto const oldSize = out.size();
-        auto const size = static_cast<std::uint32_t>(dataSize);
-
-        // make room for length and data
-        out.resize(oldSize + sizeof(std::uint32_t) + dataSize);
-
-        memcpy(&out[oldSize], &size, sizeof(std::uint32_t));
-        memcpy(&out[oldSize+sizeof(std::uint32_t)], data, size);
-
-        dtFree(data);
+        std::stringstream str;
+        str << "Too many mesh vertices produces for tile (" << tileX << ", " << tileY << ")" << std::endl;
+        std::cout << str.str();
+        return false;
     }
 
-    out.shrink_to_fit();
+    for (int i = 0; i < polyMesh->npolys; ++i)
+    {
+        if (!polyMesh->areas[i])
+            continue;
+
+        polyMesh->flags[i] = static_cast<unsigned short>(PolyFlags::Walkable | polyMesh->areas[i]);
+    }
+
+    dtNavMeshCreateParams params;
+    ZERO(params);
+
+    params.verts = polyMesh->verts;
+    params.vertCount = polyMesh->nverts;
+    params.polys = polyMesh->polys;
+    params.polyAreas = polyMesh->areas;
+    params.polyFlags = polyMesh->flags;
+    params.polyCount = polyMesh->npolys;
+    params.nvp = polyMesh->nvp;
+    params.detailMeshes = polyMeshDetail->meshes;
+    params.detailVerts = polyMeshDetail->verts;
+    params.detailVertsCount = polyMeshDetail->nverts;
+    params.detailTris = polyMeshDetail->tris;
+    params.detailTriCount = polyMeshDetail->ntris;
+    params.walkableHeight = MeshSettings::WalkableHeight;
+    params.walkableRadius = MeshSettings::WalkableRadius;
+    params.walkableClimb = MeshSettings::WalkableClimb;
+    params.tileX = tileX;
+    params.tileY = tileY;
+    params.tileLayer = 0;
+    memcpy(params.bmin, polyMesh->bmin, sizeof(polyMesh->bmin));
+    memcpy(params.bmax, polyMesh->bmax, sizeof(polyMesh->bmax));
+    params.cs = config.cs;
+    params.ch = config.ch;
+    params.buildBvTree = true;
+
+    unsigned char *outData;
+    int outDataSize;
+    if (!dtCreateNavMeshData(&params, &outData, &outDataSize))
+        return false;
+
+    utility::BinaryStream result(outDataSize);
+    result.Write(outData, outDataSize);
+
+    out = std::move(result);
+
+    dtFree(outData);
 
     return true;
 }
@@ -460,72 +536,74 @@ void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
     m_bvhDoodads.insert(doodad->FileName);
 }
 
+// TODO: (CURRENTLY NOT WORKING)
+//  - divide this geometry up into tiles for multiple workers
+//  - add serialization
+
 bool MeshBuilder::GenerateAndSaveGlobalWMO()
 {
-    auto const wmoInstance = m_map->GetGlobalWmoInstance();
+    throw std::exception("Global WMOs not currently implemented");
 
-    assert(!!wmoInstance);
+    //auto const wmoInstance = m_map->GetGlobalWmoInstance();
 
-    SerializeWmo(wmoInstance->Model);
+    //assert(!!wmoInstance);
 
-    rcConfig config;
-    InitializeRecastConfig(config);
+    //SerializeWmo(wmoInstance->Model);
 
-    config.bmin[0] = -wmoInstance->Bounds.MaxCorner.Y;
-    config.bmin[1] =  wmoInstance->Bounds.MinCorner.Z;
-    config.bmin[2] = -wmoInstance->Bounds.MaxCorner.X;
+    //rcConfig config;
+    //InitializeRecastConfig(config);
 
-    config.bmax[0] = -wmoInstance->Bounds.MinCorner.Y;
-    config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
-    config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
+    //config.bmin[0] = -wmoInstance->Bounds.MaxCorner.Y;
+    //config.bmin[1] =  wmoInstance->Bounds.MinCorner.Z;
+    //config.bmin[2] = -wmoInstance->Bounds.MaxCorner.X;
 
-    config.bmin[0] -= config.borderSize * config.cs;
-    config.bmin[2] -= config.borderSize * config.cs;
-    config.bmax[0] += config.borderSize * config.cs;
-    config.bmax[2] += config.borderSize * config.cs;
+    //config.bmax[0] = -wmoInstance->Bounds.MinCorner.Y;
+    //config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
+    //config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
 
-    RecastContext ctx(m_logLevel);
+    //config.bmin[0] -= config.borderSize * config.cs;
+    //config.bmin[2] -= config.borderSize * config.cs;
+    //config.bmax[0] += config.borderSize * config.cs;
+    //config.bmax[2] += config.borderSize * config.cs;
 
-    SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
+    //RecastContext ctx(m_logLevel);
 
-    if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
-        return false;
+    //SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
 
-    std::vector<utility::Vertex> vertices;
-    std::vector<int> indices;
+    //if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
+    //    return false;
 
-    // wmo terrain
-    wmoInstance->BuildTriangles(vertices, indices);
-    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
-        return false;
+    //std::vector<utility::Vertex> vertices;
+    //std::vector<int> indices;
 
-    // wmo liquid
-    wmoInstance->BuildLiquidTriangles(vertices, indices);
-    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
-        return false;
+    //// wmo terrain
+    //wmoInstance->BuildTriangles(vertices, indices);
+    //if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
+    //    return false;
 
-    // wmo doodads
-    wmoInstance->BuildDoodadTriangles(vertices, indices);
-    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
-        return false;
+    //// wmo liquid
+    //wmoInstance->BuildLiquidTriangles(vertices, indices);
+    //if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
+    //    return false;
 
-    FilterGroundBeneathLiquid(*solid);
+    //// wmo doodads
+    //wmoInstance->BuildDoodadTriangles(vertices, indices);
+    //if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
+    //    return false;
 
-    // note that no area id preservation is necessary here because we have no ADT terrain
-    rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
-    rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
-    rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+    //FilterGroundBeneathLiquid(*solid);
 
-    std::vector<std::uint8_t> out;
+    //// note that no area id preservation is necessary here because we have no ADT terrain
+    //rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
+    //rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+    //rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
 
-    auto const ret = FinishMesh(ctx, config, 0, 0, *solid, out);
+    //// serialization will go here
 
-    // XXX FIXME TODO something needs to be done with this data here including serializing doodad ids
-
-    return ret;
+    //return false;
 }
 
-bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
+bool MeshBuilder::BuildAndSerializeTile(int tileX, int tileY)
 {
     float minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
 
@@ -602,8 +680,9 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
             if (!wmoInstance)
             {
                 std::stringstream str;
-                str << "Could not find required WMO ID = " << wmoId << " needed by tile (" << tileX << ", " << tileY << ")\n";
-                std::cout << str.str();
+                str << "Could not find required WMO ID = " << wmoId << " needed by tile (" << tileX << ", " << tileY << ")";
+
+                throw std::exception(str.str().c_str());
             }
 
             assert(!!wmoInstance);
@@ -684,31 +763,46 @@ bool MeshBuilder::GenerateAndSaveTile(int tileX, int tileY)
             SerializeDoodad(m_map->GetDoodadInstance(doodadId)->Model);
     }
 
-    std::vector<std::uint8_t> out;
-    auto const result = FinishMesh(ctx, config, tileX, tileY, *solid, out);
+    // serialize WMO and doodad IDs for this tile
+    utility::BinaryStream wmosAndDoodads(0);
+    SerializeWMOAndDoodadIDs(rasterizedWmos, rasterizedDoodads, wmosAndDoodads);
 
-    auto const adtX = tileX / MeshSettings::TilesPerADT;
-    auto const adtY = tileY / MeshSettings::TilesPerADT;
-    auto const localTileX = tileX % MeshSettings::TilesPerADT;
-    auto const localTileY = tileY % MeshSettings::TilesPerADT;
+    // serialize heightfield for this tile
+    utility::BinaryStream heightFieldData(sizeof(std::uint32_t)*(11 + 3 * (solid->width*solid->height)));
+    SerializeHeightField(*solid, heightFieldData);
 
-    auto adt = GetInProgressADT(adtX, adtY);
+    // serialize final navmesh tile
+    utility::BinaryStream meshData(0);
+    auto const result = SerializeMeshTile(ctx, config, tileX, tileY, *solid, meshData);
 
-    adt->AddTile(localTileX, localTileY, rasterizedWmos, rasterizedDoodads, out);
-
-    if (adt->IsComplete())
     {
-        std::stringstream str;
-        str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(2) << std::setfill('0')
-            << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
+        std::lock_guard<std::mutex> guard(m_mutex);
 
-        adt->Serialize(str.str());
+        auto const adtX = tileX / MeshSettings::TilesPerADT;
+        auto const adtY = tileY / MeshSettings::TilesPerADT;
+        auto const localTileX = tileX % MeshSettings::TilesPerADT;
+        auto const localTileY = tileY % MeshSettings::TilesPerADT;
 
-        std::stringstream log;
-        log << "Finished " << m_map->Name << " ADT (" << adtX << ", " << adtY << ")";
-        std::cout << log.str() << std::endl;
+        auto adt = GetInProgressADT(adtX, adtY);
 
-        RemoveADT(adt);
+        adt->AddTile(localTileX, localTileY, wmosAndDoodads, heightFieldData, meshData);
+
+        if (adt->IsComplete())
+        {
+            std::stringstream str;
+            str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(2) << std::setfill('0')
+                << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
+
+            adt->Serialize(str.str());
+
+#ifdef _DEBUG
+            std::stringstream log;
+            log << "Finished " << m_map->Name << " ADT (" << adtX << ", " << adtY << ")";
+            std::cout << log.str() << std::endl;
+#endif
+
+            RemoveADT(adt);
+        }
     }
 
     ++m_completedTiles;
@@ -1006,8 +1100,6 @@ float MeshBuilder::PercentComplete() const
 
 meshfiles::ADT* MeshBuilder::GetInProgressADT(int x, int y)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
-
     if (!m_adtsInProgress[{x, y}])
         m_adtsInProgress[{x, y}] = std::make_unique<meshfiles::ADT>(x, y);
 
@@ -1016,8 +1108,6 @@ meshfiles::ADT* MeshBuilder::GetInProgressADT(int x, int y)
 
 void MeshBuilder::RemoveADT(const meshfiles::ADT *adt)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
-
     for (auto const &a : m_adtsInProgress)
         if (a.second.get() == adt)
         {
@@ -1028,25 +1118,21 @@ void MeshBuilder::RemoveADT(const meshfiles::ADT *adt)
 
 namespace meshfiles
 {
-void File::AddTile(int x, int y, const std::vector<std::uint8_t>& data)
+void File::AddTile(int x, int y, utility::BinaryStream &heightfield, const utility::BinaryStream &mesh)
 {
-    std::copy(data.cbegin(), data.cend(), std::back_inserter(m_tiles[{x, y}]));
+    m_tiles[{x, y}] = std::move(heightfield);
+    m_tiles[{x, y}].Append(mesh);
 }
 
 ADT::ADT(int x, int y) : m_x(x), m_y(y) {}
 
-void ADT::AddTile(int x, int y, const std::unordered_set<std::uint32_t>& wmoIds,
-                  const std::unordered_set<std::uint32_t>& doodadIds, const std::vector<std::uint8_t>& tileData)
+void ADT::AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &heightField, utility::BinaryStream &mesh)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
 
-    File::AddTile(x, y, tileData);
+    File::AddTile(x, y, heightField, mesh);
 
-    if (!wmoIds.empty())
-        std::copy(wmoIds.cbegin(), wmoIds.cend(), std::back_inserter(m_wmoIds[{x, y}]));
-
-    if (!doodadIds.empty())
-        std::copy(doodadIds.cbegin(), doodadIds.cend(), std::back_inserter(m_doodadIds[{x, y}]));
+    m_wmosAndDoodadIds[{x, y}] = std::move(wmosAndDoodads);
 }
 
 bool ADT::IsComplete() const
@@ -1054,74 +1140,60 @@ bool ADT::IsComplete() const
     return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT);
 }
 
-#define WRITE(o, p) o.write(reinterpret_cast<const char *>(&p), sizeof(p))
-
 void ADT::Serialize(const std::string &filename) const
 {
+    size_t bufferSize = 6 * sizeof(std::uint32_t);
+
+    // first compute total size, just to reduce reallocations
+    for (auto const &tile : m_tiles)
+    {
+        bufferSize += 4 * sizeof(std::uint32_t);
+        
+        if (m_wmosAndDoodadIds.find(tile.first) != m_wmosAndDoodadIds.end())
+            bufferSize += m_wmosAndDoodadIds.at(tile.first).GetPosition();
+
+        bufferSize += tile.second.GetPosition();
+    }
+
+    utility::BinaryStream outBuffer(bufferSize);
+
+    // header
+    outBuffer << MeshSettings::FileSignature << MeshSettings::FileVersion << MeshSettings::FileADT;
+
+    // ADT x and y
+    outBuffer << m_x << m_y;
+
+    // tile count
+    outBuffer << static_cast<std::uint32_t>(m_tiles.size());
+
+    for (auto const &tile : m_tiles)
+    {
+        // tile x and y
+        outBuffer << tile.first.first << tile.first.second;
+
+        // tile wmo and doodad ids
+        if (m_wmosAndDoodadIds.find(tile.first) == m_wmosAndDoodadIds.end())
+            outBuffer << static_cast<std::uint32_t>(0);
+        else
+        {
+            // buffer length in bytes
+            outBuffer << m_wmosAndDoodadIds.at(tile.first).GetPosition();
+
+            // wmo and doodad id buffer
+            outBuffer.Append(m_wmosAndDoodadIds.at(tile.first));
+        }
+
+        // height field and finalized tile buffer
+        outBuffer.Append(tile.second);
+    }
+
+    // XXX FIXME TODO - add zlib compression here!
+
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
 
     if (out.fail())
         throw std::exception("ADT serialization failed to open output file");
 
-    // signature
-    WRITE(out, MeshSettings::FileSignature);
-
-    // version
-    WRITE(out, MeshSettings::FileVersion);
-
-    // tile count
-    const std::uint32_t tileCount = static_cast<std::uint32_t>(m_tiles.size());
-    WRITE(out, tileCount);
-
-    for (auto const &tile : m_tiles)
-    {
-        // tile x
-        WRITE(out, tile.first.first);
-
-        // tile y
-        WRITE(out, tile.first.second);
-
-        // tile wmos
-        if (m_wmoIds.find(tile.first) == m_wmoIds.end())
-        {
-            const std::uint32_t zero = 0;
-            WRITE(out, zero);
-        }
-        else
-        {
-            auto const &wmos = m_wmoIds.at(tile.first);
-
-            const std::uint32_t wmoCount = static_cast<std::uint32_t>(wmos.size());
-            WRITE(out, wmoCount);
-
-            out.write(reinterpret_cast<const char *>(&wmos[0]), wmoCount);
-        }
-
-        // tile doodads
-        if (m_doodadIds.find(tile.first) == m_doodadIds.end())
-        {
-            const std::uint32_t zero = 0;
-            WRITE(out, zero);
-        }
-        else
-        {
-            auto const &doodads = m_doodadIds.at(tile.first);
-
-            const std::uint32_t doodadCount = static_cast<std::uint32_t>(doodads.size());
-            WRITE(out, doodadCount);
-
-            out.write(reinterpret_cast<const char *>(&doodads[0]), doodadCount);
-        }
-
-        // tile data length
-        const std::uint32_t tileSize = static_cast<std::uint32_t>(tile.second.size());
-        WRITE(out, tileSize);
-
-        // tile data
-		if (tileSize > 0)
-		{
-			out.write(reinterpret_cast<const char *>(&tile.second[0]), tileSize);
-		}
-    }
+    out << outBuffer;
 }
 }

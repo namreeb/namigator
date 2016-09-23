@@ -4,6 +4,7 @@
 #include "parser/Include/Wmo/Wmo.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
+#include "utility/Include/BinaryStream.hpp"
 #include "RecastDetourBuild/Include/Common.hpp"
 
 #include <vector>
@@ -18,12 +19,13 @@ namespace meshfiles
     class File
     {
         protected:
-            std::map<std::pair<int, int>, std::vector<std::uint8_t>> m_tiles;
+            // serialized heightfield and finalized mesh data, mapped by tile id
+            std::map<std::pair<int, int>, utility::BinaryStream> m_tiles;
 
             mutable std::mutex m_mutex;
 
             // this function assumes that the mutex has already been locked
-            void AddTile(int x, int y, const std::vector<std::uint8_t> &data);
+            void AddTile(int x, int y, utility::BinaryStream &heightfield, const utility::BinaryStream &mesh);
 
         public:
             virtual ~File() = default;
@@ -38,8 +40,8 @@ namespace meshfiles
             const int m_x;
             const int m_y;
 
-            std::map<std::pair<int, int>, std::vector<std::uint32_t>> m_wmoIds;
-            std::map<std::pair<int, int>, std::vector<std::uint32_t>> m_doodadIds;
+            // serialized data for WMOs and doodad IDs, mapped by tile id within the ADT
+            std::map<std::pair<int, int>, utility::BinaryStream> m_wmosAndDoodadIds;
 
         public:
             ADT(int x, int y);
@@ -47,7 +49,7 @@ namespace meshfiles
             virtual ~ADT() = default;
 
             // these x and y arguments refer to the tile x and y
-            void AddTile(int x, int y, const std::unordered_set<std::uint32_t> &wmoIds, const std::unordered_set<std::uint32_t> &doodadIds, const std::vector<std::uint8_t> &tileData);
+            void AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
             bool IsComplete() const override;
             void Serialize(const std::string &filename) const override;
@@ -87,6 +89,7 @@ class MeshBuilder
         void SerializeWmo(const parser::Wmo *wmo);
         void SerializeDoodad(const parser::Doodad *doodad);
 
+        // these two functions assume ownership of the mutex
         meshfiles::ADT *GetInProgressADT(int x, int y);
         void RemoveADT(const meshfiles::ADT *adt);
 
@@ -101,7 +104,7 @@ class MeshBuilder
         bool IsGlobalWMO() const;
 
         bool GenerateAndSaveGlobalWMO();
-        bool GenerateAndSaveTile(int tileX, int tileY);
+        bool BuildAndSerializeTile(int tileX, int tileY);
 
         bool GenerateAndSaveGSet() const;
         //bool GenerateAndSaveGSet(int tileX, int tileY);

@@ -7,24 +7,23 @@
 #include <cassert>
 #include <cstdint>
 
-#define DEFAULT_BUFFER_LENGTH 4096
-
 namespace utility
 {
-BinaryStream::BinaryStream(std::vector<char> &buffer) : m_buffer(std::move(buffer)), m_position(0L)
+BinaryStream::BinaryStream(std::vector<char> &buffer) : m_buffer(std::move(buffer)), m_position(0L) {}
+
+BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_position(0L) {}
+
+BinaryStream::BinaryStream(BinaryStream &&other) : m_buffer(std::move(other.m_buffer)), m_position(other.m_position)
 {
-    assert(!!m_buffer.size());
+    other.m_position = 0;
 }
 
-BinaryStream::BinaryStream() : m_buffer(DEFAULT_BUFFER_LENGTH), m_position(0L) {}
-
-void BinaryStream::Write(const char *data, size_t length)
+BinaryStream& BinaryStream::operator = (BinaryStream&& other)
 {
-    if (m_position + length > m_buffer.size())
-        m_buffer.resize(2 * m_buffer.size());
-
-    memcpy(&m_buffer[m_position], data, length);
-    m_position += length;
+    m_buffer = std::move(other.m_buffer);
+    m_position = other.m_position;
+    other.m_position = 0;
+    return *this;
 }
 
 std::string BinaryStream::ReadCString()
@@ -37,15 +36,32 @@ std::string BinaryStream::ReadCString()
     return ret;
 }
 
+void BinaryStream::Write(const void *data, size_t length)
+{
+    Write(m_position, data, length);
+    m_position += length;
+}
+
+void BinaryStream::Write(size_t position, const void *data, size_t length)
+{
+    if (position + length > m_buffer.size())
+    {
+        auto const newSize = (std::max)(2 * m_buffer.size(), m_buffer.size() + length);
+        m_buffer.resize(newSize);
+    }
+
+    memcpy(&m_buffer[position], data, length);
+}
+
+void BinaryStream::Append(const BinaryStream &other)
+{
+    Write(&other.m_buffer[0], other.m_position);
+}
+
 void BinaryStream::ReadBytes(void *dest, size_t length)
 {
     memcpy(dest, &m_buffer[m_position], length);
     m_position += length;
-}
-
-size_t BinaryStream::Length() const
-{
-    return m_buffer.size();
 }
 
 size_t BinaryStream::GetPosition() const
@@ -107,5 +123,11 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
     }
 
     return false;
+}
+
+std::ostream & operator << (std::ostream &stream, const BinaryStream &data)
+{
+    stream.write(&data.m_buffer[0], data.m_position);
+    return stream;
 }
 }
