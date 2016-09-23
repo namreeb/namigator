@@ -294,14 +294,14 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
             for (auto tileY = 0; tileY < MeshSettings::TilesPerADT; ++tileY)
                 for (auto tileX = 0; tileX < MeshSettings::TilesPerADT; ++tileX)
                 {
+                    auto const globalTileX = x * MeshSettings::TilesPerADT + tileX;
+                    auto const globalTileY = y * MeshSettings::TilesPerADT + tileY;
+
                     std::vector<std::pair<int, int>> chunks;
-                    ComputeRequiredChunks(m_map.get(), x, y, chunks);
+                    ComputeRequiredChunks(m_map.get(), globalTileX, globalTileY, chunks);
 
                     for (auto chunk : chunks)
                         AddChunkReference(chunk.first, chunk.second);
-
-                    auto const globalTileX = x * MeshSettings::TilesPerADT + tileX;
-                    auto const globalTileY = y * MeshSettings::TilesPerADT + tileY;
 
                     m_pendingTiles.push_back({ globalTileX, globalTileY });
                 }
