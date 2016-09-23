@@ -31,6 +31,7 @@
 #include <limits>
 #include <algorithm>
 #include <iterator>
+#include <cmath>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -360,28 +361,46 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     // this must follow the parser initialization
     m_map = std::make_unique<parser::Map>(mapName);
 
-    // this build order should ensure that the tiles for one ADT finish before the next ADT begins (more or less)
-    for (int y = MeshSettings::Adts - 1; !!y; --y)
-        for (int x = MeshSettings::Adts - 1; !!x; --x)
-        {
-            if (!m_map->HasAdt(x, y))
-                continue;
+    if (auto const wmo = m_map->GetGlobalWmoInstance())
+    {
+        auto const tileWidth = static_cast<int>(std::ceilf((wmo->Bounds.MaxCorner.X - wmo->Bounds.MinCorner.X) / MeshSettings::TileSize));
+        auto const tileHeight = static_cast<int>(std::ceilf((wmo->Bounds.MaxCorner.Y - wmo->Bounds.MinCorner.Y) / MeshSettings::TileSize));
 
-            for (auto tileY = 0; tileY < MeshSettings::TilesPerADT; ++tileY)
-                for (auto tileX = 0; tileX < MeshSettings::TilesPerADT; ++tileX)
-                {
-                    auto const globalTileX = x * MeshSettings::TilesPerADT + tileX;
-                    auto const globalTileY = y * MeshSettings::TilesPerADT + tileY;
+        m_globalWMO = std::make_unique<meshfiles::GlobalWMO>(tileWidth*tileHeight);
 
-                    std::vector<std::pair<int, int>> chunks;
-                    ComputeRequiredChunks(m_map.get(), globalTileX, globalTileY, chunks);
+        for (auto tileY = 0; tileY < tileHeight; ++tileY)
+            for (auto tileX = 0; tileX < tileWidth; ++tileX)
+                m_pendingTiles.push_back({ tileX, tileY });
 
-                    for (auto chunk : chunks)
-                        AddChunkReference(chunk.first, chunk.second);
+        wmo->BuildTriangles(m_globalWMOVertices, m_globalWMOIndices);
+        wmo->BuildLiquidTriangles(m_globalWMOLiquidVertices, m_globalWMOLiquidIndices);
+        wmo->BuildDoodadTriangles(m_globalWMODoodadVertices, m_globalWMODoodadIndices);
+    }
+    else
+    {
+        // this build order should ensure that the tiles for one ADT finish before the next ADT begins (more or less)
+        for (auto y = MeshSettings::Adts - 1; !!y; --y)
+            for (auto x = MeshSettings::Adts - 1; !!x; --x)
+            {
+                if (!m_map->HasAdt(x, y))
+                    continue;
 
-                    m_pendingTiles.push_back({ globalTileX, globalTileY });
-                }
-        }
+                for (auto tileY = 0; tileY < MeshSettings::TilesPerADT; ++tileY)
+                    for (auto tileX = 0; tileX < MeshSettings::TilesPerADT; ++tileX)
+                    {
+                        auto const globalTileX = x * MeshSettings::TilesPerADT + tileX;
+                        auto const globalTileY = y * MeshSettings::TilesPerADT + tileY;
+
+                        std::vector<std::pair<int, int>> chunks;
+                        ComputeRequiredChunks(m_map.get(), globalTileX, globalTileY, chunks);
+
+                        for (auto chunk : chunks)
+                            AddChunkReference(chunk.first, chunk.second);
+
+                        m_pendingTiles.push_back({ globalTileX, globalTileY });
+                    }
+            }
+    }
 
     m_startingTiles = m_pendingTiles.size();
 
@@ -536,74 +555,95 @@ void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
     m_bvhDoodads.insert(doodad->FileName);
 }
 
-// TODO: (CURRENTLY NOT WORKING)
-//  - divide this geometry up into tiles for multiple workers
-//  - add serialization
-
-bool MeshBuilder::GenerateAndSaveGlobalWMO()
+bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
 {
-    throw std::exception("Global WMOs not currently implemented");
+    auto const wmoInstance = m_map->GetGlobalWmoInstance();
 
-    //auto const wmoInstance = m_map->GetGlobalWmoInstance();
+    assert(!!wmoInstance);
 
-    //assert(!!wmoInstance);
+    SerializeWmo(wmoInstance->Model);
 
-    //SerializeWmo(wmoInstance->Model);
+    rcConfig config;
+    InitializeRecastConfig(config);
 
-    //rcConfig config;
-    //InitializeRecastConfig(config);
+    // tile coordinates are calculated offset from the northwest corner
 
-    //config.bmin[0] = -wmoInstance->Bounds.MaxCorner.Y;
-    //config.bmin[1] =  wmoInstance->Bounds.MinCorner.Z;
-    //config.bmin[2] = -wmoInstance->Bounds.MaxCorner.X;
+    auto const westStart = wmoInstance->Bounds.MinCorner.X + (tileX * MeshSettings::TileSize);
+    auto const northStart = wmoInstance->Bounds.MinCorner.Y + (tileY * MeshSettings::TileSize);
 
-    //config.bmax[0] = -wmoInstance->Bounds.MinCorner.Y;
-    //config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
-    //config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
+    config.bmax[0] = -northStart;
+    config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
+    config.bmax[2] = -westStart;
 
-    //config.bmin[0] -= config.borderSize * config.cs;
-    //config.bmin[2] -= config.borderSize * config.cs;
-    //config.bmax[0] += config.borderSize * config.cs;
-    //config.bmax[2] += config.borderSize * config.cs;
+    config.bmin[0] = config.bmax[0] - MeshSettings::TileSize;
+    config.bmin[1] = wmoInstance->Bounds.MinCorner.Z;
+    config.bmin[2] = config.bmax[2] - MeshSettings::TileSize;
 
-    //RecastContext ctx(m_logLevel);
+    config.bmin[0] -= config.borderSize * config.cs;
+    config.bmin[2] -= config.borderSize * config.cs;
+    config.bmax[0] += config.borderSize * config.cs;
+    config.bmax[2] += config.borderSize * config.cs;
 
-    //SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
+    RecastContext ctx(m_logLevel);
 
-    //if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
-    //    return false;
+    SmartHeightFieldPtr solid(rcAllocHeightfield(), rcFreeHeightField);
 
-    //std::vector<utility::Vertex> vertices;
-    //std::vector<int> indices;
+    if (!rcCreateHeightfield(&ctx, *solid, config.width, config.height, config.bmin, config.bmax, config.cs, config.ch))
+        return false;
 
-    //// wmo terrain
-    //wmoInstance->BuildTriangles(vertices, indices);
-    //if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
-    //    return false;
+    // wmo terrain
+    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, AreaFlags::WMO))
+        return false;
 
-    //// wmo liquid
-    //wmoInstance->BuildLiquidTriangles(vertices, indices);
-    //if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
-    //    return false;
+    // wmo liquid
+    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
+        return false;
 
-    //// wmo doodads
-    //wmoInstance->BuildDoodadTriangles(vertices, indices);
-    //if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
-    //    return false;
+    // wmo doodads
+    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
+        return false;
 
-    //FilterGroundBeneathLiquid(*solid);
+    FilterGroundBeneathLiquid(*solid);
 
-    //// note that no area id preservation is necessary here because we have no ADT terrain
-    //rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
-    //rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
-    //rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+    // note that no area id preservation is necessary here because we have no ADT terrain
+    rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
+    rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
+    rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
 
-    //// serialization will go here
+    // serialize heightfield for this tile
+    utility::BinaryStream heightFieldData(sizeof(std::uint32_t)*(11 + 3 * (solid->width*solid->height)));
+    SerializeHeightField(*solid, heightFieldData);
 
-    //return false;
+    // serialize final navmesh tile
+    utility::BinaryStream meshData(0);
+    auto const result = SerializeMeshTile(ctx, config, tileX, tileY, *solid, meshData);
+
+    {
+        std::lock_guard<std::mutex> guard(m_mutex);
+
+        m_globalWMO->AddTile(tileX, tileY, heightFieldData, meshData);
+
+        if (m_globalWMO->IsComplete())
+        {
+            std::stringstream str;
+            str << m_outputPath << "\\Nav\\" << m_map->Name << "\\Map.nav";
+
+            m_globalWMO->Serialize(str.str());
+
+#ifdef _DEBUG
+            std::stringstream log;
+            log << "Finished " << m_map->Name << ".";
+            std::cout << log.str() << std::endl;
+#endif
+        }
+    }
+
+    ++m_completedTiles;
+
+    return true;
 }
 
-bool MeshBuilder::BuildAndSerializeTile(int tileX, int tileY)
+bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
 {
     float minZ = std::numeric_limits<float>::max(), maxZ = std::numeric_limits<float>::lowest();
 
@@ -916,6 +956,9 @@ void ADT::Serialize(const std::string &filename) const
         outBuffer.Append(tile.second);
     }
 
+    // just to make sure our calculation still works.  if it doesnt, we can see copious reallocations in the above code!
+    assert(outBuffer.GetPosition() == bufferSize);
+
     // XXX FIXME TODO - add zlib compression here!
 
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
@@ -924,5 +967,23 @@ void ADT::Serialize(const std::string &filename) const
         throw std::exception("ADT serialization failed to open output file");
 
     out << outBuffer;
+}
+
+GlobalWMO::GlobalWMO(size_t tiles) : m_tileCount(tiles) {}
+
+void GlobalWMO::AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh)
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+    File::AddTile(x, y, heightField, mesh);
+}
+
+bool GlobalWMO::IsComplete() const
+{
+    return m_tiles.size() == m_tileCount;
+}
+
+void GlobalWMO::Serialize(const std::string&) const
+{
+    
 }
 }

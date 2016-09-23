@@ -87,16 +87,8 @@ int main(int argc, char *argv[])
     {
         builder = std::make_unique<MeshBuilder>(dataPath, outputPath, map, logLevel);
 
-        // if the Map is a single wmo, we have no use for multiple threads
-        if (builder->IsGlobalWMO())
-        {
-            std::cout << "Building global WMO for " << map << "..." << std::endl;
-
-            workers.push_back(std::make_unique<Worker>(builder.get(), true));
-        }
-        else
-            for (auto i = 0; i < jobs; ++i)
-                workers.push_back(std::make_unique<Worker>(builder.get(), false));
+        for (auto i = 0; i < jobs; ++i)
+            workers.push_back(std::make_unique<Worker>(builder.get()));
     }
 
     auto const start = time(nullptr);

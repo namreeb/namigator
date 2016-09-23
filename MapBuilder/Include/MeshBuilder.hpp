@@ -57,8 +57,18 @@ namespace meshfiles
 
     class GlobalWMO : protected File
     {
+        private:
+            size_t m_tileCount;
+
         public:
+            GlobalWMO(size_t tiles);
+
             virtual ~GlobalWMO() = default;
+
+            void AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
+
+            bool IsComplete() const override;
+            void Serialize(const std::string &filename) const override;
     };
 }
 
@@ -69,9 +79,19 @@ class MeshBuilder
         const std::string m_outputPath;
 
         std::map<std::pair<int, int>, std::unique_ptr<meshfiles::ADT>> m_adtsInProgress;
+        std::unique_ptr<meshfiles::GlobalWMO> m_globalWMO;
 
         std::vector<std::pair<int, int>> m_pendingTiles;
         std::vector<int> m_chunkReferences; // this is a fixed size, but it is so big it can single-handedly overflow the stack
+
+        std::vector<utility::Vertex> m_globalWMOVertices;
+        std::vector<int> m_globalWMOIndices;
+
+        std::vector<utility::Vertex> m_globalWMOLiquidVertices;
+        std::vector<int> m_globalWMOLiquidIndices;
+
+        std::vector<utility::Vertex> m_globalWMODoodadVertices;
+        std::vector<int> m_globalWMODoodadIndices;
 
         std::unordered_set<std::string> m_bvhWmos;
         std::unordered_set<std::string> m_bvhDoodads;
@@ -103,8 +123,8 @@ class MeshBuilder
         
         bool IsGlobalWMO() const;
 
-        bool GenerateAndSaveGlobalWMO();
-        bool BuildAndSerializeTile(int tileX, int tileY);
+        bool BuildAndSerializeWMOTile(int tileX, int tileY);
+        bool BuildAndSerializeADTTile(int tileX, int tileY);
 
         void SaveMap() const;
 

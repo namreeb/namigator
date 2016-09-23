@@ -21,7 +21,7 @@ class Worker
         void Work();
 
     public:
-        Worker(MeshBuilder *meshBuilder, bool globalWmo = false);
+        Worker(MeshBuilder *meshBuilder);
         ~Worker();
 
         bool IsRunning() const;
