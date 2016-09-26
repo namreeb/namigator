@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps"), "output path")
         ("adtX,x", boost::program_options::value<int>(&adtX),                                           "adt x")
         ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
-        ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(8),                         "build jobs")
+        ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(1),                         "build jobs")
         ("logLevel,l", boost::program_options::value<int>(&logLevel)->default_value(3),                 "log level (0 = none, 1 = progress, 2 = warning, 3 = error)")
         ("help,h",                                                                                      "display help message");
 
