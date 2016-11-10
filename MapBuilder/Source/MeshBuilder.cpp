@@ -69,7 +69,7 @@ void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::ve
         }
 }
 
-bool Rasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
+bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
                const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
 {
     if (!vertices.size() || !indices.size())
@@ -375,6 +375,29 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
         wmo->BuildTriangles(m_globalWMOVertices, m_globalWMOIndices);
         wmo->BuildLiquidTriangles(m_globalWMOLiquidVertices, m_globalWMOLiquidIndices);
         wmo->BuildDoodadTriangles(m_globalWMODoodadVertices, m_globalWMODoodadIndices);
+
+        std::vector<float> vertices;
+        utility::Convert::VerticesToRecast(m_globalWMOVertices, vertices);
+
+        m_minX = m_maxX = vertices[0];
+        m_minY = m_maxY = vertices[1];
+        m_minZ = m_maxZ = vertices[2];
+
+        for (size_t i = 3; i < vertices.size(); i+=3)
+        {
+            auto const x = vertices[i + 0];
+            auto const y = vertices[i + 1];
+            auto const z = vertices[i + 2];
+
+            m_minX = (std::min)(m_minX, x);
+            m_maxX = (std::max)(m_maxX, x);
+
+            m_minY = (std::min)(m_minY, y);
+            m_maxY = (std::max)(m_maxY, y);
+
+            m_minZ = (std::min)(m_minZ, z);
+            m_maxZ = (std::max)(m_maxZ, z);
+        }
     }
     else
     {
@@ -571,6 +594,16 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     auto const westStart = wmoInstance->Bounds.MinCorner.X + (tileX * MeshSettings::TileSize);
     auto const northStart = wmoInstance->Bounds.MinCorner.Y + (tileY * MeshSettings::TileSize);
 
+    /* old code:
+    config.bmin[0] = -wmoInstance->Bounds.MaxCorner.Y;
+    config.bmin[1] =  wmoInstance->Bounds.MinCorner.Z;
+    config.bmin[2] = -wmoInstance->Bounds.MaxCorner.X;
+
+    config.bmax[0] = -wmoInstance->Bounds.MinCorner.Y;
+    config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
+    config.bmax[2] = -wmoInstance->Bounds.MinCorner.X;
+    */
+
     config.bmax[0] = -northStart;
     config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
     config.bmax[2] = -westStart;
@@ -592,15 +625,15 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
         return false;
 
     // wmo terrain
-    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, AreaFlags::WMO))
+    if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, AreaFlags::WMO))
         return false;
 
     // wmo liquid
-    if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
+    if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
         return false;
 
     // wmo doodads
-    if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
+    if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
         return false;
 
     FilterGroundBeneathLiquid(*solid);
@@ -702,11 +735,11 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
     for (auto const &chunk : chunks)
     {
         // adt terrain
-        if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::ADT))
+        if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::ADT))
             return false;
 
         // liquid
-        if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
+        if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
             return false;
 
         // wmos (and included doodads and liquid)
@@ -731,15 +764,15 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
             std::vector<int> indices;
 
             wmoInstance->BuildTriangles(vertices, indices);
-            if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
+            if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
                 return false;
 
             wmoInstance->BuildLiquidTriangles(vertices, indices);
-            if (!Rasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
+            if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
                 return false;
 
             wmoInstance->BuildDoodadTriangles(vertices, indices);
-            if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
+            if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
                 return false;
 
             rasterizedWmos.insert(wmoId);
@@ -759,7 +792,7 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
             std::vector<int> indices;
 
             doodadInstance->BuildTriangles(vertices, indices);
-            if (!Rasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::Doodad))
+            if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::Doodad))
                 return false;
 
             rasterizedDoodads.insert(doodadId);

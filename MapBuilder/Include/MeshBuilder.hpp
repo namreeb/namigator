@@ -96,6 +96,8 @@ class MeshBuilder
         std::unordered_set<std::string> m_bvhWmos;
         std::unordered_set<std::string> m_bvhDoodads;
 
+        float m_minX, m_maxX, m_minY, m_maxY, m_minZ, m_maxZ;
+
         mutable std::mutex m_mutex;
 
         size_t m_startingTiles;
