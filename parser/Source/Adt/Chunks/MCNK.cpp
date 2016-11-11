@@ -29,6 +29,8 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
 
     Height = information.Position[2];
 
+    AreaId = information.AreaId;
+
     memset(HoleMap, 0, sizeof(bool)*8*8);
 
     // holes

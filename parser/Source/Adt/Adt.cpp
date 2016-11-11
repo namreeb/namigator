@@ -135,6 +135,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
             chunk->m_minZ = mapChunk->MinZ;
             chunk->m_maxZ = mapChunk->MaxZ;
+            chunk->m_areaId = mapChunk->AreaId;
 
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mapChunk->MinZ);

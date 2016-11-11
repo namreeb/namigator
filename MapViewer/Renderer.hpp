@@ -13,8 +13,33 @@
 
 class Renderer
 {
+    public:
+        enum Geometry
+        {
+            TerrainGeometry,
+            LiquidGeometry,
+            WmoGeometry,
+            DoodadGeometry,
+            NavMeshGeometry,
+            SphereGeometry,
+            LineGeometry,
+            ArrowGeometry,
+            NumGeometryBuffers,
+        };
+
+        enum GeometryFlags
+        {
+            TerrainGeometryFlag = 1 << TerrainGeometry,
+            LiquidGeometryFlag = 1 << LiquidGeometry,
+            WmoGeometryFlag = 1 << WmoGeometry,
+            DoodadGeometryFlag = 1 << DoodadGeometry,
+            NavMeshGeometryFlag = 1 << NavMeshGeometry,
+            SphereGeometryFlag = 1 << SphereGeometry,
+            LineGeometryFlag = 1 << LineGeometry,
+            ArrowGeometryFlag = 1 << ArrowGeometry,
+        };
+
     private:
-        static const float TerrainColor[4];
         static const float LiquidColor[4];
         static const float WmoColor[4];
         static const float DoodadColor[4];
@@ -33,6 +58,8 @@ class Renderer
 
         struct GeometryBuffer
         {
+            std::uint32_t UserParameter;
+
             std::vector<ColoredVertex> VertexBufferCpu;
             std::vector<int> IndexBufferCpu;
 
@@ -52,24 +79,20 @@ class Renderer
         CComPtr<ID3D11PixelShader> m_pixelShader;
         CComPtr<ID3D11Buffer> m_cbPerObjectBuffer;
         CComPtr<ID3D11RasterizerState> m_rasterizerState;
+        CComPtr<ID3D11RasterizerState> m_rasterizerStateNoCull;
+        CComPtr<ID3D11RasterizerState> m_rasterizerStateWireframe;
         CComPtr<ID3D11DepthStencilView> m_depthStencilView;
         CComPtr<ID3D11DepthStencilState> m_depthStencilState;
         CComPtr<ID3D11Texture2D> m_depthStencilBuffer;
         CComPtr<ID3D11BlendState> m_liquidBlendState;
         CComPtr<ID3D11BlendState> m_opaqueBlendState;
 
-        std::vector<GeometryBuffer> m_terrainBuffers;
-        std::vector<GeometryBuffer> m_liquidBuffers;
-        std::vector<GeometryBuffer> m_wmoBuffers;
-        std::vector<GeometryBuffer> m_doodadBuffers;
-        std::vector<GeometryBuffer> m_meshBuffers;
-        std::vector<GeometryBuffer> m_sphereBuffers;
-        std::vector<GeometryBuffer> m_lineBuffers;
-        std::vector<GeometryBuffer> m_arrowBuffers;
+        std::vector<GeometryBuffer> m_buffers[NumGeometryBuffers];
 
         std::unordered_set<unsigned int> m_wmos;
         std::unordered_set<unsigned int> m_doodads;
 
+        /// TODO: Replace with geometry flags
         bool m_renderADT;
         bool m_renderLiquid;
         bool m_renderWMO;
@@ -77,7 +100,14 @@ class Renderer
         bool m_renderMesh;
         bool m_renderPathfind;
 
-        void InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, bool genNormals = true);
+        bool m_wireframeEnabled;
+
+        void InsertBuffer(std::vector<GeometryBuffer> &buffer,
+            const float *color,
+            const std::vector<utility::Vertex> &vertices,
+            const std::vector<int> &indices,
+            std::uint32_t userParam = 0,
+            bool genNormals = true);
 
     public:
         Renderer(HWND window);
@@ -85,7 +115,7 @@ class Renderer
         void ClearBuffers();
         void ClearSprites();
 
-        void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, std::uint32_t areaId);
         void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
         void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
@@ -107,7 +137,7 @@ class Renderer
         void SetRenderDoodad(bool enabled) { m_renderDoodad = enabled; }
         void SetRenderMesh(bool enabled) { m_renderMesh = enabled; }
 
-        bool HitTest(int x, int y, utility::Vertex &out) const;
+        bool HitTest(int x, int y, std::uint32_t geometryFlags, utility::Vertex &out, std::uint32_t &param) const;
 
         Camera m_camera;
 };

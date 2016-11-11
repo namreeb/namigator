@@ -65,6 +65,8 @@ class MCNK : public AdtChunk
         float MinZ;
         float MaxZ;
 
+        std::uint32_t AreaId;
+
         bool HoleMap[8][8];
         std::vector<utility::Vertex> Positions;
 

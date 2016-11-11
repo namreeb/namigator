@@ -26,6 +26,8 @@ struct AdtChunk
     std::vector<std::uint32_t> m_wmoInstances;
     std::vector<std::uint32_t> m_doodadInstances;
 
+    std::uint32_t m_areaId;
+
     float m_minZ;
     float m_maxZ;
 };

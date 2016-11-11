@@ -22,7 +22,6 @@
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 #define ThrowIfFail(x) if (FAILED(x)) throw "Renderer initialization error"
 
-const float Renderer::TerrainColor[4]       = { 0.1f, 0.8f, 0.3f, 1.f };
 const float Renderer::LiquidColor[4]        = { 0.25f, 0.28f, 0.9f, 0.5f };
 const float Renderer::WmoColor[4]           = { 1.f, 0.95f, 0.f, 1.f };
 const float Renderer::DoodadColor[4]        = { 1.f, 0.f, 0.f, 1.f };
@@ -32,7 +31,7 @@ const float Renderer::SphereColor[4]        = { 1.f, 0.5f, 0.25f, 0.75f };
 const float Renderer::LineColor[4]          = { 0.5f, 0.25f, 0.0f, 1.f };
 const float Renderer::ArrowColor[4]         = { 0.5f, 0.25f, 0.0f, 1.f };
 
-Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true)
+Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true), m_wireframeEnabled(false)
 {
     RECT wr;
     GetClientRect(window, &wr);
@@ -177,34 +176,59 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
 
     bd.RenderTarget[0].BlendEnable = FALSE;
     ThrowIfFail(m_device->CreateBlendState(&bd, &m_opaqueBlendState));
+
+    D3D11_RASTERIZER_DESC rasterizerDesc;
+    ZERO(rasterizerDesc);
+
+    rasterizerDesc.FrontCounterClockwise = true;
+    rasterizerDesc.MultisampleEnable = true;
+
+    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    rasterizerDesc.CullMode = D3D11_CULL_BACK;
+
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
+    m_deviceContext->RSSetState(m_rasterizerState);
+
+    rasterizerDesc.CullMode = D3D11_CULL_NONE;
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerStateNoCull));
+
+    rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerStateWireframe));
 }
 
 void Renderer::ClearBuffers()
 {
-    m_terrainBuffers.clear();
-    m_liquidBuffers.clear();
-    m_wmoBuffers.clear();
-    m_doodadBuffers.clear();
-    m_meshBuffers.clear();
-    m_lineBuffers.clear();
+    for (std::uint32_t geometry = 0; geometry < NumGeometryBuffers; ++geometry)
+        m_buffers[geometry].clear();
 
     ClearSprites();
 }
 
 void Renderer::ClearSprites()
 {
-    m_sphereBuffers.clear();
-    m_arrowBuffers.clear();
+    m_buffers[SphereGeometry].clear();
+    m_buffers[ArrowGeometry].clear();
 }
 
-void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, std::uint32_t areaId)
 {
-    InsertBuffer(m_terrainBuffers, TerrainColor, vertices, indices);
+    static const float colorsByAreaId[][4] = {
+        { 0.0f, 0.9f, 0.4f, 1.f },
+        { 0.1f, 0.8f, 0.3f, 1.f },
+        { 0.2f, 0.7f, 0.2f, 1.f },
+        { 0.3f, 0.6f, 0.1f, 1.f },
+        { 0.4f, 0.5f, 0.2f, 1.f },
+        { 0.5f, 0.4f, 0.3f, 1.f },
+        { 0.6f, 0.3f, 0.4f, 1.f },
+    };
+
+    auto color = colorsByAreaId[areaId % 7];
+    InsertBuffer(m_buffers[TerrainGeometry], color, vertices, indices, areaId);
 }
 
 void Renderer::AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
-    InsertBuffer(m_liquidBuffers, LiquidColor, vertices, indices);
+    InsertBuffer(m_buffers[LiquidGeometry], LiquidColor, vertices, indices);
 }
 
 void Renderer::AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -215,7 +239,7 @@ void Renderer::AddWmo(unsigned int id, const std::vector<utility::Vertex> &verti
 
     m_wmos.insert(id);
 
-    InsertBuffer(m_wmoBuffers, WmoColor, vertices, indices);
+    InsertBuffer(m_buffers[WmoGeometry], WmoColor, vertices, indices);
 }
 
 void Renderer::AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
@@ -225,17 +249,17 @@ void Renderer::AddDoodad(unsigned int id, const std::vector<utility::Vertex> &ve
         return;
 
     m_doodads.insert(id);
-    InsertBuffer(m_doodadBuffers, DoodadColor, vertices, indices);
+    InsertBuffer(m_buffers[DoodadGeometry], DoodadColor, vertices, indices);
 }
 
 void Renderer::AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
-    InsertBuffer(m_meshBuffers, MeshColor, vertices, indices);
+    InsertBuffer(m_buffers[NavMeshGeometry], MeshColor, vertices, indices);
 }
 
 void Renderer::AddLines(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
 {
-    InsertBuffer(m_lineBuffers, LineColor, vertices, indices, false);
+    InsertBuffer(m_buffers[LineGeometry], LineColor, vertices, indices, 0, false);
 }
 
 void Renderer::AddSphere(const utility::Vertex& position, float size, int recursionLevel)
@@ -249,7 +273,7 @@ void Renderer::AddSphere(const utility::Vertex& position, float size, int recurs
     for (auto& vertex : vertices)
         vertex = utility::Vertex::Transform(vertex, transform);
 
-    InsertBuffer(m_sphereBuffers, SphereColor, vertices, sphereMesh.GetIndices());
+    InsertBuffer(m_buffers[SphereGeometry], SphereColor, vertices, sphereMesh.GetIndices());
 }
 
 void Renderer::AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step)
@@ -295,7 +319,7 @@ void Renderer::AddArrows(const utility::Vertex& start, const utility::Vertex& en
 
         // Yeah I know, not very efficient...
         // Should change InsertBuffer to append verts + indices instead of allocating new buffers all the time.
-        InsertBuffer(m_arrowBuffers, ArrowColor, transformedVerts, std::vector<int>{}, false);
+        InsertBuffer(m_buffers[ArrowGeometry], ArrowColor, transformedVerts, std::vector<int>{}, 0, false);
     }
 }
 
@@ -322,7 +346,12 @@ bool Renderer::HasDoodad(unsigned int id) const
     return m_doodads.find(id) != m_doodads.end();
 }
 
-void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *color, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, bool genNormals)
+void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer,
+    const float *color,
+    const std::vector<utility::Vertex> &vertices,
+    const std::vector<int> &indices,
+    std::uint32_t userParam,
+    bool genNormals)
 {
     if (vertices.empty())
         return;
@@ -398,6 +427,7 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer, const float *co
     m_deviceContext->Unmap(vertexBuffer, 0);
 
     GeometryBuffer geometry;
+    geometry.UserParameter = userParam;
     geometry.VertexBufferCpu = vertexBufferCpu;
     geometry.IndexBufferCpu = indices;
     geometry.VertexBufferGpu = vertexBuffer;
@@ -441,6 +471,7 @@ void Renderer::Render()
     UINT viewportCount = 1;
 
     m_deviceContext->RSGetViewports(&viewportCount, &viewport);
+    m_deviceContext->RSSetState(m_wireframeEnabled ? m_rasterizerStateWireframe : m_rasterizerState);
 
     m_camera.UpdateProjection(viewport.TopLeftX, viewport.TopLeftY,
         viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
@@ -454,40 +485,42 @@ void Renderer::Render()
     const unsigned int stride = sizeof(ColoredVertex);
     const unsigned int offset = 0;
 
+    /// TODO: Rework all this duplicated code to use the geometry flags in order to determine which buffers should be rendered in a general way
+
     // draw terrain
     if (m_renderADT)
-        for (size_t i = 0; i < m_terrainBuffers.size(); ++i)
+        for (size_t i = 0; i < m_buffers[TerrainGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_terrainBuffers[i].VertexBufferGpu };
+            ID3D11Buffer *const pBuffer[] = { m_buffers[TerrainGeometry][i].VertexBufferGpu };
             m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_terrainBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetIndexBuffer(m_buffers[TerrainGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_terrainBuffers[i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[TerrainGeometry][i].IndexBufferCpu.size()), 0, 0);
         }
 
     // draw wmos
     if (m_renderWMO)
-        for (size_t i = 0; i < m_wmoBuffers.size(); ++i)
+        for (size_t i = 0; i < m_buffers[WmoGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_wmoBuffers[i].VertexBufferGpu };
+            ID3D11Buffer *const pBuffer[] = { m_buffers[WmoGeometry][i].VertexBufferGpu };
             m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_wmoBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetIndexBuffer(m_buffers[WmoGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_wmoBuffers[i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[WmoGeometry][i].IndexBufferCpu.size()), 0, 0);
         }
 
     // draw doodads
     if (m_renderDoodad)
-        for (size_t i = 0; i < m_doodadBuffers.size(); ++i)
+        for (size_t i = 0; i < m_buffers[DoodadGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_doodadBuffers[i].VertexBufferGpu };
+            ID3D11Buffer *const pBuffer[] = { m_buffers[DoodadGeometry][i].VertexBufferGpu };
             m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_doodadBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetIndexBuffer(m_buffers[DoodadGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
             m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_doodadBuffers[i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[DoodadGeometry][i].IndexBufferCpu.size()), 0, 0);
         }
 
     if (m_renderLiquid || m_renderMesh || m_renderPathfind)
@@ -497,59 +530,61 @@ void Renderer::Render()
 
         // draw liquid (with alpha blending)
         if (m_renderLiquid)
-            for (size_t i = 0; i < m_liquidBuffers.size(); ++i)
+            for (size_t i = 0; i < m_buffers[LiquidGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_liquidBuffers[i].VertexBufferGpu };
+                ID3D11Buffer *const pBuffer[] = { m_buffers[LiquidGeometry][i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_liquidBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetIndexBuffer(m_buffers[LiquidGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_liquidBuffers[i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[LiquidGeometry][i].IndexBufferCpu.size()), 0, 0);
             }
 
         // draw meshes (also with alpha blending)
         if (m_renderMesh)
         {
-            for (size_t i = 0; i < m_meshBuffers.size(); ++i)
+            for (size_t i = 0; i < m_buffers[NavMeshGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_meshBuffers[i].VertexBufferGpu };
+                ID3D11Buffer *const pBuffer[] = { m_buffers[NavMeshGeometry][i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_meshBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetIndexBuffer(m_buffers[NavMeshGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_meshBuffers[i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[NavMeshGeometry][i].IndexBufferCpu.size()), 0, 0);
             }
 
-            for (size_t i = 0; i < m_lineBuffers.size(); ++i)
+            for (size_t i = 0; i < m_buffers[LineGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_lineBuffers[i].VertexBufferGpu };
+                ID3D11Buffer *const pBuffer[] = { m_buffers[LineGeometry][i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_lineBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetIndexBuffer(m_buffers[LineGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_lineBuffers[i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[LineGeometry][i].IndexBufferCpu.size()), 0, 0);
             }
         }
+
+        m_deviceContext->RSSetState(m_rasterizerStateNoCull);
 
         // draw pathfind queries (also with alpha blending)
         if (m_renderPathfind)
         {
-            for (size_t i = 0; i < m_sphereBuffers.size(); ++i)
+            for (size_t i = 0; i < m_buffers[SphereGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_sphereBuffers[i].VertexBufferGpu };
+                ID3D11Buffer *const pBuffer[] = { m_buffers[SphereGeometry][i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_sphereBuffers[i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetIndexBuffer(m_buffers[SphereGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_sphereBuffers[i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[SphereGeometry][i].IndexBufferCpu.size()), 0, 0);
             }
 
-            for (size_t i = 0; i < m_arrowBuffers.size(); ++i)
+            for (size_t i = 0; i < m_buffers[ArrowGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_arrowBuffers[i].VertexBufferGpu };
+                ID3D11Buffer *const pBuffer[] = { m_buffers[ArrowGeometry][i].VertexBufferGpu };
                 m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
                 m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-                m_deviceContext->Draw(static_cast<UINT>(m_arrowBuffers[i].VertexBufferCpu.size()), 0);
+                m_deviceContext->Draw(static_cast<UINT>(m_buffers[ArrowGeometry][i].VertexBufferCpu.size()), 0);
             }
         }
 
@@ -565,29 +600,10 @@ void Renderer::Render()
 
 void Renderer::SetWireframe(bool enabled)
 {
-    D3D11_RASTERIZER_DESC rasterizerDesc;
-    ZERO(rasterizerDesc);
-
-    rasterizerDesc.FrontCounterClockwise = true;
-    rasterizerDesc.MultisampleEnable = true;
-
-    if (enabled)
-    {
-        rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
-        rasterizerDesc.CullMode = D3D11_CULL_NONE;
-    }
-    else
-    {
-        rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-        rasterizerDesc.CullMode = D3D11_CULL_BACK;
-    }
-
-    m_rasterizerState.Release();
-    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
-    m_deviceContext->RSSetState(m_rasterizerState);
+    m_wireframeEnabled = enabled;
 }
 
-bool Renderer::HitTest(int x, int y, utility::Vertex &out) const
+bool Renderer::HitTest(int x, int y, std::uint32_t geometryFlags, utility::Vertex &out, std::uint32_t& param) const
 {
     utility::Vector3 nearPosition;
     nearPosition.X = static_cast<float>(x);
@@ -606,24 +622,29 @@ bool Renderer::HitTest(int x, int y, utility::Vertex &out) const
     utility::Ray ray(nearPosition, farPosition);
 
     int faceIndex = -1;
-    int meshBuffer = -1;
 
-    for (size_t i = 0; i < m_meshBuffers.size(); ++i)
+    for (std::uint32_t geometry = 0; geometry < NumGeometryBuffers; ++geometry)
     {
-        const auto& buffer = m_meshBuffers[i];
-        for (size_t j = 0; j < buffer.IndexBufferCpu.size() / 3; ++j)
+        if (!(geometryFlags & (1 << geometry)))
+            continue;
+
+        for (size_t i = 0; i < m_buffers[geometry].size(); ++i)
         {
-            const auto& v0 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 0]].vertex;
-            const auto& v1 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 1]].vertex;
-            const auto& v2 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 2]].vertex;
-
-            float distance = 1.0f;
-            if (ray.IntersectTriangle(v0, v1, v2, &distance) && distance < ray.GetDistance())
+            const auto& buffer = m_buffers[geometry][i];
+            for (size_t j = 0; j < buffer.IndexBufferCpu.size() / 3; ++j)
             {
-                ray.SetHitPoint(distance);
+                const auto& v0 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 0]].vertex;
+                const auto& v1 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 1]].vertex;
+                const auto& v2 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 2]].vertex;
 
-                meshBuffer = static_cast<int>(i);
-                faceIndex = static_cast<int>(j);
+                float distance = 1.0f;
+                if (ray.IntersectTriangle(v0, v1, v2, &distance) && distance < ray.GetDistance())
+                {
+                    ray.SetHitPoint(distance);
+
+                    faceIndex = static_cast<int>(j);
+                    param = buffer.UserParameter;
+                }
             }
         }
     }

@@ -151,30 +151,44 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_LBUTTONDOWN:
         {
+            std::uint32_t param = 0;
             utility::Vertex hit;
-            if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hit))
+
+            if (!!(wParam & MK_SHIFT))
             {
-                gRenderer->ClearSprites();
-
-                if (gHasStart)
+                if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::TerrainGeometryFlag, hit, param))
                 {
-                    std::vector<utility::Vertex> path;
+                    std::stringstream ss;
+                    ss << "AreaID: " << param << std::endl;
+                    OutputDebugStringA(ss.str().c_str());
+                }
+            }
+            else
+            {
+                if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::NavMeshGeometryFlag, hit, param))
+                {
+                    gRenderer->ClearSprites();
 
-                    gHasStart = false;
+                    if (gHasStart)
+                    {
+                        std::vector<utility::Vertex> path;
 
-                    if (gNavMesh->FindPath(gStart, hit, path, true))
-                        gRenderer->AddPath(path);
+                        gHasStart = false;
+
+                        if (gNavMesh->FindPath(gStart, hit, path, true))
+                            gRenderer->AddPath(path);
+                        else
+                            MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
+                    }
                     else
-                        MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
-                }
-                else
-                {
-                    gHasStart = true;
-                    gStart = hit;
-                    gRenderer->AddSphere(gStart, 6.f);
-                }
+                    {
+                        gHasStart = true;
+                        gStart = hit;
+                        gRenderer->AddSphere(gStart, 6.f);
+                    }
 
-                return TRUE;
+                    return TRUE;
+                }
             }
 
             break;
@@ -388,7 +402,7 @@ void LoadADTFromGUI()
         {
             auto const chunk = adt->GetChunk(x, y);
 
-            gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices);
+            gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices, chunk->m_areaId);
             gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
 
             for (auto &d : chunk->m_doodadInstances)
