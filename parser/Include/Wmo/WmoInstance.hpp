@@ -7,7 +7,6 @@
 #include "utility/Include/BoundingBox.hpp"
 
 #include <vector>
-#include <string>
 #include <set>
 #include <cstdint>
 

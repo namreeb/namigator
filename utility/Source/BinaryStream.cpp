@@ -55,11 +55,15 @@ void BinaryStream::Write(size_t position, const void *data, size_t length)
 
 void BinaryStream::Append(const BinaryStream &other)
 {
-    Write(&other.m_buffer[0], other.m_position);
+    if (other.m_buffer.size() > 0 && other.m_position > 0)
+        Write(&other.m_buffer[0], other.m_position);
 }
 
 void BinaryStream::ReadBytes(void *dest, size_t length)
 {
+    if (length == 0)
+        return;
+
     memcpy(dest, &m_buffer[m_position], length);
     m_position += length;
 }

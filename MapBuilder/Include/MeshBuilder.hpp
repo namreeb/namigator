@@ -30,11 +30,10 @@ namespace meshfiles
         public:
             virtual ~File() = default;
 
-            virtual bool IsComplete() const = 0;
             virtual void Serialize(const std::string &filename) const = 0;
     };
 
-    class ADT : protected File
+    class ADT : File
     {
         private:
             const int m_x;
@@ -44,30 +43,27 @@ namespace meshfiles
             std::map<std::pair<int, int>, utility::BinaryStream> m_wmosAndDoodadIds;
 
         public:
-            ADT(int x, int y);
+            ADT(int x, int y) : m_x(x), m_y(y) {}
 
             virtual ~ADT() = default;
 
             // these x and y arguments refer to the tile x and y
             void AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
-            bool IsComplete() const override;
+            bool IsComplete() const { return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT); }
             void Serialize(const std::string &filename) const override;
     };
 
-    class GlobalWMO : protected File
+    class GlobalWMO : File
     {
         private:
-            size_t m_tileCount;
+            static constexpr std::uint32_t WMOcoordinate = 0xFFFFFFFF;
 
         public:
-            GlobalWMO(size_t tiles);
-
             virtual ~GlobalWMO() = default;
 
             void AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
-            bool IsComplete() const override;
             void Serialize(const std::string &filename) const override;
     };
 }
@@ -100,7 +96,7 @@ class MeshBuilder
 
         mutable std::mutex m_mutex;
 
-        size_t m_startingTiles;
+        size_t m_totalTiles;
         size_t m_completedTiles;
 
         const int m_logLevel;
@@ -119,7 +115,7 @@ class MeshBuilder
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel);
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY);
 
-        size_t TotalTiles() const;
+        size_t TotalTiles() const { return m_totalTiles; }
 
         bool GetNextTile(int &tileX, int &tileY);
         
