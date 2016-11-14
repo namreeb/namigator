@@ -66,6 +66,8 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
     continentFile << dataPath << "\\" << mapName << ".map";
 
     std::ifstream in(continentFile.str(), std::ifstream::binary);
+	if (!in)
+		THROW("Could not open map file");
 
     std::uint32_t magic;
     in.read(reinterpret_cast<char *>(&magic), sizeof(magic));

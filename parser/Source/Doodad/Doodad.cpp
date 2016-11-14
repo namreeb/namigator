@@ -37,6 +37,7 @@ Doodad::Doodad(const std::string &path)
     {
         case 256:   // Classic
         case 260:   // TBC
+		case 263:   // TBC
             reader->SetPosition(0xEC);
             break;
 
