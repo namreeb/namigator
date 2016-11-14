@@ -1118,7 +1118,10 @@ void ADT::Serialize(const std::string &filename) const
         WRITE(out, tileSize);
 
         // tile data
-        out.write(reinterpret_cast<const char *>(&tile.second[0]), tileSize);
+		if (tileSize > 0)
+		{
+			out.write(reinterpret_cast<const char *>(&tile.second[0]), tileSize);
+		}
     }
 }
 }
