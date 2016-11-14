@@ -395,6 +395,12 @@ void LoadADTFromGUI()
     auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
     auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
 
+	if (!gMap->HasAdt(adtX, adtY))
+	{
+		MessageBox(nullptr, L"Map does not have the specified ADT tile", L"Error", MB_OK | MB_ICONEXCLAMATION);
+		return;
+	}
+
     auto const adt = gMap->GetAdt(adtX, adtY);
 
     for (int x = 0; x < MeshSettings::ChunksPerAdt; ++x)
