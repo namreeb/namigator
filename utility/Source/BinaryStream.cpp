@@ -9,20 +9,31 @@
 
 namespace utility
 {
-BinaryStream::BinaryStream(std::vector<char> &buffer) : m_buffer(std::move(buffer)), m_position(0L) {}
+BinaryStream::BinaryStream(std::vector<char> &buffer) : m_buffer(std::move(buffer)), m_rpos(0), m_wpos(0) {}
 
-BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_position(0L) {}
+BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_rpos(0), m_wpos(0) {}
 
-BinaryStream::BinaryStream(BinaryStream &&other) : m_buffer(std::move(other.m_buffer)), m_position(other.m_position)
+BinaryStream::BinaryStream(std::istream &stream) : m_rpos(0), m_wpos(0)
 {
-    other.m_position = 0;
+    stream.seekg(0, std::ios::end);
+    auto const size = stream.tellg();
+    stream.seekg(0, std::ios::beg);
+
+    m_buffer.resize(size);
+    stream.read(&m_buffer[0], m_buffer.size());
 }
 
-BinaryStream& BinaryStream::operator = (BinaryStream&& other)
+BinaryStream::BinaryStream(BinaryStream &&other) noexcept : m_buffer(std::move(other.m_buffer)), m_rpos(other.m_rpos), m_wpos(other.m_wpos)
+{
+    other.m_rpos = other.m_wpos = 0;
+}
+
+BinaryStream& BinaryStream::operator = (BinaryStream&& other) noexcept
 {
     m_buffer = std::move(other.m_buffer);
-    m_position = other.m_position;
-    other.m_position = 0;
+    m_rpos = other.m_rpos;
+    m_wpos = other.m_wpos;
+    other.m_rpos = other.m_wpos = 0;
     return *this;
 }
 
@@ -38,8 +49,8 @@ std::string BinaryStream::ReadCString()
 
 void BinaryStream::Write(const void *data, size_t length)
 {
-    Write(m_position, data, length);
-    m_position += length;
+    Write(m_wpos, data, length);
+    m_wpos += length;
 }
 
 void BinaryStream::Write(size_t position, const void *data, size_t length)
@@ -55,8 +66,8 @@ void BinaryStream::Write(size_t position, const void *data, size_t length)
 
 void BinaryStream::Append(const BinaryStream &other)
 {
-    if (other.m_buffer.size() > 0 && other.m_position > 0)
-        Write(&other.m_buffer[0], other.m_position);
+    if (other.m_buffer.size() > 0 && other.m_wpos > 0)
+        Write(&other.m_buffer[0], other.m_wpos);
 }
 
 void BinaryStream::ReadBytes(void *dest, size_t length)
@@ -64,23 +75,11 @@ void BinaryStream::ReadBytes(void *dest, size_t length)
     if (length == 0)
         return;
 
-    memcpy(dest, &m_buffer[m_position], length);
-    m_position += length;
-}
+    if (m_rpos + length > m_buffer.size())
+        throw std::domain_error("Read past end of buffer");
 
-size_t BinaryStream::GetPosition() const
-{
-    return m_position;
-}
-
-void BinaryStream::SetPosition(size_t position)
-{
-    m_position = position;
-}
-
-void BinaryStream::Slide(int offset)
-{
-    m_position += offset;
+    memcpy(dest, &m_buffer[m_rpos], length);
+    m_rpos += length;
 }
 
 bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t &result) const
@@ -131,7 +130,7 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
 
 std::ostream & operator << (std::ostream &stream, const BinaryStream &data)
 {
-    stream.write(&data.m_buffer[0], data.m_position);
+    stream.write(&data.m_buffer[0], data.m_wpos);
     return stream;
 }
 }

@@ -20,7 +20,7 @@ namespace meshfiles
     {
         protected:
             // serialized heightfield and finalized mesh data, mapped by tile id
-            std::map<std::pair<int, int>, utility::BinaryStream> m_tiles;
+            std::map<std::pair<std::int32_t, std::int32_t>, utility::BinaryStream> m_tiles;
 
             mutable std::mutex m_mutex;
 
@@ -56,9 +56,6 @@ namespace meshfiles
 
     class GlobalWMO : File
     {
-        private:
-            static constexpr std::uint32_t WMOcoordinate = 0xFFFFFFFF;
-
         public:
             virtual ~GlobalWMO() = default;
 
@@ -115,7 +112,7 @@ class MeshBuilder
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel);
         MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY);
 
-        size_t TotalTiles() const { return m_totalTiles; }
+        size_t CompletedTiles() const { return m_completedTiles; }
 
         bool GetNextTile(int &tileX, int &tileY);
         

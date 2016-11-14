@@ -278,8 +278,8 @@ void Renderer::AddSphere(const utility::Vertex& position, float size, int recurs
 
 void Renderer::AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step)
 {
-    constexpr float width = 8.f;
-    constexpr float height = 10.f;
+    constexpr float width = 4.f;
+    constexpr float height = 5.f;
 
     std::vector<utility::Vertex> vertices{
         { -width / 2.f, -height / 2.f, 0.f },
@@ -325,11 +325,9 @@ void Renderer::AddArrows(const utility::Vertex& start, const utility::Vertex& en
 
 void Renderer::AddPath(const std::vector<utility::Vertex> &path)
 {
-    assert(path.size() > 1);
-
     for (size_t i = 0; i < path.size(); ++i)
     {
-        AddSphere(path[i], 4.f);
+        AddSphere(path[i], 1.f);
 
         if (!!i)
             AddArrows(path[i - 1], path[i], 10.f);

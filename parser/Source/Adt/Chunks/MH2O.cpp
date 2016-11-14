@@ -19,7 +19,7 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     for (int y = 0; y < 16; ++y)
         for (int x = 0; x < 16; ++x)
         {
-            reader->SetPosition(offsetFrom + sizeof(MH2OHeader)*(y * 16 + x));
+            reader->rpos(offsetFrom + sizeof(MH2OHeader)*(y * 16 + x));
                 
             MH2OHeader header;
             reader->ReadBytes(&header, sizeof(header));
@@ -29,7 +29,7 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
 
             for (int layer = 0; layer < header.LayerCount; ++layer)
             {
-                reader->SetPosition(offsetFrom + header.InstancesOffset + layer*sizeof(LiquidInstance));
+                reader->rpos(offsetFrom + header.InstancesOffset + layer*sizeof(LiquidInstance));
 
                 LiquidInstance instance;
                 reader->ReadBytes(&instance, sizeof(instance));
@@ -62,7 +62,7 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
                 {
                     if (header.AttributesOffset && instance.OffsetExistsBitmap)
                     {
-                        reader->SetPosition(offsetFrom + instance.OffsetExistsBitmap);
+                        reader->rpos(offsetFrom + instance.OffsetExistsBitmap);
                         reader->ReadBytes(&exists[0], exists.size());
                     }
                     else
@@ -76,7 +76,7 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
                     }
                     else
                     {
-                        reader->SetPosition(offsetFrom + instance.OffsetVertexData);
+                        reader->rpos(offsetFrom + instance.OffsetVertexData);
                         reader->ReadBytes(&heightMap[0], sizeof(float)*heightMap.size());
                     }
                 }

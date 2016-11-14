@@ -35,7 +35,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
     if (!reader->GetChunkLocation("MPHD", mphdLocation))
         THROW("MPHD not found");
 
-    reader->SetPosition(mphdLocation + 8);
+    reader->rpos(mphdLocation + 8);
 
     m_hasTerrain = !(reader->Read<unsigned int>() & 0x1);
 
@@ -43,7 +43,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
     if (!reader->GetChunkLocation("MAIN", mainLocation))
         THROW("MAIN not found");
 
-    reader->SetPosition(mainLocation + 8);
+    reader->rpos(mainLocation + 8);
 
     for (int y = 0; y < 64; ++y)
         for (int x = 0; x < 64; ++x)
@@ -51,7 +51,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
             auto const flag = reader->Read<int>();
 
             // skip async object
-            reader->Slide(4);
+            reader->rpos(reader->rpos() + 4);
 
             m_hasAdt[x][y] = !!(flag & 1);
         }
@@ -63,14 +63,14 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
     size_t mwmoLocation;
     if (!reader->GetChunkLocation("MWMO", mwmoLocation))
         THROW("MWMO not found");
-    reader->SetPosition(mwmoLocation + 8);
+    reader->rpos(mwmoLocation + 8);
 
     auto const wmoName = reader->ReadCString();
 
     size_t modfLocation;
     if (!reader->GetChunkLocation("MODF", modfLocation))
         THROW("MODF not found");
-    reader->SetPosition(modfLocation + 8);
+    reader->rpos(modfLocation + 8);
 
     input::WmoPlacement placement;
     reader->ReadBytes(&placement, sizeof(placement));

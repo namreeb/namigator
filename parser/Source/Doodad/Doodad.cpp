@@ -37,12 +37,12 @@ Doodad::Doodad(const std::string &path)
     {
         case 256:   // Classic
         case 260:   // TBC
-		case 263:   // TBC
-            reader->SetPosition(0xEC);
+        case 263:   // TBC
+            reader->rpos(0xEC);
             break;
 
         case 264:   // WOTLK
-            reader->SetPosition(0xD8);
+            reader->rpos(0xD8);
             break;
 
         default:
@@ -60,13 +60,13 @@ Doodad::Doodad(const std::string &path)
     Vertices.resize(vertexCount);
 
     // read bounding vertices
-    reader->SetPosition(verticesPosition);
+    reader->rpos(verticesPosition);
     reader->ReadBytes(&Vertices[0], vertexCount * sizeof(utility::Vertex));
 
     // read bounding indices
     Indices.reserve(indexCount);
 
-    reader->SetPosition(indicesPosition);
+    reader->rpos(indicesPosition);
     for (auto i = 0; i < indexCount; ++i)
         Indices.push_back(reader->Read<unsigned short>());
 }

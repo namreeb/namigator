@@ -2,6 +2,8 @@
 
 #include "Model.hpp"
 
+#include "utility/Include/BinaryStream.hpp"
+#include "Recast/Include/Recast.h"
 #include "Detour/Include/DetourNavMesh.h"
 
 #include <vector>
@@ -14,19 +16,23 @@ class Map;
 class Tile
 {
     private:
-        std::vector<std::shared_ptr<WmoModel>> m_wmos;
-        std::vector<std::shared_ptr<DoodadModel>> m_doodads;
-
-        std::vector<unsigned char> m_tileData;
-
         Map * const m_map;
         dtTileRef m_ref;
 
+        int m_x;
+        int m_y;
+
+        rcHeightfield m_heightField;
+        std::vector<std::uint8_t> m_tileData;
+
     public:
-        Tile(Map *map, std::ifstream &in);
+        Tile(Map *map, utility::BinaryStream &in);
         ~Tile();
 
-        std::vector<unsigned int> m_wmoInstances;
-        std::vector<unsigned int> m_doodadInstances;
+        int X() const { return m_x; }
+        int Y() const { return m_y; }
+
+        std::vector<std::uint32_t> m_wmos;
+        std::vector<std::uint32_t> m_doodads;
 };
 }

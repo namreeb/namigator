@@ -14,7 +14,7 @@ MDDF::MDDF(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
 
     Doodads.resize(Size / sizeof(DoodadPlacement));
 
-    reader->SetPosition(position + 8);
+    reader->rpos(position + 8);
     reader->ReadBytes(&Doodads[0], sizeof(DoodadPlacement) * Doodads.size());
 }
 }

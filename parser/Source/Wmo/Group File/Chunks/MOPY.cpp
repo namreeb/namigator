@@ -6,7 +6,7 @@ namespace input
 {
 MOPY::MOPY(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupChunk(position, groupFileStream), TriangleCount(Size/2)
 {
-    groupFileStream->SetPosition(position + 8);
+    groupFileStream->rpos(position + 8);
 
     Type = WmoGroupChunkType::MOPY;
 

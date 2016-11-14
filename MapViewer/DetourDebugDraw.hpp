@@ -35,7 +35,7 @@ class DetourDebugDraw : public duDebugDraw
         Renderer * const m_renderer;
 
     public:
-        DetourDebugDraw(Renderer *renderer) : m_renderer(renderer), m_size(0.f) {}
+        DetourDebugDraw(Renderer *renderer) : m_type(DU_DRAW_TRIS), m_size(0.f), m_renderer(renderer) {}
 
         virtual void depthMask(bool /*state*/) {}
         virtual void texture(bool /*state*/) {}

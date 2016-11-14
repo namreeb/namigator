@@ -184,7 +184,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     {
                         gHasStart = true;
                         gStart = hit;
-                        gRenderer->AddSphere(gStart, 6.f);
+                        gRenderer->AddSphere(gStart, 3.f);
                     }
 
                     return TRUE;
@@ -242,6 +242,9 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
             break;
         }
+
+        default:
+            break;
     }
 
     return DefWindowProc(hWnd, message, wParam, lParam);
@@ -348,7 +351,7 @@ void ChangeMap(const std::string &cn)
     gMap = std::make_unique<parser::Map>(mapName);
     gNavMesh = std::make_unique<pathfind::Map>(".\\Maps", mapName);
 
-    // if the loaded map has no ADTs, but instead a global WMO, load it now
+    // if the loaded map has no ADTs, but instead a global WMO, load it now, including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
     {
         std::vector<utility::Vertex> vertices;
@@ -373,6 +376,10 @@ void ChangeMap(const std::string &cn)
         gControls->Enable(Controls::ADTX, false);
         gControls->Enable(Controls::ADTY, false);
         gControls->Enable(Controls::LoadADT, false);
+
+        DetourDebugDraw dd(gRenderer.get());
+
+        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
     }
     else
     {
@@ -455,7 +462,7 @@ void LoadADTFromGUI()
 
     for (auto y = adtY * MeshSettings::TilesPerADT; y < (adtY + 1)*MeshSettings::TilesPerADT; ++y)
         for (auto x = adtX * MeshSettings::TilesPerADT; x < (adtX + 1)*MeshSettings::TilesPerADT; ++x)
-            if (gNavMesh->LoadTile(x, y))
+            if (gNavMesh->LoadADT(x, y))
             {
                 DetourDebugDraw dd(gRenderer.get());
 
@@ -502,25 +509,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     gControls->AddLabel(L"Select Map:", 10, 12);
 
-    std::vector<std::wstring> Maps;
-    Maps.push_back(L"000 Azeroth");
-    Maps.push_back(L"001 Kalimdor");
-    Maps.push_back(L"013 Test");
-    Maps.push_back(L"025 Scott Test");
-    Maps.push_back(L"029 Test");
-    Maps.push_back(L"030 PVPZone01 (Alterac Valley)");
-    Maps.push_back(L"033 Shadowfang");
-    Maps.push_back(L"034 StormwindJail (Stockades)");
+    std::vector<std::wstring> maps;
+    maps.push_back(L"000 Azeroth");
+    maps.push_back(L"001 Kalimdor");
+    maps.push_back(L"013 Test");
+    maps.push_back(L"025 Scott Test");
+    maps.push_back(L"029 Test");
+    maps.push_back(L"030 PVPZone01 (Alterac Valley)");
+    maps.push_back(L"033 Shadowfang");
+    maps.push_back(L"034 StormwindJail (Stockades)");
     //Maps.push_back(L"035 StormwindPrison");
-    Maps.push_back(L"036 DeadminesInstance");
-    Maps.push_back(L"037 PVPZone02 (Azshara Crater)");
-    Maps.push_back(L"043 WailingCaverns");
-    Maps.push_back(L"489 PVPzone03 (Warsong Gulch)");
-    Maps.push_back(L"529 PVPzone04 (Arathi Basin)");
-    Maps.push_back(L"530 Expansion01 (Outland");
-    Maps.push_back(L"571 Northrend");
+    maps.push_back(L"036 DeadminesInstance");
+    maps.push_back(L"037 PVPZone02 (Azshara Crater)");
+    maps.push_back(L"043 WailingCaverns");
+    maps.push_back(L"489 PVPzone03 (Warsong Gulch)");
+    maps.push_back(L"529 PVPzone04 (Arathi Basin)");
+    maps.push_back(L"530 Expansion01 (Outland");
+    maps.push_back(L"571 Northrend");
 
-    gControls->AddComboBox(Controls::MapsCombo, Maps, 115, 10, ChangeMap);
+    gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
     gControls->AddLabel(L"X:", 10, 35);
     gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);

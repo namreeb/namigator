@@ -10,7 +10,6 @@
 
 #include "Detour/Include/DetourNavMesh.h"
 #include "Detour/Include/DetourNavMeshQuery.h"
-#include "DetourTileCache/Include/DetourTileCache.h"
 
 #include "RecastDetourBuild/Include/Common.hpp"
 
@@ -20,6 +19,17 @@
 #include <memory>
 #include <list>
 
+namespace std
+{
+template <>
+struct hash<std::pair<int,int>>
+{
+    std::size_t operator()(const std::pair<int, int>& coord) const
+    {
+        return std::hash<int>()(coord.first ^ coord.second);
+    }
+};
+}
 namespace pathfind
 {
 // note that instances of this type are assumed to be thread-local, therefore the type is not thread safe
@@ -35,11 +45,10 @@ class Map
         const std::string m_mapName;
 
         dtNavMesh m_navMesh;
-        dtTileCache m_tileCache;
         dtNavMeshQuery m_navQuery;
         dtQueryFilter m_queryFilter;
         
-        std::unique_ptr<const Tile> m_tiles[MeshSettings::TileCount][MeshSettings::TileCount];
+        std::unordered_map<std::pair<int, int>, std::unique_ptr<const Tile>> m_tiles;
         std::shared_ptr<WmoModel> m_globalWmo;
 
         std::unordered_map<unsigned int, WmoInstance> m_wmoInstances;
@@ -57,8 +66,8 @@ class Map
         Map(const std::string &dataPath, const std::string &mapName);
 
         void LoadAllTiles();
-        bool LoadTile(int x, int y);
-        void UnloadTile(int x, int y);
+        bool LoadADT(int x, int y);
+        void UnloadADT(int x, int y);
 
         bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;

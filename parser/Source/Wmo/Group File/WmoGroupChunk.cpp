@@ -7,7 +7,7 @@ namespace input
 {
 WmoGroupChunk::WmoGroupChunk(size_t position, utility::BinaryStream *groupFileStream) : Position(position)
 {
-    groupFileStream->SetPosition(position);
+    groupFileStream->rpos(position);
 
     WmoChunkHeader header;
     groupFileStream->ReadBytes(&header, sizeof(header));

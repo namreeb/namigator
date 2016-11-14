@@ -220,35 +220,33 @@ void SerializeWMOAndDoodadIDs(const std::unordered_set<std::uint32_t> &wmos, con
 
 void SerializeHeightField(const rcHeightfield &solid, utility::BinaryStream &out)
 {
-    out << solid.width << solid.height;
+    out << static_cast<std::int32_t>(solid.width) << static_cast<std::int32_t>(solid.height);
 
     out.Write(&solid.bmin, sizeof(solid.bmin));
     out.Write(&solid.bmax, sizeof(solid.bmax));
 
     out << solid.cs << solid.ch;
 
-    // place holder for span count
-    auto const spanCount = out.GetPosition();
-    out << static_cast<std::uint32_t>(0);
-
-    // note that this might be storable in less space, since rcSpan is a bitfield struct
+    // TODO this might be storable in less space, since rcSpan is a bitfield struct
     for (auto i = 0; i < solid.width*solid.height; ++i)
     {
         // place holder for the height of this column in the height field
-        auto const columnSize = out.GetPosition();
+        auto const columnSize = out.wpos();
         out << static_cast<std::uint32_t>(0);
 
+        auto count = 0;
         for (const rcSpan *s = solid.spans[i]; !!s; s = s->next)
+        {
             out << static_cast<std::uint32_t>(s->smin)
                 << static_cast<std::uint32_t>(s->smax)
                 << static_cast<std::uint32_t>(s->area);
+            ++count;
+        }
 
-        auto const height = (out.GetPosition() - columnSize) / 3;
+        auto const height = (out.wpos() - columnSize + sizeof(std::uint32_t)) / (3 * sizeof(std::uint32_t));
 
         out.Write(columnSize, static_cast<std::uint32_t>(height));
     }
-
-    out.Write(spanCount, static_cast<std::uint32_t>(out.GetPosition() - spanCount));
 }
 
 using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
@@ -293,15 +291,15 @@ bool SerializeMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int ti
     if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist, config.detailSampleMaxError, *polyMeshDetail))
         return false;
 
-    chf.reset(nullptr);
-    cset.reset(nullptr);
+    chf.reset();
+    cset.reset();
 
     // too many vertices?
     if (polyMesh->nverts >= 0xFFFF)
     {
         std::stringstream str;
         str << "Too many mesh vertices produces for tile (" << tileX << ", " << tileY << ")" << std::endl;
-        std::cout << str.str();
+        std::cerr << str.str();
         return false;
     }
 
@@ -598,17 +596,16 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     InitializeRecastConfig(config);
 
     // tile coordinates are calculated offset from the northwest corner
+    auto const westStart = wmoInstance->Bounds.MaxCorner.Y - (tileX * MeshSettings::TileSize);  // wow coordinate system
+    auto const northStart = wmoInstance->Bounds.MaxCorner.X - (tileY * MeshSettings::TileSize); // wow coordinate system
 
-    auto const westStart = wmoInstance->Bounds.MinCorner.X + (tileX * MeshSettings::TileSize);
-    auto const northStart = wmoInstance->Bounds.MinCorner.Y + (tileY * MeshSettings::TileSize);
-
-    config.bmax[0] = -northStart;
-    config.bmax[1] =  wmoInstance->Bounds.MaxCorner.Z;
-    config.bmax[2] = -westStart;
-
-    config.bmin[0] = config.bmax[0] - MeshSettings::TileSize;
+    config.bmin[0] = -westStart;
     config.bmin[1] = wmoInstance->Bounds.MinCorner.Z;
-    config.bmin[2] = config.bmax[2] - MeshSettings::TileSize;
+    config.bmin[2] = -northStart;
+
+    config.bmax[0] = config.bmin[0] + MeshSettings::TileSize;
+    config.bmax[1] = wmoInstance->Bounds.MaxCorner.Z;
+    config.bmax[2] = config.bmin[2] + MeshSettings::TileSize;
 
     config.bmin[0] -= config.borderSize * config.cs;
     config.bmin[2] -= config.borderSize * config.cs;
@@ -647,7 +644,7 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     }
 
     // serialize heightfield for this tile
-    utility::BinaryStream heightFieldData(sizeof(std::uint32_t)*(11 + 3 * (solid->width*solid->height)));
+    utility::BinaryStream heightFieldData(sizeof(std::uint32_t)*(10 + 3 * (solid->width*solid->height)));
 
     if (!solidEmpty)
         SerializeHeightField(*solid, heightFieldData);
@@ -929,6 +926,7 @@ namespace meshfiles
 void File::AddTile(int x, int y, utility::BinaryStream &heightfield, const utility::BinaryStream &mesh)
 {
     m_tiles[{x, y}] = std::move(heightfield);
+    m_tiles[{x, y}] << static_cast<std::uint32_t>(mesh.wpos());
     m_tiles[{x, y}].Append(mesh);
 }
 
@@ -948,12 +946,12 @@ void ADT::Serialize(const std::string &filename) const
     // first compute total size, just to reduce reallocations
     for (auto const &tile : m_tiles)
     {
-        bufferSize += 3 * sizeof(std::uint32_t);
+        bufferSize += 4 * sizeof(std::uint32_t);
         
         if (m_wmosAndDoodadIds.find(tile.first) != m_wmosAndDoodadIds.end())
-            bufferSize += m_wmosAndDoodadIds.at(tile.first).GetPosition();
+            bufferSize += m_wmosAndDoodadIds.at(tile.first).wpos();
 
-        bufferSize += tile.second.GetPosition();
+        bufferSize += tile.second.wpos();
     }
 
     utility::BinaryStream outBuffer(bufferSize);
@@ -972,24 +970,18 @@ void ADT::Serialize(const std::string &filename) const
         // tile x and y
         outBuffer << tile.first.first << tile.first.second;
 
-        // tile wmo and doodad ids
+        // append wmo and doodad id buffer (which already contains size information), or an empty one if there is none
         if (m_wmosAndDoodadIds.find(tile.first) == m_wmosAndDoodadIds.end())
-            outBuffer << static_cast<std::uint32_t>(0);
+            outBuffer << static_cast<std::uint32_t>(0) << static_cast<std::uint32_t>(0);
         else
-        {
-            // buffer length in bytes
-            outBuffer << m_wmosAndDoodadIds.at(tile.first).GetPosition();
-
-            // wmo and doodad id buffer
             outBuffer.Append(m_wmosAndDoodadIds.at(tile.first));
-        }
 
         // height field and finalized tile buffer
         outBuffer.Append(tile.second);
     }
 
-    // just to make sure our calculation still works.  if it doesnt, we can see copious reallocations in the above code!
-    assert(outBuffer.GetPosition() == bufferSize);
+    // temporary just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
+    assert(outBuffer.wpos() == bufferSize);
 
     // XXX FIXME TODO - add zlib compression here!
 
@@ -1013,7 +1005,7 @@ void GlobalWMO::Serialize(const std::string& filename) const
 
     // first compute total size, just to reduce reallocations
     for (auto const &tile : m_tiles)
-        bufferSize += 3 * sizeof(std::uint32_t) + tile.second.GetPosition();
+        bufferSize += 4 * sizeof(std::uint32_t) + tile.second.wpos();
 
     utility::BinaryStream outBuffer(bufferSize);
 
@@ -1021,7 +1013,7 @@ void GlobalWMO::Serialize(const std::string& filename) const
     outBuffer << MeshSettings::FileSignature << MeshSettings::FileVersion << MeshSettings::FileWMO;
 
     // ADT x and y
-    outBuffer << WMOcoordinate << WMOcoordinate;
+    outBuffer << MeshSettings::WMOcoordinate << MeshSettings::WMOcoordinate;
 
     // tile count
     outBuffer << static_cast<std::uint32_t>(m_tiles.size());
@@ -1032,16 +1024,16 @@ void GlobalWMO::Serialize(const std::string& filename) const
         outBuffer << tile.first.first << tile.first.second;
 
         // no per-tile doodad ids for global WMOs
-        outBuffer << static_cast<std::uint32_t>(0);
+        outBuffer << static_cast<std::uint32_t>(0) << static_cast<std::uint32_t>(0);
 
         // height field and finalized tile buffer
         outBuffer.Append(tile.second);
     }
 
-    // just to make sure our calculation still works.  if it doesnt, we can see copious reallocations in the above code!
-    assert(outBuffer.GetPosition() == bufferSize);
+    // temporary just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
+    assert(outBuffer.wpos() == bufferSize);
 
-    // XXX FIXME TODO - add zlib compression here!
+    // TODO add zlib compression here
 
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
 

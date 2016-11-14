@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     auto const stop = time(nullptr);
     auto const runTime = stop - start;
     
-    std::cout << "Finished " << map << " (" << builder->TotalTiles() << " tiles) in " << runTime << " seconds." << std::endl;
+    std::cout << "Finished " << map << " (" << builder->CompletedTiles() << " tiles) in " << runTime << " seconds." << std::endl;
 
     return EXIT_SUCCESS;
 }

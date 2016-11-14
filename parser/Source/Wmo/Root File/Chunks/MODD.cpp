@@ -9,7 +9,7 @@ MODD::MODD(size_t position, utility::BinaryStream *reader) : WmoRootChunk(positi
     if (!Count)
         return;
 
-    reader->SetPosition(position + 8);
+    reader->rpos(position + 8);
 
     Doodads.resize(Count);
     reader->ReadBytes(&Doodads[0], Size);

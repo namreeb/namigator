@@ -8,7 +8,7 @@ namespace input
 {
 AdtChunk::AdtChunk(size_t position, utility::BinaryStream *reader) : Position(position)
 {
-    reader->SetPosition(position);
+    reader->rpos(position);
 
     Type = reader->Read<unsigned int>();
     Size = reader->Read<unsigned int>();

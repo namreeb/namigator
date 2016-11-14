@@ -32,7 +32,7 @@ Wmo::Wmo(Map *map, const std::string &path)
     if (!reader->GetChunkLocation("MOHD", mohdLocation))
         THROW("MOHD not found");
 
-    reader->SetPosition(mohdLocation + 8);
+    reader->rpos(mohdLocation + 8);
 
     input::MOHD information;
     reader->ReadBytes(&information, sizeof(information));
@@ -46,7 +46,7 @@ Wmo::Wmo(Map *map, const std::string &path)
         std::stringstream ss;
 
         ss << dirName << "\\" << FileName << "_" << std::setfill('0') << std::setw(3) << i << ".wmo";
-        groupFiles.push_back(std::unique_ptr<input::WmoGroupFile>(new input::WmoGroupFile(ss.str())));
+        groupFiles.push_back(std::make_unique<input::WmoGroupFile>(ss.str()));
     }
 
     size_t modsLocation;

@@ -40,27 +40,60 @@ struct DoodadFileInstance
     utility::BoundingBox m_bounds;
     char m_fileName[64];
 };
+
+struct NavFileHeader
+{
+    std::uint32_t sig;
+    std::uint32_t ver;
+    std::uint32_t kind;
+    std::uint32_t x;
+    std::uint32_t y;
+    std::uint32_t tileCount;
+
+    void Verify(bool wmo) const
+    {
+        if (sig != MeshSettings::FileSignature)
+            THROW("Incorrect file signature");
+
+        if (ver != MeshSettings::FileVersion)
+            THROW("Incorrect file version");
+
+        if (wmo)
+        {
+            if (kind != MeshSettings::FileWMO)
+                THROW("Not WMO nav file");
+
+            if (x != MeshSettings::WMOcoordinate || y != MeshSettings::WMOcoordinate)
+                THROW("Not WMO tile coordinates");
+        }
+        
+        if (!wmo && kind != MeshSettings::FileADT)
+            THROW("Not ADT nav file");
+    }
+};
 #pragma pack(pop)
+
+namespace
+{
+// TODO this function can probably be discarded once support is added for using heightfield to add temporary obstacles
+void SkipHeightField(utility::BinaryStream &stream)
+{
+    std::int32_t width, height;
+    stream >> width >> height;
+
+    stream.rpos(stream.rpos() + 32);
+
+    std::uint32_t size;
+    stream >> size;
+
+    stream.rpos(stream.rpos() + size);
+}
+}
 
 namespace pathfind
 {
 Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(dataPath), m_mapName(mapName)
 {
-    dtNavMeshParams params;
-
-    constexpr float tileSize = -32.f * MeshSettings::AdtSize;
-    constexpr int maxTiles = MeshSettings::TileCount * MeshSettings::TileCount;
-
-    params.orig[0] = tileSize;
-    params.orig[1] = 0.f;
-    params.orig[2] = tileSize;
-    params.tileHeight = params.tileWidth = MeshSettings::TileSize;
-    params.maxTiles = maxTiles;
-    params.maxPolys = 1 << DT_POLY_BITS;
-
-    auto const result = m_navMesh.init(&params);
-    assert(result == DT_SUCCESS);
-
     std::stringstream continentFile;
 
     continentFile << dataPath << "\\" << mapName << ".map";
@@ -80,6 +113,21 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 
     if (hasTerrain)
     {
+        dtNavMeshParams params;
+
+        constexpr float tileSize = -32.f * MeshSettings::AdtSize;
+        constexpr int maxTiles = MeshSettings::TileCount * MeshSettings::TileCount;
+
+        params.orig[0] = tileSize;
+        params.orig[1] = 0.f;
+        params.orig[2] = tileSize;
+        params.tileHeight = params.tileWidth = MeshSettings::TileSize;
+        params.maxTiles = maxTiles;
+        params.maxPolys = 1 << DT_POLY_BITS;
+
+        auto const result = m_navMesh.init(&params);
+        assert(result == DT_SUCCESS);
+
         std::uint32_t wmoInstanceCount;
         in.read(reinterpret_cast<char *>(&wmoInstanceCount), sizeof(wmoInstanceCount));
 
@@ -137,24 +185,52 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         ins.m_fileName = globalWmo.m_fileName;
 
         m_wmoInstances.insert({ GlobalWmoId, ins });
-
-        std::stringstream str;
-        str << m_dataPath << "\\Nav\\" << m_mapName << "\\" << m_mapName << ".nav";
-        std::ifstream navIn(str.str(), std::ifstream::binary);
-
-        if (navIn.fail())
-            THROW("Failed to open global WMO nav file").ErrorCode();
-
-        std::int32_t navMeshSize;
-        navIn.read(reinterpret_cast<char *>(&navMeshSize), sizeof(navMeshSize));
-
-        auto const buff = new unsigned char[navMeshSize];
-        navIn.read(reinterpret_cast<char *>(buff), navMeshSize);
-
-        if (m_navMesh.addTile(buff, static_cast<int>(navMeshSize), DT_TILE_FREE_DATA, 0, nullptr) != DT_SUCCESS)
-            THROW("dtNavMesh::addTile failed");
-
         m_globalWmo = LoadWmoModel(GlobalWmoId);
+
+        dtNavMeshParams params;
+
+        params.orig[0] = -globalWmo.m_bounds.MaxCorner.Y;
+        params.orig[1] =  globalWmo.m_bounds.MinCorner.Z;
+        params.orig[2] = -globalWmo.m_bounds.MaxCorner.X;
+        params.tileHeight = params.tileWidth = MeshSettings::TileSize;
+
+        auto const tileWidth = static_cast<int>(std::ceilf((globalWmo.m_bounds.MaxCorner.X - globalWmo.m_bounds.MinCorner.X) / MeshSettings::TileSize));
+        auto const tileHeight = static_cast<int>(std::ceilf((globalWmo.m_bounds.MaxCorner.Y - globalWmo.m_bounds.MinCorner.Y) / MeshSettings::TileSize));
+
+        params.maxTiles = tileWidth*tileHeight;
+        params.maxPolys = 1 << DT_POLY_BITS;
+
+        auto const result = m_navMesh.init(&params);
+        assert(result == DT_SUCCESS);
+        
+        std::stringstream str;
+        str << m_dataPath << "\\Nav\\" << m_mapName << "\\Map.nav";
+        std::ifstream navFile(str.str(), std::ifstream::binary);
+        utility::BinaryStream navIn(navFile);
+        navFile.close();
+
+        try
+        {
+            NavFileHeader header;
+            navIn >> header;
+
+            header.Verify(!!m_globalWmo);
+
+            if (header.x != MeshSettings::WMOcoordinate || header.y != MeshSettings::WMOcoordinate)
+                THROW("Incorrect WMO coordinates");
+
+            for (auto i = 0u; i < header.tileCount; ++i)
+            {
+                auto tile = std::make_unique<Tile>(this, navIn);
+                m_tiles[{tile->X(), tile->Y()}] = std::move(tile);
+            }
+        }
+        catch (std::domain_error const &e)
+        {
+            std::stringstream err;
+            err << "Failed to read navmesh file: " << e.what();
+            MessageBox(nullptr, err.str().c_str(), "ERROR", 0);
+        }
     }
 
     if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
@@ -255,7 +331,7 @@ std::shared_ptr<DoodadModel> Map::LoadDoodadModel(const std::string &fileName)
         std::ifstream in(file.str(), std::ifstream::binary);
 
         if (in.fail())
-            return false;
+            return nullptr;
 
         model = std::make_shared<DoodadModel>();
 
@@ -270,16 +346,23 @@ std::shared_ptr<DoodadModel> Map::LoadDoodadModel(const std::string &fileName)
 
 void Map::LoadAllTiles()
 {
-    for (int y = 0; y < 64; ++y)
-        for (int x = 0; x < 64; ++x)
-            LoadTile(x, y);
+    if (m_globalWmo)
+    {
+        
+    }
+    else
+        for (auto y = 0; y < MeshSettings::Adts; ++y)
+            for (auto x = 0; x < MeshSettings::Adts; ++x)
+                LoadADT(x, y);
 }
 
-bool Map::LoadTile(int x, int y)
+bool Map::LoadADT(int x, int y)
 {
-    // if it is already loaded, do nothing
-    if (m_tiles[x][y])
-        return true;
+    // if any of the tiles for this ADT are loaded, it is already loaded
+    for (auto tileY = y * MeshSettings::TilesPerADT; tileY < (y + 1)*MeshSettings::TilesPerADT; ++tileY)
+        for (auto tileX = x * MeshSettings::TilesPerADT; tileX < (x + 1)*MeshSettings::TilesPerADT; ++tileX)
+            if (m_tiles.find({ x, y }) != m_tiles.end())
+                return true;
 
     std::stringstream str;
     str << m_dataPath << "\\Nav\\" << m_mapName << "\\"
@@ -287,23 +370,48 @@ bool Map::LoadTile(int x, int y)
         << std::setfill('0') << std::setw(4) << y << ".nav";
 
     std::ifstream in(str.str(), std::ifstream::binary);
+    utility::BinaryStream stream(in);
+    in.close();
 
-    if (in.fail())
+    try
+    {
+        NavFileHeader header;
+        stream >> header;
+
+        header.Verify(!!m_globalWmo);
+
+        if (header.x != static_cast<std::uint32_t>(x) || header.y != static_cast<std::uint32_t>(y))
+            THROW("Incorrect ADT coordinates");
+
+        for (auto i = 0u; i < header.tileCount; ++i)
+        {
+            auto tile = std::make_unique<Tile>(this, stream);
+            m_tiles[{tile->X(), tile->Y()}] = std::move(tile);
+        }
+    }
+    catch (std::domain_error const&)
+    {
         return false;
-
-    m_tiles[x][y] = std::make_unique<Tile>(this, in);
+    }
 
     return true;
 }
 
-void Map::UnloadTile(int x, int y)
+void Map::UnloadADT(int x, int y)
 {
-    m_tiles[x][y].reset();
+    for (auto tileY = y * MeshSettings::TilesPerADT; tileY < (y + 1)*MeshSettings::TilesPerADT; ++tileY)
+        for (auto tileX = x * MeshSettings::TilesPerADT; tileX < (x + 1)*MeshSettings::TilesPerADT; ++tileX)
+        {
+            auto i = m_tiles.find({ tileX, tileY });
+
+            if (i != m_tiles.end())
+                m_tiles.erase(i);
+        }
 }
 
 bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
 {
-    constexpr float extents[] = { 20.f, 20.f, 20.f };
+    constexpr float extents[] = { 5.f, 5.f, 5.f };
 
     float recastStart[3];
     float recastEnd[3];
@@ -315,13 +423,13 @@ bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std
     if (!(m_navQuery.findNearestPoly(recastStart, extents, &m_queryFilter, &startPolyRef, nullptr) & DT_SUCCESS))
         return false;
 
-    if (startPolyRef == 0)
+    if (!startPolyRef)
         return false;
 
     if (!(m_navQuery.findNearestPoly(recastEnd, extents, &m_queryFilter, &endPolyRef, nullptr) & DT_SUCCESS))
         return false;
 
-    if (endPolyRef == 0)
+    if (!endPolyRef)
         return false;
 
     dtPolyRef polyRefBuffer[MaxPathHops];
@@ -426,10 +534,14 @@ bool Map::RayCast(utility::Ray &ray) const
     for (int y = yStart; y <= yStop; ++y)
         for (int x = xStart; x <= xStop; ++x)
         {
-            auto const tile = m_tiles[x][y].get();
+            auto const itr = m_tiles.find({ x, y });
+            if (itr == m_tiles.end())
+                continue;
+
+            auto const tile = (*itr).second.get();
 
             // check doodads for this tile
-            for (auto const doodad : tile->m_doodadInstances)
+            for (auto const doodad : tile->m_doodads)
             {
                 // if we've already tested it, skip it
                 if (testedDoodads.find(doodad) != testedDoodads.end())
@@ -454,7 +566,7 @@ bool Map::RayCast(utility::Ray &ray) const
             }
 
             // check WMOs for this tile
-            for (auto const wmo : tile->m_wmoInstances)
+            for (auto const wmo : tile->m_wmos)
             {
                 // if we've already tested it, skip it
                 if (testedWmos.find(wmo) != testedWmos.end())

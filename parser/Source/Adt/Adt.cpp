@@ -62,7 +62,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
     if (reader->Read<unsigned int>() != input::AdtChunkType::MVER)
         THROW("MVER does not begin ADT file");
 
-    reader->Slide(4);
+    reader->rpos(reader->rpos() + 4);
 
     if (reader->Read<unsigned int>() != ADT_VERSION)
         THROW("ADT version is incorrect");

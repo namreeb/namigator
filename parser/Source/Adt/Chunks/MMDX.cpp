@@ -16,7 +16,7 @@ MMDX::MMDX(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     if (Size == 0)
         return;
 
-    reader->SetPosition(position + 8);
+    reader->rpos(position + 8);
 
     std::vector<char> doodadNames(Size);
     reader->ReadBytes(&doodadNames[0], Size);

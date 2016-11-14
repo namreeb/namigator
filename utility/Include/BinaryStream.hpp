@@ -6,6 +6,7 @@
 #include <memory>
 #include <type_traits>
 #include <ostream>
+#include <fstream>
 
 namespace utility
 {
@@ -17,24 +18,37 @@ class BinaryStream
         friend std::ostream & operator << (std::ostream &, const BinaryStream &);
 
         std::vector<char> m_buffer;
-        size_t m_position;
+        size_t m_rpos, m_wpos;
 
     public:
         BinaryStream(std::vector<char> &buffer);
         BinaryStream(size_t length = DEFAULT_BUFFER_LENGTH);
-        BinaryStream(BinaryStream &&other);
+        BinaryStream(std::istream &stream);
+        BinaryStream(BinaryStream &&other) noexcept;
 
-        BinaryStream& operator = (BinaryStream&& other);
+        BinaryStream& operator = (BinaryStream&& other) noexcept;
 
         template <typename T> T Read()
         {
+            static_assert(std::is_pod<T>::value, "T must be POD");
+            static_assert(sizeof(T) <= 4, "Stack return read is meant only for small values");
+
             T ret;
-            ReadBytes(&ret, sizeof(T));
+            Read(ret);
             return ret;
         }
 
-        template <typename T> void Write(T data)
+        template <typename T> void Read(T &out)
         {
+            static_assert(std::is_pod<T>::value, "T must be POD");
+
+            ReadBytes(&out, sizeof(T));
+        }
+
+        template <typename T> void Write(const T& data)
+        {
+            static_assert(std::is_pod<T>::value, "T must be POD");
+
             Write(&data, sizeof(T));
         }
 
@@ -50,10 +64,11 @@ class BinaryStream
 
         void Append(const BinaryStream &other);
 
-        size_t GetPosition() const;
+        size_t rpos() const { return m_rpos; }
+        void rpos(size_t pos) { m_rpos = pos; }
 
-        void SetPosition(size_t position);
-        void Slide(int offset);
+        size_t wpos() const { return m_wpos; }
+        void wpos(size_t pos) { m_wpos = pos; }
 
         bool GetChunkLocation(const std::string &chunkName, size_t &result) const;
         bool GetChunkLocation(const std::string &chunkName, size_t startLoc, size_t &result) const;
@@ -65,6 +80,15 @@ BinaryStream & operator << (BinaryStream &stream, T data)
     static_assert(std::is_pod<T>::value, "T must be POD");
 
     stream.Write(data);
+    return stream;
+}
+
+template <typename T>
+BinaryStream & operator >> (BinaryStream &stream,  T &data)
+{
+    static_assert(std::is_pod<T>::value, "T must be POD");
+
+    stream.Read(data);
     return stream;
 }
 

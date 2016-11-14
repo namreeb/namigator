@@ -42,7 +42,7 @@ class WmoRootChunk
             Position = position;
             Reader = reader;
 
-            Reader->SetPosition(position);
+            Reader->rpos(position);
 
             WmoChunkHeader header;
             reader->ReadBytes(&header, sizeof(header));

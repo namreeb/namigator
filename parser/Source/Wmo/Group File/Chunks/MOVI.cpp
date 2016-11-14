@@ -12,7 +12,7 @@ MOVI::MOVI(size_t position, utility::BinaryStream *fileStream) : WmoGroupChunk(p
 
     Indices.resize(Size / sizeof(std::int16_t));
 
-    fileStream->SetPosition(position + 8);
+    fileStream->rpos(position + 8);
     fileStream->ReadBytes(&Indices[0], Size);
 }
 }

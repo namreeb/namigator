@@ -18,7 +18,7 @@ MCLQ::MCLQ(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     for (int y = 0; y < 9; ++y)
         for (int x = 0; x < 9; ++x)
         {
-            reader->Slide(4);
+            reader->rpos(reader->rpos() + 4);
             Heights[y][x] = reader->Read<float>();
         }
 

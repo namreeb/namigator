@@ -36,6 +36,7 @@ class MeshSettings
         static constexpr std::uint32_t FileVersion = '0002';
         static constexpr std::uint32_t FileADT = 'ADT\0';
         static constexpr std::uint32_t FileWMO = 'WMO\0';
+        static constexpr std::uint32_t WMOcoordinate = 0xFFFFFFFF;
 
         // Nothing below here should ever have to change
 

@@ -8,7 +8,7 @@ namespace input
 {
 MODN::MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream *reader) : WmoRootChunk(position, reader)
 {
-    reader->SetPosition(position + 8);
+    reader->rpos(position + 8);
 
     unsigned int currOffset = 0;
 
