@@ -11,7 +11,7 @@
 
 namespace utility
 {
-BinaryStream::BinaryStream(std::vector<std::uint8_t> &buffer) : m_buffer(std::move(buffer)), m_rpos(0), m_wpos(0) {}
+BinaryStream::BinaryStream(std::vector<std::uint8_t> &buffer) : m_buffer(std::move(buffer)), m_rpos(0), m_wpos(m_buffer.size()) {}
 
 BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_rpos(0), m_wpos(0) {}
 

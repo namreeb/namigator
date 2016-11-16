@@ -77,6 +77,12 @@ class BinaryStream
         void Decompress();
 };
 
+inline BinaryStream & operator << (BinaryStream &stream, const std::string &str)
+{
+    stream.Write(str.c_str(), str.length());
+    return stream;
+}
+
 template <typename T>
 BinaryStream & operator << (BinaryStream &stream, T data)
 {

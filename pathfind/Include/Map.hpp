@@ -30,6 +30,7 @@ struct hash<std::pair<int,int>>
     }
 };
 }
+
 namespace pathfind
 {
 // note that instances of this type are assumed to be thread-local, therefore the type is not thread safe
@@ -68,6 +69,8 @@ class Map
         void LoadAllTiles();
         bool LoadADT(int x, int y);
         void UnloadADT(int x, int y);
+
+        void AddObject(unsigned int id, const utility::Vertex &position);
 
         bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;

@@ -363,11 +363,9 @@ bool IsHeightFieldEmpty(rcHeightfield const& solid)
 }
 }
 
-MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel)
+MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel)
     : m_outputPath(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
 {
-    parser::Parser::Initialize(dataPath.c_str());
-
     // this must follow the parser initialization
     m_map = std::make_unique<parser::Map>(mapName);
 
@@ -440,11 +438,9 @@ MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputP
     utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
 }
 
-MeshBuilder::MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
+MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
     : m_outputPath(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
 {
-    parser::Parser::Initialize(dataPath.c_str());
-
     // this must follow the parser initialization
     m_map = std::make_unique<parser::Map>(mapName);
 

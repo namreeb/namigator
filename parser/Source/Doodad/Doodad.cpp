@@ -28,6 +28,9 @@ Doodad::Doodad(const std::string &path)
 
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(GetRealModelPath(path)));
 
+    if (!reader)
+        THROW("Doodad " + path + " not found");
+
     if (reader->Read<unsigned int>() != Magic)
         THROW("Invalid doodad file");
 

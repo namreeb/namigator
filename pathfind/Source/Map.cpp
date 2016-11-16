@@ -394,6 +394,11 @@ void Map::UnloadADT(int x, int y)
         }
 }
 
+void Map::AddObject(unsigned int id, const utility::Vertex &position)
+{
+    
+}
+
 bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
 {
     constexpr float extents[] = { 5.f, 5.f, 5.f };

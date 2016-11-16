@@ -109,8 +109,8 @@ class MeshBuilder
         void RemoveADT(const meshfiles::ADT *adt);
 
     public:
-        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel);
-        MeshBuilder(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY);
+        MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel);
+        MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY);
 
         size_t CompletedTiles() const { return m_completedTiles; }
 

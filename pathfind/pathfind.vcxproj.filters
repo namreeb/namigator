@@ -17,7 +17,7 @@
     <ClInclude Include="Include\Model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Adt.hpp">
+    <ClInclude Include="Include\Tile.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -25,7 +25,7 @@
     <ClCompile Include="Source\Map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Adt.cpp">
+    <ClCompile Include="Source\Tile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

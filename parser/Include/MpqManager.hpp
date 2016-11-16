@@ -6,11 +6,7 @@
 #include <list>
 #include <map>
 
-#ifdef WIN32
-#include <windows.h>
-#else
-#error "UNIX HANDLE header unknown"
-#endif
+using HANDLE = void *;
 
 namespace parser
 {

@@ -76,7 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;$(BOOST_ROOT);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>DT_POLYREF64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)recastnavigation\Recast\Include;$(SolutionDir)recastnavigation\Detour\Include;$(ProjectDir)Include;$(BOOST_ROOT);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>DT_POLYREF64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -156,11 +156,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\DBC.hpp" />
+    <ClInclude Include="Include\GameObjectBVHBuilder.hpp" />
     <ClInclude Include="Include\MeshBuilder.hpp" />
     <ClInclude Include="Include\RecastContext.hpp" />
     <ClInclude Include="Include\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\DBC.cpp" />
+    <ClCompile Include="Source\GameObjectBVHBuilder.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\MeshBuilder.cpp" />
     <ClCompile Include="Source\RecastContext.cpp" />
