@@ -983,7 +983,7 @@ void ADT::Serialize(const std::string &filename) const
     // temporary just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
     assert(outBuffer.wpos() == bufferSize);
 
-    // XXX FIXME TODO - add zlib compression here!
+    outBuffer.Compress();
 
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
 
@@ -1033,7 +1033,7 @@ void GlobalWMO::Serialize(const std::string& filename) const
     // temporary just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
     assert(outBuffer.wpos() == bufferSize);
 
-    // TODO add zlib compression here
+    outBuffer.Compress();
 
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
 

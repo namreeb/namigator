@@ -14,6 +14,7 @@
 #include <vector>
 #include <list>
 #include <sstream>
+#include <cstdint>
 
 namespace parser
 {
@@ -104,7 +105,7 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
                 THROW("Error in SFileOpenFileEx").ErrorCode();
         }
 
-        std::vector<char> inFileData(SFileGetFileSize(fileHandle, nullptr));
+        std::vector<std::uint8_t> inFileData(SFileGetFileSize(fileHandle, nullptr));
 
         if (!SFileReadFile(fileHandle, &inFileData[0], static_cast<DWORD>(inFileData.size()), nullptr, nullptr))
             THROW("Error in SFileReadFile").ErrorCode();

@@ -22,6 +22,9 @@
     <ClCompile Include="Source\AABBTree.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Include\miniz.c">
+      <Filter>Include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Array2d.hpp">

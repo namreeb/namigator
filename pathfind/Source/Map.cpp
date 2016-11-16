@@ -73,23 +73,6 @@ struct NavFileHeader
 };
 #pragma pack(pop)
 
-namespace
-{
-// TODO this function can probably be discarded once support is added for using heightfield to add temporary obstacles
-void SkipHeightField(utility::BinaryStream &stream)
-{
-    std::int32_t width, height;
-    stream >> width >> height;
-
-    stream.rpos(stream.rpos() + 32);
-
-    std::uint32_t size;
-    stream >> size;
-
-    stream.rpos(stream.rpos() + size);
-}
-}
-
 namespace pathfind
 {
 Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(dataPath), m_mapName(mapName)
@@ -208,6 +191,8 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         std::ifstream navFile(str.str(), std::ifstream::binary);
         utility::BinaryStream navIn(navFile);
         navFile.close();
+
+        navIn.Decompress();
 
         try
         {

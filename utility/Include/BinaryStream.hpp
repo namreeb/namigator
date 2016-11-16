@@ -17,11 +17,11 @@ class BinaryStream
 
         friend std::ostream & operator << (std::ostream &, const BinaryStream &);
 
-        std::vector<char> m_buffer;
+        std::vector<std::uint8_t> m_buffer;
         size_t m_rpos, m_wpos;
 
     public:
-        BinaryStream(std::vector<char> &buffer);
+        BinaryStream(std::vector<std::uint8_t> &buffer);
         BinaryStream(size_t length = DEFAULT_BUFFER_LENGTH);
         BinaryStream(std::istream &stream);
         BinaryStream(BinaryStream &&other) noexcept;
@@ -72,6 +72,9 @@ class BinaryStream
 
         bool GetChunkLocation(const std::string &chunkName, size_t &result) const;
         bool GetChunkLocation(const std::string &chunkName, size_t startLoc, size_t &result) const;
+
+        void Compress();
+        void Decompress();
 };
 
 template <typename T>
