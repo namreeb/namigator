@@ -351,8 +351,8 @@ bool Map::LoadADT(int x, int y)
 
     std::stringstream str;
     str << m_dataPath << "\\Nav\\" << m_mapName << "\\"
-        << std::setfill('0') << std::setw(4) << x << "_"
-        << std::setfill('0') << std::setw(4) << y << ".nav";
+        << std::setfill('0') << std::setw(2) << x << "_"
+        << std::setfill('0') << std::setw(2) << y << ".nav";
 
     std::ifstream in(str.str(), std::ifstream::binary);
     utility::BinaryStream stream(in);
