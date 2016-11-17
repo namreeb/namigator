@@ -23,7 +23,8 @@ class GameObjectBVHBuilder
 
         bool m_shutdownRequested;
 
-        std::string BuildFilename(const std::string &in) const;
+        std::string BuildAbsoluteFilename(const std::string &in) const;
+
         void Work();
 
     public:

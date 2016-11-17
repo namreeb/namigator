@@ -30,12 +30,12 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, int wo
         if (!path.length())
             continue;
 
-        auto const output = BuildFilename(path);
+        auto const output = BuildAbsoluteFilename(path);
 
         // mark existing files as already serialized so that they are included in the index file
         if (boost::filesystem::exists(output))
         {
-            m_serialized[row] = output;
+            m_serialized[row] = boost::filesystem::path(output).filename().string();
             continue;
         }
 
@@ -88,7 +88,7 @@ void GameObjectBVHBuilder::WriteIndexFile() const
     o << out;
 }
 
-std::string GameObjectBVHBuilder::BuildFilename(const std::string &in) const
+std::string GameObjectBVHBuilder::BuildAbsoluteFilename(const std::string &in) const
 {
     boost::filesystem::path path(in);
 
@@ -157,7 +157,7 @@ void GameObjectBVHBuilder::Work()
             }
         }
 
-        auto const output = BuildFilename(filename);
+        auto const output = BuildAbsoluteFilename(filename);
 
         try
         {
@@ -173,10 +173,6 @@ void GameObjectBVHBuilder::Work()
 
                 std::ofstream o(output, std::ofstream::binary | std::ofstream::trunc);
                 doodadTree.Serialize(o);
-                o.close();
-
-                std::lock_guard<std::mutex> guard(m_mutex);
-                m_serialized[entry] = output;
             }
             else
             {
@@ -190,11 +186,10 @@ void GameObjectBVHBuilder::Work()
 
                 std::ofstream o(output, std::ofstream::binary | std::ofstream::trunc);
                 wmoTree.Serialize(o);
-                o.close();
-
-                std::lock_guard<std::mutex> guard(m_mutex);
-                m_serialized[entry] = output;
             }
+
+            std::lock_guard<std::mutex> guard(m_mutex);
+            m_serialized[entry] = boost::filesystem::path(output).filename().string();
         }
         catch (utility::exception const &e)
         {
