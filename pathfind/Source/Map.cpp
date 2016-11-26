@@ -394,7 +394,7 @@ void Map::UnloadADT(int x, int y)
         }
 }
 
-void Map::AddObject(unsigned int id, const utility::Vertex &position)
+void Map::AddObject(unsigned int/* id*/, const utility::Vertex &/*position*/)
 {
     
 }
