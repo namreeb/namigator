@@ -57,7 +57,7 @@ float BoundingBox::getSurfaceArea() const {
 }
 
 Vector3 BoundingBox::getCenter() const {
-    return 0.5f * (MaxCorner - MinCorner);
+    return 0.5f * (MaxCorner + MinCorner);
 }
 
 Vector3 BoundingBox::getExtent() const {
