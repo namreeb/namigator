@@ -366,7 +366,7 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
         assert(removeResult == DT_SUCCESS);
     }
 
-    auto const insertResult = m_map->m_navMesh.addTile(&m_tileData[0], static_cast<int>(m_tileData.size()), 0, 0, &m_ref);
+    auto const insertResult = m_map->m_navMesh.addTile(&m_tileData[0], static_cast<int>(m_tileData.size()), 0, m_ref, &m_ref);
 
     assert(insertResult == DT_SUCCESS);
 }
