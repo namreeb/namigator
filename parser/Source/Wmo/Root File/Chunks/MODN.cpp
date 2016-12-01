@@ -24,7 +24,7 @@ MODN::MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream
 
         Names[currOffset] = currFileName;
 
-        currOffset += currFileName.length() + 1;
+        currOffset += static_cast<unsigned int>(currFileName.length() + 1);
     }
 }
 }
