@@ -47,7 +47,7 @@ void Worker::Work()
                     exit(1);
                 }
             }
-            else if (!m_meshBuilder->BuildAndSerializeADTTile(tileX, tileY))
+            else if (!m_meshBuilder->BuildAndSerializeMapTile(tileX, tileY))
             {
                 auto const adtX = tileX / MeshSettings::TilesPerADT;
                 auto const adtY = tileY / MeshSettings::TilesPerADT;

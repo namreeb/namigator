@@ -75,7 +75,7 @@ class MeshBuilder
         std::unique_ptr<meshfiles::GlobalWMO> m_globalWMO;
 
         std::vector<std::pair<int, int>> m_pendingTiles;
-        std::vector<int> m_chunkReferences; // this is a fixed size, but it is so big it can single-handedly overflow the stack
+        std::vector<int> m_chunkReferences; // this is a fixed size, but it is so big that it can single-handedly overflow the stack
 
         std::vector<utility::Vertex> m_globalWMOVertices;
         std::vector<int> m_globalWMOIndices;
@@ -119,7 +119,7 @@ class MeshBuilder
         bool IsGlobalWMO() const;
 
         bool BuildAndSerializeWMOTile(int tileX, int tileY);
-        bool BuildAndSerializeADTTile(int tileX, int tileY);
+        bool BuildAndSerializeMapTile(int tileX, int tileY);
 
         void SaveMap() const;
 

@@ -104,11 +104,15 @@ bool AABBTree::Deserialize(std::istream& stream)
     std::uint32_t vertexCount;
     stream.read(reinterpret_cast<char *>(&vertexCount), sizeof(vertexCount));
 
+    assert(vertexCount > 0);
+
     m_vertices.resize(vertexCount);
     stream.read(reinterpret_cast<char *>(&m_vertices[0]), vertexCount * sizeof(utility::Vertex));
 
     std::uint32_t indexCount;
     stream.read(reinterpret_cast<char *>(&indexCount), sizeof(indexCount));
+
+    assert(indexCount > 0);
 
     m_indices.reserve(indexCount);
     for (std::uint32_t i = 0; i < indexCount; ++i)

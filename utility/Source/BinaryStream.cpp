@@ -39,12 +39,22 @@ BinaryStream& BinaryStream::operator = (BinaryStream&& other) noexcept
     return *this;
 }
 
-std::string BinaryStream::ReadCString()
+std::string BinaryStream::ReadString()
 {
     std::string ret;
 
     for (auto c = Read<std::int8_t>(); !!c; c = Read<std::int8_t>())
         ret += c;
+
+    return ret;
+}
+
+std::string BinaryStream::ReadString(size_t length)
+{
+    std::string ret;
+
+    for (auto i = 0u; i < length; ++i)
+        ret += Read<std::int8_t>();
 
     return ret;
 }

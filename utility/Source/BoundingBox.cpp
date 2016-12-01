@@ -1,5 +1,7 @@
 #include "utility/Include/BoundingBox.hpp"
 
+#include <algorithm>
+
 namespace utility
 {
 BoundingBox::BoundingBox(const Vector3& min, const Vector3& max) {
@@ -46,6 +48,16 @@ void BoundingBox::connectWith(const BoundingBox& b) {
     MaxCorner = takeMaximum(MaxCorner, b.MaxCorner);
 }
 
+void BoundingBox::update(const Vector3& v)
+{
+    MinCorner.X = (std::min)(MinCorner.X, v.X);
+    MaxCorner.X = (std::max)(MaxCorner.X, v.X);
+    MinCorner.Y = (std::min)(MinCorner.Y, v.Y);
+    MaxCorner.Y = (std::max)(MaxCorner.Y, v.Y);
+    MinCorner.Z = (std::min)(MinCorner.Z, v.Z);
+    MaxCorner.Z = (std::max)(MaxCorner.Z, v.Z);
+}
+
 float BoundingBox::getVolume() const {
     Vector3 e = MaxCorner - MinCorner;
     return e.X * e.Y * e.Z;
@@ -74,6 +86,28 @@ const Vector3& BoundingBox::getMinimum() const {
 
 const Vector3& BoundingBox::getMaximum() const {
     return MaxCorner;
+}
+
+bool BoundingBox::intersect2d(const BoundingBox& b) const
+{
+    if (MaxCorner.X < b.MinCorner.X) return false;
+    if (MinCorner.X > b.MaxCorner.X) return false;
+
+    if (MaxCorner.Y < b.MinCorner.Y) return false;
+    if (MinCorner.Y > b.MaxCorner.Y) return false;
+
+    return true;
+}
+
+bool BoundingBox::intersect(const BoundingBox& b) const
+{
+    if (!intersect2d(b))
+        return false;
+
+    if (MaxCorner.Z < b.MinCorner.Z) return false;
+    if (MinCorner.Z > b.MaxCorner.Z) return false;
+
+    return true; // boxes overlap
 }
 
 std::ostream & operator << (std::ostream &o, const utility::BoundingBox &b)

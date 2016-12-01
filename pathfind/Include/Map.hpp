@@ -4,20 +4,15 @@
 #include "Model.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
-#include "utility/Include/BoundingBox.hpp"
-#include "utility/Include/AABBTree.hpp"
 #include "utility/Include/Ray.hpp"
 
 #include "Detour/Include/DetourNavMesh.h"
 #include "Detour/Include/DetourNavMeshQuery.h"
 
-#include "RecastDetourBuild/Include/Common.hpp"
-
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include <list>
 
 namespace std
 {
@@ -49,33 +44,53 @@ class Map
         dtNavMeshQuery m_navQuery;
         dtQueryFilter m_queryFilter;
         
-        std::unordered_map<std::pair<int, int>, std::unique_ptr<const Tile>> m_tiles;
-        std::shared_ptr<WmoModel> m_globalWmo;
+        std::unordered_map<std::pair<int, int>, std::unique_ptr<Tile>> m_tiles;
 
-        std::unordered_map<unsigned int, WmoInstance> m_wmoInstances;
-        std::unordered_map<unsigned int, DoodadInstance> m_doodadInstances;
+        // indexed by display id
+        std::unordered_map<unsigned int, std::string> m_temporaryObstaclePaths;     // same for all maps, but no global object to store it in
 
+        // indexed by unique instance id.  this data is always loaded.  whenever a tile using one of these instances is loaded, the corresponding
+        // model is loaded also.  whenever all tiles referencing a model (possibly through distinct instances) are unloaded, the model is unloaded.
+        std::unordered_map<std::uint32_t, WmoInstance> m_staticWmos;
+        std::unordered_map<std::uint32_t, DoodadInstance> m_staticDoodads;
+
+        // indexed by GUID
+        std::unordered_map<std::uint64_t, std::weak_ptr<WmoInstance>> m_temporaryWmos;
+        std::unordered_map<std::uint64_t, std::weak_ptr<DoodadInstance>> m_temporaryDoodads;
+
+        // map, by filename, of loaded models
         std::unordered_map<std::string, std::weak_ptr<WmoModel>> m_loadedWmoModels;
         std::unordered_map<std::string, std::weak_ptr<DoodadModel>> m_loadedDoodadModels;
 
-        std::shared_ptr<WmoModel> LoadWmoModel(unsigned int id);
+        // ensures that the model for a particular WMO instance is loaded
+        std::shared_ptr<WmoModel> LoadModelForWmoInstance(unsigned int instanceId);
 
-        std::shared_ptr<DoodadModel> LoadDoodadModel(unsigned int id);
-        std::shared_ptr<DoodadModel> LoadDoodadModel(const std::string &fileName);
+        // ensures that the model for a particular doodad instance is loaded
+        std::shared_ptr<DoodadModel> LoadModelForDoodadInstance(unsigned int instanceId);
+
+        // ensure that the given WMO model is loaded
+        std::shared_ptr<WmoModel> EnsureWmoModelLoaded(const std::string &filename);
+
+        // ensure that the given doodad model is loaded
+        std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &filename);
+
+        // TODO: need mechanism to cleanup expired weak pointers saved in the containers of this class
 
     public:
         Map(const std::string &dataPath, const std::string &mapName);
 
-        void LoadAllTiles();
         bool LoadADT(int x, int y);
         void UnloadADT(int x, int y);
 
-        void AddObject(unsigned int id, const utility::Vertex &position);
+        // rotation specified in radians rotated around Z axis
+        void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, float orientation, int doodadSet = -1);
+        void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, const utility::Quaternion &rotation, int doodadSet = -1);
+        void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, const utility::Matrix &rotation, int doodadSet = -1);
 
         bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;
         bool FindHeights(float x, float y, std::vector<float> &output) const;
-        bool RayCast(utility::Ray &ray) const;                                                                                  // NOT IMPLEMENTED YET!
+        bool RayCast(utility::Ray &ray) const;
 
         const dtNavMesh &GetNavMesh() const { return m_navMesh; }
         const dtNavMeshQuery &GetNavMeshQuery() const { return m_navQuery; }

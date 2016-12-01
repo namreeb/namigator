@@ -3,6 +3,10 @@
 
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/BinaryStream.hpp"
+#include "utility/Include/MathHelper.hpp"
+
+#include "MapBuilder/Include/MeshBuilder.hpp"
+
 #include "Recast/Include/Recast.h"
 #include "Recast/Include/RecastAlloc.h"
 #include "Detour/Include/DetourNavMesh.h"
@@ -24,21 +28,42 @@ Tile::Tile(Map *map, utility::BinaryStream &in) : m_map(map), m_ref(0)
     std::uint32_t wmoCount;
     in >> wmoCount;
 
-    m_wmos.resize(wmoCount);
     if (wmoCount > 0)
-        in.ReadBytes(&m_wmos[0], m_wmos.size() * sizeof(std::uint32_t));
+    {
+        m_staticWmos.resize(wmoCount);
+        in.ReadBytes(&m_staticWmos[0], m_staticWmos.size() * sizeof(std::uint32_t));
 
-    // this will be zero for global wmos, even though it will contain doodads.  they are not currently sorted by tile.
+        for (auto const wmo : m_staticWmos)
+            m_staticWmoModels.push_back(std::move(map->LoadModelForWmoInstance(wmo)));
+    }
+
+    // for global WMOs, doodads are not referenced or loaded on a per-tile basis, therefore this will always be zero in that case
     std::uint32_t doodadCount;
     in >> doodadCount;
 
-    m_doodads.resize(doodadCount);
     if (doodadCount > 0)
-        in.ReadBytes(&m_doodads[0], m_doodads.size() * sizeof(std::uint32_t));
+    {
+        m_staticDoodads.resize(doodadCount);
+        in.ReadBytes(&m_staticDoodads[0], m_staticDoodads.size() * sizeof(std::uint32_t));
+
+        for (auto const doodad : m_staticDoodads)
+            m_staticDoodadModels.push_back(std::move(map->LoadModelForDoodadInstance(doodad)));
+    }
 
     // read height field
     in >> m_heightField.width >> m_heightField.height >> m_heightField.bmin >> m_heightField.bmax >> m_heightField.cs >> m_heightField.ch;
-    
+
+    utility::Vertex a, b;
+    utility::Convert::VertexToWow(m_heightField.bmin, a);
+    utility::Convert::VertexToWow(m_heightField.bmax, b);
+
+    m_bounds.MinCorner.X = (std::min)(a.X, b.X);
+    m_bounds.MaxCorner.X = (std::max)(a.X, b.X);
+    m_bounds.MinCorner.Y = (std::min)(a.Y, b.Y);
+    m_bounds.MaxCorner.Y = (std::max)(a.Y, b.Y);
+    m_bounds.MinCorner.Z = (std::min)(a.Z, b.Z);
+    m_bounds.MaxCorner.Z = (std::max)(a.Z, b.Z);
+
     m_heightField.spans = reinterpret_cast<rcSpan **>(rcAlloc(m_heightField.width*m_heightField.height * sizeof(rcSpan*), RC_ALLOC_PERM));
 
     for (auto i = 0; i < m_heightField.width*m_heightField.height; ++i)

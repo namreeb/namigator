@@ -72,6 +72,8 @@ void GameObjectBVHBuilder::Shutdown()
 
 void GameObjectBVHBuilder::WriteIndexFile() const
 {
+    std::lock_guard<std::mutex> guard(m_mutex);
+
     // sort the final results because why not?
     std::vector<std::pair<std::uint32_t, std::string>> serialized(m_serialized.begin(), m_serialized.end());
     std::sort(serialized.begin(), serialized.end());
@@ -167,7 +169,11 @@ void GameObjectBVHBuilder::Work()
 
                 // ignore doodads with no collideable geometry
                 if (doodad.Vertices.empty() || doodad.Indices.empty())
+                {
+                    std::lock_guard<std::mutex> guard(m_mutex);
+                    m_serialized[entry] = "";
                     continue;
+                }
 
                 utility::AABBTree doodadTree(doodad.Vertices, doodad.Indices);
 
@@ -180,7 +186,11 @@ void GameObjectBVHBuilder::Work()
 
                 // ignore wmos with no collision geometry.  this probably shouldn't ever really happen
                 if (wmo.Vertices.empty() || wmo.Indices.empty())
+                {
+                    std::lock_guard<std::mutex> guard(m_mutex);
+                    m_serialized[entry] = "";
                     continue;
+                }
 
                 utility::AABBTree wmoTree(wmo.Vertices, wmo.Indices);
 

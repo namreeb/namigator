@@ -349,7 +349,14 @@ void ChangeMap(const std::string &cn)
     GetMapName(cn, mapName);
 
     gMap = std::make_unique<parser::Map>(mapName);
-    gNavMesh = std::make_unique<pathfind::Map>(".\\Maps", mapName);
+    gNavMesh = std::make_unique<pathfind::Map>("./Maps", mapName);
+
+    // hard coded temporary obstacle (which exists in game) until the GUI can be updated
+    if (mapName == "StormwindJail")
+    {
+        const utility::Quaternion rotation { 0.f, 0.f, 0.945519f, 0.325567f };
+        gNavMesh->AddGameObject(0, 259, { 188.603f, 81.585f, -33.9396f }, rotation);
+    }
 
     // if the loaded map has no ADTs, but instead a global WMO, load it now, including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
@@ -480,13 +487,13 @@ void LoadADTFromGUI()
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow)
 {
-    if (!utility::Directory::Exists(".\\Data"))
+    if (!utility::Directory::Exists("./Data"))
     {
         MessageBox(NULL, L"Data folder does not exist", L"ERROR", 0);
         return EXIT_FAILURE;
     }
 
-    if (!utility::Directory::Exists(".\\Maps"))
+    if (!utility::Directory::Exists("./Maps"))
     {
         MessageBox(NULL, L"Maps folder does not exist", L"ERROR", 0);
         return EXIT_FAILURE;
@@ -494,7 +501,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     gHasStart = false;
 
-    parser::Parser::Initialize(".\\Data");
+    parser::Parser::Initialize("./Data");
 
     InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 

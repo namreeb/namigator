@@ -41,6 +41,9 @@ class AABBTree
         void Serialize(std::ostream& stream) const;
         bool Deserialize(std::istream& stream);
 
+        const std::vector<Vertex> &Vertices() const { return m_vertices; }
+        const std::vector<int> &Indices() const { return m_indices; }
+
     private:
         unsigned int PartitionMedian(Node& node, unsigned int* faces, unsigned int numFaces);
         unsigned int PartitionSurfaceArea(Node& node, unsigned int* faces, unsigned int numFaces);
@@ -59,6 +62,7 @@ class AABBTree
         unsigned int m_freeNode = 0;
 
         std::vector<Node> m_nodes;
+
         std::vector<Vertex> m_vertices;
         std::vector<int> m_indices;
 

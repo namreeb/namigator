@@ -60,7 +60,9 @@ class BinaryStream
         void Write(const void *data, size_t length);
         void Write(size_t position, const void *data, size_t length);
         void ReadBytes(void *dest, size_t length);
-        std::string ReadCString();
+
+        std::string ReadString();
+        std::string ReadString(size_t length);
 
         void Append(const BinaryStream &other);
 

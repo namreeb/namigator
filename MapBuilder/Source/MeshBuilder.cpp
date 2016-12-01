@@ -170,7 +170,6 @@ void SelectivelyEnforceWalkableClimb(rcCompactHeightfield &chf, int walkableClim
                     if (spanArea == AreaFlags::ADT && neighborSpanArea == AreaFlags::ADT)
                         continue;
 
-                    //std::cout << "Removing connection for span " << i << " dir " << dir << " to " << k << std::endl;
                     rcSetCon(span, dir, RC_NOT_CONNECTED);
                 }
             }
@@ -435,7 +434,7 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
+    utility::Directory::Create(m_outputPath + "/Nav/" + mapName);
 }
 
 MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
@@ -459,9 +458,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    utility::Directory::Create(m_outputPath + "\\Nav\\" + mapName);
+    utility::Directory::Create(m_outputPath + "/Nav/" + mapName);
 }
-
 
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)
 {
@@ -536,7 +534,7 @@ void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
     utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
 
     std::stringstream out;
-    out << m_outputPath << "\\BVH\\WMO_" << wmo->FileName << ".bvh";
+    out << m_outputPath << "/BVH/WMO_" << wmo->FileName << ".bvh";
 
     std::ofstream o(out.str(), std::ofstream::binary|std::ofstream::trunc);
     aabbTree.Serialize(o);
@@ -573,7 +571,7 @@ void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
     utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
 
     std::stringstream dout;
-    dout << m_outputPath << "\\BVH\\Doodad_" << doodad->FileName << ".bvh";
+    dout << m_outputPath << "/BVH/Doodad_" << doodad->FileName << ".bvh";
     std::ofstream doodadOut(dout.str(), std::ofstream::binary|std::ofstream::trunc);
     doodadTree.Serialize(doodadOut);
 
@@ -603,6 +601,10 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     config.bmax[1] = wmoInstance->Bounds.MaxCorner.Z;
     config.bmax[2] = config.bmin[2] + MeshSettings::TileSize;
 
+    // bounding box of tile in wow coordinates for culling wmos and doodads
+    const utility::BoundingBox tileBounds({ config.bmax[2], config.bmax[0], config.bmin[1] }, { config.bmin[2], config.bmin[0], config.bmax[1] });
+
+    // erode mesh tile boundaries to force recast to examine obstacles on or near the tile boundary
     config.bmin[0] -= config.borderSize * config.cs;
     config.bmin[2] -= config.borderSize * config.cs;
     config.bmax[0] += config.borderSize * config.cs;
@@ -661,7 +663,7 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     if (++m_completedTiles == m_totalTiles)
     {
         std::stringstream str;
-        str << m_outputPath << "\\Nav\\" << m_map->Name << "\\Map.nav";
+        str << m_outputPath << "/Nav/" << m_map->Name << "/Map.nav";
 
         m_globalWMO->Serialize(str.str());
 
@@ -675,7 +677,7 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     return true;
 }
 
-bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
+bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 {
     float minZ = (std::numeric_limits<float>::max)(), maxZ = std::numeric_limits<float>::lowest();
 
@@ -715,6 +717,10 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
     config.bmax[1] = maxZ;
     config.bmax[2] = (tileY + 1) * MeshSettings::TileSize - 32.f * MeshSettings::AdtSize;
 
+    // bounding box of tile in wow coordinates for culling wmos and doodads
+    const utility::BoundingBox tileBounds({ config.bmax[2], config.bmax[0], config.bmin[1] }, { config.bmin[2], config.bmin[0], config.bmax[1] });
+
+    // erode mesh tile boundaries to force recast to examine obstacles on or near the tile boundary
     config.bmin[0] -= config.borderSize * config.cs;
     config.bmin[2] -= config.borderSize * config.cs;
     config.bmax[0] += config.borderSize * config.cs;
@@ -759,6 +765,10 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
 
             assert(!!wmoInstance);
 
+            // FIXME: it is possible that the added geometry of the doodads will expand the bounding box of this wmo, thereby placing it on this tile
+            if (!tileBounds.intersect2d(wmoInstance->Bounds))
+                continue;
+
             std::vector<utility::Vertex> vertices;
             std::vector<int> indices;
 
@@ -786,6 +796,9 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
             auto const doodadInstance = m_map->GetDoodadInstance(doodadId);
 
             assert(!!doodadInstance);
+
+            if (!tileBounds.intersect2d(doodadInstance->Bounds))
+                continue;
 
             std::vector<utility::Vertex> vertices;
             std::vector<int> indices;
@@ -862,7 +875,7 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
         if (adt->IsComplete())
         {
             std::stringstream str;
-            str << m_outputPath << "\\Nav\\" << m_map->Name << "\\" << std::setw(2) << std::setfill('0')
+            str << m_outputPath << "/Nav/" << m_map->Name << "/" << std::setw(2) << std::setfill('0')
                 << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
 
             adt->Serialize(str.str());
@@ -887,7 +900,7 @@ bool MeshBuilder::BuildAndSerializeADTTile(int tileX, int tileY)
 void MeshBuilder::SaveMap() const
 {
     std::stringstream filename;
-    filename << m_outputPath << "\\" << m_map->Name << ".map";
+    filename << m_outputPath << "/" << m_map->Name << ".map";
 
     std::ofstream out(filename.str(), std::ofstream::binary|std::ofstream::trunc);
 

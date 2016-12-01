@@ -13,19 +13,14 @@ namespace parser
 {
 namespace
 {
-    void UpdateBounds(utility::BoundingBox &bounds, const utility::Vertex &vertex, std::set<AdtChunkLocation> &adtChunks)
-    {
-        bounds.MinCorner.X = std::min(bounds.MinCorner.X, vertex.X);
-        bounds.MaxCorner.X = std::max(bounds.MaxCorner.X, vertex.X);
-        bounds.MinCorner.Y = std::min(bounds.MinCorner.Y, vertex.Y);
-        bounds.MaxCorner.Y = std::max(bounds.MaxCorner.Y, vertex.Y);
-        bounds.MinCorner.Z = std::min(bounds.MinCorner.Z, vertex.Z);
-        bounds.MaxCorner.Z = std::max(bounds.MaxCorner.Z, vertex.Z);
+void UpdateBounds(utility::BoundingBox &bounds, const utility::Vertex &vertex, std::set<AdtChunkLocation> &adtChunks)
+{
+    bounds.update(vertex);
 
-        int adtX, adtY, chunkX, chunkY;
-        utility::Convert::WorldToAdt(vertex, adtX, adtY, chunkX, chunkY);
-        adtChunks.insert({ static_cast<std::uint8_t>(adtX), static_cast<std::uint8_t>(adtY), static_cast<std::uint8_t>(chunkX), static_cast<std::uint8_t>(chunkY) });
-    }
+    int adtX, adtY, chunkX, chunkY;
+    utility::Convert::WorldToAdt(vertex, adtX, adtY, chunkX, chunkY);
+    adtChunks.insert({ static_cast<std::uint8_t>(adtX), static_cast<std::uint8_t>(adtY), static_cast<std::uint8_t>(chunkX), static_cast<std::uint8_t>(chunkY) });
+}
 }
 
 DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Matrix &transformMatrix) : TransformMatrix(transformMatrix), Model(doodad)

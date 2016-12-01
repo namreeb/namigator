@@ -3,7 +3,7 @@
 #include "Wmo/WmoDoodadPlacement.hpp"
 #include "Wmo/Root File/WmoRootChunk.hpp"
 
-#include "utility/Include/LinearAlgebra.hpp"
+#include "utility/Include/BinaryStream.hpp"
 
 #include <vector>
 

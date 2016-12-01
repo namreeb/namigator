@@ -19,12 +19,12 @@ MODN::MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream
         while ((nextByte = reader->Read<unsigned char>()) == 0)
             ++currOffset;
 
-        std::string currFileName = reader->ReadCString();
+        std::string currFileName = reader->ReadString();
         currFileName.insert(0, 1, nextByte);
 
         Names[currOffset] = currFileName;
 
-        currOffset += (unsigned int)currFileName.length() + 1;
+        currOffset += currFileName.length() + 1;
     }
 }
 }

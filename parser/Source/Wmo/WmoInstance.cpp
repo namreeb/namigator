@@ -102,7 +102,7 @@ void WmoInstance::BuildDoodadTriangles(std::vector<utility::Vertex> &vertices, s
     {
         size_t vertexCount = 0, indexCount = 0;
 
-        // first, count how many vertiecs we will have.  this lets us do just one allocation.
+        // first, count how many vertices we will have.  this lets us do just one allocation.
         for (auto const &doodad : doodadSet)
         {
             vertexCount += doodad->Parent->Vertices.size();

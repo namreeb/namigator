@@ -3,6 +3,7 @@
 
 #include "RecastDetourBuild/Include/Common.hpp"
 #include "utility/Include/MathHelper.hpp"
+#include "utility/Include/BinaryStream.hpp"
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/Ray.hpp"
 
@@ -20,6 +21,7 @@
 #include <limits>
 #include <algorithm>
 #include <unordered_set>
+#include <boost/filesystem.hpp>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -50,7 +52,7 @@ struct NavFileHeader
     std::uint32_t y;
     std::uint32_t tileCount;
 
-    void Verify(bool wmo) const
+    void Verify(bool globalWmo) const
     {
         if (sig != MeshSettings::FileSignature)
             THROW("Incorrect file signature");
@@ -58,7 +60,7 @@ struct NavFileHeader
         if (ver != MeshSettings::FileVersion)
             THROW("Incorrect file version");
 
-        if (wmo)
+        if (globalWmo)
         {
             if (kind != MeshSettings::FileWMO)
                 THROW("Not WMO nav file");
@@ -67,7 +69,7 @@ struct NavFileHeader
                 THROW("Not WMO tile coordinates");
         }
         
-        if (!wmo && kind != MeshSettings::FileADT)
+        if (!globalWmo && kind != MeshSettings::FileADT)
             THROW("Not ADT nav file");
     }
 };
@@ -79,7 +81,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 {
     std::stringstream continentFile;
 
-    continentFile << dataPath << "\\" << mapName << ".map";
+    continentFile << dataPath << "/" << mapName << ".map";
 
     std::ifstream in(continentFile.str(), std::ifstream::binary);
 	if (!in)
@@ -127,9 +129,9 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
                 ins.m_transformMatrix = utility::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = wmo.m_bounds;
-                ins.m_fileName = wmo.m_fileName;
+                ins.m_modelFilename = wmo.m_fileName;
 
-                m_wmoInstances.insert({ static_cast<unsigned int>(wmo.m_id), ins });
+                m_staticWmos.insert({ static_cast<unsigned int>(wmo.m_id), ins });
             }
         }
 
@@ -148,9 +150,9 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
                 ins.m_transformMatrix = utility::Matrix::CreateFromArray(doodad.m_transformMatrix, sizeof(doodad.m_transformMatrix) / sizeof(doodad.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = doodad.m_bounds;
-                ins.m_fileName = doodad.m_fileName;
+                ins.m_modelFilename = doodad.m_fileName;
 
-                m_doodadInstances.insert({ static_cast<unsigned int>(doodad.m_id), ins });
+                m_staticDoodads.insert({ static_cast<unsigned int>(doodad.m_id), ins });
             }
         }
     }
@@ -165,10 +167,11 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         ins.m_transformMatrix = utility::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
         ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
         ins.m_bounds = globalWmo.m_bounds;
-        ins.m_fileName = globalWmo.m_fileName;
 
-        m_wmoInstances.insert({ GlobalWmoId, ins });
-        m_globalWmo = LoadWmoModel(GlobalWmoId);
+        auto model = EnsureWmoModelLoaded(globalWmo.m_fileName);
+        ins.m_model = model;
+
+        m_staticWmos.insert({ GlobalWmoId, ins });
 
         dtNavMeshParams params;
 
@@ -187,7 +190,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         assert(result == DT_SUCCESS);
         
         std::stringstream str;
-        str << m_dataPath << "\\Nav\\" << m_mapName << "\\Map.nav";
+        str << m_dataPath << "/Nav/" << m_mapName << "/Map.nav";
         std::ifstream navFile(str.str(), std::ifstream::binary);
         utility::BinaryStream navIn(navFile);
         navFile.close();
@@ -199,7 +202,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
             NavFileHeader header;
             navIn >> header;
 
-            header.Verify(!!m_globalWmo);
+            header.Verify(true);
 
             if (header.x != MeshSettings::WMOcoordinate || header.y != MeshSettings::WMOcoordinate)
                 THROW("Incorrect WMO coordinates");
@@ -207,7 +210,12 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
             for (auto i = 0u; i < header.tileCount; ++i)
             {
                 auto tile = std::make_unique<Tile>(this, navIn);
-                m_tiles[{tile->X(), tile->Y()}] = std::move(tile);
+
+                // for a global wmo, all tiles are guarunteed to contain the model
+                tile->m_staticWmos.push_back(GlobalWmoId);
+                tile->m_staticWmoModels.push_back(model);
+
+                m_tiles[{tile->m_x, tile->m_y}] = std::move(tile);
             }
         }
         catch (std::domain_error const &e)
@@ -220,125 +228,146 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 
     if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
         THROW("dtNavMeshQuery::init failed");
+
+    std::ifstream tempObstaclesIndex(m_dataPath + "/BVH/bvh.idx", std::ifstream::binary);
+    if (tempObstaclesIndex.fail())
+        THROW("Failed to open temporary obstacles index");
+
+    utility::BinaryStream index(tempObstaclesIndex);
+    tempObstaclesIndex.close();
+
+    std::uint32_t size;
+    index >> size;
+
+    for (auto i = 0u; i < size; ++i)
+    {
+        std::uint32_t entry, length;
+        index >> entry >> length;
+        
+        m_temporaryObstaclePaths[entry] = index.ReadString(length);
+    }
 }
 
-std::shared_ptr<WmoModel> Map::LoadWmoModel(unsigned int id)
+std::shared_ptr<WmoModel> Map::LoadModelForWmoInstance(unsigned int instanceId)
 {
-    auto const instance = m_wmoInstances.find(id);
+    auto const instance = m_staticWmos.find(instanceId);
 
     // ensure it exists.  this should never fail
-    if (instance == m_wmoInstances.end())
+    if (instance == m_staticWmos.end())
         THROW("Unknown WMO instance requested");
 
-    auto model = m_loadedWmoModels[instance->second.m_fileName].lock();
+    // if the model is loaded, return it
+    if (!instance->second.m_model.expired())
+        return instance->second.m_model.lock();
 
-    // if the model is not already loaded, load it
-    if (!model)
-    {
-        std::stringstream file;
-        file << m_dataPath << "\\BVH\\WMO_" << instance->second.m_fileName << ".bvh";
+    auto model = EnsureWmoModelLoaded(instance->second.m_modelFilename);
 
-        std::ifstream in(file.str(), std::ifstream::binary);
-
-        if (in.fail())
-            THROW("Could not open WMO BVH file").ErrorCode();
-
-        model = std::make_shared<WmoModel>();
-
-        if (!model->m_aabbTree.Deserialize(in))
-            THROW("Could not deserialize WMO").ErrorCode();
-
-        std::uint32_t doodadSetCount;
-        in.read(reinterpret_cast<char *>(&doodadSetCount), sizeof(doodadSetCount));
-
-        model->m_doodadSets.resize(static_cast<size_t>(doodadSetCount));
-        model->m_loadedDoodadSets.resize(static_cast<size_t>(doodadSetCount));
-
-        for (std::uint32_t set = 0; set < doodadSetCount; ++set)
-        {
-            std::uint32_t doodadSetSize;
-            in.read(reinterpret_cast<char *>(&doodadSetSize), sizeof(doodadSetSize));
-
-            model->m_doodadSets[set].resize(doodadSetSize);
-
-            for (std::uint32_t doodad = 0; doodad < doodadSetSize; ++doodad)
-            {
-                float transformMatrix[16];
-                in.read(reinterpret_cast<char *>(transformMatrix), sizeof(transformMatrix));
-
-                model->m_doodadSets[set][doodad].m_transformMatrix = utility::Matrix::CreateFromArray(transformMatrix, sizeof(transformMatrix) / sizeof(transformMatrix[0]));
-
-                in >> model->m_doodadSets[set][doodad].m_bounds;
-
-                char fileName[64];
-                in.read(fileName, sizeof(fileName));
-                model->m_doodadSets[set][doodad].m_fileName = fileName;
-            }
-        }
-
-        m_loadedWmoModels[instance->second.m_fileName] = model;
-    }
-
-    auto const doodadSet = instance->second.m_doodadSet;
-
-    // by now, we know that the model is loaded.  ensure that the doodad set for this instance is also loaded
-    for (auto const &doodad : model->m_doodadSets[doodadSet])
-    {
-        auto doodadModel = LoadDoodadModel(doodad.m_fileName);
-
-        model->m_loadedDoodadSets[doodadSet].push_back(doodadModel);
-    }
+    instance->second.m_model = model;
 
     return model;
 }
 
-// lookup already loaded information about this doodad instance, and ensure that the AABB tree for the model is loaded
-std::shared_ptr<DoodadModel> Map::LoadDoodadModel(unsigned int id)
+std::shared_ptr<DoodadModel> Map::LoadModelForDoodadInstance(unsigned int instanceId)
 {
-    auto const instance = m_doodadInstances.find(id);
+    auto const instance = m_staticDoodads.find(instanceId);
 
     // ensure it exists.  this should never fail
-    if (instance == m_doodadInstances.end())
+    if (instance == m_staticDoodads.end())
         THROW("Unknown doodad instance requested");
 
-    return LoadDoodadModel(instance->second.m_fileName);
-}
+    // if the model is loaded, return it
+    if (!instance->second.m_model.expired())
+        return instance->second.m_model.lock();
 
-std::shared_ptr<DoodadModel> Map::LoadDoodadModel(const std::string &fileName)
-{
-    auto model = m_loadedDoodadModels[fileName].lock();
+    auto model = EnsureDoodadModelLoaded(instance->second.m_modelFilename);
 
-    if (!model)
-    {
-        std::stringstream file;
-        file << m_dataPath << "\\BVH\\Doodad_" << fileName << ".bvh";
-
-        std::ifstream in(file.str(), std::ifstream::binary);
-
-        if (in.fail())
-            return nullptr;
-
-        model = std::make_shared<DoodadModel>();
-
-        if (!model->m_aabbTree.Deserialize(in))
-            THROW("Could not deserialize doodad").ErrorCode();
-
-        m_loadedDoodadModels[fileName] = model;
-    }
+    instance->second.m_model = model;
 
     return model;
 }
 
-void Map::LoadAllTiles()
+std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& filename)
 {
-    if (m_globalWmo)
+    // if this model is currently loaded, return it
     {
-        
+        auto const i = m_loadedDoodadModels.find(filename);
+        if (i != m_loadedDoodadModels.end() && !i->second.expired())
+            return i->second.lock();
     }
-    else
-        for (auto y = 0; y < MeshSettings::Adts; ++y)
-            for (auto x = 0; x < MeshSettings::Adts; ++x)
-                LoadADT(x, y);
+
+    // else, load it
+
+    std::ifstream in(m_dataPath + "/BVH/Doodad_" + filename + ".bvh", std::ifstream::binary);
+
+    if (in.fail())
+        THROW("Failed to doodad BVH file: " + filename).ErrorCode();
+
+    auto model = std::make_shared<pathfind::DoodadModel>();
+
+    if (!model->m_aabbTree.Deserialize(in))
+        THROW("Could not deserialize doodad").ErrorCode();
+
+    m_loadedDoodadModels[filename] = model;
+    return std::move(model);
+}
+
+std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename)
+{
+    // if this model is currently loaded, return it
+    {
+        auto const i = m_loadedWmoModels.find(filename);
+        if (i != m_loadedWmoModels.end() && !i->second.expired())
+            return i->second.lock();
+    }
+
+    // else, load it
+
+    std::ifstream in(m_dataPath + "/BVH/WMO_" + filename + ".bvh", std::ifstream::binary);
+
+    if (in.fail())
+        THROW("Could not open WMO BVH file " + filename).ErrorCode();
+
+    auto model = std::make_shared<pathfind::WmoModel>();
+
+    if (!model->m_aabbTree.Deserialize(in))
+        THROW("Could not deserialize WMO").ErrorCode();
+
+    std::uint32_t doodadSetCount;
+    in.read(reinterpret_cast<char *>(&doodadSetCount), sizeof(doodadSetCount));
+
+    model->m_doodadSets.resize(doodadSetCount);
+    model->m_loadedDoodadSets.resize(doodadSetCount);
+
+    for (std::uint32_t set = 0; set < doodadSetCount; ++set)
+    {
+        std::uint32_t doodadSetSize;
+        in.read(reinterpret_cast<char *>(&doodadSetSize), sizeof(doodadSetSize));
+
+        model->m_doodadSets[set].resize(doodadSetSize);
+
+        for (std::uint32_t doodad = 0; doodad < doodadSetSize; ++doodad)
+        {
+            float transformMatrix[16];
+            in.read(reinterpret_cast<char *>(transformMatrix), sizeof(transformMatrix));
+
+            model->m_doodadSets[set][doodad].m_transformMatrix = utility::Matrix::CreateFromArray(transformMatrix, sizeof(transformMatrix) / sizeof(transformMatrix[0]));
+
+            in >> model->m_doodadSets[set][doodad].m_bounds;
+
+            char doodadFileName[64];
+            in.read(doodadFileName, sizeof(doodadFileName));
+
+            auto doodadModel = EnsureDoodadModelLoaded(doodadFileName);
+
+            // loaded doodads serve as reference counters for automatic unload
+            model->m_loadedDoodadSets[set].push_back(doodadModel);
+            model->m_doodadSets[set][doodad].m_model = m_loadedDoodadModels[doodadFileName] = doodadModel;
+        }
+    }
+
+    m_loadedWmoModels[filename] = model;
+
+    return std::move(model);
 }
 
 bool Map::LoadADT(int x, int y)
@@ -350,7 +379,7 @@ bool Map::LoadADT(int x, int y)
                 return true;
 
     std::stringstream str;
-    str << m_dataPath << "\\Nav\\" << m_mapName << "\\"
+    str << m_dataPath << "/Nav/" << m_mapName << "/"
         << std::setfill('0') << std::setw(2) << x << "_"
         << std::setfill('0') << std::setw(2) << y << ".nav";
 
@@ -363,7 +392,7 @@ bool Map::LoadADT(int x, int y)
         NavFileHeader header;
         stream >> header;
 
-        header.Verify(!!m_globalWmo);
+        header.Verify(false);
 
         if (header.x != static_cast<std::uint32_t>(x) || header.y != static_cast<std::uint32_t>(y))
             THROW("Incorrect ADT coordinates");
@@ -371,7 +400,7 @@ bool Map::LoadADT(int x, int y)
         for (auto i = 0u; i < header.tileCount; ++i)
         {
             auto tile = std::make_unique<Tile>(this, stream);
-            m_tiles[{tile->X(), tile->Y()}] = std::move(tile);
+            m_tiles[{tile->m_x, tile->m_y}] = std::move(tile);
         }
     }
     catch (std::domain_error const&)
@@ -392,11 +421,6 @@ void Map::UnloadADT(int x, int y)
             if (i != m_tiles.end())
                 m_tiles.erase(i);
         }
-}
-
-void Map::AddObject(unsigned int/* id*/, const utility::Vertex &/*position*/)
-{
-    
 }
 
 bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
@@ -474,120 +498,111 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
 
 bool Map::RayCast(utility::Ray &ray) const
 {
-    int x1, x2, y1, y2;
-
     auto const start = ray.GetStartPoint();
     auto const end = ray.GetEndPoint();
 
-    if (m_globalWmo)
+    auto hit = false;
+
+    // save ids to prevent repeated checks on the same objects
+    std::unordered_set<std::uint32_t> staticWmos, staticDoodads;
+    std::unordered_set<std::uint64_t> temporaryWmos, temporaryDoodads;
+
+    // for each tile...
+    for (auto const &tile : m_tiles)
     {
-        auto const &wmoInstance = m_wmoInstances.at(GlobalWmoId);
+        // if the tile itself does not intersect our ray, do nothing
+        if (!ray.IntersectBoundingBox(tile.second->m_bounds))
+            continue;
 
-        if (!ray.IntersectBoundingBox(wmoInstance.m_bounds))
-            return false;
-
-        utility::Ray rayInverse(utility::Vertex::Transform(start, wmoInstance.m_inverseTransformMatrix),
-                                utility::Vertex::Transform(end,   wmoInstance.m_inverseTransformMatrix));
-
-        bool hit = false;
-
-        // does it intersect the global WMO itself?
-        if (m_globalWmo->m_aabbTree.IntersectRay(rayInverse))
+        // measure intersection for all static wmos on the tile
+        for (auto const &id : tile.second->m_staticWmos)
         {
-            hit = true;
-            ray.SetHitPoint(rayInverse.GetDistance());
-        }
+            // skip static wmos we have already seen (possibly from a previous tile)
+            if (staticWmos.find(id) != staticWmos.end())
+                continue;
 
-        // also check the doodads spawned by this WMO
-        for (auto const &doodad : m_globalWmo->m_loadedDoodadSets[wmoInstance.m_doodadSet])
-            if (doodad->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+            // record this static wmo as having been tested
+            staticWmos.insert(id);
+
+            auto const &instance = m_staticWmos.at(id);
+
+            utility::Ray rayInverse(utility::Vertex::Transform(start, instance.m_inverseTransformMatrix),
+                                    utility::Vertex::Transform(end,   instance.m_inverseTransformMatrix));
+
+            // if this is a closer hit, update the original ray's distance
+            if (instance.m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
             {
                 hit = true;
                 ray.SetHitPoint(rayInverse.GetDistance());
             }
+        }
 
-        return hit;
-    }
-
-    utility::Convert::WorldToAdt(start, x1, y1);
-    utility::Convert::WorldToAdt(end, x2, y2);
-
-    const int xStart = (std::min)(x1, x2);
-    const int xStop  = (std::max)(x1, x2);
-    const int yStart = (std::min)(y1, y2);
-    const int yStop  = (std::max)(y1, y2);
-
-    std::unordered_set<unsigned int> testedDoodads;
-    std::unordered_set<unsigned int> testedWmos;
-
-    // for all tiles involved
-    for (int y = yStart; y <= yStop; ++y)
-        for (int x = xStart; x <= xStop; ++x)
+        // measure intersection for all static doodads on this tile
+        for (auto const &id : tile.second->m_staticDoodads)
         {
-            auto const itr = m_tiles.find({ x, y });
-            if (itr == m_tiles.end())
+            // skip static doodads we have already seen (possibly from a previous tile)
+            if (staticDoodads.find(id) != staticDoodads.end())
                 continue;
 
-            auto const tile = (*itr).second.get();
+            // record this static doodad as having been tested
+            staticDoodads.insert(id);
 
-            // check doodads for this tile
-            for (auto const doodad : tile->m_doodads)
+            auto const &instance = m_staticDoodads.at(id);
+
+            utility::Ray rayInverse(utility::Vertex::Transform(start, instance.m_inverseTransformMatrix),
+                                    utility::Vertex::Transform(end,   instance.m_inverseTransformMatrix));
+
+            // if this is a closer hit, update the original ray's distance
+            if (instance.m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
             {
-                // if we've already tested it, skip it
-                if (testedDoodads.find(doodad) != testedDoodads.end())
-                    continue;
-
-                testedDoodads.insert(doodad);
-
-                auto const &doodadInstance = m_doodadInstances.at(doodad);
-
-                // skip collision check if the ray doesnt intersect this model's bounding box
-                if (!ray.IntersectBoundingBox(doodadInstance.m_bounds))
-                    continue;
-
-                auto const model = m_loadedDoodadModels.at(doodadInstance.m_fileName).lock();
-
-                utility::Ray rayInverse(utility::Vertex::Transform(start, doodadInstance.m_inverseTransformMatrix),
-                                        utility::Vertex::Transform(end,   doodadInstance.m_inverseTransformMatrix));
-
-                // if there is a hit and it is closer than any previous hits, save it
-                if (model->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
-                    ray.SetHitPoint(rayInverse.GetDistance());
-            }
-
-            // check WMOs for this tile
-            for (auto const wmo : tile->m_wmos)
-            {
-                // if we've already tested it, skip it
-                if (testedWmos.find(wmo) != testedWmos.end())
-                    continue;
-
-                testedWmos.insert(wmo);
-
-                auto const &wmoInstance = m_wmoInstances.at(wmo);
-
-                // skip collision check if the ray doesnt intersectthis model's bounding box
-                if (!ray.IntersectBoundingBox(wmoInstance.m_bounds))
-                    continue;
-
-                auto const model = m_loadedWmoModels.at(wmoInstance.m_fileName).lock();
-
-                utility::Ray rayInverse(utility::Vertex::Transform(start, wmoInstance.m_inverseTransformMatrix),
-                                        utility::Vertex::Transform(end,   wmoInstance.m_inverseTransformMatrix));
-
-                // first, check against the WMO itself
-
-                // if there is a hit and it is closer than any previous hits, save it
-                if (model->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
-                    ray.SetHitPoint(rayInverse.GetDistance());
-
-                // second, check against the doodads from this WMO instance
-                for (auto const &doodad : model->m_loadedDoodadSets[wmoInstance.m_doodadSet])
-                    if (doodad->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
-                        ray.SetHitPoint(rayInverse.GetDistance());
+                hit = true;
+                ray.SetHitPoint(rayInverse.GetDistance());
             }
         }
 
-    return true;
+        // measure intersection for all temporary wmos on this tile
+        for (auto const &wmo : tile.second->m_temporaryWmos)
+        {
+            // skip static wmos we have already seen (possibly from a previous tile)
+            if (temporaryWmos.find(wmo.first) != temporaryWmos.end())
+                continue;
+
+            // record this temporary wmo as having been tested
+            temporaryWmos.insert(wmo.first);
+
+            utility::Ray rayInverse(utility::Vertex::Transform(start, wmo.second->m_inverseTransformMatrix),
+                                    utility::Vertex::Transform(end,   wmo.second->m_inverseTransformMatrix));
+
+            // if this is a closer hit, update the original ray's distance
+            if (wmo.second->m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+            {
+                hit = true;
+                ray.SetHitPoint(rayInverse.GetDistance());
+            }
+        }
+
+        // measure intersection for all temporary doodads on this tile
+        for (auto const &doodad : tile.second->m_temporaryDoodads)
+        {
+            // skip static wmos we have already seen (possibly from a previous tile)
+            if (temporaryDoodads.find(doodad.first) != temporaryDoodads.end())
+                continue;
+
+            // record this temporary wmo as having been tested
+            temporaryDoodads.insert(doodad.first);
+
+            utility::Ray rayInverse(utility::Vertex::Transform(start, doodad.second->m_inverseTransformMatrix),
+                                    utility::Vertex::Transform(end, doodad.second->m_inverseTransformMatrix));
+
+            // if this is a closer hit, update the original ray's distance
+            if (doodad.second->m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+            {
+                hit = true;
+                ray.SetHitPoint(rayInverse.GetDistance());
+            }
+        }
+    }
+
+    return hit;
 }
 }

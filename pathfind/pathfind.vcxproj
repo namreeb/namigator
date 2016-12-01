@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Map.cpp" />
+    <ClCompile Include="Source\TemporaryObstacle.cpp" />
     <ClCompile Include="Source\Tile.cpp" />
   </ItemGroup>
   <ItemGroup>

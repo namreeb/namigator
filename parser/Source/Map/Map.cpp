@@ -22,7 +22,7 @@
 
 namespace parser
 {
-Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
+Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name)
 {
     auto const file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
@@ -65,7 +65,7 @@ Map::Map(const std::string &name) : Name(name), m_globalWmo(nullptr)
         THROW("MWMO not found");
     reader->rpos(mwmoLocation + 8);
 
-    auto const wmoName = reader->ReadCString();
+    auto const wmoName = reader->ReadString();
 
     size_t modfLocation;
     if (!reader->GetChunkLocation("MODF", modfLocation))
