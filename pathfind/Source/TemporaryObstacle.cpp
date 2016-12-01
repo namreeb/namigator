@@ -356,8 +356,9 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
 
     InitializeRecastConfig(config);
 
-    auto const buildResult = RebuildMeshTile(ctx, config, m_x, m_y, m_heightField, m_tileData);
-
+    // build the mesh into a secondary buffer, rather than overwriting the previous tile, so that we can delay the old tile's removal
+    std::vector<std::uint8_t> newTileData;
+    auto const buildResult = RebuildMeshTile(ctx, config, m_x, m_y, m_heightField, newTileData);
     assert(buildResult);
 
     if (m_ref)
@@ -365,6 +366,8 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
         auto const removeResult = m_map->m_navMesh.removeTile(m_ref, nullptr, nullptr);
         assert(removeResult == DT_SUCCESS);
     }
+
+    m_tileData = std::move(newTileData);
 
     auto const insertResult = m_map->m_navMesh.addTile(&m_tileData[0], static_cast<int>(m_tileData.size()), 0, m_ref, &m_ref);
 
