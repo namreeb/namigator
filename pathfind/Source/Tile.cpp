@@ -118,5 +118,7 @@ Tile::~Tile()
 
     for (auto i = 0; i < m_heightField.width*m_heightField.height; ++i)
         rcFree(m_heightField.spans[i]);
+
+    rcFree(m_heightField.spans);
 }
 }
