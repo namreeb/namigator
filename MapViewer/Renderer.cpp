@@ -30,6 +30,7 @@ const float Renderer::BackgroundColor[4]    = { 0.f, 0.2f, 0.4f, 1.f };
 const float Renderer::SphereColor[4]        = { 1.f, 0.5f, 0.25f, 0.75f };
 const float Renderer::LineColor[4]          = { 0.5f, 0.25f, 0.0f, 1.f };
 const float Renderer::ArrowColor[4]         = { 0.5f, 0.25f, 0.0f, 1.f };
+const float Renderer::GameObjectColor[4]    = { 0.8f, 0.5f, 0.1f, 1.f };
 
 Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true), m_wireframeEnabled(false)
 {
@@ -210,6 +211,11 @@ void Renderer::ClearSprites()
     m_buffers[ArrowGeometry].clear();
 }
 
+void Renderer::ClearGameObjects()
+{
+    m_buffers[GameObjectGeometry].clear();
+}
+
 void Renderer::AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, std::uint32_t areaId)
 {
     static const float colorsByAreaId[][4] = {
@@ -332,6 +338,11 @@ void Renderer::AddPath(const std::vector<utility::Vertex> &path)
         if (!!i)
             AddArrows(path[i - 1], path[i], 10.f);
     }
+}
+
+void Renderer::AddGameObject(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices)
+{
+    InsertBuffer(m_buffers[GameObjectGeometry], GameObjectColor, vertices, indices);
 }
 
 bool Renderer::HasWmo(unsigned int id) const
@@ -511,6 +522,7 @@ void Renderer::Render()
 
     // draw doodads
     if (m_renderDoodad)
+    {
         for (size_t i = 0; i < m_buffers[DoodadGeometry].size(); ++i)
         {
             ID3D11Buffer *const pBuffer[] = { m_buffers[DoodadGeometry][i].VertexBufferGpu };
@@ -520,6 +532,16 @@ void Renderer::Render()
 
             m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[DoodadGeometry][i].IndexBufferCpu.size()), 0, 0);
         }
+        for (size_t i = 0; i < m_buffers[GameObjectGeometry].size(); ++i)
+        {
+            ID3D11Buffer *const pBuffer[] = { m_buffers[GameObjectGeometry][i].VertexBufferGpu };
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
+            m_deviceContext->IASetIndexBuffer(m_buffers[GameObjectGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[GameObjectGeometry][i].IndexBufferCpu.size()), 0, 0);
+        }
+    }
 
     if (m_renderLiquid || m_renderMesh || m_renderPathfind)
     {

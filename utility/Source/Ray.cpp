@@ -30,7 +30,7 @@ bool Ray::IntersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3&
     Vector3 p = Vector3::CrossProduct(rayDir, v2);
     float det = Vector3::DotProduct(v1, p);
 
-    if (fabsf(det) < 1e-5) {
+    if (det < 1e-5) {
         return false;
     }
 

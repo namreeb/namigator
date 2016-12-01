@@ -29,7 +29,7 @@
 #define START_HEIGHT        800
 
 #define CONTROL_WIDTH       355
-#define CONTROL_HEIGHT      280
+#define CONTROL_HEIGHT      360
 
 #define CAMERA_STEP         2.f
 
@@ -42,6 +42,41 @@ std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<CommonControl> gControls;
 std::unique_ptr<parser::Map> gMap;
 std::unique_ptr<pathfind::Map> gNavMesh;
+
+struct MouseDoodad
+{
+    std::shared_ptr<pathfind::Model> Model;
+
+    unsigned int DisplayId = 0;
+
+    utility::Vector3 Position;
+    utility::Quaternion Rotation;
+    float Scale = 1.0f;
+
+    utility::Matrix Transform;
+};
+
+std::unique_ptr<MouseDoodad> gMouseDoodad;
+
+void UpdateMouseDoodadTransform()
+{
+    gMouseDoodad->Transform = utility::Matrix::CreateFromQuaternion(gMouseDoodad->Rotation)
+        * utility::Matrix::CreateScalingMatrix(gMouseDoodad->Scale)
+        * utility::Matrix::CreateTranslationMatrix(gMouseDoodad->Position);
+}
+
+void MoveMouseDoodad(utility::Vertex const& position)
+{
+    gMouseDoodad->Position = position;
+    UpdateMouseDoodadTransform();
+
+    auto vertices = gMouseDoodad->Model->m_aabbTree.Vertices();
+    for (auto& vertex : vertices)
+        vertex = utility::Vertex::Transform(vertex, gMouseDoodad->Transform);
+
+    gRenderer->ClearGameObjects();
+    gRenderer->AddGameObject(vertices, gMouseDoodad->Model->m_aabbTree.Indices());
+}
 
 int gMovingUp = 0;
 int gMovingVertical = 0;
@@ -165,6 +200,14 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             }
             else
             {
+                if (!!gMouseDoodad)
+                {
+                    gNavMesh->AddGameObject(0, gMouseDoodad->DisplayId, gMouseDoodad->Position, gMouseDoodad->Rotation);
+                    gMouseDoodad.reset();
+
+                    return TRUE;
+                }
+
                 if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::NavMeshGeometryFlag, hit, param))
                 {
                     gRenderer->ClearSprites();
@@ -225,6 +268,17 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
                 return TRUE;
             }
+            else if (!!gMouseDoodad)
+            {
+                std::uint32_t param = 0;
+                utility::Vertex hit;
+
+                if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::CollidableGeometryFlag, hit, param))
+                {
+                    MoveMouseDoodad(hit);
+                    return TRUE;
+                }
+            }
 
             break;
         }
@@ -262,6 +316,8 @@ enum Controls : int
     RenderWMO,
     RenderDoodad,
     RenderMesh,
+    SpawnDoodadEdit,
+    SpawnDoodadButton,
 };
 
 void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow)
@@ -351,12 +407,12 @@ void ChangeMap(const std::string &cn)
     gMap = std::make_unique<parser::Map>(mapName);
     gNavMesh = std::make_unique<pathfind::Map>("./Maps", mapName);
 
-    // hard coded temporary obstacle (which exists in game) until the GUI can be updated
-    if (mapName == "StormwindJail")
-    {
-        const utility::Quaternion rotation { 0.f, 0.f, 0.945519f, 0.325567f };
-        gNavMesh->AddGameObject(0, 259, { 188.603f, 81.585f, -33.9396f }, rotation);
-    }
+    //// hard coded temporary obstacle (which exists in game) until the GUI can be updated
+    //if (mapName == "StormwindJail")
+    //{
+    //    const utility::Quaternion rotation { 0.f, 0.f, 0.945519f, 0.325567f };
+    //    gNavMesh->AddGameObject(0, 259, { 188.603f, 81.585f, -33.9396f }, rotation);
+    //}
 
     // if the loaded map has no ADTs, but instead a global WMO, load it now, including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
@@ -484,6 +540,26 @@ void LoadADTFromGUI()
     gRenderer->m_camera.LookAt(cx, cy, cz);
 }
 
+void SpawnGOFromGUI()
+{
+    if (!gNavMesh)
+        return;
+
+    auto const displayId = std::stoi(gControls->GetText(Controls::SpawnDoodadEdit));
+    auto const model = gNavMesh->GetOrLoadModelByDisplayId(displayId);
+
+    if (!model)
+        return;
+
+    gMouseDoodad = std::make_unique<MouseDoodad>();
+    gMouseDoodad->DisplayId = displayId;
+    gMouseDoodad->Model = model;
+    gMouseDoodad->Scale = 1.0f;
+    gMouseDoodad->Rotation = utility::Quaternion(0, 0, 0, 1);
+
+    UpdateMouseDoodadTransform();
+}
+
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow)
 {
@@ -554,6 +630,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 160, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
     gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 185, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
     gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 210, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
+
+    gControls->AddTextBox(Controls::SpawnDoodadEdit, L"Display ID", 10, 245, 90, 20);
+    gControls->AddButton(Controls::SpawnDoodadButton, L"Spawn GO", 115, 242, 100, 25, SpawnGOFromGUI);
 
     // enter the main loop:
 

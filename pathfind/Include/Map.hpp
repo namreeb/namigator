@@ -69,10 +69,10 @@ class Map
         std::shared_ptr<DoodadModel> LoadModelForDoodadInstance(unsigned int instanceId);
 
         // ensure that the given WMO model is loaded
-        std::shared_ptr<WmoModel> EnsureWmoModelLoaded(const std::string &filename);
+        std::shared_ptr<WmoModel> EnsureWmoModelLoaded(const std::string &filename, bool isBvhFilename = false);
 
         // ensure that the given doodad model is loaded
-        std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &filename);
+        std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &filename, bool isBvhFilename = false);
 
         // TODO: need mechanism to cleanup expired weak pointers saved in the containers of this class
 
@@ -86,6 +86,8 @@ class Map
         void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, float orientation, int doodadSet = -1);
         void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, const utility::Quaternion &rotation, int doodadSet = -1);
         void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, const utility::Matrix &rotation, int doodadSet = -1);
+
+        std::shared_ptr<Model> GetOrLoadModelByDisplayId(unsigned int displayId);
 
         bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
         bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;

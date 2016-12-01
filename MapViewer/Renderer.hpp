@@ -24,6 +24,7 @@ class Renderer
             SphereGeometry,
             LineGeometry,
             ArrowGeometry,
+            GameObjectGeometry,
             NumGeometryBuffers,
         };
 
@@ -37,6 +38,9 @@ class Renderer
             SphereGeometryFlag = 1 << SphereGeometry,
             LineGeometryFlag = 1 << LineGeometry,
             ArrowGeometryFlag = 1 << ArrowGeometry,
+            GameObjectGeometryFlag = 1 << GameObjectGeometry,
+
+            CollidableGeometryFlag = TerrainGeometryFlag | WmoGeometryFlag | DoodadGeometryFlag,
         };
 
     private:
@@ -48,6 +52,7 @@ class Renderer
         static const float SphereColor[4];
         static const float LineColor[4];
         static const float ArrowColor[4];
+        static const float GameObjectColor[4];
 
         struct ColoredVertex
         {
@@ -114,6 +119,7 @@ class Renderer
 
         void ClearBuffers();
         void ClearSprites();
+        void ClearGameObjects();
 
         void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, std::uint32_t areaId);
         void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
@@ -124,6 +130,7 @@ class Renderer
         void AddSphere(const utility::Vertex& position, float size, int recursionLevel = 2);
         void AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step);
         void AddPath(const std::vector<utility::Vertex> &path);
+        void AddGameObject(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
 
         bool HasWmo(unsigned int id) const;
         bool HasDoodad(unsigned int id) const;

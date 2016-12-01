@@ -286,46 +286,66 @@ std::shared_ptr<DoodadModel> Map::LoadModelForDoodadInstance(unsigned int instan
     return model;
 }
 
-std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& filename)
+std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& filename, bool isBvhFilename)
 {
+    std::string bvhFilename;
+
+    if (!isBvhFilename)
+        bvhFilename += "Doodad_";
+
+    bvhFilename += filename;
+
+    if (!isBvhFilename)
+        bvhFilename += ".bvh";
+
     // if this model is currently loaded, return it
     {
-        auto const i = m_loadedDoodadModels.find(filename);
+        auto const i = m_loadedDoodadModels.find(bvhFilename);
         if (i != m_loadedDoodadModels.end() && !i->second.expired())
             return i->second.lock();
     }
 
     // else, load it
 
-    std::ifstream in(m_dataPath + "/BVH/Doodad_" + filename + ".bvh", std::ifstream::binary);
+    std::ifstream in(m_dataPath + "/BVH/" + bvhFilename, std::ifstream::binary);
 
     if (in.fail())
-        THROW("Failed to doodad BVH file: " + filename).ErrorCode();
+        THROW("Failed to doodad BVH file: " + bvhFilename).ErrorCode();
 
     auto model = std::make_shared<pathfind::DoodadModel>();
 
     if (!model->m_aabbTree.Deserialize(in))
         THROW("Could not deserialize doodad").ErrorCode();
 
-    m_loadedDoodadModels[filename] = model;
+    m_loadedDoodadModels[bvhFilename] = model;
     return std::move(model);
 }
 
-std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename)
+std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename, bool isBvhFilename)
 {
+    std::string bvhFilename;
+
+    if (!isBvhFilename)
+        bvhFilename += "WMO_";
+
+    bvhFilename += filename;
+
+    if (!isBvhFilename)
+        bvhFilename += ".bvh";
+
     // if this model is currently loaded, return it
     {
-        auto const i = m_loadedWmoModels.find(filename);
+        auto const i = m_loadedWmoModels.find(bvhFilename);
         if (i != m_loadedWmoModels.end() && !i->second.expired())
             return i->second.lock();
     }
 
     // else, load it
 
-    std::ifstream in(m_dataPath + "/BVH/WMO_" + filename + ".bvh", std::ifstream::binary);
+    std::ifstream in(m_dataPath + "/BVH/" + bvhFilename, std::ifstream::binary);
 
     if (in.fail())
-        THROW("Could not open WMO BVH file " + filename).ErrorCode();
+        THROW("Could not open WMO BVH file " + bvhFilename).ErrorCode();
 
     auto model = std::make_shared<pathfind::WmoModel>();
 
@@ -365,7 +385,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename)
         }
     }
 
-    m_loadedWmoModels[filename] = model;
+    m_loadedWmoModels[bvhFilename] = model;
 
     return std::move(model);
 }
@@ -421,6 +441,36 @@ void Map::UnloadADT(int x, int y)
             if (i != m_tiles.end())
                 m_tiles.erase(i);
         }
+}
+
+std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
+{
+    // Get the BVH file for this display ID
+    auto const it = m_temporaryObstaclePaths.find(displayId);
+    if (it == m_temporaryObstaclePaths.end() || it->second.empty())
+        return nullptr;
+
+    auto const fileName = it->second;
+    auto const doodad = fileName[0] == 'd' || fileName[0] == 'D';
+
+    if (doodad)
+    {
+        //auto const i = m_loadedDoodadModels.find(fileName);
+        //if (i != m_loadedDoodadModels.end() && !i->second.expired())
+        //    return i->second.lock();
+
+        return EnsureDoodadModelLoaded(fileName, true);
+    }
+    else
+    {
+        //auto const i = m_loadedWmoModels.find(fileName);
+        //if (i != m_loadedWmoModels.end() && !i->second.expired())
+        //    return i->second.lock();
+
+        return EnsureWmoModelLoaded(fileName, true);
+    }
+
+    //return nullptr;
 }
 
 bool Map::FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial) const
@@ -526,6 +576,10 @@ bool Map::RayCast(utility::Ray &ray) const
 
             auto const &instance = m_staticWmos.at(id);
 
+            // skip this wmo if the bbox doesn't intersect, saves us from calculating the inverse ray
+            if (!ray.IntersectBoundingBox(instance.m_bounds))
+                continue;
+
             utility::Ray rayInverse(utility::Vertex::Transform(start, instance.m_inverseTransformMatrix),
                                     utility::Vertex::Transform(end,   instance.m_inverseTransformMatrix));
 
@@ -549,6 +603,10 @@ bool Map::RayCast(utility::Ray &ray) const
 
             auto const &instance = m_staticDoodads.at(id);
 
+            // skip this doodad if the bbox doesn't intersect, saves us from calculating the inverse ray
+            if (!ray.IntersectBoundingBox(instance.m_bounds))
+                continue;
+
             utility::Ray rayInverse(utility::Vertex::Transform(start, instance.m_inverseTransformMatrix),
                                     utility::Vertex::Transform(end,   instance.m_inverseTransformMatrix));
 
@@ -570,6 +628,10 @@ bool Map::RayCast(utility::Ray &ray) const
             // record this temporary wmo as having been tested
             temporaryWmos.insert(wmo.first);
 
+            // skip this wmo if the bbox doesn't intersect, saves us from calculating the inverse ray
+            if (!ray.IntersectBoundingBox(wmo.second->m_bounds))
+                continue;
+
             utility::Ray rayInverse(utility::Vertex::Transform(start, wmo.second->m_inverseTransformMatrix),
                                     utility::Vertex::Transform(end,   wmo.second->m_inverseTransformMatrix));
 
@@ -590,6 +652,10 @@ bool Map::RayCast(utility::Ray &ray) const
 
             // record this temporary wmo as having been tested
             temporaryDoodads.insert(doodad.first);
+
+            // skip this doodad if the bbox doesn't intersect, saves us from calculating the inverse ray
+            if (!ray.IntersectBoundingBox(doodad.second->m_bounds))
+                continue;
 
             utility::Ray rayInverse(utility::Vertex::Transform(start, doodad.second->m_inverseTransformMatrix),
                                     utility::Vertex::Transform(end, doodad.second->m_inverseTransformMatrix));

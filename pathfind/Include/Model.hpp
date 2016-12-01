@@ -8,10 +8,14 @@
 
 namespace pathfind
 {
-// only loaded as needed
-struct DoodadModel
+struct Model
 {
     utility::AABBTree m_aabbTree;
+};
+
+// only loaded as needed
+struct DoodadModel : Model
+{
 };
 
 // always loaded
@@ -26,9 +30,8 @@ struct DoodadInstance
 };
 
 // only loaded as needed
-struct WmoModel
+struct WmoModel : Model
 {
-    utility::AABBTree m_aabbTree;
     std::vector<std::vector<DoodadInstance>> m_doodadSets;
     std::vector<std::vector<std::shared_ptr<DoodadModel>>> m_loadedDoodadSets;
 };
