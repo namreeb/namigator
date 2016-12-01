@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utility/Include/AABBTree.hpp"
+#include "utility/Include/LinearAlgebra.hpp"
 
 #include <memory>
 #include <string>
@@ -20,6 +21,7 @@ struct DoodadInstance
     utility::Matrix m_inverseTransformMatrix;
     utility::BoundingBox m_bounds;
     std::string m_modelFilename;
+    std::vector<utility::Vertex> m_translatedVertices;  // wow coordinate space.  indices are obtained from model.
     std::weak_ptr<DoodadModel> m_model;
 };
 

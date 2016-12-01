@@ -276,17 +276,16 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const utilit
         auto model = EnsureDoodadModelLoaded(fileName);
         instance->m_model = model;
 
-        std::vector<utility::Vertex> transformedVertices;
-        transformedVertices.reserve(model->m_aabbTree.Vertices().size());
+        instance->m_translatedVertices.reserve(model->m_aabbTree.Vertices().size());
 
         for (auto const &v : model->m_aabbTree.Vertices())
-            transformedVertices.emplace_back(utility::Vertex::Transform(v, matrix));
+            instance->m_translatedVertices.emplace_back(utility::Vertex::Transform(v, matrix));
 
         // models are guarunteed to have more than zero vertices
-        utility::BoundingBox bounds { transformedVertices[0], transformedVertices[0] };
+        utility::BoundingBox bounds { instance->m_translatedVertices[0], instance->m_translatedVertices[0] };
 
-        for (auto i = 1u; i < transformedVertices.size(); ++i)
-            bounds.update(transformedVertices[i]);
+        for (auto i = 1u; i < instance->m_translatedVertices.size(); ++i)
+            bounds.update(instance->m_translatedVertices[i]);
 
         instance->m_bounds = bounds;
         m_temporaryDoodads[guid] = instance;
@@ -320,12 +319,12 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
 {
     auto const model = doodad->m_model.lock();
 
-    m_temporaryDoodads[guid] = std::move(doodad);
-
     std::vector<float> recastVertices;
-    utility::Convert::VerticesToRecast(model->m_aabbTree.Vertices(), recastVertices);
+    utility::Convert::VerticesToRecast(doodad->m_translatedVertices, recastVertices);
 
     std::vector<unsigned char> areas(model->m_aabbTree.Indices().size(), AreaFlags::Doodad);
+
+    m_temporaryDoodads[guid] = std::move(doodad);
 
     RecastContext ctx(rcLogCategory::RC_LOG_ERROR);
     rcClearUnwalkableTriangles(&ctx, MeshSettings::WalkableSlope, &recastVertices[0], static_cast<int>(recastVertices.size() / 3),
