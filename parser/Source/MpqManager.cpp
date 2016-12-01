@@ -36,11 +36,13 @@ void MpqManager::Initialize(const std::string &wowDir)
 {
     WowDir = wowDir;
 
+    auto wowPath = boost::filesystem::path(wowDir);
+
     std::vector<boost::filesystem::directory_entry> directories;
     std::vector<boost::filesystem::path> files;
     std::vector<boost::filesystem::path> patches;
 
-    for (auto i = boost::filesystem::directory_iterator(wowDir); i != boost::filesystem::directory_iterator(); ++i)
+    for (auto i = boost::filesystem::directory_iterator(wowPath); i != boost::filesystem::directory_iterator(); ++i)
     {
         if (boost::filesystem::is_directory(i->status()))
         {
@@ -74,7 +76,7 @@ void MpqManager::Initialize(const std::string &wowDir)
         if (dirString.length() != 4)
             continue;
 
-        auto const localeMpq = boost::filesystem::path(dirString + "/locale-" + dirString + ".MPQ");
+        auto const localeMpq = wowPath / dirString / ("locale-" + dirString + ".MPQ");
         auto found = false;
 
         std::vector<boost::filesystem::path> localePatches;
