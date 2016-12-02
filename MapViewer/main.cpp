@@ -206,6 +206,10 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     gNavMesh->AddGameObject(gMouseDoodad->Guid, gMouseDoodad->DisplayId, gMouseDoodad->Position, gMouseDoodad->Rotation);
                     gMouseDoodad.reset();
 
+                    DetourDebugDraw dd(gRenderer.get());
+
+                    duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+
                     return TRUE;
                 }
 
