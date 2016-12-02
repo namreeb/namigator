@@ -45,6 +45,7 @@ std::unique_ptr<pathfind::Map> gNavMesh;
 
 struct MouseDoodad
 {
+    std::uint64_t Guid;
     std::shared_ptr<pathfind::Model> Model;
 
     unsigned int DisplayId = 0;
@@ -202,7 +203,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             {
                 if (!!gMouseDoodad)
                 {
-                    gNavMesh->AddGameObject(0, gMouseDoodad->DisplayId, gMouseDoodad->Position, gMouseDoodad->Rotation);
+                    gNavMesh->AddGameObject(gMouseDoodad->Guid, gMouseDoodad->DisplayId, gMouseDoodad->Position, gMouseDoodad->Rotation);
                     gMouseDoodad.reset();
 
                     return TRUE;
@@ -407,13 +408,6 @@ void ChangeMap(const std::string &cn)
     gMap = std::make_unique<parser::Map>(mapName);
     gNavMesh = std::make_unique<pathfind::Map>("./Maps", mapName);
 
-    //// hard coded temporary obstacle (which exists in game) until the GUI can be updated
-    //if (mapName == "StormwindJail")
-    //{
-    //    const utility::Quaternion rotation { 0.f, 0.f, 0.945519f, 0.325567f };
-    //    gNavMesh->AddGameObject(0, 259, { 188.603f, 81.585f, -33.9396f }, rotation);
-    //}
-
     // if the loaded map has no ADTs, but instead a global WMO, load it now, including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
     {
@@ -552,6 +546,7 @@ void SpawnGOFromGUI()
         return;
 
     gMouseDoodad = std::make_unique<MouseDoodad>();
+    gMouseDoodad->Guid = static_cast<std::uint64_t>(rand());
     gMouseDoodad->DisplayId = displayId;
     gMouseDoodad->Model = model;
     gMouseDoodad->Scale = 1.0f;
