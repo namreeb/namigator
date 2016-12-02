@@ -955,10 +955,14 @@ void ADT::Serialize(const std::string &filename) const
     // first compute total size, just to reduce reallocations
     for (auto const &tile : m_tiles)
     {
-        bufferSize += 4 * sizeof(std::uint32_t);
+        bufferSize += 2 * sizeof(std::uint32_t);
         
+        // in this case, the wmo and doodad counts are included in the buffer
         if (m_wmosAndDoodadIds.find(tile.first) != m_wmosAndDoodadIds.end())
             bufferSize += m_wmosAndDoodadIds.at(tile.first).wpos();
+        // if the buffer is empty, two zeros are written
+        else
+            bufferSize += 2 * sizeof(std::uint32_t);
 
         bufferSize += tile.second.wpos();
     }
