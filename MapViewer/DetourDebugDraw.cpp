@@ -6,9 +6,11 @@
 #include <iostream>
 #include <unordered_map>
 
-#ifdef _DEBUG
-#include <cassert>
-#endif
+DetourDebugDraw::DetourDebugDraw(Renderer *renderer) : m_type(DU_DRAW_TRIS), m_size(0.f), m_renderer(renderer)
+{
+    m_renderer->ClearBuffers(Renderer::Geometry::LineGeometry);
+    m_renderer->ClearBuffers(Renderer::Geometry::NavMeshGeometry);
+}
 
 void DetourDebugDraw::begin(duDebugDrawPrimitives prim, float size)
 {

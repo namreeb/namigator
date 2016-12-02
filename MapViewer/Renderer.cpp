@@ -197,10 +197,15 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerStateWireframe));
 }
 
+void Renderer::ClearBuffers(Geometry type)
+{
+    m_buffers[type].clear();
+}
+
 void Renderer::ClearBuffers()
 {
     for (std::uint32_t geometry = 0; geometry < NumGeometryBuffers; ++geometry)
-        m_buffers[geometry].clear();
+        ClearBuffers(static_cast<Geometry>(geometry));
 
     ClearSprites();
 }

@@ -117,6 +117,7 @@ class Renderer
     public:
         Renderer(HWND window);
 
+        void ClearBuffers(Geometry type);
         void ClearBuffers();
         void ClearSprites();
         void ClearGameObjects();
