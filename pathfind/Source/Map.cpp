@@ -409,6 +409,8 @@ bool Map::LoadADT(int x, int y)
 
     try
     {
+        stream.Decompress();
+
         NavFileHeader header;
         stream >> header;
 

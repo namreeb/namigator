@@ -521,14 +521,12 @@ void LoadADTFromGUI()
             }
         }
 
-    for (auto y = adtY * MeshSettings::TilesPerADT; y < (adtY + 1)*MeshSettings::TilesPerADT; ++y)
-        for (auto x = adtX * MeshSettings::TilesPerADT; x < (adtX + 1)*MeshSettings::TilesPerADT; ++x)
-            if (gNavMesh->LoadADT(x, y))
-            {
-                DetourDebugDraw dd(gRenderer.get());
+    if (gNavMesh->LoadADT(adtX, adtY))
+    {
+        DetourDebugDraw dd(gRenderer.get());
 
-                duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
-            }
+        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+    }
 
     const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
     const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;
