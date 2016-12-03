@@ -718,7 +718,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     config.bmax[2] = (tileY + 1) * MeshSettings::TileSize - 32.f * MeshSettings::AdtSize;
 
     // bounding box of tile in wow coordinates for culling wmos and doodads
-    const utility::BoundingBox tileBounds({ config.bmax[2], config.bmax[0], config.bmin[1] }, { config.bmin[2], config.bmin[0], config.bmax[1] });
+    const utility::BoundingBox tileBounds({ -config.bmax[2], -config.bmax[0], config.bmin[1] }, { -config.bmin[2], -config.bmin[0], config.bmax[1] });
 
     // erode mesh tile boundaries to force recast to examine obstacles on or near the tile boundary
     config.bmin[0] -= config.borderSize * config.cs;
