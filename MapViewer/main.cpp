@@ -8,6 +8,7 @@
 #include "parser/Include/Wmo/WmoInstance.hpp"
 
 #include "utility/Include/Directory.hpp"
+#include "utility/Include/MathHelper.hpp"
 
 #include "pathfind/Include/Map.hpp"
 
@@ -312,9 +313,9 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 enum Controls : int
 {
     MapsCombo,
-    ADTX,
-    ADTY,
-    LoadADT,
+    PositionX,
+    PositionY,
+    Load,
     Wireframe,
     RenderADT,
     RenderLiquid,
@@ -434,9 +435,9 @@ void ChangeMap(const std::string &cn)
         gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
         gRenderer->m_camera.LookAt(cx, cy, cz);
 
-        gControls->Enable(Controls::ADTX, false);
-        gControls->Enable(Controls::ADTY, false);
-        gControls->Enable(Controls::LoadADT, false);
+        gControls->Enable(Controls::PositionX, false);
+        gControls->Enable(Controls::PositionY, false);
+        gControls->Enable(Controls::Load, false);
 
         DetourDebugDraw dd(gRenderer.get());
 
@@ -444,13 +445,13 @@ void ChangeMap(const std::string &cn)
     }
     else
     {
-        gControls->Enable(Controls::ADTX, true);
-        gControls->Enable(Controls::ADTY, true);
-        gControls->Enable(Controls::LoadADT, true);
+        gControls->Enable(Controls::PositionX, true);
+        gControls->Enable(Controls::PositionY, true);
+        gControls->Enable(Controls::Load, true);
     }
 }
 
-void LoadADTFromGUI()
+void LoadPositionFromGUI()
 {
     // if we have not yet loaded the Map, do so now
     if (!gMap)
@@ -460,80 +461,110 @@ void LoadADTFromGUI()
     if (gMap->GetGlobalWmoInstance())
         return;
 
-    auto const adtX = std::stoi(gControls->GetText(Controls::ADTX));
-    auto const adtY = std::stoi(gControls->GetText(Controls::ADTY));
+    int x, y;
 
-	if (!gMap->HasAdt(adtX, adtY))
-	{
-		MessageBox(nullptr, L"Map does not have the specified ADT tile", L"Error", MB_OK | MB_ICONEXCLAMATION);
-		return;
-	}
-
-    auto const adt = gMap->GetAdt(adtX, adtY);
-
-    for (int x = 0; x < MeshSettings::ChunksPerAdt; ++x)
-        for (int y = 0; y < MeshSettings::ChunksPerAdt; ++y)
-        {
-            auto const chunk = adt->GetChunk(x, y);
-
-            gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices, chunk->m_areaId);
-            gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
-
-            for (auto &d : chunk->m_doodadInstances)
-            {
-                if (gRenderer->HasDoodad(d))
-                    continue;
-
-                auto const doodad = gMap->GetDoodadInstance(d);
-
-                assert(doodad);
-
-                std::vector<utility::Vertex> vertices;
-                std::vector<int> indices;
-
-                doodad->BuildTriangles(vertices, indices);
-                gRenderer->AddDoodad(d, vertices, indices);
-            }
-
-            for (auto &w : chunk->m_wmoInstances)
-            {
-                if (gRenderer->HasWmo(w))
-                    continue;
-
-                auto const wmo = gMap->GetWmoInstance(w);
-
-                assert(wmo);
-
-                std::vector<utility::Vertex> vertices;
-                std::vector<int> indices;
-
-                wmo->BuildTriangles(vertices, indices);
-                gRenderer->AddWmo(w, vertices, indices);
-
-                wmo->BuildLiquidTriangles(vertices, indices);
-                gRenderer->AddLiquid(vertices, indices);
-
-                if (gRenderer->HasDoodad(w))
-                    continue;
-
-                wmo->BuildDoodadTriangles(vertices, indices);
-                gRenderer->AddDoodad(w, vertices, indices);
-            }
-        }
-
-    if (gNavMesh->LoadADT(adtX, adtY))
+    // if there is a decimal, it is a world coordinate
+    if (gControls->GetText(Controls::PositionX).find('.') != std::string::npos ||
+        gControls->GetText(Controls::PositionY).find('.') != std::string::npos)
     {
-        DetourDebugDraw dd(gRenderer.get());
+        auto const posX = std::stof(gControls->GetText(Controls::PositionX));
+        auto const posY = std::stof(gControls->GetText(Controls::PositionY));
 
-        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+        utility::Convert::WorldToAdt({ posX, posY, 0.f }, x, y);
+    }
+    else
+    {
+        auto const intX = std::stoi(gControls->GetText(Controls::PositionX));
+        auto const intY = std::stoi(gControls->GetText(Controls::PositionY));
+
+        // if either is negative, it is a world coordinate, or
+        // if either is greater than or equal to 64, it is a world coordinate
+        if (intX < 0 || intY < 0 || intX >= MeshSettings::Adts || intY >= MeshSettings::Adts)
+            utility::Convert::WorldToAdt({ static_cast<float>(intX), static_cast<float>(intY), 0.f }, x, y);
+        // otherwise, it is an adt coordinate
+        else
+        {
+            x = intX;
+            y = intY;
+        }
     }
 
-    const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
-    const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;
-    const float cz = (adt->Bounds.MaxCorner.Z + adt->Bounds.MinCorner.Z) / 2.f;
+    // if both the x and y values are integers less than 64, assume the coordinates are ADT coordinates
 
-    gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
-    gRenderer->m_camera.LookAt(cx, cy, cz);
+    if (x < MeshSettings::Adts && y < MeshSettings::Adts && x >= 0 && y >= 0)
+    {
+        if (!gMap->HasAdt(x, y))
+        {
+            MessageBox(nullptr, L"Map does not have the specified ADT tile", L"Error", MB_OK | MB_ICONEXCLAMATION);
+            return;
+        }
+
+        auto const adt = gMap->GetAdt(x, y);
+
+        for (int chunkX = 0; chunkX < MeshSettings::ChunksPerAdt; ++chunkX)
+            for (int chunkY = 0; chunkY < MeshSettings::ChunksPerAdt; ++chunkY)
+            {
+                auto const chunk = adt->GetChunk(chunkX, chunkY);
+
+                gRenderer->AddTerrain(chunk->m_terrainVertices, chunk->m_terrainIndices, chunk->m_areaId);
+                gRenderer->AddLiquid(chunk->m_liquidVertices, chunk->m_liquidIndices);
+
+                for (auto &d : chunk->m_doodadInstances)
+                {
+                    if (gRenderer->HasDoodad(d))
+                        continue;
+
+                    auto const doodad = gMap->GetDoodadInstance(d);
+
+                    assert(doodad);
+
+                    std::vector<utility::Vertex> vertices;
+                    std::vector<int> indices;
+
+                    doodad->BuildTriangles(vertices, indices);
+                    gRenderer->AddDoodad(d, vertices, indices);
+                }
+
+                for (auto &w : chunk->m_wmoInstances)
+                {
+                    if (gRenderer->HasWmo(w))
+                        continue;
+
+                    auto const wmo = gMap->GetWmoInstance(w);
+
+                    assert(wmo);
+
+                    std::vector<utility::Vertex> vertices;
+                    std::vector<int> indices;
+
+                    wmo->BuildTriangles(vertices, indices);
+                    gRenderer->AddWmo(w, vertices, indices);
+
+                    wmo->BuildLiquidTriangles(vertices, indices);
+                    gRenderer->AddLiquid(vertices, indices);
+
+                    if (gRenderer->HasDoodad(w))
+                        continue;
+
+                    wmo->BuildDoodadTriangles(vertices, indices);
+                    gRenderer->AddDoodad(w, vertices, indices);
+                }
+            }
+
+        if (gNavMesh->LoadADT(x, y))
+        {
+            DetourDebugDraw dd(gRenderer.get());
+
+            duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+        }
+
+        const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
+        const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;
+        const float cz = (adt->Bounds.MaxCorner.Z + adt->Bounds.MinCorner.Z) / 2.f;
+
+        gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
+        gRenderer->m_camera.LookAt(cx, cy, cz);
+    }
 }
 
 void SpawnGOFromGUI()
@@ -610,16 +641,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
     gControls->AddLabel(L"X:", 10, 35);
-    gControls->AddTextBox(Controls::ADTX, L"38", 25, 35, 75, 20);
+    gControls->AddTextBox(Controls::PositionX, L"38", 25, 35, 75, 20);
 
     gControls->AddLabel(L"Y:", 10, 60);
-    gControls->AddTextBox(Controls::ADTY, L"40", 25, 60, 75, 20);
+    gControls->AddTextBox(Controls::PositionY, L"40", 25, 60, 75, 20);
 
-    gControls->AddButton(Controls::LoadADT, L"Load ADT", 115, 57, 100, 25, LoadADTFromGUI);
+    gControls->AddButton(Controls::Load, L"Load", 115, 57, 75, 25, LoadPositionFromGUI);
 
-    gControls->Enable(Controls::ADTX, false);
-    gControls->Enable(Controls::ADTY, false);
-    gControls->Enable(Controls::LoadADT, false);
+    gControls->Enable(Controls::PositionX, false);
+    gControls->Enable(Controls::PositionY, false);
+    gControls->Enable(Controls::Load, false);
 
     gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 85, false, [](bool checked) { gRenderer->SetWireframe(checked); });
     gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 110, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
