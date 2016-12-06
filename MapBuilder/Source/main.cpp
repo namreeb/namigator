@@ -1,7 +1,6 @@
 #include "MeshBuilder.hpp"
 #include "GameObjectBVHBuilder.hpp"
 #include "Worker.hpp"
-#include "DBC.hpp"
 
 #include "parser/Include/parser.hpp"
 #include "parser/Include/Adt/Adt.hpp"
