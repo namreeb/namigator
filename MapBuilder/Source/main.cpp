@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     desc.add_options()
         ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value("."),           "data folder")
         ("map,m", boost::program_options::value<std::string>(&map),                                     "generate data for the specified map")
-        ("gameobj,g",                                                                                   "generate line of sight (BVH) data for all game objects (WILL NOT replace existing data)")
+        ("bvh,b",                                                                                       "generate line of sight (BVH) data for all game objects (WILL NOT replace existing data)")
         ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps"), "output path")
         ("adtX,x", boost::program_options::value<int>(&adtX),                                           "adt x")
         ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
@@ -57,9 +57,9 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    if (vm.count("map") + vm.count("gameobj") != 1)
+    if (vm.count("map") + vm.count("bvh") != 1)
     {
-        std::cerr << "ERROR: Must specify either a map to generate (--map) or the global generation of BVH data (--gameobj)" << std::endl;
+        std::cerr << "ERROR: Must specify either a map to generate (--map) or the global generation of BVH data (--bvh)" << std::endl;
         std::cerr << desc << std::endl;
 
         return EXIT_FAILURE;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     utility::Directory::Create(outputPath);
     utility::Directory::Create(outputPath + "\\BVH");
 
-    if (vm.count("gameobj"))
+    if (vm.count("bvh"))
     {
         GameObjectBVHBuilder goBuilder(outputPath, jobs);
 
