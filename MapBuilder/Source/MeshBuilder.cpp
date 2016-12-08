@@ -4,6 +4,7 @@
 #include "parser/Include/parser.hpp"
 #include "parser/Include/Adt/Adt.hpp"
 #include "parser/Include/Adt/AdtChunk.hpp"
+#include "parser/Include/DBC.hpp"
 
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
@@ -19,6 +20,8 @@
 #include "recastnavigation/Detour/Include/DetourAlloc.h"
 #include "recastnavigation/DetourTileCache/Include/DetourTileCacheBuilder.h"
 
+#include <boost/filesystem.hpp>
+
 #include <cassert>
 #include <string>
 #include <fstream>
@@ -33,6 +36,7 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
+#include <unordered_map>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -44,6 +48,23 @@ static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
 namespace
 {
+std::string BuildAbsoluteFilename(const std::string &outputPath, const std::string &in)
+{
+    boost::filesystem::path path(in);
+
+    auto const extension = path.extension().string();
+
+    std::string kind;
+    if (extension[1] == 'm' || extension[1] == 'M')
+        kind = "Doodad";
+    else if (extension[1] == 'w' || extension[1] == 'W')
+        kind = "WMO";
+    else
+        THROW("Unrecognized extension");
+
+    return outputPath + "/BVH/" + kind + "_" + path.filename().replace_extension("bvh").string();
+}
+
 void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::vector<std::pair<int, int>> &chunks)
 {
     chunks.clear();
@@ -459,6 +480,118 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
     m_totalTiles = m_pendingTiles.size();
 
     utility::Directory::Create(m_outputPath + "/Nav/" + mapName);
+}
+
+void MeshBuilder::LoadGameObjects(const std::string &path)
+{
+    std::cout << "Reading game object..." << std::endl;
+
+    std::ifstream in(path);
+
+    if (in.fail())
+        THROW("Failed to open gameobject file").ErrorCode();
+
+    m_gameObjectInstances.clear();
+
+    std::string line;
+    std::vector<std::string> cells;
+    while (std::getline(in, line))
+    {
+        std::istringstream str(line);
+        std::string field;
+
+        while (std::getline(str, field, ','))
+            cells.emplace_back(field);
+    }
+
+    in.close();
+
+    if (!!(cells.size() % 10))
+        THROW("Bad format of gameobject file");
+
+    m_gameObjectInstances.reserve(cells.size() / 10);
+
+    for (auto i = 0u; i < cells.size(); i += 10)
+    {
+        GameObjectInstance instance
+        {
+            std::stoull(cells[i]),      // guid
+            std::stoul(cells[i + 1]),   // display id
+            std::stoul(cells[i + 2]),   // map
+            std::stof(cells[i + 3]),    // position x
+            std::stof(cells[i + 4]),    // position y
+            std::stof(cells[i + 5]),    // position z
+            std::stof(cells[i + 6]),    // quaternion
+            std::stof(cells[i + 7]),
+            std::stof(cells[i + 8]),
+            std::stof(cells[i + 9]),
+        };
+
+        // only concern ourselves with gameobjects on the current map
+        if (instance.map == m_map->Id)
+            m_gameObjectInstances.emplace_back(instance);
+    }
+
+    std::cout << "Loaded " << m_gameObjectInstances.size() << " game object instances.  Loading model information..." << std::endl;
+
+    auto const displayInfo = parser::DBC("DBFilesClient\\GameObjectDisplayInfo.dbc");
+
+    std::unordered_map<std::uint32_t, utility::AABBTree> models;
+
+    for (auto i = 0u; i < displayInfo.RecordCount(); ++i)
+    {
+        auto const id = displayInfo.GetField(i, 0);
+        auto const modelPath = displayInfo.GetStringField(i, 1);
+
+        // not sure why this happens.  might we be missing some needed information?
+        if (modelPath.length() == 0)
+            continue;
+
+        auto const extension = boost::filesystem::path(modelPath).extension().string();
+
+        // doodad
+        if (extension[1] == 'm' || extension[1] == 'M')
+        {
+            auto const doodad = m_map->GetDoodad(modelPath);
+
+            int asdf = 1234;
+        }
+        // wmo
+        else if (extension[1] == 'w' || extension[1] == 'W')
+        {
+            auto const wmo = m_map->GetWmo(modelPath);
+
+            int asdf = 1234;
+        }
+        else
+            THROW("Unrecognized model extension");
+
+        auto const modelFullPath = BuildAbsoluteFilename(m_outputPath, modelPath);
+
+        utility::AABBTree model;
+
+        std::ifstream modelIn(modelFullPath, std::ifstream::binary);
+
+        // if the file fails to open, continue to the next one silently.  this happens when the model has no collision geometry
+        if (modelIn.fail())
+            continue;
+
+        if (!model.Deserialize(modelIn))
+        {
+            std::cerr << "Failed to deserialize model " << modelPath << std::endl;
+            continue;
+        }
+
+        models[id] = std::move(model);
+    }
+
+    std::cout << "Done.  Loaded " << models.size() << " models.  Instantiating game objects..." << std::endl;
+
+    for (auto const &go : m_gameObjectInstances)
+    {
+        if (models.find(go.displayId) == models.end())
+            THROW("Game object references non-existent model id");
+    }
 }
 
 bool MeshBuilder::GetNextTile(int &tileX, int &tileY)

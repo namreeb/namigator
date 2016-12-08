@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 
+namespace parser
+{
 class DBC
 {
     private:
@@ -23,3 +25,4 @@ class DBC
 
         size_t RecordCount() const { return m_recordCount; }
 };
+}

@@ -29,14 +29,17 @@ class Map
 
         mutable std::mutex m_wmoMutex;
         std::vector<std::unique_ptr<const Wmo>> m_loadedWmos;
-        std::map<unsigned int, std::unique_ptr<const WmoInstance>> m_loadedWmoInstances;
+        std::map<std::uint32_t, std::unique_ptr<const WmoInstance>> m_loadedWmoInstances;
+        std::map<std::uint64_t, std::unique_ptr<const WmoInstance>> m_loadedWmoGameObjects;
 
         mutable std::mutex m_doodadMutex;
         std::vector<std::unique_ptr<const Doodad>> m_loadedDoodads;
-        std::map<unsigned int, std::unique_ptr<const DoodadInstance>> m_loadedDoodadInstances;
+        std::map<std::uint32_t, std::unique_ptr<const DoodadInstance>> m_loadedDoodadInstances;
+        std::map<std::uint64_t, std::unique_ptr<const WmoInstance>> m_loadedDoodadGameObjects;
 
     public:
         const std::string Name;
+        const unsigned int Id;
 
         Map(const std::string &MapName);
 

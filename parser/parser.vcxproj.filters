@@ -85,6 +85,9 @@
     <ClCompile Include="Source\Wmo\Root File\Chunks\MODS.cpp">
       <Filter>Source\Wmo\Root File\Chunks</Filter>
     </ClCompile>
+    <ClCompile Include="Source\DBC.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Adt\Adt.hpp">
@@ -191,6 +194,9 @@
     </ClInclude>
     <ClInclude Include="Include\Adt\AdtChunkLocation.hpp">
       <Filter>Include\Adt</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\DBC.hpp">
+      <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

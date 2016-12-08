@@ -1,4 +1,5 @@
 #include "MpqManager.hpp"
+#include "DBC.hpp"
 
 #include "utility/Include/Exception.hpp"
 #include "StormLib.h"
@@ -10,11 +11,13 @@
 #include <cstdint>
 #include <cctype>
 #include <algorithm>
+#include <map>
 
 namespace parser
 {
 std::list<HANDLE> MpqManager::MpqHandles;
 std::string MpqManager::WowDir;
+std::map<unsigned int, std::string> MpqManager::Maps;
 
 void MpqManager::LoadMpq(const std::string &filePath)
 {
@@ -112,6 +115,11 @@ void MpqManager::Initialize(const std::string &wowDir)
         for (auto const &handle : MpqHandles)
             if (!SFileOpenPatchArchive(handle, file.string().c_str(), "base", 0))
                 THROW("Failed to apply patch").ErrorCode();
+
+    DBC maps("DBFilesClient\\Map.dbc");
+
+    for (auto i = 0u; i < maps.RecordCount(); ++i)
+        Maps[maps.GetField(i, 0)] = maps.GetStringField(i, 1);
 }
 
 utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
@@ -145,5 +153,22 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
     }
 
     return nullptr;
+}
+
+unsigned int MpqManager::GetMapId(const std::string &name)
+{
+    for (auto const &entry : Maps)
+    {
+        std::string entryLower;
+        std::transform(entry.second.begin(), entry.second.end(), std::back_inserter(entryLower), ::tolower);
+
+        std::string nameLower;
+        std::transform(name.begin(), name.end(), std::back_inserter(nameLower), ::tolower);
+
+        if (entryLower == nameLower)
+            return entry.first;
+    }
+
+    THROW("Map ID for " + name + " not found");
 }
 }

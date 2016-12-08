@@ -14,6 +14,7 @@ class MpqManager
 {
     private:
         static std::list<HANDLE> MpqHandles;
+        static std::map<unsigned int, std::string> Maps;
 
         static void LoadMpq(const std::string &filePath);
 
@@ -25,5 +26,7 @@ class MpqManager
         static void Initialize(const std::string &wowDir);
 
         static utility::BinaryStream *OpenFile(const std::string &file);
+
+        static unsigned int GetMapId(const std::string &name);
 };
 };

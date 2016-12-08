@@ -28,9 +28,12 @@ class AABBTree
 
     public:
         AABBTree() = default;
+        AABBTree(AABBTree&& other) = default;
         ~AABBTree() = default;
 
         AABBTree(const std::vector<Vertex>& verts, const std::vector<int>& indices);
+
+        AABBTree& operator = (AABBTree&& other) = default;
 
     public:
         void Build(const std::vector<Vertex>& verts, const std::vector<int>& indices);

@@ -156,14 +156,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\DBC.hpp" />
     <ClInclude Include="Include\GameObjectBVHBuilder.hpp" />
     <ClInclude Include="Include\MeshBuilder.hpp" />
     <ClInclude Include="Include\RecastContext.hpp" />
     <ClInclude Include="Include\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\DBC.cpp" />
     <ClCompile Include="Source\GameObjectBVHBuilder.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\MeshBuilder.cpp" />

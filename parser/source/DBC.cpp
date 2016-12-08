@@ -21,6 +21,8 @@ struct dbc_header
 };
 #pragma pack(pop)
 
+namespace parser
+{
 DBC::DBC(const std::string& filename)
 {
     std::unique_ptr<utility::BinaryStream> in(parser::MpqManager::OpenFile(filename));
@@ -40,7 +42,7 @@ DBC::DBC(const std::string& filename)
     m_fieldCount = header.field_count;
 
     m_data.resize(header.record_count*header.field_count);
-    in->ReadBytes(&m_data[0], m_data.size()*sizeof(std::uint32_t));
+    in->ReadBytes(&m_data[0], m_data.size() * sizeof(std::uint32_t));
 
     // ensure that we have precisely enough space left for the string block
     assert(header.string_block_size + in->rpos() == in->wpos());
@@ -51,7 +53,7 @@ DBC::DBC(const std::string& filename)
 std::uint32_t DBC::GetField(int row, int column) const
 {
     auto const offset = row * m_fieldCount + column;
-    
+
     if (offset > m_data.size())
         THROW("Invalid row, column requested from DBC");
 
@@ -62,4 +64,5 @@ std::string DBC::GetStringField(int row, int column) const
 {
     auto const pos = GetField(row, column);
     return std::string(reinterpret_cast<const char *>(&m_string[pos]));
+}
 }

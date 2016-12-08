@@ -148,6 +148,7 @@
     <ClCompile Include="Source\Adt\Chunks\MWMO.cpp" />
     <ClCompile Include="Source\Adt\Chunks\Subchunks\MCLQ.cpp" />
     <ClCompile Include="Source\Adt\Chunks\Subchunks\MCVT.cpp" />
+    <ClCompile Include="Source\DBC.cpp" />
     <ClCompile Include="Source\Doodad\Doodad.cpp" />
     <ClCompile Include="Source\Doodad\DoodadInstance.cpp" />
     <ClCompile Include="Source\Map\Map.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="Include\Adt\Chunks\MWMO.hpp" />
     <ClInclude Include="Include\Adt\Chunks\Subchunks\MCLQ.hpp" />
     <ClInclude Include="Include\Adt\Chunks\Subchunks\MCVT.hpp" />
+    <ClInclude Include="Include\DBC.hpp" />
     <ClInclude Include="Include\Doodad\Doodad.hpp" />
     <ClInclude Include="Include\Doodad\DoodadPlacement.hpp" />
     <ClInclude Include="Include\Doodad\DoodadInstance.hpp" />

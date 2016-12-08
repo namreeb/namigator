@@ -21,7 +21,7 @@
 
 int main(int argc, char *argv[])
 {
-    std::string dataPath, map, outputPath;
+    std::string dataPath, map, outputPath, goCSVPath;
     int adtX, adtY, jobs, logLevel;
 
     boost::program_options::options_description desc("Allowed options");
@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
         ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value("."),           "data folder")
         ("map,m", boost::program_options::value<std::string>(&map),                                     "generate data for the specified map")
         ("bvh,b",                                                                                       "generate line of sight (BVH) data for all game objects (WILL NOT replace existing data)")
+        ("gocsv,g", boost::program_options::value<std::string>(&goCSVPath),                             "CSV file containing gameobject data to include in pathfind mesh")
         ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps"), "output path")
         ("adtX,x", boost::program_options::value<int>(&adtX),                                           "adt x")
         ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
@@ -74,6 +75,14 @@ int main(int argc, char *argv[])
 
     if (vm.count("bvh"))
     {
+        if (vm.count("gocsv"))
+        {
+            std::cerr << "ERROR: Specifying gameobject data for BVH generation is meaningless" << std::endl;
+            std::cerr << desc << std::endl;
+
+            return EXIT_FAILURE;
+        }
+
         GameObjectBVHBuilder goBuilder(outputPath, jobs);
 
         auto const startSize = goBuilder.Remaining();
@@ -111,36 +120,50 @@ int main(int argc, char *argv[])
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
 
-    if (vm.count("adtX") && vm.count("adtY"))
+    try
     {
-        builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel, adtX, adtY);
-
-        if (builder->IsGlobalWMO())
+        if (vm.count("adtX") && vm.count("adtY"))
         {
-            std::cerr << "ERROR: Specified map has no ADTs" << std::endl;
+            builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel, adtX, adtY);
+
+            if (vm.count("gocsv"))
+                builder->LoadGameObjects(goCSVPath);
+
+            if (builder->IsGlobalWMO())
+            {
+                std::cerr << "ERROR: Specified map has no ADTs" << std::endl;
+                std::cerr << desc << std::endl;
+
+                return EXIT_FAILURE;
+            }
+
+            std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
+
+            workers.push_back(std::make_unique<Worker>(builder.get()));
+        }
+        // either both, or neither should be specified
+        else if (vm.count("adtX") || vm.count("adtY"))
+        {
+            std::cerr << "ERROR: Must specify ADT X and Y" << std::endl;
             std::cerr << desc << std::endl;
 
             return EXIT_FAILURE;
         }
+        else
+        {
+            builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel);
 
-        std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
+            if (vm.count("gocsv"))
+                builder->LoadGameObjects(goCSVPath);
 
-        workers.push_back(std::make_unique<Worker>(builder.get()));
+            for (auto i = 0; i < jobs; ++i)
+                workers.push_back(std::make_unique<Worker>(builder.get()));
+        }
     }
-    // either both, or neither should be specified
-    else if (vm.count("adtX") || vm.count("adtY"))
+    catch (std::exception const &e)
     {
-        std::cerr << "ERROR: Must specify ADT X and Y" << std::endl;
-        std::cerr << desc << std::endl;
-
+        std::cerr << "Builder initialization failed: " << e.what() << std::endl;
         return EXIT_FAILURE;
-    }
-    else
-    {
-        builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel);
-
-        for (auto i = 0; i < jobs; ++i)
-            workers.push_back(std::make_unique<Worker>(builder.get()));
     }
 
     auto const start = time(nullptr);

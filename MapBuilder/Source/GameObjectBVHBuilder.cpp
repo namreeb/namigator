@@ -1,8 +1,9 @@
 #include "GameObjectBVHBuilder.hpp"
-#include "DBC.hpp"
 
 #include "parser/Include/Doodad/Doodad.hpp"
 #include "parser/Include/Wmo/Wmo.hpp"
+#include "parser/Include/DBC.hpp"
+
 #include "utility/include/AABBTree.hpp"
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/BinaryStream.hpp"
@@ -20,7 +21,7 @@
 GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, int workers)
     : m_outputPath(outputPath), m_workers(static_cast<size_t>(workers)), m_shutdownRequested(false)
 {
-    DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
+    parser::DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
 
     for (auto i = 0u; i < displayInfo.RecordCount(); ++i)
     {

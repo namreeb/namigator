@@ -48,3 +48,4 @@
 /pathfind/x64/Release
 /utility/x64/Release
 /pathfind/*.user
+/gos.csv

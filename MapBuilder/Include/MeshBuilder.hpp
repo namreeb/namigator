@@ -71,6 +71,19 @@ class MeshBuilder
         std::unique_ptr<parser::Map> m_map;
         const std::string m_outputPath;
 
+#pragma pack (push, 1)
+        struct GameObjectInstance
+        {
+            std::uint64_t guid;
+            std::uint32_t displayId;
+            std::uint32_t map;
+            float position[3];
+            float quaternion[4];
+        };
+#pragma pack (pop)
+
+        std::vector<GameObjectInstance> m_gameObjectInstances;
+
         std::map<std::pair<int, int>, std::unique_ptr<meshfiles::ADT>> m_adtsInProgress;
         std::unique_ptr<meshfiles::GlobalWMO> m_globalWMO;
 
@@ -111,6 +124,8 @@ class MeshBuilder
     public:
         MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel);
         MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY);
+
+        void LoadGameObjects(const std::string &path);
 
         size_t CompletedTiles() const { return m_completedTiles; }
 

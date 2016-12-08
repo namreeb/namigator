@@ -22,7 +22,7 @@
 
 namespace parser
 {
-Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name)
+Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(MpqManager::GetMapId(name))
 {
     auto const file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
