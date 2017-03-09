@@ -4,7 +4,6 @@
 #include "Wmo/Wmo.hpp"
 #include "Wmo/WmoPlacement.hpp"
 
-#include "utility/Include/Directory.hpp"
 #include "utility/Include/BinaryStream.hpp"
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/LinearAlgebra.hpp"

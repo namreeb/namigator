@@ -22,6 +22,7 @@ class DoodadInstance
         const Doodad * const Model;
 
         DoodadInstance(const Doodad *doodad, const utility::Matrix &transformMatrix);
+        //DoodadInstance(const Doodad *doodad, const utility::Vertex &position, const utility::Quaternion &rotation);
 
         utility::Vertex TransformVertex(const utility::Vertex &vertex) const;
         void BuildTriangles(std::vector<utility::Vertex> &vertices, std::vector<int> &indices) const;

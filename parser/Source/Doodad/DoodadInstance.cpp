@@ -34,6 +34,11 @@ DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Matrix &tran
         UpdateBounds(Bounds, v, AdtChunks);
 }
 
+//DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Vertex &position, const utility::Quaternion &rotation) : TransformMatrix()
+//{
+//    
+//}
+
 utility::Vertex DoodadInstance::TransformVertex(const utility::Vertex &vertex) const
 {
     return utility::Vertex::Transform(vertex, TransformMatrix);

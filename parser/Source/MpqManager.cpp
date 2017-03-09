@@ -4,14 +4,13 @@
 #include "utility/Include/Exception.hpp"
 #include "StormLib.h"
 
-#include <boost/filesystem.hpp>
-
 #include <vector>
 #include <sstream>
 #include <cstdint>
 #include <cctype>
 #include <algorithm>
 #include <map>
+#include <experimental/filesystem>
 
 namespace parser
 {
@@ -39,21 +38,21 @@ void MpqManager::Initialize(const std::string &wowDir)
 {
     WowDir = wowDir;
 
-    auto wowPath = boost::filesystem::path(wowDir);
+    auto wowPath = std::experimental::filesystem::path(wowDir);
 
-    std::vector<boost::filesystem::directory_entry> directories;
-    std::vector<boost::filesystem::path> files;
-    std::vector<boost::filesystem::path> patches;
+    std::vector<std::experimental::filesystem::directory_entry> directories;
+    std::vector<std::experimental::filesystem::path> files;
+    std::vector<std::experimental::filesystem::path> patches;
 
-    for (auto i = boost::filesystem::directory_iterator(wowPath); i != boost::filesystem::directory_iterator(); ++i)
+    for (auto i = std::experimental::filesystem::directory_iterator(wowPath); i != std::experimental::filesystem::directory_iterator(); ++i)
     {
-        if (boost::filesystem::is_directory(i->status()))
+        if (std::experimental::filesystem::is_directory(i->status()))
         {
             directories.push_back(*i);
             continue;
         }
 
-        if (!boost::filesystem::is_regular_file(i->status()))
+        if (!std::experimental::filesystem::is_regular_file(i->status()))
             continue;
 
         auto path = i->path().string();
@@ -82,11 +81,11 @@ void MpqManager::Initialize(const std::string &wowDir)
         auto const localeMpq = wowPath / dirString / ("locale-" + dirString + ".MPQ");
         auto found = false;
 
-        std::vector<boost::filesystem::path> localePatches;
-        boost::filesystem::path firstPatch;
-        for (auto i = boost::filesystem::directory_iterator(dir); i != boost::filesystem::directory_iterator(); ++i)
+        std::vector<std::experimental::filesystem::path> localePatches;
+        std::experimental::filesystem::path firstPatch;
+        for (auto i = std::experimental::filesystem::directory_iterator(dir); i != std::experimental::filesystem::directory_iterator(); ++i)
         {
-            if (boost::filesystem::equivalent(*i, localeMpq))
+            if (std::experimental::filesystem::equivalent(*i, localeMpq))
                 found = true;
 
             auto const filename = i->path().filename().string();
@@ -100,7 +99,7 @@ void MpqManager::Initialize(const std::string &wowDir)
         if (found)
         {
             files.push_back(localeMpq);
-            if (!boost::filesystem::is_empty(firstPatch))
+            if (!std::experimental::filesystem::is_empty(firstPatch))
                 files.push_back(firstPatch);
 
             std::sort(localePatches.begin(), localePatches.end());

@@ -6,8 +6,8 @@
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/Ray.hpp"
 
-#include "Detour/Include/DetourNavMesh.h"
-#include "Detour/Include/DetourNavMeshQuery.h"
+#include "recastnavigation/Detour/Include/DetourNavMesh.h"
+#include "recastnavigation/Detour/Include/DetourNavMeshQuery.h"
 
 #include <string>
 #include <vector>

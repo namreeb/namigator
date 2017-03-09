@@ -7,9 +7,9 @@
 
 #include "MapBuilder/Include/MeshBuilder.hpp"
 
-#include "Recast/Include/Recast.h"
-#include "Recast/Include/RecastAlloc.h"
-#include "Detour/Include/DetourNavMesh.h"
+#include "recastnavigation/Recast/Include/Recast.h"
+#include "recastnavigation/Recast/Include/RecastAlloc.h"
+#include "recastnavigation/Detour/Include/DetourNavMesh.h"
 
 #include <vector>
 #include <cassert>

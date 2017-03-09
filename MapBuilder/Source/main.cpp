@@ -6,63 +6,105 @@
 #include "parser/Include/Adt/Adt.hpp"
 #include "parser/Include/Wmo/WmoInstance.hpp"
 
-#include "utility/Include/Directory.hpp"
-
-#include <boost/program_options.hpp>
-
 #include <iostream>
 #include <string>
 #include <thread>
 #include <chrono>
 #include <map>
 #include <cstdint>
+#include <sstream>
+#include <experimental/filesystem>
 
 #define STATUS_INTERVAL_SECONDS     10
+
+namespace
+{
+void DisplayUsage(std::ostream &o)
+{
+    o << "Usage:\n";
+    o << "  -h/--help                      -- Display help message\n";
+    o << "  -d/--data <data directory>     -- Path to data directory from which to draw input geometry\n";
+    o << "  -m/--map <map name>            -- Which map to produce data for\n";
+    o << "  -b/--bvh                       -- Enable line of sight (BVH) data generation for all encountered game objects (note: this will NOT replace existing data)\n";
+    o << "  -g/--gocsv <go csv file>       -- Path to CSV file containing game object data to include in static mesh output\n";
+    o << "  -o/--output <output directory> -- Path to root output directory\n";
+    o << "  -t/--threads <thread count>    -- How many worker threads to use\n";
+    o << "  -l/--logLevel <log level>      -- Log level (0 = none, 1 = progress, 2 = warning, 3 = error)\n";
+#ifdef _DEBUG
+    o << "  -x/--adtX <x>                  -- X coordinate of individual ADT to process\n";
+    o << "  -y/--adtY <y>                  -- Y coordinate of individual ADT to process\n";
+#endif
+    o.flush();
+}
+}
 
 int main(int argc, char *argv[])
 {
     std::string dataPath, map, outputPath, goCSVPath;
-    int adtX, adtY, jobs, logLevel;
-
-    boost::program_options::options_description desc("Allowed options");
-    desc.add_options()
-        ("data,d", boost::program_options::value<std::string>(&dataPath)->default_value("."),           "data folder")
-        ("map,m", boost::program_options::value<std::string>(&map),                                     "generate data for the specified map")
-        ("bvh,b",                                                                                       "generate line of sight (BVH) data for all game objects (WILL NOT replace existing data)")
-        ("gocsv,g", boost::program_options::value<std::string>(&goCSVPath),                             "CSV file containing gameobject data to include in pathfind mesh")
-        ("output,o", boost::program_options::value<std::string>(&outputPath)->default_value(".\\Maps"), "output path")
-        ("adtX,x", boost::program_options::value<int>(&adtX),                                           "adt x")
-        ("adtY,y", boost::program_options::value<int>(&adtY),                                           "adt y")
-        ("jobs,j", boost::program_options::value<int>(&jobs)->default_value(1),                         "build jobs")
-        ("logLevel,l", boost::program_options::value<int>(&logLevel)->default_value(3),                 "log level (0 = none, 1 = progress, 2 = warning, 3 = error)")
-        ("help,h",                                                                                      "display help message");
-
-    boost::program_options::variables_map vm;
+    int adtX, adtY, threads, logLevel;
+    bool bvh = false;
 
     try
     {
-        boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
-        boost::program_options::notify(vm);
+        for (auto i = 1; i < argc; ++i)
+        {
+            std::string arg(argv[i]);
+            std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
+
+            const bool lastArgument = i = argc - 1;
+
+            // if there are no more arguments we can still handle the parameterless arguments
+            if (lastArgument)
+            {
+                if (arg == "-b" || arg == "--bvh")
+                    bvh = true;
+                else if (arg == "-h" || arg == "--help")
+                {
+                    // when this is requested, don't do anything else
+                    DisplayUsage(std::cout);
+                    return EXIT_SUCCESS;
+                }
+                else
+                    throw std::invalid_argument("Missing argument to parameter " + arg);
+
+                break;
+            }
+
+            // below here we know that there is another argument
+            if (arg == "-d" || arg == "--data")
+                dataPath = argv[++i];
+            else if (arg == "-m" || arg == "--map")
+                map = argv[++i];
+            else if (arg == "-g" || arg == "--gocsv")
+                goCSVPath = argv[++i];
+            else if (arg == "-o" || arg == "--output")
+                outputPath = argv[++i];
+            else if (arg == "-t" || arg == "--threads")
+                threads = std::stoi(argv[++i]);
+            else if (arg == "-l" || arg == "--loglevel")
+                logLevel = std::stoi(argv[++i]);
+#ifdef _DEBUG
+            else if (arg == "-x" || arg == "--adtX")
+                adtX = std::stoi(argv[++i]);
+            else if (arg == "-y" || arg == "--adtY")
+                adtY = std::stoi(argv[++i]);
+#endif
+            else
+                throw std::invalid_argument("Unrecognized argument " + arg);
+        }
+
     }
-    catch (boost::program_options::error const &e)
+    catch (std::invalid_argument const &e)
     {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-
+        DisplayUsage(std::cerr);
         return EXIT_FAILURE;
     }
-
-    if (vm.count("help"))
-    {
-        std::cout << desc << std::endl;
-        return EXIT_SUCCESS;
-    }
-
-    if (vm.count("map") + vm.count("bvh") != 1)
+    
+    if (bvh && !map.empty())
     {
         std::cerr << "ERROR: Must specify either a map to generate (--map) or the global generation of BVH data (--bvh)" << std::endl;
-        std::cerr << desc << std::endl;
-
+        DisplayUsage(std::cerr);
         return EXIT_FAILURE;
     }
 
@@ -70,20 +112,22 @@ int main(int argc, char *argv[])
 
     parser::Parser::Initialize(dataPath);
 
-    utility::Directory::Create(outputPath);
-    utility::Directory::Create(outputPath + "\\BVH");
+    if (!std::experimental::filesystem::is_directory(outputPath))
+        std::experimental::filesystem::create_directory(outputPath);
 
-    if (vm.count("bvh"))
+    if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
+        std::experimental::filesystem::create_directory(outputPath + "/BVH");
+
+    if (bvh)
     {
-        if (vm.count("gocsv"))
+        if (!goCSVPath.empty())
         {
             std::cerr << "ERROR: Specifying gameobject data for BVH generation is meaningless" << std::endl;
-            std::cerr << desc << std::endl;
-
+            DisplayUsage(std::cerr);
             return EXIT_FAILURE;
         }
 
-        GameObjectBVHBuilder goBuilder(outputPath, jobs);
+        GameObjectBVHBuilder goBuilder(outputPath, threads);
 
         auto const startSize = goBuilder.Remaining();
 
@@ -115,25 +159,25 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    utility::Directory::Create(outputPath + "\\Nav");
+    if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
+        std::experimental::filesystem::create_directory(outputPath + "/Nav");
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
 
     try
     {
-        if (vm.count("adtX") && vm.count("adtY"))
+        if (adtX && adtY)
         {
             builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel, adtX, adtY);
 
-            if (vm.count("gocsv"))
+            if (!goCSVPath.empty())
                 builder->LoadGameObjects(goCSVPath);
 
             if (builder->IsGlobalWMO())
             {
                 std::cerr << "ERROR: Specified map has no ADTs" << std::endl;
-                std::cerr << desc << std::endl;
-
+                DisplayUsage(std::cerr);
                 return EXIT_FAILURE;
             }
 
@@ -142,21 +186,20 @@ int main(int argc, char *argv[])
             workers.push_back(std::make_unique<Worker>(builder.get()));
         }
         // either both, or neither should be specified
-        else if (vm.count("adtX") || vm.count("adtY"))
+        else if (adtX || adtY)
         {
             std::cerr << "ERROR: Must specify ADT X and Y" << std::endl;
-            std::cerr << desc << std::endl;
-
+            DisplayUsage(std::cerr);
             return EXIT_FAILURE;
         }
         else
         {
             builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel);
 
-            if (vm.count("gocsv"))
+            if (!goCSVPath.empty())
                 builder->LoadGameObjects(goCSVPath);
 
-            for (auto i = 0; i < jobs; ++i)
+            for (auto i = 0; i < threads; ++i)
                 workers.push_back(std::make_unique<Worker>(builder.get()));
         }
     }

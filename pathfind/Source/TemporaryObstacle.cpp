@@ -8,8 +8,8 @@
 #include "utility/Include/BoundingBox.hpp"
 #include "utility/Include/Exception.hpp"
 
-#include "Recast/Include/Recast.h"
-#include "Detour/Include/DetourNavMeshBuilder.h"
+#include "recastnavigation/Recast/Include/Recast.h"
+#include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
 
 #include <cassert>
 #include <cstdint>
@@ -23,40 +23,40 @@ namespace
 class RecastContext : public rcContext
 {
     private:
-    const rcLogCategory m_logLevel;
+        const rcLogCategory m_logLevel;
 
-    virtual void doLog(const rcLogCategory category, const char *msg, const int) override
-    {
-        if (!m_logLevel || category < m_logLevel)
-            return;
-
-        std::stringstream out;
-
-        out << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ";
-
-        switch (category)
+        virtual void doLog(const rcLogCategory category, const char *msg, const int) override
         {
-            case rcLogCategory::RC_LOG_ERROR:
-                out << "ERROR: ";
-                break;
-            case rcLogCategory::RC_LOG_PROGRESS:
-                out << "PROGRESS: ";
-                break;
-            case rcLogCategory::RC_LOG_WARNING:
-                out << "WARNING: ";
-                break;
-            default:
-                out << "rcContext::doLog(" << category << "): ";
-                break;
+            if (!m_logLevel || category < m_logLevel)
+                return;
+
+            std::stringstream out;
+
+            out << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ";
+
+            switch (category)
+            {
+                case rcLogCategory::RC_LOG_ERROR:
+                    out << "ERROR: ";
+                    break;
+                case rcLogCategory::RC_LOG_PROGRESS:
+                    out << "PROGRESS: ";
+                    break;
+                case rcLogCategory::RC_LOG_WARNING:
+                    out << "WARNING: ";
+                    break;
+                default:
+                    out << "rcContext::doLog(" << category << "): ";
+                    break;
+            }
+
+            out << msg;
+
+            MessageBox(nullptr, out.str().c_str(), "Recast Failure", 0);
         }
 
-        out << msg;
-
-        MessageBox(nullptr, out.str().c_str(), "Recast Failure", 0);
-    }
-
     public:
-    RecastContext(int logLevel) : m_logLevel(static_cast<rcLogCategory>(logLevel)) {}
+        RecastContext(int logLevel) : m_logLevel(static_cast<rcLogCategory>(logLevel)) {}
 };
 
 // TODO these next two functions are essentially copied from MapBuilder.  do something to remove the code duplication!

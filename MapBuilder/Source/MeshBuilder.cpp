@@ -9,7 +9,6 @@
 #include "utility/Include/MathHelper.hpp"
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/AABBTree.hpp"
-#include "utility/Include/Directory.hpp"
 #include "utility/Include/Exception.hpp"
 
 #include "RecastDetourBuild/Include/Common.hpp"
@@ -19,8 +18,6 @@
 #include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
 #include "recastnavigation/Detour/Include/DetourAlloc.h"
 #include "recastnavigation/DetourTileCache/Include/DetourTileCacheBuilder.h"
-
-#include <boost/filesystem.hpp>
 
 #include <cassert>
 #include <string>
@@ -37,6 +34,7 @@
 #include <iterator>
 #include <cmath>
 #include <unordered_map>
+#include <experimental/filesystem>
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
@@ -50,7 +48,7 @@ namespace
 {
 std::string BuildAbsoluteFilename(const std::string &outputPath, const std::string &in)
 {
-    boost::filesystem::path path(in);
+    const std::experimental::filesystem::path path(in);
 
     auto const extension = path.extension().string();
 
@@ -455,7 +453,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    utility::Directory::Create(m_outputPath + "/Nav/" + mapName);
+    if (!std::experimental::filesystem::is_directory(m_outputPath + "/Nav/" + mapName))
+        std::experimental::filesystem::create_directory(m_outputPath + "/Nav/" + mapName);
 }
 
 MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
@@ -479,7 +478,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    utility::Directory::Create(m_outputPath + "/Nav/" + mapName);
+    if (!std::experimental::filesystem::is_directory(m_outputPath + "/Nav/" + mapName))
+        std::experimental::filesystem::create_directory(m_outputPath + "/Nav/" + mapName);
 }
 
 void MeshBuilder::LoadGameObjects(const std::string &path)
@@ -547,7 +547,7 @@ void MeshBuilder::LoadGameObjects(const std::string &path)
         if (modelPath.length() == 0)
             continue;
 
-        auto const extension = boost::filesystem::path(modelPath).extension().string();
+        auto const extension = std::experimental::filesystem::path(modelPath).extension().string();
 
         // doodad
         if (extension[1] == 'm' || extension[1] == 'M')

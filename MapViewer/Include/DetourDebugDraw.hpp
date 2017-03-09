@@ -2,7 +2,7 @@
 
 #include "Renderer.hpp"
 
-#include "DebugUtils/Include/DebugDraw.h"
+#include "recastnavigation/DebugUtils/Include/DebugDraw.h"
 
 #include "utility/Include/LinearAlgebra.hpp"
 

@@ -49,3 +49,7 @@
 /utility/x64/Release
 /pathfind/*.user
 /gos.csv
+/.vs
+/ipch/STORMLIB_VS15-933783c6/*.ipch
+/MapViewer/Include/pixelShader.hpp
+/MapViewer/Include/vertexShader.hpp

@@ -5,14 +5,13 @@
 #include <map>
 #include <functional>
 #include <cassert>
-#include <cwchar>
 
 CommonControl::CommonControl(HWND window)
     : m_instance(reinterpret_cast<HINSTANCE>(GetWindowLongPtr(window, GWLP_HINSTANCE))), m_window(window),
       m_labelFont(CreateFont(16, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,
-                             ANTIALIASED_QUALITY, VARIABLE_PITCH, L"Microsoft Sans Serif")),
+                             ANTIALIASED_QUALITY, VARIABLE_PITCH, "Microsoft Sans Serif")),
       m_textBoxFont(CreateFont(16, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,
-                               ANTIALIASED_QUALITY, VARIABLE_PITCH, L"Microsoft Sans Serif"))
+                               ANTIALIASED_QUALITY, VARIABLE_PITCH, "Microsoft Sans Serif"))
 {
     auto const handler = [](HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
@@ -32,14 +31,14 @@ LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
     {
         case WM_COMMAND:
         {
-            wchar_t className[16];
+            TCHAR className[16];
 
             auto const control = reinterpret_cast<HWND>(lParam);
 
             if (!GetClassName(control, className, sizeof(className) / sizeof(className[0])))
                 break;
 
-            if (!wcsncmp(className, L"Button", wcslen(className)))
+            if (!strncmp(className, "Button", strlen(className)))
             {
                 auto const style = GetWindowLong(control, GWL_STYLE);
 
@@ -83,7 +82,7 @@ LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
                     }
                 }
             }
-            else if (!wcsncmp(className, L"ComboBox", wcslen(className)) && HIWORD(wParam) == CBN_SELCHANGE)
+            else if (!strncmp(className, "ComboBox", strlen(className)) && HIWORD(wParam) == CBN_SELCHANGE)
             {
                 auto handler = m_comboBoxHandlers.find(static_cast<int>(LOWORD(wParam)));
 
@@ -101,7 +100,7 @@ LRESULT CommonControl::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-void CommonControl::AddLabel(const std::wstring &text, int x, int y)
+void CommonControl::AddLabel(const std::string &text, int x, int y)
 {
     auto hdc = GetDC(m_window);
 
@@ -111,21 +110,21 @@ void CommonControl::AddLabel(const std::wstring &text, int x, int y)
     auto result = GetTextExtentPoint(hdc, text.c_str(), static_cast<int>(text.length()), &textSize);
     assert(result);
 
-    auto control = CreateWindow(L"STATIC", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, textSize.cx, textSize.cy, m_window, nullptr, m_instance, nullptr);
+    auto control = CreateWindow("STATIC", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, textSize.cx, textSize.cy, m_window, nullptr, m_instance, nullptr);
     
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
 }
 
-void CommonControl::AddTextBox(int id, const std::wstring &text, int x, int y, int width, int height)
+void CommonControl::AddTextBox(int id, const std::string &text, int x, int y, int width, int height)
 {
-    auto control = CreateWindow(L"EDIT", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER, x, y, width, height, m_window, nullptr, m_instance, nullptr);
+    auto control = CreateWindow("EDIT", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER, x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
 
     m_controls.emplace(id, control);
 }
 
-void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, int x, int y, std::function<void(const std::string &)> handler)
+void CommonControl::AddComboBox(int id, const std::vector<std::string> &items, int x, int y, std::function<void(const std::string &)> handler)
 {
     auto hdc = GetDC(m_window);
 
@@ -147,7 +146,7 @@ void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, 
 
     height += 2 * static_cast<int>(items.size());
 
-    auto control = CreateWindow(L"COMBOBOX", nullptr, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
+    auto control = CreateWindow("COMBOBOX", nullptr, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
                                 x, y, width, height, m_window, nullptr, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
@@ -159,9 +158,9 @@ void CommonControl::AddComboBox(int id, const std::vector<std::wstring> &items, 
     m_comboBoxHandlers.emplace(id, handler);
 }
 
-void CommonControl::AddButton(int id, const std::wstring &text, int x, int y, int width, int height, std::function<void()> handler)
+void CommonControl::AddButton(int id, const std::string &text, int x, int y, int width, int height, std::function<void()> handler)
 {
-    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD, x, y, width, height, m_window, (HMENU)(LONG_PTR)id, m_instance, nullptr);
+    auto control = CreateWindow("BUTTON", text.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD, x, y, width, height, m_window, (HMENU)(LONG_PTR)id, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_labelFont, MAKELPARAM(TRUE, 0));
 
@@ -169,7 +168,7 @@ void CommonControl::AddButton(int id, const std::wstring &text, int x, int y, in
     m_buttonHandlers.emplace(id, handler);
 }
 
-void CommonControl::AddCheckBox(int id, const std::wstring &text, int x, int y, bool checked, std::function<void (bool)> handler)
+void CommonControl::AddCheckBox(int id, const std::string &text, int x, int y, bool checked, std::function<void (bool)> handler)
 {
     auto hdc = GetDC(m_window);
 
@@ -179,7 +178,7 @@ void CommonControl::AddCheckBox(int id, const std::wstring &text, int x, int y, 
     auto result = GetTextExtentPoint(hdc, text.c_str(), static_cast<int>(text.length()), &textSize);
     assert(result);
 
-    auto control = CreateWindow(L"BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX, x, y, 20+textSize.cx, textSize.cy, m_window, (HMENU)(LONG_PTR)id, m_instance, nullptr);
+    auto control = CreateWindow("BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX, x, y, 20+textSize.cx, textSize.cy, m_window, (HMENU)(LONG_PTR)id, m_instance, nullptr);
 
     SendMessage(control, WM_SETFONT, (WPARAM)m_textBoxFont, MAKELPARAM(TRUE, 0));
 

@@ -4,8 +4,8 @@
 
 #include "utility/Include/BinaryStream.hpp"
 #include "utility/Include/BoundingBox.hpp"
-#include "Recast/Include/Recast.h"
-#include "Detour/Include/DetourNavMesh.h"
+#include "recastnavigation/Recast/Include/Recast.h"
+#include "recastnavigation/Detour/Include/DetourNavMesh.h"
 
 #include <unordered_map>
 #include <vector>

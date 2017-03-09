@@ -7,8 +7,8 @@
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/Ray.hpp"
 
-#include "Detour/Include/DetourNavMesh.h"
-#include "Detour/Include/DetourNavMeshQuery.h"
+#include "recastnavigation/Detour/Include/DetourNavMesh.h"
+#include "recastnavigation/Detour/Include/DetourNavMeshQuery.h"
 
 #include <string>
 #include <sstream>
@@ -21,7 +21,6 @@
 #include <limits>
 #include <algorithm>
 #include <unordered_set>
-#include <boost/filesystem.hpp>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 

@@ -7,12 +7,11 @@
 #include "parser/Include/Adt/Adt.hpp"
 #include "parser/Include/Wmo/WmoInstance.hpp"
 
-#include "utility/Include/Directory.hpp"
 #include "utility/Include/MathHelper.hpp"
 
 #include "pathfind/Include/Map.hpp"
 
-#include "DebugUtils/Include/DetourDebugDraw.h"
+#include "recastnavigation/DebugUtils/Include/DetourDebugDraw.h"
 #include "RecastDetourBuild/Include/Common.hpp"
 
 #include "resource.h"
@@ -23,6 +22,7 @@
 #include <sstream>
 #include <cassert>
 #include <vector>
+#include <experimental/filesystem>
 
 #define START_X             100
 #define START_Y             100
@@ -227,7 +227,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                         if (gNavMesh->FindPath(gStart, hit, path, true))
                             gRenderer->AddPath(path);
                         else
-                            MessageBox(nullptr, L"FindPath failed", L"Path Find", 0);
+                            MessageBox(nullptr, "FindPath failed", "Path Find", 0);
                     }
                     else
                     {
@@ -338,7 +338,7 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpszClassName = L"DXWindow";
+    wc.lpszClassName = "DXWindow";
     wc.hIconSm = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
     wc.hIcon = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
     //wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
@@ -349,8 +349,8 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, true);
 
     guiWindow = CreateWindowEx(WS_EX_RIGHTSCROLLBAR,
-        L"DXWindow",
-        L"CMaNGOS Map Debugging Interface",
+        "DXWindow",
+        "namigator testing interface",
         WS_OVERLAPPEDWINDOW,
         wr.left,
         wr.top,
@@ -369,15 +369,15 @@ void InitializeWindows(HINSTANCE hInstance, HWND &guiWindow, HWND &controlWindow
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpszClassName = L"ControlWindow";
+    wc.lpszClassName = "ControlWindow";
     wc.hIconSm = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 16, 16, 0);
     wc.hIcon = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0);
 
     RegisterClassEx(&wc);
 
     controlWindow = CreateWindowEx(WS_EX_RIGHTSCROLLBAR,
-        L"ControlWindow",
-        L"Control",
+        "ControlWindow",
+        "Control",
         (WS_BORDER | WS_CAPTION) & (~WS_ICONIC),
         wr.right - MAGIC_LEFT_SHIFT,
         wr.top,
@@ -495,7 +495,7 @@ void LoadPositionFromGUI()
     {
         if (!gMap->HasAdt(x, y))
         {
-            MessageBox(nullptr, L"Map does not have the specified ADT tile", L"Error", MB_OK | MB_ICONEXCLAMATION);
+            MessageBox(nullptr, "Map does not have the specified ADT tile", "Error", MB_OK | MB_ICONEXCLAMATION);
             return;
         }
 
@@ -591,15 +591,15 @@ void SpawnGOFromGUI()
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow)
 {
-    if (!utility::Directory::Exists("./Data"))
+    if (!std::experimental::filesystem::is_directory("./Data"))
     {
-        MessageBox(NULL, L"Data folder does not exist", L"ERROR", 0);
+        MessageBox(NULL, "Data folder does not exist", "ERROR", 0);
         return EXIT_FAILURE;
     }
 
-    if (!utility::Directory::Exists("./Maps"))
+    if (!std::experimental::filesystem::is_directory("./Maps"))
     {
-        MessageBox(NULL, L"Maps folder does not exist", L"ERROR", 0);
+        MessageBox(NULL, "Maps folder does not exist", "ERROR", 0);
         return EXIT_FAILURE;
     }
 
@@ -618,49 +618,49 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     // set up and initialize our Windows common control API for the control window
     gControls = std::make_unique<CommonControl>(gControlWindow);
 
-    gControls->AddLabel(L"Select Map:", 10, 12);
+    gControls->AddLabel("Select Map:", 10, 12);
 
-    std::vector<std::wstring> maps;
-    maps.push_back(L"000 Azeroth");
-    maps.push_back(L"001 Kalimdor");
-    maps.push_back(L"013 Test");
-    maps.push_back(L"025 Scott Test");
-    maps.push_back(L"029 Test");
-    maps.push_back(L"030 PVPZone01 (Alterac Valley)");
-    maps.push_back(L"033 Shadowfang");
-    maps.push_back(L"034 StormwindJail (Stockades)");
-    //Maps.push_back(L"035 StormwindPrison");
-    maps.push_back(L"036 DeadminesInstance");
-    maps.push_back(L"037 PVPZone02 (Azshara Crater)");
-    maps.push_back(L"043 WailingCaverns");
-    maps.push_back(L"489 PVPzone03 (Warsong Gulch)");
-    maps.push_back(L"529 PVPzone04 (Arathi Basin)");
-    maps.push_back(L"530 Expansion01 (Outland");
-    maps.push_back(L"571 Northrend");
+    std::vector<std::string> maps;
+    maps.push_back("000 Azeroth");
+    maps.push_back("001 Kalimdor");
+    maps.push_back("013 Test");
+    maps.push_back("025 Scott Test");
+    maps.push_back("029 Test");
+    maps.push_back("030 PVPZone01 (Alterac Valley)");
+    maps.push_back("033 Shadowfang");
+    maps.push_back("034 StormwindJail (Stockades)");
+    //Maps.push_back("035 StormwindPrison");
+    maps.push_back("036 DeadminesInstance");
+    maps.push_back("037 PVPZone02 (Azshara Crater)");
+    maps.push_back("043 WailingCaverns");
+    maps.push_back("489 PVPzone03 (Warsong Gulch)");
+    maps.push_back("529 PVPzone04 (Arathi Basin)");
+    maps.push_back("530 Expansion01 (Outland");
+    maps.push_back("571 Northrend");
 
     gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
-    gControls->AddLabel(L"X:", 10, 35);
-    gControls->AddTextBox(Controls::PositionX, L"38", 25, 35, 75, 20);
+    gControls->AddLabel("X:", 10, 35);
+    gControls->AddTextBox(Controls::PositionX, "38", 25, 35, 75, 20);
 
-    gControls->AddLabel(L"Y:", 10, 60);
-    gControls->AddTextBox(Controls::PositionY, L"40", 25, 60, 75, 20);
+    gControls->AddLabel("Y:", 10, 60);
+    gControls->AddTextBox(Controls::PositionY, "40", 25, 60, 75, 20);
 
-    gControls->AddButton(Controls::Load, L"Load", 115, 57, 75, 25, LoadPositionFromGUI);
+    gControls->AddButton(Controls::Load, "Load", 115, 57, 75, 25, LoadPositionFromGUI);
 
     gControls->Enable(Controls::PositionX, false);
     gControls->Enable(Controls::PositionY, false);
     gControls->Enable(Controls::Load, false);
 
-    gControls->AddCheckBox(Controls::Wireframe, L"Wireframe", 10, 85, false, [](bool checked) { gRenderer->SetWireframe(checked); });
-    gControls->AddCheckBox(Controls::RenderADT, L"Render ADT", 10, 110, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
-    gControls->AddCheckBox(Controls::RenderLiquid, L"Render Liquid", 10, 135, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
-    gControls->AddCheckBox(Controls::RenderWMO, L"Render WMO", 10, 160, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
-    gControls->AddCheckBox(Controls::RenderDoodad, L"Render Doodad", 10, 185, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
-    gControls->AddCheckBox(Controls::RenderMesh, L"Render Mesh", 10, 210, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
+    gControls->AddCheckBox(Controls::Wireframe, "Wireframe", 10, 85, false, [](bool checked) { gRenderer->SetWireframe(checked); });
+    gControls->AddCheckBox(Controls::RenderADT, "Render ADT", 10, 110, true, [](bool checked) { gRenderer->SetRenderADT(checked); });
+    gControls->AddCheckBox(Controls::RenderLiquid, "Render Liquid", 10, 135, true, [](bool checked) { gRenderer->SetRenderLiquid(checked); });
+    gControls->AddCheckBox(Controls::RenderWMO, "Render WMO", 10, 160, true, [](bool checked) { gRenderer->SetRenderWMO(checked); });
+    gControls->AddCheckBox(Controls::RenderDoodad, "Render Doodad", 10, 185, true, [](bool checked) { gRenderer->SetRenderDoodad(checked); });
+    gControls->AddCheckBox(Controls::RenderMesh, "Render Mesh", 10, 210, true, [](bool checked) { gRenderer->SetRenderMesh(checked); });
 
-    gControls->AddTextBox(Controls::SpawnDoodadEdit, L"Display ID", 10, 245, 90, 20);
-    gControls->AddButton(Controls::SpawnDoodadButton, L"Spawn GO", 115, 242, 100, 25, SpawnGOFromGUI);
+    gControls->AddTextBox(Controls::SpawnDoodadEdit, "Display ID", 10, 245, 90, 20);
+    gControls->AddButton(Controls::SpawnDoodadButton, "Spawn GO", 115, 242, 100, 25, SpawnGOFromGUI);
 
     // enter the main loop:
 

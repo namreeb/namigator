@@ -8,8 +8,6 @@
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/BinaryStream.hpp"
 
-#include <boost/filesystem.hpp>
-
 #include <string>
 #include <unordered_map>
 #include <cstdint>
@@ -17,11 +15,12 @@
 #include <mutex>
 #include <iostream>
 #include <sstream>
+#include <experimental/filesystem>
 
 GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, int workers)
     : m_outputPath(outputPath), m_workers(static_cast<size_t>(workers)), m_shutdownRequested(false)
 {
-    parser::DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
+    const parser::DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
 
     for (auto i = 0u; i < displayInfo.RecordCount(); ++i)
     {
@@ -34,13 +33,13 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, int wo
         auto const output = BuildAbsoluteFilename(path);
 
         // mark existing files as already serialized so that they are included in the index file
-        if (boost::filesystem::exists(output))
+        if (std::experimental::filesystem::exists(output))
         {
-            m_serialized[row] = boost::filesystem::path(output).filename().string();
+            m_serialized[row] = std::experimental::filesystem::path(output).filename().string();
             continue;
         }
 
-        auto const extension = boost::filesystem::path(path).extension().string();
+        auto const extension = std::experimental::filesystem::path(path).extension().string();
 
         if (extension[1] == 'm' || extension[1] == 'M')
             m_doodads[row] = path;
@@ -93,7 +92,7 @@ void GameObjectBVHBuilder::WriteIndexFile() const
 
 std::string GameObjectBVHBuilder::BuildAbsoluteFilename(const std::string &in) const
 {
-    boost::filesystem::path path(in);
+    std::experimental::filesystem::path path(in);
 
     auto const extension = path.extension().string();
 
@@ -200,7 +199,7 @@ void GameObjectBVHBuilder::Work()
             }
 
             std::lock_guard<std::mutex> guard(m_mutex);
-            m_serialized[entry] = boost::filesystem::path(output).filename().string();
+            m_serialized[entry] = std::experimental::filesystem::path(output).filename().string();
         }
         catch (utility::exception const &e)
         {

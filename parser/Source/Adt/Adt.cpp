@@ -19,7 +19,6 @@
 #include "Map/Map.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
-#include "utility/Include/Directory.hpp"
 #include "RecastDetourBuild/Include/Common.hpp"
 
 #include <fstream>
@@ -316,7 +315,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
                 wmoDefinition.GetTransformMatrix(transformMatrix);
 
                 wmoInstance = new WmoInstance(wmo, wmoDefinition.DoodadSet, bounds, transformMatrix);
-                map->InsertWmoInstance(static_cast<unsigned int>(wmoDefinition.UniqueId), wmoInstance);
+                map->InsertWmoInstance(wmoDefinition.UniqueId, wmoInstance);
             }
 
             assert(!!wmo && !!wmoInstance);
