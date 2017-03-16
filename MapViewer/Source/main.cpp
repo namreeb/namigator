@@ -8,6 +8,7 @@
 #include "parser/Include/Wmo/WmoInstance.hpp"
 
 #include "utility/Include/MathHelper.hpp"
+#include "utility/Include/Exception.hpp"
 
 #include "pathfind/Include/Map.hpp"
 
@@ -37,6 +38,8 @@
 // FIXME: Amount to shift control window leftwards.  Find out proper solution for this later!
 #define MAGIC_LEFT_SHIFT    15
 
+namespace
+{
 HWND gGuiWindow, gControlWindow;
 
 std::unique_ptr<Renderer> gRenderer;
@@ -150,7 +153,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     gMovingForward = -1;
                     return TRUE;
             }
-                
+
             break;
         }
 
@@ -158,22 +161,22 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
         {
             switch (static_cast<char>(wParam))
             {
-            case ' ':
-            case 'X':
-                gMovingVertical = 0;
-                return TRUE;
-            case 'Q':
-            case 'E':
-                gMovingUp = 0;
-                return TRUE;
-            case 'D':
-            case 'A':
-                gMovingRight = 0;
-                return TRUE;
-            case 'W':
-            case 'S':
-                gMovingForward = 0;
-                return TRUE;
+                case ' ':
+                case 'X':
+                    gMovingVertical = 0;
+                    return TRUE;
+                case 'Q':
+                case 'E':
+                    gMovingUp = 0;
+                    return TRUE;
+                case 'D':
+                case 'A':
+                    gMovingRight = 0;
+                    return TRUE;
+                case 'W':
+                case 'S':
+                    gMovingForward = 0;
+                    return TRUE;
             }
             break;
         }
@@ -294,7 +297,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             if (gRenderer->m_camera.IsMousePanning())
             {
                 gRenderer->m_camera.EndMousePan();
-                
+
                 ShowCursor(TRUE);
 
                 return TRUE;
@@ -410,8 +413,15 @@ void ChangeMap(const std::string &cn)
 
     GetMapName(cn, mapName);
 
-    gMap = std::make_unique<parser::Map>(mapName);
-    gNavMesh = std::make_unique<pathfind::Map>("./Maps", mapName);
+    try
+    {
+        gMap = std::make_unique<parser::Map>(mapName);
+        gNavMesh = std::make_unique<pathfind::Map>("Maps", mapName);
+    }
+    catch (utility::exception const &e)
+    {
+        MessageBoxA(nullptr, e.what(), "ERROR", 0);
+    }
 
     // if the loaded map has no ADTs, but instead a global WMO, load it now, including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
@@ -587,17 +597,28 @@ void SpawnGOFromGUI()
 
     UpdateMouseDoodadTransform();
 }
+}
 
 // the entry point for any Windows program
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmdLine, int nCmdShow)
 {
-    if (!std::experimental::filesystem::is_directory("./Data"))
+    auto const root = std::experimental::filesystem::path(::strlen(lpCmdLine) > 0 ? lpCmdLine : ".");
+
+    if (!std::experimental::filesystem::is_directory(root))
+    {
+        MessageBox(nullptr, "Root folder does not exist", "ERROR", 0);
+        return EXIT_FAILURE;
+    }
+
+    std::experimental::filesystem::current_path(root);
+
+    if (!std::experimental::filesystem::is_directory("Data"))
     {
         MessageBox(NULL, "Data folder does not exist", "ERROR", 0);
         return EXIT_FAILURE;
     }
 
-    if (!std::experimental::filesystem::is_directory("./Maps"))
+    if (!std::experimental::filesystem::is_directory("Maps"))
     {
         MessageBox(NULL, "Maps folder does not exist", "ERROR", 0);
         return EXIT_FAILURE;
@@ -605,7 +626,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     gHasStart = false;
 
-    parser::Parser::Initialize("./Data");
+    parser::Parser::Initialize("Data");
 
     InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 
