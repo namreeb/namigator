@@ -56,6 +56,11 @@ class MeshSettings
         static constexpr int VoxelWalkableHeight = static_cast<int>(WalkableHeight / CellHeight);
         static constexpr int VoxelWalkableClimb = static_cast<int>(WalkableClimb / CellHeight);
 
+        static_assert(
+            TilesPerChunk == 1 ||
+            TilesPerChunk == 2 ||
+            TilesPerChunk == 4 ||
+            TilesPerChunk == 8, "Tiles must evenly divide the chunk height structure");
         static_assert(TileSize <= AdtSize, "Tiles cannot be larger than ADTs");
         static_assert(VoxelWalkableRadius > 0, "VoxelWalkableRadius must be a positive integer");
         static_assert(VoxelWalkableHeight > 0, "VoxelWalkableHeight must be a positive integer");
