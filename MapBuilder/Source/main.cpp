@@ -41,7 +41,7 @@ void DisplayUsage(std::ostream &o)
 int main(int argc, char *argv[])
 {
     std::string dataPath, map, outputPath, goCSVPath;
-    int adtX, adtY, threads, logLevel;
+    int adtX = 0, adtY = 0, threads, logLevel;
     bool bvh = false;
 
     try
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
             std::string arg(argv[i]);
             std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
 
-            const bool lastArgument = i = argc - 1;
+            const bool lastArgument = i == argc - 1;
 
             // if there are no more arguments we can still handle the parameterless arguments
             if (lastArgument)
