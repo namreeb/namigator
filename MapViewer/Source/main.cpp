@@ -319,6 +319,7 @@ enum Controls : int
     PositionX,
     PositionY,
     Load,
+    ZSearch,
     Wireframe,
     RenderADT,
     RenderLiquid,
@@ -577,6 +578,23 @@ void LoadPositionFromGUI()
     }
 }
 
+void SearchZValues()
+{
+    auto const posX = std::stof(gControls->GetText(Controls::PositionX));
+    auto const posY = std::stof(gControls->GetText(Controls::PositionY));
+
+    std::vector<float> output;
+    auto const adt = gNavMesh->FindHeights(posX, posY, output);
+
+    std::stringstream result;
+
+    result << "Heights at (" << posX << ", " << posY << "):\n";
+    for (auto const h : output)
+        result << h << "\n";
+
+    MessageBoxA(nullptr, result.str().c_str(), "Z Search Results", 0);
+}
+
 void SpawnGOFromGUI()
 {
     if (!gNavMesh)
@@ -668,6 +686,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
     gControls->AddTextBox(Controls::PositionY, "40", 25, 60, 75, 20);
 
     gControls->AddButton(Controls::Load, "Load", 115, 57, 75, 25, LoadPositionFromGUI);
+    gControls->AddButton(Controls::ZSearch, "Z Search", 200, 57, 75, 25, SearchZValues);
 
     gControls->Enable(Controls::PositionX, false);
     gControls->Enable(Controls::PositionY, false);
