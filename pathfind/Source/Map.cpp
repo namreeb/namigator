@@ -21,6 +21,7 @@
 #include <limits>
 #include <algorithm>
 #include <unordered_set>
+#include <experimental/filesystem>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -78,11 +79,10 @@ namespace pathfind
 {
 Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(dataPath), m_mapName(mapName)
 {
-    std::stringstream continentFile;
+    const std::experimental::filesystem::path data(dataPath);
+    auto const continentFile = data / (mapName + ".map");
 
-    continentFile << dataPath << "/" << mapName << ".map";
-
-    std::ifstream in(continentFile.str(), std::ifstream::binary);
+    std::ifstream in(continentFile.string(), std::ifstream::binary);
 	if (!in)
 		THROW("Could not open map file");
 
@@ -188,9 +188,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         auto const result = m_navMesh.init(&params);
         assert(result == DT_SUCCESS);
         
-        std::stringstream str;
-        str << m_dataPath << "/Nav/" << m_mapName << "/Map.nav";
-        std::ifstream navFile(str.str(), std::ifstream::binary);
+        std::ifstream navFile(m_dataPath / "Nav" / "Map.nav", std::ifstream::binary);
         utility::BinaryStream navIn(navFile);
         navFile.close();
 
@@ -228,7 +226,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
     if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
         THROW("dtNavMeshQuery::init failed");
 
-    std::ifstream tempObstaclesIndex(m_dataPath + "/BVH/bvh.idx", std::ifstream::binary);
+    std::ifstream tempObstaclesIndex(m_dataPath / "BVH" / "bvh.idx", std::ifstream::binary);
     if (tempObstaclesIndex.fail())
         THROW("Failed to open temporary obstacles index");
 
@@ -306,7 +304,7 @@ std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& fil
 
     // else, load it
 
-    std::ifstream in(m_dataPath + "/BVH/" + bvhFilename, std::ifstream::binary);
+    std::ifstream in(m_dataPath / "BVH" / bvhFilename, std::ifstream::binary);
 
     if (in.fail())
         THROW("Failed to doodad BVH file: " + bvhFilename).ErrorCode();
@@ -340,8 +338,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename,
     }
 
     // else, load it
-
-    std::ifstream in(m_dataPath + "/BVH/" + bvhFilename, std::ifstream::binary);
+    std::ifstream in(m_dataPath / "BVH" / bvhFilename, std::ifstream::binary);
 
     if (in.fail())
         THROW("Could not open WMO BVH file " + bvhFilename).ErrorCode();
@@ -398,11 +395,10 @@ bool Map::LoadADT(int x, int y)
                 return true;
 
     std::stringstream str;
-    str << m_dataPath << "/Nav/" << m_mapName << "/"
-        << std::setfill('0') << std::setw(2) << x << "_"
+    str << std::setfill('0') << std::setw(2) << x << "_"
         << std::setfill('0') << std::setw(2) << y << ".nav";
 
-    std::ifstream in(str.str(), std::ifstream::binary);
+    std::ifstream in(m_dataPath / "Nav" / m_mapName / str.str(), std::ifstream::binary);
     utility::BinaryStream stream(in);
     in.close();
 

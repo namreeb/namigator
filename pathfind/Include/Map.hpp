@@ -13,6 +13,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <experimental/filesystem>
 
 namespace std
 {
@@ -37,7 +38,7 @@ class Map
         static constexpr int MaxPathHops = 128;
         static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
 
-        const std::string m_dataPath;
+        const std::experimental::filesystem::path m_dataPath;
         const std::string m_mapName;
 
         dtNavMesh m_navMesh;

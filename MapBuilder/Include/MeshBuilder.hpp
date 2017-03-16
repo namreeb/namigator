@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <map>
 #include <cstdint>
+#include <experimental/filesystem>
 
 namespace meshfiles
 {
@@ -30,7 +31,7 @@ namespace meshfiles
         public:
             virtual ~File() = default;
 
-            virtual void Serialize(const std::string &filename) const = 0;
+            virtual void Serialize(const std::experimental::filesystem::path &filename) const = 0;
     };
 
     class ADT : File
@@ -51,7 +52,7 @@ namespace meshfiles
             void AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
             bool IsComplete() const { return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT); }
-            void Serialize(const std::string &filename) const override;
+            void Serialize(const std::experimental::filesystem::path &filename) const override;
     };
 
     class GlobalWMO : File
@@ -61,7 +62,7 @@ namespace meshfiles
 
             void AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
-            void Serialize(const std::string &filename) const override;
+            void Serialize(const std::experimental::filesystem::path &filename) const override;
     };
 }
 
@@ -69,7 +70,7 @@ class MeshBuilder
 {
     private:
         std::unique_ptr<parser::Map> m_map;
-        const std::string m_outputPath;
+        const std::experimental::filesystem::path m_outputPath;
 
 #pragma pack (push, 1)
         struct GameObjectInstance

@@ -46,9 +46,10 @@ static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
 namespace
 {
-std::string BuildAbsoluteFilename(const std::string &outputPath, const std::string &in)
+std::experimental::filesystem::path BuildAbsoluteFilename(const std::experimental::filesystem::path &outputPath, const std::string &in)
 {
     const std::experimental::filesystem::path path(in);
+    auto const filename = path.filename().replace_extension("bvh").string();
 
     auto const extension = path.extension().string();
 
@@ -60,7 +61,7 @@ std::string BuildAbsoluteFilename(const std::string &outputPath, const std::stri
     else
         THROW("Unrecognized extension");
 
-    return outputPath + "/BVH/" + kind + "_" + path.filename().replace_extension("bvh").string();
+    return outputPath / "BVH" / (kind + "_" + filename);
 }
 
 void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::vector<std::pair<int, int>> &chunks)
@@ -453,8 +454,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    if (!std::experimental::filesystem::is_directory(m_outputPath + "/Nav/" + mapName))
-        std::experimental::filesystem::create_directory(m_outputPath + "/Nav/" + mapName);
+    if (!std::experimental::filesystem::is_directory(m_outputPath / "Nav" / mapName))
+        std::experimental::filesystem::create_directory(m_outputPath / "Nav" / mapName);
 }
 
 MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
@@ -478,8 +479,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    if (!std::experimental::filesystem::is_directory(m_outputPath + "/Nav/" + mapName))
-        std::experimental::filesystem::create_directory(m_outputPath + "/Nav/" + mapName);
+    if (!std::experimental::filesystem::is_directory(m_outputPath / "Nav" / mapName))
+        std::experimental::filesystem::create_directory(m_outputPath / "Nav" / mapName);
 }
 
 void MeshBuilder::LoadGameObjects(const std::string &path)
@@ -666,10 +667,7 @@ void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
 
     utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
 
-    std::stringstream out;
-    out << m_outputPath << "/BVH/WMO_" << wmo->FileName << ".bvh";
-
-    std::ofstream o(out.str(), std::ofstream::binary|std::ofstream::trunc);
+    std::ofstream o(m_outputPath / "BVH" / ("WMO_" + wmo->FileName + ".bvh"), std::ofstream::binary|std::ofstream::trunc);
     aabbTree.Serialize(o);
 
     m_bvhWmos.insert(wmo->FileName);
@@ -703,9 +701,7 @@ void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
 
     utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
 
-    std::stringstream dout;
-    dout << m_outputPath << "/BVH/Doodad_" << doodad->FileName << ".bvh";
-    std::ofstream doodadOut(dout.str(), std::ofstream::binary|std::ofstream::trunc);
+    std::ofstream doodadOut(m_outputPath / "BVH" / ("Doodad_" + doodad->FileName + ".bvh"), std::ofstream::binary|std::ofstream::trunc);
     doodadTree.Serialize(doodadOut);
 
     m_bvhDoodads.insert(doodad->FileName);
@@ -795,10 +791,7 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
 
     if (++m_completedTiles == m_totalTiles)
     {
-        std::stringstream str;
-        str << m_outputPath << "/Nav/" << m_map->Name << "/Map.nav";
-
-        m_globalWMO->Serialize(str.str());
+        m_globalWMO->Serialize(m_outputPath / "Nav" / m_map->Name / "Map.nav");
 
 #ifdef _DEBUG
         std::stringstream log;
@@ -1008,10 +1001,9 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
         if (adt->IsComplete())
         {
             std::stringstream str;
-            str << m_outputPath << "/Nav/" << m_map->Name << "/" << std::setw(2) << std::setfill('0')
-                << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
+            str << std::setw(2) << std::setfill('0') << adtX << "_" << std::setw(2) << std::setfill('0') << adtY << ".nav";
 
-            adt->Serialize(str.str());
+            adt->Serialize(m_outputPath / "Nav" / m_map->Name / str.str());
 
 #ifdef _DEBUG
             std::stringstream log;
@@ -1032,10 +1024,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
 void MeshBuilder::SaveMap() const
 {
-    std::stringstream filename;
-    filename << m_outputPath << "/" << m_map->Name << ".map";
-
-    std::ofstream out(filename.str(), std::ofstream::binary|std::ofstream::trunc);
+    std::ofstream out(m_outputPath / (m_map->Name + ".map"), std::ofstream::binary|std::ofstream::trunc);
 
     m_map->Serialize(out);
 }
@@ -1081,7 +1070,7 @@ void ADT::AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::
     m_wmosAndDoodadIds[{x, y}] = std::move(wmosAndDoodads);
 }
 
-void ADT::Serialize(const std::string &filename) const
+void ADT::Serialize(const std::experimental::filesystem::path &filename) const
 {
     size_t bufferSize = 6 * sizeof(std::uint32_t);
 
@@ -1145,7 +1134,7 @@ void GlobalWMO::AddTile(int x, int y, utility::BinaryStream &heightField, utilit
     File::AddTile(x, y, heightField, mesh);
 }
 
-void GlobalWMO::Serialize(const std::string& filename) const
+void GlobalWMO::Serialize(const std::experimental::filesystem::path &filename) const
 {
     size_t bufferSize = 6 * sizeof(std::uint32_t);
 

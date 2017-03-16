@@ -6,12 +6,13 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <experimental/filesystem>
 
 // TODO: make generic Builder class for this and MeshBuilder?
 class GameObjectBVHBuilder
 {
     private:
-        const std::string m_outputPath;
+        const std::experimental::filesystem::path m_outputPath;
         const size_t m_workers;
 
         std::unordered_map<std::uint32_t, std::string> m_doodads;
@@ -23,12 +24,12 @@ class GameObjectBVHBuilder
 
         bool m_shutdownRequested;
 
-        std::string BuildAbsoluteFilename(const std::string &in) const;
+        std::experimental::filesystem::path BuildAbsoluteFilename(const std::experimental::filesystem::path &in) const;
 
         void Work();
 
     public:
-        GameObjectBVHBuilder(const std::string &outputPath, int workers);
+        GameObjectBVHBuilder(const std::string &outputPath, size_t workers);
         ~GameObjectBVHBuilder();
 
         void Begin();

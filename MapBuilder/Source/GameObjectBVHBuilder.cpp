@@ -17,8 +17,8 @@
 #include <sstream>
 #include <experimental/filesystem>
 
-GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, int workers)
-    : m_outputPath(outputPath), m_workers(static_cast<size_t>(workers)), m_shutdownRequested(false)
+GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t workers)
+    : m_outputPath(outputPath), m_workers(workers), m_shutdownRequested(false)
 {
     const parser::DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
 
@@ -85,16 +85,13 @@ void GameObjectBVHBuilder::WriteIndexFile() const
     for (auto const &entry : serialized)
         out << entry.first << static_cast<std::uint32_t>(entry.second.length()) << entry.second;
 
-    auto const filename = m_outputPath + "/BVH/bvh.idx";
-    std::ofstream o(filename, std::ofstream::binary | std::ofstream::trunc);
+    std::ofstream o(m_outputPath / "BVH" / "bvh.idx", std::ofstream::binary | std::ofstream::trunc);
     o << out;
 }
 
-std::string GameObjectBVHBuilder::BuildAbsoluteFilename(const std::string &in) const
+std::experimental::filesystem::path GameObjectBVHBuilder::BuildAbsoluteFilename(const std::experimental::filesystem::path &in) const
 {
-    std::experimental::filesystem::path path(in);
-
-    auto const extension = path.extension().string();
+    auto const extension = in.extension().string();
 
     std::string kind;
     if (extension[1] == 'm' || extension[1] == 'M')
@@ -104,7 +101,7 @@ std::string GameObjectBVHBuilder::BuildAbsoluteFilename(const std::string &in) c
     else
         THROW("Unrecognized extension");
 
-    return m_outputPath + "/BVH/" + kind + "_" + path.filename().replace_extension("bvh").string();
+    return m_outputPath / "BVH" / (kind + "_" + in.filename().replace_extension("bvh").string());
 }
 
 void GameObjectBVHBuilder::Work()
