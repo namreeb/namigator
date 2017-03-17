@@ -521,26 +521,28 @@ bool Map::FindHeights(const utility::Vertex &position, std::vector<float> &outpu
 
 bool Map::FindHeights(float x, float y, std::vector<float> &output) const
 {
-    const utility::Vertex stop(x, y, std::numeric_limits<float>::lowest());
-    utility::Ray ray({ x, y, (std::numeric_limits<float>::max)() }, stop);
+    constexpr float extents[] = { 0.f, (std::numeric_limits<float>::max)(), 0.f };
+    float recastCenter[3];
 
-    output.clear();
+    utility::Convert::VertexToRecast({ x, y, 0.f }, recastCenter);
 
-    for (;;)
+    dtPolyRef polys[MaxStackedPolys];
+    int polyCount;
+
+    auto const queryResult = m_navQuery.queryPolygons(recastCenter, extents, &m_queryFilter, polys, &polyCount, MaxStackedPolys);
+    assert(queryResult == DT_SUCCESS);
+
+    output.reserve(polyCount);
+
+    for (auto i = 0; i < polyCount; ++i)
     {
-        auto const ret = RayCast(ray);
+        float result;
 
-        if (!ret)
-            break;
-
-        auto const &hitPoint = ray.GetHitPoint();
-
-        output.push_back(hitPoint.Z);
-
-        ray = utility::Ray(hitPoint, stop);
+        if (m_navQuery.getPolyHeight(polys[i], recastCenter, &result) == DT_SUCCESS)
+            output.push_back(result);
     }
 
-    return output.size() > 0;
+    return !output.empty();
 }
 
 bool Map::RayCast(utility::Ray &ray) const

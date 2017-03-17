@@ -35,6 +35,7 @@ class Map
     friend class Tile;
 
     private:
+        static constexpr int MaxStackedPolys = 128;
         static constexpr int MaxPathHops = 128;
         static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
 
