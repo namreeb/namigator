@@ -17,13 +17,13 @@ class MeshSettings
         static constexpr int TilesPerChunk = 1;                 // number of rows and columns of tiles per ADT MCNK chunk
         static constexpr int TileVoxelSize = 112;               // number of voxel rows and columns per tile
 
-        static constexpr float CellHeight = 0.5f;
+        static constexpr float CellHeight = 0.25f;
         static constexpr float WalkableHeight = 1.6f;           // agent height in world units (yards)
         static constexpr float WalkableRadius = 0.3f;           // narrowest allowable hallway in world units (yards)
         static constexpr float WalkableSlope = 50.f;            // maximum walkable slope, in degrees
         static constexpr float WalkableClimb = 1.f;             // maximum 'step' height for which slope is ignored (yards)
         static constexpr float DetailSampleDistance = 3.f;      // heightfield detail mesh sample distance (yards)
-        static constexpr float DetailSampleMaxError = 0.75f;    // maximum distance detail mesh surface should deviate from heightfield (yards)
+        static constexpr float DetailSampleMaxError = 0.25f;    // maximum distance detail mesh surface should deviate from heightfield (yards)
 
         // NOTE: If Recast warns "Walk towards polygon center failed to reach center", try lowering this value
         static constexpr float MaxSimplificationError = 0.5f;
