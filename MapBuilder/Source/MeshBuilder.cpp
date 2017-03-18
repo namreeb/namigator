@@ -42,8 +42,6 @@ static_assert(sizeof(int) == sizeof(std::int32_t), "Recast requires 32 bit int t
 static_assert(sizeof(float) == 4, "float must be a 32 bit type");
 static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
-//#define DISABLE_SELECTIVE_FILTERING
-
 namespace
 {
 std::experimental::filesystem::path BuildAbsoluteFilename(const std::experimental::filesystem::path &outputPath, const std::string &in)
@@ -939,7 +937,6 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
     FilterGroundBeneathLiquid(*solid);
 
-#ifndef DISABLE_SELECTIVE_FILTERING
     // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
     {
         std::vector<rcSpan *> adtSpans;
@@ -951,13 +948,10 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
                 if (!!(s->area & AreaFlags::ADT))
                     adtSpans.push_back(s);
 
-#endif
         rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
 
-#ifndef DISABLE_SELECTIVE_FILTERING
         RestoreAdtSpans(adtSpans);
     }
-#endif
 
     rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
     rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
