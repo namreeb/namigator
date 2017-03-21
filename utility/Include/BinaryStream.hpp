@@ -16,6 +16,8 @@ class BinaryStream
         static constexpr size_t DEFAULT_BUFFER_LENGTH = 4096;
 
         friend std::ostream & operator << (std::ostream &, const BinaryStream &);
+        friend BinaryStream & operator << (BinaryStream &, const BinaryStream &);
+        friend BinaryStream & operator << (BinaryStream &, const std::string &);
 
         std::vector<std::uint8_t> m_buffer;
         size_t m_rpos, m_wpos;
@@ -30,7 +32,7 @@ class BinaryStream
 
         template <typename T> T Read()
         {
-            static_assert(std::is_pod<T>::value, "T must be POD");
+            static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
             static_assert(sizeof(T) <= 4, "Stack return read is meant only for small values");
 
             T ret;
@@ -40,14 +42,14 @@ class BinaryStream
 
         template <typename T> void Read(T &out)
         {
-            static_assert(std::is_pod<T>::value, "T must be POD");
+            static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
 
             ReadBytes(&out, sizeof(T));
         }
 
         template <typename T> void Write(const T& data)
         {
-            static_assert(std::is_pod<T>::value, "T must be POD");
+            static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
 
             Write(&data, sizeof(T));
         }
@@ -64,6 +66,8 @@ class BinaryStream
         std::string ReadString();
         std::string ReadString(size_t length);
 
+        void WriteString(const std::string &str, size_t length);
+
         void Append(const BinaryStream &other);
 
         size_t rpos() const { return m_rpos; }
@@ -79,16 +83,10 @@ class BinaryStream
         void Decompress();
 };
 
-inline BinaryStream & operator << (BinaryStream &stream, const std::string &str)
-{
-    stream.Write(str.c_str(), str.length());
-    return stream;
-}
-
 template <typename T>
 BinaryStream & operator << (BinaryStream &stream, T data)
 {
-    static_assert(std::is_pod<T>::value, "T must be POD");
+    static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
 
     stream.Write(data);
     return stream;
@@ -97,11 +95,14 @@ BinaryStream & operator << (BinaryStream &stream, T data)
 template <typename T>
 BinaryStream & operator >> (BinaryStream &stream,  T &data)
 {
-    static_assert(std::is_pod<T>::value, "T must be POD");
+    static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
 
     stream.Read(data);
     return stream;
 }
 
+std::ostream & operator << (std::ostream &, const BinaryStream &);
+BinaryStream & operator << (BinaryStream &, const BinaryStream &);
+BinaryStream & operator << (BinaryStream &, const std::string &);
 std::ostream & operator << (std::ostream &stream, const BinaryStream &data);
 }

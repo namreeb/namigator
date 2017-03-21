@@ -1,6 +1,6 @@
 #include "AABBTree.hpp"
+#include "BinaryStream.hpp"
 
-#include <fstream>
 #include <algorithm>
 #include <cstdint>
 #include <cassert>
@@ -51,101 +51,112 @@ BoundingBox AABBTree::GetBoundingBox() const
     return m_nodes.front().bounds;
 }
 
-void AABBTree::Serialize(std::ostream& stream) const
+void AABBTree::Serialize(utility::BinaryStream& stream) const
 {
-    const std::uint32_t magic = 'BVH1';
-    stream.write(reinterpret_cast<const char *>(&magic), sizeof(magic));
+    auto const size = sizeof(std::uint32_t) * 5 + // magic, vertex count, index count, node count, end magic
+        sizeof(Vertex) * m_vertices.size()      + // vertices
+        sizeof(std::int32_t) * m_indices.size() + // indices
+        (sizeof(std::uint8_t) + sizeof(std::uint32_t) + sizeof(BoundingBox)) * m_nodes.size();  // nodes (numFaces + startFace/childen + bounds) * count
 
-    std::uint32_t size = static_cast<std::uint32_t>(m_vertices.size());
-    stream.write(reinterpret_cast<const char *>(&size), sizeof(size));
-    for (const auto& vertex : m_vertices)
-        stream << vertex;
+    auto ourStream = utility::BinaryStream(size);
 
-    size = static_cast<std::uint32_t>(m_indices.size());
-    stream.write(reinterpret_cast<const char *>(&size), sizeof(size));
+    ourStream << StartMagic;
+
+    ourStream << static_cast<std::uint32_t>(m_vertices.size());
+    ourStream.Write(&m_vertices[0], m_vertices.size() * sizeof(Vertex));
+
+    ourStream << static_cast<std::uint32_t>(m_indices.size());
+
     for (const auto& index : m_indices)
     {
         const std::int32_t idx = index;
-        stream.write(reinterpret_cast<const char *>(&idx), sizeof(idx));
+        ourStream << idx;
     }
 
-    size = static_cast<std::uint32_t>(m_nodes.size());
-    stream.write(reinterpret_cast<const char *>(&size), sizeof(size));
+    ourStream << static_cast<std::uint32_t>(m_nodes.size());
+
     for (const auto& node : m_nodes)
     {
         assert(node.numFaces < 8);
 
-        const std::uint8_t numFaces = static_cast<std::uint8_t>(node.numFaces);
-        stream.write(reinterpret_cast<const char *>(&numFaces), sizeof(numFaces));
+        ourStream << static_cast<std::uint8_t>(node.numFaces);
+
         if (!!node.numFaces)
         {
             // Write leaf node
-            stream.write(reinterpret_cast<const char *>(&node.startFace), sizeof(node.startFace));
+            ourStream << node.startFace << node.bounds;
         }
         else
         {
             // Write inner node
-            stream.write(reinterpret_cast<const char *>(&node.children), sizeof(node.children));
-            stream << node.bounds;
+            ourStream << node.children << node.bounds;
         }
     }
 
-    const std::uint32_t endMagic = 'FOOB';
-    stream.write(reinterpret_cast<const char *>(&endMagic), sizeof(endMagic));
+    ourStream << EndMagic;
+
+    assert(ourStream.wpos() == size);
+
+    stream << ourStream;
 }
 
-bool AABBTree::Deserialize(std::istream& stream)
+bool AABBTree::Deserialize(utility::BinaryStream& stream)
 {
     std::uint32_t magic;
-    stream.read(reinterpret_cast<char *>(&magic), sizeof(magic));
-    if (magic != (std::uint32_t)'BVH1')
+    stream >> magic;
+    if (magic != StartMagic)
         return false;
 
     std::uint32_t vertexCount;
-    stream.read(reinterpret_cast<char *>(&vertexCount), sizeof(vertexCount));
+    stream >> vertexCount;
 
     assert(vertexCount > 0);
 
     m_vertices.resize(vertexCount);
-    stream.read(reinterpret_cast<char *>(&m_vertices[0]), vertexCount * sizeof(utility::Vertex));
+    stream.ReadBytes(&m_vertices[0], vertexCount * sizeof(Vertex));
 
     std::uint32_t indexCount;
-    stream.read(reinterpret_cast<char *>(&indexCount), sizeof(indexCount));
+    stream >> indexCount;
 
     assert(indexCount > 0);
 
     m_indices.reserve(indexCount);
-    for (std::uint32_t i = 0; i < indexCount; ++i)
+    for (auto i = 0u; i < indexCount; ++i)
     {
         std::int32_t index;
-        stream.read(reinterpret_cast<char *>(&index), sizeof(index));
+        stream >> index;
         m_indices.push_back(static_cast<int>(index));
     }
 
     std::uint32_t nodeCount;
-    stream.read(reinterpret_cast<char *>(&nodeCount), sizeof(nodeCount));
+    stream >> nodeCount;
+
     m_nodes.resize(nodeCount);
-    for (std::uint32_t i = 0; i < nodeCount; ++i)
+
+    for (auto i = 0u; i < nodeCount; ++i)
     {
         std::uint8_t numFaces;
-        stream.read(reinterpret_cast<char *>(&numFaces), sizeof(numFaces));
+        stream >> numFaces;
 
         m_nodes[i].numFaces = static_cast<unsigned int>(numFaces);
+
         if (!!numFaces)
         {
             // Read leaf node
-            stream.read(reinterpret_cast<char *>(&m_nodes[i].startFace), sizeof(m_nodes[i].startFace));
+            stream >> m_nodes[i].startFace >> m_nodes[i].bounds;
         }
         else
         {
             // Read inner node
-            stream.read(reinterpret_cast<char *>(&m_nodes[i].children), sizeof(m_nodes[i].children));
-            stream >> m_nodes[i].bounds;
+            stream >> m_nodes[i].children >> m_nodes[i].bounds;
         }
     }
 
     std::uint32_t endMagic;
-    stream.read(reinterpret_cast<char *>(&endMagic), sizeof(endMagic));
+    stream >> endMagic;
+
+    if (endMagic != EndMagic)
+        return false;
 
     return true;
 }

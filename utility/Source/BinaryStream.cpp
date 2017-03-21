@@ -76,6 +76,13 @@ void BinaryStream::Write(size_t position, const void *data, size_t length)
     memcpy(&m_buffer[position], data, length);
 }
 
+void BinaryStream::WriteString(const std::string &str, size_t length)
+{
+    std::vector<std::uint8_t> buffer(length);
+    memcpy(&buffer[0], str.c_str(), (std::min)(length, str.length()));
+    Write(&buffer[0], buffer.size());
+}
+
 void BinaryStream::Append(const BinaryStream &other)
 {
     if (other.m_buffer.size() > 0 && other.m_wpos > 0)
@@ -195,6 +202,18 @@ void BinaryStream::Decompress()
 
     m_buffer = std::move(buffer);
     m_buffer.resize(m_wpos);
+}
+
+BinaryStream & operator << (BinaryStream &stream, const std::string &str)
+{
+    stream.Write(str.c_str(), str.length());
+    return stream;
+}
+
+BinaryStream & operator << (BinaryStream &stream, const BinaryStream &other)
+{
+    stream.Write(&other.m_buffer[0], other.wpos());
+    return stream;
 }
 
 std::ostream & operator << (std::ostream &stream, const BinaryStream &data)

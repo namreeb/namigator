@@ -131,6 +131,8 @@ Adt::Adt(Map *map, int adtX, int adtY)
 
             AdtChunk *const chunk = new AdtChunk();
 
+            memcpy(chunk->m_heights, mapChunk->Heights, sizeof(chunk->m_heights));
+
             chunk->m_terrainVertices = std::move(mapChunk->Positions);
             chunk->m_minZ = mapChunk->MinZ;
             chunk->m_maxZ = mapChunk->MaxZ;
@@ -151,7 +153,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
                     if (mapChunk->HasHoles && mapChunk->HoleMap[y][x])
                         continue;
 
-                    const int currIndex = y * 17 + x;
+                    auto const currIndex = y * 17 + x;
 
                     // Upper triangle
                     chunk->m_terrainIndices.push_back(currIndex);

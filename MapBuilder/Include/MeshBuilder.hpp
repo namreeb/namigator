@@ -17,53 +17,59 @@
 
 namespace meshfiles
 {
-    class File
-    {
-        protected:
-            // serialized heightfield and finalized mesh data, mapped by tile id
-            std::map<std::pair<std::int32_t, std::int32_t>, utility::BinaryStream> m_tiles;
+class File
+{
+    protected:
+        // serialized heightfield and finalized mesh data, mapped by tile id
+        std::map<std::pair<std::int32_t, std::int32_t>, utility::BinaryStream> m_tiles;
 
-            mutable std::mutex m_mutex;
+        mutable std::mutex m_mutex;
 
-            // this function assumes that the mutex has already been locked
-            void AddTile(int x, int y, utility::BinaryStream &heightfield, const utility::BinaryStream &mesh);
+        // this function assumes that the mutex has already been locked
+        void AddTile(int x, int y, utility::BinaryStream &heightfield, const utility::BinaryStream &mesh);
 
-        public:
-            virtual ~File() = default;
+    public:
+        virtual ~File() = default;
 
-            virtual void Serialize(const std::experimental::filesystem::path &filename) const = 0;
-    };
+        virtual void Serialize(const std::experimental::filesystem::path &filename) const = 0;
+};
 
-    class ADT : File
-    {
-        private:
-            const int m_x;
-            const int m_y;
+class ADT : File
+{
+    private:
+        const int m_x;
+        const int m_y;
 
-            // serialized data for WMOs and doodad IDs, mapped by tile id within the ADT
-            std::map<std::pair<int, int>, utility::BinaryStream> m_wmosAndDoodadIds;
+        // serialized data for WMOs and doodad IDs, mapped by tile id within the ADT
+        std::map<std::pair<int, int>, utility::BinaryStream> m_wmosAndDoodadIds;
 
-        public:
-            ADT(int x, int y) : m_x(x), m_y(y) {}
+        // serialized data for ADT quad heights, mapped by tile id within the ADT
+        std::map<std::pair<int, int>, utility::BinaryStream> m_quadHeights;
 
-            virtual ~ADT() = default;
+    public:
+        ADT(int x, int y) : m_x(x), m_y(y) {}
 
-            // these x and y arguments refer to the tile x and y
-            void AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
+        virtual ~ADT() = default;
 
-            bool IsComplete() const { return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT); }
-            void Serialize(const std::experimental::filesystem::path &filename) const override;
-    };
+        // these x and y arguments refer to the tile x and y
+        void AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &quadHeights, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
-    class GlobalWMO : File
-    {
-        public:
-            virtual ~GlobalWMO() = default;
+        bool IsComplete() const { return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT); }
+        void Serialize(const std::experimental::filesystem::path &filename) const override;
+};
 
-            void AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
+class GlobalWMO : File
+{
+    public:
+        virtual ~GlobalWMO() = default;
 
-            void Serialize(const std::experimental::filesystem::path &filename) const override;
-    };
+        void AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
+
+        void Serialize(const std::experimental::filesystem::path &filename) const override;
+};
+
+void SerializeWmo(const parser::Wmo *wmo, const std::experimental::filesystem::path &path);
+void SerializeDoodad(const parser::Doodad *doodad, const std::experimental::filesystem::path &path);
 }
 
 class MeshBuilder

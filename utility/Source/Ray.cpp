@@ -20,7 +20,7 @@ bool Ray::IntersectTriangle(const Vector3* verts, float* distance) const {
 
 bool Ray::IntersectTriangle(const Vector3& p0, const Vector3& p1, const Vector3& p2, float* distance) const {
     // To increase precision for very small world scales
-    const float upscaleFactor = 1.0f;
+    constexpr float upscaleFactor = 100.0f;
 
     Vector3 rayDir = GetDirection() * upscaleFactor;
     Vector3 v0 = p0 * upscaleFactor;

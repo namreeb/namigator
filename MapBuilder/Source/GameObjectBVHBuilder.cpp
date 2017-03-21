@@ -1,4 +1,5 @@
 #include "GameObjectBVHBuilder.hpp"
+#include "MeshBuilder.hpp"
 
 #include "parser/Include/Doodad/Doodad.hpp"
 #include "parser/Include/Wmo/Wmo.hpp"
@@ -172,14 +173,11 @@ void GameObjectBVHBuilder::Work()
                     continue;
                 }
 
-                utility::AABBTree doodadTree(doodad.Vertices, doodad.Indices);
-
-                std::ofstream o(output, std::ofstream::binary | std::ofstream::trunc);
-                doodadTree.Serialize(o);
+                meshfiles::SerializeDoodad(&doodad, output);
             }
             else
             {
-                const parser::Wmo wmo(nullptr, filename);
+                const parser::Wmo wmo(filename);
 
                 // ignore wmos with no collision geometry.  this probably shouldn't ever really happen
                 if (wmo.Vertices.empty() || wmo.Indices.empty())
@@ -189,14 +187,12 @@ void GameObjectBVHBuilder::Work()
                     continue;
                 }
 
-                utility::AABBTree wmoTree(wmo.Vertices, wmo.Indices);
-
-                std::ofstream o(output, std::ofstream::binary | std::ofstream::trunc);
-                wmoTree.Serialize(o);
+                // note that this will also serialize all doodads referenced in all doodad sets within this wmo
+                meshfiles::SerializeWmo(&wmo, output);
             }
 
             std::lock_guard<std::mutex> guard(m_mutex);
-            m_serialized[entry] = std::experimental::filesystem::path(output).filename().string();
+            m_serialized[entry] = output.filename().string();
         }
         catch (utility::exception const &e)
         {

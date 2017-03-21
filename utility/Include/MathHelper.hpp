@@ -31,8 +31,10 @@ class Convert
 
         static void WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY);
         static void WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY, int &chunkX, int &chunkY);
+        static void WorldToTile(const utility::Vertex &vertex, int &tileX, int &tileY);
 
         static void ADTToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY);
+        static void TileToWorldNorthwestCorner(int tileX, int tileY, float &worldX, float &worldY);
 
         static void VertexToRecast(const utility::Vertex &input, utility::Vertex &output);
         static void VertexToRecast(const utility::Vertex &input, float *output);

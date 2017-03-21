@@ -5,10 +5,11 @@
 
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 namespace parser
 {
-WmoDoodad::WmoDoodad(const Doodad *doodad, const utility::Matrix &transformMatrix) : Parent(doodad), TransformMatrix(transformMatrix)
+WmoDoodad::WmoDoodad(std::shared_ptr<const Doodad> &doodad, const utility::Matrix &transformMatrix) : Parent(std::move(doodad)), TransformMatrix(transformMatrix)
 {
     std::vector<utility::Vertex> vertices;
     std::vector<int> indices;

@@ -5,3 +5,4 @@ add_library(pathfind STATIC
     Source/TemporaryObstacle.cpp
     Source/Tile.cpp
 )
+add_dependencies(pathfind utility recastnavigation)

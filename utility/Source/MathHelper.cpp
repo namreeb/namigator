@@ -7,6 +7,16 @@
 #include <vector>
 #include <cassert>
 
+/*
+ *        +X
+ *     +Y    -Y
+ *        -X
+ *  When you go up, your ingame X goes up, but the ADT file Y goes down.
+ *  When you go left, your ingame Y goes up, but the ADT file X goes down.
+ *  When you go down, your ingame X goes down, but the ADT file Y goes up.
+ *  When you go right, your ingame Y goes down, but the ADT file X goes up.
+ */
+
 namespace utility
 {
 bool MathHelper::FaceTooSteep(const utility::Vertex &a, const utility::Vertex &b, const utility::Vertex &c, float degrees)
@@ -58,15 +68,13 @@ float MathHelper::InterpolateHeight(const utility::Vertex &a, const utility::Ver
 
 float Convert::ToRadians(float degrees)
 {
-    constexpr float conversion = MathHelper::Pi / 180.f;
-
+    auto constexpr conversion = MathHelper::Pi / 180.f;
     return degrees * conversion;
 }
 
 void Convert::WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY)
 {
-    constexpr float mid = 32.f * MeshSettings::AdtSize;
-
+    auto constexpr mid = 32.f * MeshSettings::AdtSize;
     adtX = static_cast<int>((mid - vertex.Y) / MeshSettings::AdtSize);
     adtY = static_cast<int>((mid - vertex.X) / MeshSettings::AdtSize);
 }
@@ -85,10 +93,24 @@ void Convert::WorldToAdt(const utility::Vertex &vertex, int &adtX, int &adtY, in
     assert(chunkX >= 0 && chunkY >= 0 && chunkX < 16 && chunkY < 16);
 }
 
+void Convert::WorldToTile(const utility::Vertex &vertex, int &tileX, int &tileY)
+{
+    auto constexpr start = (MeshSettings::Adts / 2.f) * MeshSettings::AdtSize;
+    tileX = static_cast<int>((start - vertex.Y) / MeshSettings::TileSize);
+    tileY = static_cast<int>((start - vertex.X) / MeshSettings::TileSize);
+}
+
 void Convert::ADTToWorldNorthwestCorner(int adtX, int adtY, float &worldX, float &worldY)
 {
     worldX = (32.f - adtY) * MeshSettings::AdtSize;
     worldY = (32.f - adtX) * MeshSettings::AdtSize;
+}
+
+void Convert::TileToWorldNorthwestCorner(int tileX, int tileY, float &worldX, float &worldY)
+{
+    auto constexpr start = (MeshSettings::Adts / 2.f) * MeshSettings::AdtSize;
+    worldX = start - tileY * MeshSettings::TileSize;
+    worldY = start - tileX * MeshSettings::TileSize;
 }
 
 void Convert::VertexToRecast(const utility::Vertex &input, utility::Vertex &output)

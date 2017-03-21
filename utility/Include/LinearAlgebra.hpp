@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utility/Include/BinaryStream.hpp"
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -128,7 +130,7 @@ class Matrix
         Matrix ComputeInverse() const;
 
         friend Matrix operator * (const Matrix &a, const Matrix &b);
-        friend std::ostream & operator << (std::ostream &, const Matrix &);
+        friend utility::BinaryStream & operator << (utility::BinaryStream &, const Matrix &);
 
         void PopulateArray(float *out) const
         {
@@ -136,7 +138,7 @@ class Matrix
         }
 };
 
-std::ostream & operator << (std::ostream &, const Matrix &);
+utility::BinaryStream & operator << (utility::BinaryStream &, const Matrix &);
 
 template <typename Vector>
 Vector takeMinimum(const Vector& a, const Vector& b) {

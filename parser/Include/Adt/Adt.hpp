@@ -17,6 +17,8 @@ struct AdtChunk
 {
     bool m_holeMap[8][8];
 
+    float m_heights[9 * 9 + 8 * 8];
+
     std::vector<utility::Vertex> m_terrainVertices;
     std::vector<int> m_terrainIndices;
 

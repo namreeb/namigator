@@ -76,6 +76,15 @@ class Map
         // ensure that the given doodad model is loaded
         std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &filename, bool isBvhFilename = false);
 
+        // find a more precise z value at or below the given hint.  the purpose of this is to refine
+        // the z value for the final hop on a path, and should not be exposed to clients, as it assumes
+        // that the hint is within the Recast DetailSampleMaxError, and users cannot be trusted to
+        // honor this restriction.  also, they shouldn't have to, since we want to take care of it for them
+        float FindPreciseZ(float x, float y, float zHint) const;
+
+        bool RayCast(utility::Ray &ray) const;
+        bool RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) const;
+
         // TODO: need mechanism to cleanup expired weak pointers saved in the containers of this class
 
     public:
@@ -92,9 +101,15 @@ class Map
         std::shared_ptr<Model> GetOrLoadModelByDisplayId(unsigned int displayId);
 
         bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
-        bool FindHeights(const utility::Vertex &position, std::vector<float> &output) const;
-        bool FindHeights(float x, float y, std::vector<float> &output) const;
-        bool RayCast(utility::Ray &ray) const;
+
+        // for finding height(s) at a given (x, y), there are two scenarios:
+        // 1: we want to find exactly one z for a given path which has this (x, y) as a hop.  in this case, there should only be one correct value,
+        //    and it is the value that would be achieved by walking either from the previous hop to this one, or from this hop to the next one. 
+        // 2: for a given (x, y), we want to find all possible z values
+        //
+        // NOTE: if your usage is outside of both of these scenarios, you are probably doing something wrong
+        float FindHeight(const utility::Vertex &source, const utility::Vertex &target) const;       // scenario one
+        bool FindHeights(float x, float y, std::vector<float> &output) const;                       // scenario two
 
         const dtNavMesh &GetNavMesh() const { return m_navMesh; }
         const dtNavMeshQuery &GetNavMeshQuery() const { return m_navQuery; }

@@ -62,6 +62,8 @@ std::experimental::filesystem::path BuildAbsoluteFilename(const std::experimenta
     return outputPath / "BVH" / (kind + "_" + filename);
 }
 
+// multiple chunks are often required even though a tile is guarunteed to be no bigger than a chunk.
+// this is because recast requires geometry from neighboring tiles to produce accurate results.
 void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::vector<std::pair<int, int>> &chunks)
 {
     chunks.clear();
@@ -83,7 +85,13 @@ void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::ve
             if (adtX < 0 || adtY < 0 || adtX >= MeshSettings::Adts || adtY >= MeshSettings::Adts)
                 continue;
 
-            if (map->HasAdt(adtX, adtY))
+            if (!map->HasAdt(adtX, adtY))
+                continue;
+
+            // put the chunk for the requested tile at the start of the results
+            if (x == tileX * ChunksPerTile && y == tileY * ChunksPerTile)
+                chunks.insert(chunks.begin(), { x, y });
+            else
                 chunks.push_back({ x, y });
         }
 }
@@ -237,33 +245,91 @@ void SerializeWMOAndDoodadIDs(const std::unordered_set<std::uint32_t> &wmos, con
 
 void SerializeHeightField(const rcHeightfield &solid, utility::BinaryStream &out)
 {
-    out << static_cast<std::int32_t>(solid.width) << static_cast<std::int32_t>(solid.height);
+    utility::BinaryStream result(sizeof(std::uint32_t)*(11 + 3 * (solid.width*solid.height)));
 
-    out.Write(&solid.bmin, sizeof(solid.bmin));
-    out.Write(&solid.bmax, sizeof(solid.bmax));
+    result << static_cast<std::int32_t>(solid.width) << static_cast<std::int32_t>(solid.height);
 
-    out << solid.cs << solid.ch;
+    result.Write(&solid.bmin, sizeof(solid.bmin));
+    result.Write(&solid.bmax, sizeof(solid.bmax));
+
+    result << solid.cs << solid.ch;
 
     // TODO this might be storable in less space, since rcSpan is a bitfield struct
     for (auto i = 0; i < solid.width*solid.height; ++i)
     {
         // place holder for the height of this column in the height field
-        auto const columnSize = out.wpos();
-        out << static_cast<std::uint32_t>(0);
+        auto const columnSize = result.wpos();
+        result << static_cast<std::uint32_t>(0);
 
         auto count = 0;
         for (const rcSpan *s = solid.spans[i]; !!s; s = s->next)
         {
-            out << static_cast<std::uint32_t>(s->smin)
+            result << static_cast<std::uint32_t>(s->smin)
                 << static_cast<std::uint32_t>(s->smax)
                 << static_cast<std::uint32_t>(s->area);
             ++count;
         }
 
-        auto const height = (out.wpos() - columnSize + sizeof(std::uint32_t)) / (3 * sizeof(std::uint32_t));
+        auto const height = (result.wpos() - columnSize + sizeof(std::uint32_t)) / (3 * sizeof(std::uint32_t));
 
-        out.Write(columnSize, static_cast<std::uint32_t>(height));
+        result.Write(columnSize, static_cast<std::uint32_t>(height));
     }
+
+    out = std::move(result);
+}
+
+void SerializeTileQuadHeight(const parser::AdtChunk *chunk, int tileX, int tileY, utility::BinaryStream &out)
+{
+    // how many quads are on this tile
+    auto constexpr width = 8 / MeshSettings::TilesPerChunk;
+
+    utility::BinaryStream result(1 + width*width + sizeof(float)*MeshSettings::QuadValuesPerTile);
+
+    // the '1' signifies that quad height data follows
+    result << static_cast<std::uint8_t>(1);
+
+    auto const startX = (tileX % MeshSettings::TilesPerChunk) * width;
+    auto const startY = (tileY % MeshSettings::TilesPerChunk) * width;
+
+    auto constexpr maxIdx = sizeof(chunk->m_heights) / sizeof(chunk->m_heights[0]);
+
+    // write holes
+    for (auto y = startY; y < startY + width; ++y)
+        for (auto x = startX; x < startX + width; ++x)
+            result << static_cast<std::uint8_t>(chunk->m_holeMap[x][y] ? 1 : 0);
+
+    // add the first row of values
+    for (auto x = 0; x <= width; ++x)
+    {
+        auto const idx = 17 * startY + x + startX;
+        assert(idx < maxIdx);
+
+        result << chunk->m_heights[idx];
+    }
+
+    // middle values and the bottom row for each remaining quad
+    for (auto y = 0; y < width; ++y)
+    {
+        // middle values
+        for (auto x = 0; x < width; ++x)
+        {
+            auto const idx = 17 * (y + startY) + x + startX + 9;
+            assert(idx < maxIdx);
+
+            result << chunk->m_heights[idx];
+        }
+
+        // bottom values
+        for (auto x = 0; x <= width; ++x)
+        {
+            auto const idx = 17 * (y + startY + 1) + x + startX;
+            assert(idx < maxIdx);
+
+            result << chunk->m_heights[idx];
+        }
+    }
+
+    out = std::move(result);
 }
 
 using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
@@ -575,7 +641,7 @@ void MeshBuilder::LoadGameObjects(const std::string &path)
         if (modelIn.fail())
             continue;
 
-        if (!model.Deserialize(modelIn))
+        if (!model.Deserialize(utility::BinaryStream(modelIn)))
         {
             std::cerr << "Failed to deserialize model " << modelPath << std::endl;
             continue;
@@ -658,38 +724,19 @@ void MeshBuilder::RemoveChunkReference(int chunkX, int chunkY)
 
 void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
-
     if (m_bvhWmos.find(wmo->FileName) != m_bvhWmos.end())
         return;
 
-    utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
+    meshfiles::SerializeWmo(wmo, m_outputPath / "BVH" / ("WMO_" + wmo->FileName + ".bvh"));
 
-    std::ofstream o(m_outputPath / "BVH" / ("WMO_" + wmo->FileName + ".bvh"), std::ofstream::binary|std::ofstream::trunc);
-    aabbTree.Serialize(o);
+    // the above serialization routine will also serialize all doodads in all
+    // doodad sets for this wmo, therefore we should mark them as serialized
+
+    for (auto const &doodadSet : wmo->DoodadSets)
+        for (auto const &wmoDoodad : doodadSet)
+            m_bvhDoodads.insert(wmoDoodad->Parent->FileName);
 
     m_bvhWmos.insert(wmo->FileName);
-
-    const std::uint32_t doodadSetCount = static_cast<std::uint32_t>(wmo->DoodadSets.size());
-    o.write(reinterpret_cast<const char *>(&doodadSetCount), sizeof(doodadSetCount));
-
-    // Also write BVH for any WMO-spawned doodads
-    for (auto const &doodadSet : wmo->DoodadSets)
-    {
-        const std::uint32_t doodadSetSize = static_cast<std::uint32_t>(doodadSet.size());
-        o.write(reinterpret_cast<const char *>(&doodadSetSize), sizeof(doodadSetSize));
-
-        for (auto const &wmoDoodad : doodadSet)
-        {
-            auto const doodad = wmoDoodad->Parent;
-
-            o << wmoDoodad->TransformMatrix;
-            o << wmoDoodad->Bounds;
-            o << std::left << std::setw(64) << std::setfill('\000') << doodad->FileName;
-
-            SerializeDoodad(doodad);
-        }
-    }
 }
 
 void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
@@ -697,10 +744,7 @@ void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
     if (m_bvhDoodads.find(doodad->FileName) != m_bvhDoodads.end())
         return;
 
-    utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
-
-    std::ofstream doodadOut(m_outputPath / "BVH" / ("Doodad_" + doodad->FileName + ".bvh"), std::ofstream::binary|std::ofstream::trunc);
-    doodadTree.Serialize(doodadOut);
+    meshfiles::SerializeDoodad(doodad, m_outputPath / "BVH" / ("Doodad_" + doodad->FileName + ".bvh"));
 
     m_bvhDoodads.insert(doodad->FileName);
 }
@@ -830,6 +874,10 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
         chunks.push_back(chunk);
     }
 
+    // because ComputeRequiredChunks places the chunk that this tile falls on at the start of the collection,
+    // we know that the first element in the 'chunks' collection is also the chunk upon which this tile falls.
+    auto const tileChunk = chunks[0];
+
     rcConfig config;
     InitializeRecastConfig(config);
     
@@ -956,12 +1004,12 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
     rcFilterLowHangingWalkableObstacles(&ctx, config.walkableClimb, *solid);
 
-    // Write the BVH for every new WMO
-    for (auto const& wmoId : rasterizedWmos)
-        SerializeWmo(m_map->GetWmoInstance(wmoId)->Model);
-
     {
         std::lock_guard<std::mutex> guard(m_mutex);
+
+        // Write the BVH for every new WMO
+        for (auto const& wmoId : rasterizedWmos)
+            SerializeWmo(m_map->GetWmoInstance(wmoId)->Model);
 
         // Write the BVH for every new doodad
         for (auto const& doodadId : rasterizedDoodads)
@@ -969,15 +1017,19 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     }
 
     // serialize WMO and doodad IDs for this tile
-    utility::BinaryStream wmosAndDoodads(0);
+    utility::BinaryStream wmosAndDoodads;
     SerializeWMOAndDoodadIDs(rasterizedWmos, rasterizedDoodads, wmosAndDoodads);
 
     // serialize heightfield for this tile
-    utility::BinaryStream heightFieldData(sizeof(std::uint32_t)*(11 + 3 * (solid->width*solid->height)));
+    utility::BinaryStream heightFieldData;
     SerializeHeightField(*solid, heightFieldData);
 
+    // serialize ADT vertex height
+    utility::BinaryStream quadHeightData;
+    SerializeTileQuadHeight(tileChunk, tileX, tileY, quadHeightData);
+
     // serialize final navmesh tile
-    utility::BinaryStream meshData(0);
+    utility::BinaryStream meshData;
     auto const result = SerializeMeshTile(ctx, config, tileX, tileY, *solid, meshData);
 
     {
@@ -990,7 +1042,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
         auto adt = GetInProgressADT(adtX, adtY);
 
-        adt->AddTile(localTileX, localTileY, wmosAndDoodads, heightFieldData, meshData);
+        adt->AddTile(localTileX, localTileY, wmosAndDoodads, quadHeightData, heightFieldData, meshData);
 
         if (adt->IsComplete())
         {
@@ -1018,9 +1070,11 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
 void MeshBuilder::SaveMap() const
 {
-    std::ofstream out(m_outputPath / (m_map->Name + ".map"), std::ofstream::binary|std::ofstream::trunc);
-
+    utility::BinaryStream out;
     m_map->Serialize(out);
+
+    std::ofstream of(m_outputPath / (m_map->Name + ".map"), std::ofstream::binary | std::ofstream::trunc);
+    of << out;
 }
 
 float MeshBuilder::PercentComplete() const
@@ -1055,13 +1109,14 @@ void File::AddTile(int x, int y, utility::BinaryStream &heightfield, const utili
     m_tiles[{x, y}].Append(mesh);
 }
 
-void ADT::AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &heightField, utility::BinaryStream &mesh)
+void ADT::AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &quadHeights, utility::BinaryStream &heightField, utility::BinaryStream &mesh)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
 
     File::AddTile(x, y, heightField, mesh);
 
     m_wmosAndDoodadIds[{x, y}] = std::move(wmosAndDoodads);
+    m_quadHeights[{x, y}] = std::move(quadHeights);
 }
 
 void ADT::Serialize(const std::experimental::filesystem::path &filename) const
@@ -1080,6 +1135,10 @@ void ADT::Serialize(const std::experimental::filesystem::path &filename) const
         else
             bufferSize += 2 * sizeof(std::uint32_t);
 
+        // quad height data
+        bufferSize += m_quadHeights.at(tile.first).wpos();
+
+        // height field and mesh buffer
         bufferSize += tile.second.wpos();
     }
 
@@ -1089,15 +1148,18 @@ void ADT::Serialize(const std::experimental::filesystem::path &filename) const
     outBuffer << MeshSettings::FileSignature << MeshSettings::FileVersion << MeshSettings::FileADT;
 
     // ADT x and y
-    outBuffer << m_x << m_y;
+    outBuffer << static_cast<std::uint32_t>(m_x) << static_cast<std::uint32_t>(m_y);
 
     // tile count
     outBuffer << static_cast<std::uint32_t>(m_tiles.size());
 
     for (auto const &tile : m_tiles)
     {
-        // tile x and y
-        outBuffer << tile.first.first << tile.first.second;
+        // we want to store the global tile x and y, rather than the x, y relative to this ADT
+        auto const x = static_cast<std::uint32_t>(tile.first.first) + m_x * MeshSettings::TilesPerADT;
+        auto const y = static_cast<std::uint32_t>(tile.first.second) + m_y * MeshSettings::TilesPerADT;
+
+        outBuffer << x << y;
 
         // append wmo and doodad id buffer (which already contains size information), or an empty one if there is none
         if (m_wmosAndDoodadIds.find(tile.first) == m_wmosAndDoodadIds.end())
@@ -1105,11 +1167,14 @@ void ADT::Serialize(const std::experimental::filesystem::path &filename) const
         else
             outBuffer.Append(m_wmosAndDoodadIds.at(tile.first));
 
+        // append adt quad height data
+        outBuffer.Append(m_quadHeights.at(tile.first));
+
         // height field and finalized tile buffer
         outBuffer.Append(tile.second);
     }
 
-    // temporary just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
+    // just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
     assert(outBuffer.wpos() == bufferSize);
 
     outBuffer.Compress();
@@ -1157,6 +1222,9 @@ void GlobalWMO::Serialize(const std::experimental::filesystem::path &filename) c
 
         // height field and finalized tile buffer
         outBuffer.Append(tile.second);
+
+        // the '0' indicates that there is no quad height data for this tile
+        outBuffer << static_cast<std::uint8_t>(0);
     }
 
     // temporary just to make sure our calculation still works.  if it doesnt, we could see copious reallocations in the above code!
@@ -1170,5 +1238,48 @@ void GlobalWMO::Serialize(const std::experimental::filesystem::path &filename) c
         THROW("WMO serialization failed to open output file").ErrorCode();
 
     out << outBuffer;
+}
+
+void SerializeWmo(const parser::Wmo *wmo, const std::experimental::filesystem::path &path)
+{
+    utility::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
+
+    utility::BinaryStream o;
+    aabbTree.Serialize(o);
+
+    auto const dataDir = path.parent_path();
+
+    o << static_cast<std::uint32_t>(wmo->DoodadSets.size());
+
+    for (auto const &doodadSet : wmo->DoodadSets)
+    {
+        o << static_cast<std::uint32_t>(doodadSet.size());
+
+        for (auto const &wmoDoodad : doodadSet)
+        {
+            auto const doodad = wmoDoodad->Parent;
+
+            o << wmoDoodad->TransformMatrix;
+            o << wmoDoodad->Bounds;
+            o << std::left << std::setw(64) << std::setfill('\000') << doodad->FileName;
+
+            // also serialize this doodad
+            SerializeDoodad(wmoDoodad->Parent.get(), dataDir / ("Doodad_" + doodad->FileName + ".bvh"));
+        }
+    }
+
+    std::ofstream of(path, std::ofstream::binary | std::ofstream::trunc);
+    of << o;
+}
+
+void SerializeDoodad(const parser::Doodad *doodad, const std::experimental::filesystem::path &path)
+{
+    utility::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
+
+    utility::BinaryStream doodadOut;
+    doodadTree.Serialize(doodadOut);
+
+    std::ofstream of(path, std::ofstream::binary | std::ofstream::trunc);
+    of << doodadOut;
 }
 }

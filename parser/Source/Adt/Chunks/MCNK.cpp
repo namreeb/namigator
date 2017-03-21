@@ -81,6 +81,8 @@ MCNK::MCNK(size_t position, utility::BinaryStream *reader)
 
         const float z = information.Position[2] + heightChunk.Heights[i];
 
+        Heights[i] = z;
+
         if (z > MaxZ)
             MaxZ = z;
         if (z < MinZ)

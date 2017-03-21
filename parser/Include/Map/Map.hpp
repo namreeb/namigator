@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utility/Include/BinaryStream.hpp"
+
 #include <mutex>
 #include <memory>
 #include <string>
@@ -20,6 +22,9 @@ class Adt;
 class Map
 {
     private:
+        static constexpr std::uint32_t Magic = 'MAP1';
+        static constexpr size_t ModelFileNameLength = 64;
+
         bool m_hasAdt[64][64];
         bool m_hasTerrain;
 
@@ -33,7 +38,7 @@ class Map
         std::map<std::uint64_t, std::unique_ptr<const WmoInstance>> m_loadedWmoGameObjects;
 
         mutable std::mutex m_doodadMutex;
-        std::vector<std::unique_ptr<const Doodad>> m_loadedDoodads;
+        std::vector<std::shared_ptr<const Doodad>> m_loadedDoodads; // must be shared because it can also be owned by a WMO
         std::map<std::uint32_t, std::unique_ptr<const DoodadInstance>> m_loadedDoodadInstances;
         std::map<std::uint64_t, std::unique_ptr<const WmoInstance>> m_loadedDoodadGameObjects;
 
@@ -58,6 +63,6 @@ class Map
         void InsertDoodadInstance(unsigned int uniqueId, const DoodadInstance *doodad);
         const DoodadInstance *GetDoodadInstance(unsigned int uniqueId) const;
 
-        void Serialize(std::ostream& stream) const;
+        void Serialize(utility::BinaryStream& stream) const;
 };
 }

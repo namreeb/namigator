@@ -41,7 +41,7 @@ void DisplayUsage(std::ostream &o)
 int main(int argc, char *argv[])
 {
     std::string dataPath, map, outputPath, goCSVPath;
-    int adtX = 0, adtY = 0, threads, logLevel;
+    int adtX = -1, adtY = -1, threads, logLevel;
     bool bvh = false;
 
     try
@@ -53,22 +53,20 @@ int main(int argc, char *argv[])
 
             const bool lastArgument = i == argc - 1;
 
-            // if there are no more arguments we can still handle the parameterless arguments
-            if (lastArgument)
+            if (arg == "-b" || arg == "--bvh")
             {
-                if (arg == "-b" || arg == "--bvh")
-                    bvh = true;
-                else if (arg == "-h" || arg == "--help")
-                {
-                    // when this is requested, don't do anything else
-                    DisplayUsage(std::cout);
-                    return EXIT_SUCCESS;
-                }
-                else
-                    throw std::invalid_argument("Missing argument to parameter " + arg);
-
-                break;
+                bvh = true;
+                continue;
             }
+            else if (arg == "-h" || arg == "--help")
+            {
+                // when this is requested, don't do anything else
+                DisplayUsage(std::cout);
+                return EXIT_SUCCESS;
+            }
+
+            if (lastArgument)
+                throw std::invalid_argument("Missing argument to parameter " + arg);
 
             // below here we know that there is another argument
             if (arg == "-d" || arg == "--data")
@@ -101,9 +99,23 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     
-    if (bvh && !map.empty())
+    if (outputPath.empty())
+    {
+        std::cerr << "ERROR: Must specify output path" << std::endl;
+        DisplayUsage(std::cerr);
+        return EXIT_FAILURE;
+    }
+
+    if (!bvh && map.empty())
     {
         std::cerr << "ERROR: Must specify either a map to generate (--map) or the global generation of BVH data (--bvh)" << std::endl;
+        DisplayUsage(std::cerr);
+        return EXIT_FAILURE;
+    }
+
+    if (adtX >= MeshSettings::Adts || adtY >= MeshSettings::Adts)
+    {
+        std::cerr << "ERROR: Invalid ADT (" << adtX << ", " << adtY << ")" << std::endl;
         DisplayUsage(std::cerr);
         return EXIT_FAILURE;
     }
@@ -150,8 +162,11 @@ int main(int argc, char *argv[])
 
                 lastStatus = now;
             }
-
         } while (goBuilder.Remaining() > 0);
+
+        std::stringstream fin;
+        fin << "Finished BVH generation";
+        std::cout << fin.str() << std::endl;
 
         goBuilder.Shutdown();
         goBuilder.WriteIndexFile();
@@ -167,7 +182,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        if (adtX && adtY)
+        if (adtX >= 0 && adtY >= 0)
         {
             builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel, adtX, adtY);
 
@@ -186,7 +201,7 @@ int main(int argc, char *argv[])
             workers.push_back(std::make_unique<Worker>(builder.get()));
         }
         // either both, or neither should be specified
-        else if (adtX || adtY)
+        else if (adtX >= 0 || adtY >= 0)
         {
             std::cerr << "ERROR: Must specify ADT X and Y" << std::endl;
             DisplayUsage(std::cerr);
@@ -242,8 +257,7 @@ int main(int argc, char *argv[])
 
     builder->SaveMap();
 
-    auto const stop = time(nullptr);
-    auto const runTime = stop - start;
+    auto const runTime = time(nullptr) - start;
     
     std::cout << "Finished " << map << " (" << builder->CompletedTiles() << " tiles) in " << runTime << " seconds." << std::endl;
 

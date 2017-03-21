@@ -30,6 +30,8 @@ DoodadInstance::DoodadInstance(const Doodad *doodad, const utility::Matrix &tran
 
     BuildTriangles(vertices, indices);
 
+    Bounds = { vertices[indices[0]], vertices[indices[0]] };
+
     for (auto const &v : vertices)
         UpdateBounds(Bounds, v, AdtChunks);
 }

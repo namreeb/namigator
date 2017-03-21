@@ -632,13 +632,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
 
     if (!std::experimental::filesystem::is_directory("Data"))
     {
-        MessageBox(NULL, "Data folder does not exist", "ERROR", 0);
+        MessageBox(nullptr, "Data folder does not exist", "ERROR", 0);
         return EXIT_FAILURE;
     }
 
     if (!std::experimental::filesystem::is_directory("Maps"))
     {
-        MessageBox(NULL, "Maps folder does not exist", "ERROR", 0);
+        MessageBox(nullptr, "Maps folder does not exist", "ERROR", 0);
         return EXIT_FAILURE;
     }
 
@@ -680,10 +680,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
     gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
     gControls->AddLabel("X:", 10, 35);
-    gControls->AddTextBox(Controls::PositionX, "38", 25, 35, 75, 20);
+    gControls->AddTextBox(Controls::PositionX, "1753.842285", 25, 35, 75, 20);
 
     gControls->AddLabel("Y:", 10, 60);
-    gControls->AddTextBox(Controls::PositionY, "40", 25, 60, 75, 20);
+    gControls->AddTextBox(Controls::PositionY, "-662.430908", 25, 60, 75, 20);
 
     gControls->AddButton(Controls::Load, "Load", 115, 57, 75, 25, LoadPositionFromGUI);
     gControls->AddButton(Controls::ZSearch, "Z Search", 200, 57, 75, 25, SearchZValues);

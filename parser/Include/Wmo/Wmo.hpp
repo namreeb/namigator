@@ -1,6 +1,5 @@
 #pragma once
 
-#include "parser/Include/Map/Map.hpp"
 #include "parser/Include/Wmo/WmoDoodad.hpp"
 
 #include "utility/Include/LinearAlgebra.hpp"
@@ -26,6 +25,6 @@ class Wmo
 
         std::vector<std::vector<std::unique_ptr<const WmoDoodad>>> DoodadSets;
 
-        Wmo(Map *map, const std::string &path);
+        Wmo(const std::string &path);
 };
 }

@@ -1,5 +1,6 @@
 #include "utility/Include/LinearAlgebra.hpp"
 #include "utility/Include/Exception.hpp"
+#include "utility/Include/BinaryStream.hpp"
 
 #include <math.h>
 #include <ostream>
@@ -419,9 +420,9 @@ bool operator == (const Vector3 &a, const Vector3 &b)
     return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
 }
 
-std::ostream & operator << (std::ostream &o, const Matrix &m)
+utility::BinaryStream & operator << (utility::BinaryStream &o, const Matrix &m)
 {
-    o.write(reinterpret_cast<const char *>(&m.m_matrix[0]), sizeof(float) * m.m_matrix.size());
+    o.Write(&m.m_matrix[0], sizeof(float)*m.m_matrix.size());
     return o;
 }
 }

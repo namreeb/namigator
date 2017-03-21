@@ -69,6 +69,7 @@ class MCNK : public AdtChunk
 
         bool HoleMap[8][8];
         std::vector<utility::Vertex> Positions;
+        float Heights[VertexCount];
 
         std::unique_ptr<MCLQ> LiquidChunk;
 

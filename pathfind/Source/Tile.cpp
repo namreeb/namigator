@@ -11,13 +11,15 @@
 #include "recastnavigation/Recast/Include/RecastAlloc.h"
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 
+#include "RecastDetourBuild/Include/Common.hpp"
+
 #include <vector>
 #include <cassert>
 #include <cstdint>
 
 namespace pathfind
 {
-Tile::Tile(Map *map, utility::BinaryStream &in) : m_map(map), m_ref(0)
+Tile::Tile(Map *map, utility::BinaryStream &in) : m_map(map), m_ref(0), m_x(-1), m_y(-1)
 {
     std::uint32_t tileX, tileY;
     in >> tileX >> tileY;
@@ -50,8 +52,25 @@ Tile::Tile(Map *map, utility::BinaryStream &in) : m_map(map), m_ref(0)
             m_staticDoodadModels.push_back(std::move(map->LoadModelForDoodadInstance(doodad)));
     }
 
+    std::uint8_t quadHeight;
+    in >> quadHeight;
+
+    // only two possible values
+    assert(quadHeight == 0 || quadHeight == 1);
+
+    // optional quad height data for ADT based tiles
+    if (quadHeight)
+    {
+        in.ReadBytes(&m_quadHoles, sizeof(m_quadHoles));
+        m_quadHeights.resize(MeshSettings::QuadValuesPerTile);
+        in.ReadBytes(&m_quadHeights[0], sizeof(float)*m_quadHeights.size());
+    }
+
     // read height field
     in >> m_heightField.width >> m_heightField.height >> m_heightField.bmin >> m_heightField.bmax >> m_heightField.cs >> m_heightField.ch;
+
+    // for now, width and height must always be equal.  this check is here as a way to make sure we are reading the file correctly so far
+    assert(m_heightField.width == m_heightField.height);
 
     utility::Vertex a, b;
     utility::Convert::VertexToWow(m_heightField.bmin, a);

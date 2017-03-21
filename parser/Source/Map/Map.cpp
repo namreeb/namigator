@@ -122,8 +122,16 @@ const Wmo *Map::GetWmo(const std::string &name)
         if (wmo->FileName == filename)
             return wmo.get();
 
-    auto ret = new Wmo(this, name);
+    auto ret = new Wmo(name);
+
     m_loadedWmos.push_back(std::unique_ptr<const Wmo>(ret));
+
+    // loading this WMO also loaded all referenced doodads in all doodad sets for the wmo.
+    // for now, let us share ownership between the WMO and this map
+    for (auto const &doodadSet : ret->DoodadSets)
+        for (auto const &wmoDoodad : doodadSet)
+            m_loadedDoodads.push_back(wmoDoodad->Parent);
+
     return ret;
 }
 
@@ -178,65 +186,87 @@ const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
     return itr == m_loadedDoodadInstances.end() ? nullptr : itr->second.get();
 }
 
-void Map::Serialize(std::ostream& stream) const
+void Map::Serialize(utility::BinaryStream& stream) const
 {
-    const std::uint32_t magic = 'MAP1';
-    stream.write(reinterpret_cast<const char *>(&magic), sizeof(magic));
+    const size_t ourSize = sizeof(std::uint8_t) +
+        m_hasTerrain ?
+            (
+                sizeof(std::uint32_t) +             // loaded wmo size
+                (
+                    sizeof(std::uint32_t) +         // id
+                    sizeof(std::uint16_t) +         // doodad set
+                    22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
+                    64                              // model file name
+                ) * m_loadedWmoInstances.size() +   // for each wmo instance
+                sizeof(std::uint32_t) +             // loaded doodad size
+                (
+                    sizeof(std::uint32_t) +         // id
+                    22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
+                    64                              // model file name
+                ) * m_loadedDoodadInstances.size()
+            )
+        :
+            (
+                sizeof(std::uint32_t) +             // id
+                sizeof(std::uint16_t) +             // doodad set
+                22 * sizeof(float) +                // 16 floats for transform matrix, 6 floats for bounds
+                64                                  // model file name
+            );
 
-    if (!m_hasTerrain)
+    utility::BinaryStream ourStream(ourSize);
+    ourStream << Magic;
+
+    if (m_hasTerrain)
     {
-        stream << (std::uint8_t)0;
+        ourStream << (std::uint8_t)1;
+
+        {
+            std::lock_guard<std::mutex> guard(m_wmoMutex);
+
+            ourStream << static_cast<std::uint32_t>(m_loadedWmoInstances.size());
+
+            for (auto const &wmo : m_loadedWmoInstances)
+            {
+                ourStream << static_cast<std::uint32_t>(wmo.first);
+                ourStream << static_cast<std::uint16_t>(wmo.second->DoodadSet);
+                ourStream << wmo.second->TransformMatrix;
+                ourStream << wmo.second->Bounds;
+                ourStream.WriteString(wmo.second->Model->FileName, ModelFileNameLength);
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> guard(m_doodadMutex);
+
+            ourStream << static_cast<std::uint32_t>(m_loadedDoodadInstances.size());
+
+            for (auto const &doodad : m_loadedDoodadInstances)
+            {
+                ourStream << static_cast<std::uint32_t>(doodad.first);
+                ourStream << doodad.second->TransformMatrix;
+                ourStream << doodad.second->Bounds;
+                ourStream.WriteString(doodad.second->Model->FileName, ModelFileNameLength);
+            }
+        }
+    }
+    else
+    {
+        ourStream << (std::uint8_t)0;
 
         auto const wmo = GetGlobalWmoInstance();
 
-        const std::uint32_t id = 0xFFFFFFFF;
-        stream.write(reinterpret_cast<const char *>(&id), sizeof(id));
+        constexpr std::uint32_t id = 0xFFFFFFFF;
 
-        const std::uint16_t doodadSet = static_cast<std::uint16_t>(wmo->DoodadSet);
-        stream.write(reinterpret_cast<const char *>(&doodadSet), sizeof(doodadSet));
-
-        stream << wmo->TransformMatrix;
-        stream << wmo->Bounds;
-        stream << std::left << std::setw(64) << std::setfill('\000') << wmo->Model->FileName;
-
-        return;
+        ourStream << id;
+        ourStream << static_cast<std::uint16_t>(wmo->DoodadSet);
+        ourStream << wmo->TransformMatrix;
+        ourStream << wmo->Bounds;
+        ourStream.WriteString(wmo->Model->FileName, ModelFileNameLength);
     }
 
-    stream << (std::uint8_t)1;
+    // make sure our prediction of the final size is correct, to avoid reallocations
+    assert(ourSize == ourStream.wpos());
 
-    {
-        std::lock_guard<std::mutex> guard(m_wmoMutex);
-
-        const std::uint32_t wmoInstanceCount = static_cast<std::uint32_t>(m_loadedWmoInstances.size());
-        stream.write(reinterpret_cast<const char *>(&wmoInstanceCount), sizeof(wmoInstanceCount));
-
-        for (auto const &wmo : m_loadedWmoInstances)
-        {
-            const std::uint32_t id = static_cast<std::uint32_t>(wmo.first);
-            const std::uint16_t doodadSet = static_cast<std::uint16_t>(wmo.second->DoodadSet);
-
-            stream.write(reinterpret_cast<const char *>(&id), sizeof(id));
-            stream.write(reinterpret_cast<const char *>(&doodadSet), sizeof(doodadSet));
-            stream << wmo.second->TransformMatrix;
-            stream << wmo.second->Bounds;
-            stream << std::left << std::setw(64) << std::setfill('\000') << wmo.second->Model->FileName;
-        }
-    }
-
-    {
-        std::lock_guard<std::mutex> guard(m_doodadMutex);
-
-        const std::uint32_t doodadInstanceCount = static_cast<std::uint32_t>(m_loadedDoodadInstances.size());
-        stream.write(reinterpret_cast<const char *>(&doodadInstanceCount), sizeof(doodadInstanceCount));
-
-        for (auto const &doodad : m_loadedDoodadInstances)
-        {
-            const std::uint32_t id = static_cast<std::uint32_t>(doodad.first);
-            stream.write(reinterpret_cast<const char *>(&id), sizeof(id));
-            stream << doodad.second->TransformMatrix;
-            stream << doodad.second->Bounds;
-            stream << std::left << std::setw(64) << std::setfill('\000') << doodad.second->Model->FileName;
-        }
-    }
+    stream << ourStream;
 }
 }

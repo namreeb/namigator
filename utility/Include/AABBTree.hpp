@@ -5,7 +5,6 @@
 #include "LinearAlgebra.hpp"
 #include "BoundingBox.hpp"
 
-#include <fstream>
 #include <vector>
 #include <cstdint>
 
@@ -26,6 +25,9 @@ class AABBTree
             BoundingBox bounds;
         };
 
+        static constexpr std::uint32_t StartMagic = 'BVH1';
+        static constexpr std::uint32_t EndMagic = 'FOOB';
+
     public:
         AABBTree() = default;
         AABBTree(AABBTree&& other) = default;
@@ -41,8 +43,8 @@ class AABBTree
 
         BoundingBox GetBoundingBox() const;
 
-        void Serialize(std::ostream& stream) const;
-        bool Deserialize(std::istream& stream);
+        void Serialize(utility::BinaryStream& stream) const;
+        bool Deserialize(utility::BinaryStream& stream);
 
         const std::vector<Vertex> &Vertices() const { return m_vertices; }
         const std::vector<int> &Indices() const { return m_indices; }

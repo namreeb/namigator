@@ -1,5 +1,4 @@
 #include "MpqManager.hpp"
-#include "Map/Map.hpp"
 #include "Wmo/Wmo.hpp"
 #include "Wmo/Group File/WmoGroupFile.hpp"
 #include "Wmo/Root File/Chunks/MOHD.hpp"
@@ -21,7 +20,7 @@
 
 namespace parser
 {
-Wmo::Wmo(Map *map, const std::string &path)
+Wmo::Wmo(const std::string &path)
 {
     FileName = path.substr(path.rfind('\\') + 1);
     FileName = FileName.substr(0, FileName.rfind('.'));
@@ -146,35 +145,32 @@ Wmo::Wmo(Map *map, const std::string &path)
             }
     }
 
-    // Doodad sets.  Ignore this step if no map is provided.  This is the case when BVH data is being pre-generated.
+    // Doodad sets
 
-    if (!!map)
+    input::MODS doodadSetsChunk(information.DoodadSetsCount, modsLocation, reader.get());
+    input::MODN doodadNamesChunk(information.DoodadNamesCount, modnLocation, reader.get());
+    input::MODD doodadChunk(moddLocation, reader.get());
+
+    DoodadSets.resize(doodadSetsChunk.DoodadSets.size());
+
+    for (size_t i = 0; i < doodadSetsChunk.DoodadSets.size(); ++i)
     {
-        input::MODS doodadSetsChunk(information.DoodadSetsCount, modsLocation, reader.get());
-        input::MODN doodadNamesChunk(information.DoodadNamesCount, modnLocation, reader.get());
-        input::MODD doodadChunk(moddLocation, reader.get());
+        auto const &set = doodadSetsChunk.DoodadSets[i];
 
-        DoodadSets.resize(doodadSetsChunk.DoodadSets.size());
+        DoodadSets[i].reserve(set.DoodadCount);
 
-        for (size_t i = 0; i < doodadSetsChunk.DoodadSets.size(); ++i)
+        for (auto d = set.FirstDoodadIndex; d < set.FirstDoodadIndex + set.DoodadCount; ++d)
         {
-            auto const &set = doodadSetsChunk.DoodadSets[i];
+            auto const &placement = doodadChunk.Doodads[d];
+            auto const &name = doodadNamesChunk.Names[placement.NameIndex];
 
-            DoodadSets[i].reserve(set.DoodadCount);
+            utility::Matrix transformMatrix;
+            placement.GetTransformMatrix(transformMatrix);
 
-            for (auto d = set.FirstDoodadIndex; d < set.FirstDoodadIndex + set.DoodadCount; ++d)
-            {
-                auto const &placement = doodadChunk.Doodads[d];
-                auto const &name = doodadNamesChunk.Names[placement.NameIndex];
+            auto doodad = std::make_shared<const Doodad>(name);
 
-                utility::Matrix transformMatrix;
-                placement.GetTransformMatrix(transformMatrix);
-
-                auto const doodad = map->GetDoodad(name);
-
-                if (!!doodad->Vertices.size() && !!doodad->Indices.size())
-                    DoodadSets[i].push_back(std::make_unique<WmoDoodad const>(doodad, transformMatrix));
-            }
+            if (!!doodad->Vertices.size() && !!doodad->Indices.size())
+                DoodadSets[i].push_back(std::make_unique<WmoDoodad const>(doodad, transformMatrix));
         }
     }
 }

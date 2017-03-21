@@ -2,10 +2,14 @@
 
 #include "Model.hpp"
 
+#include "utility/Include/Ray.hpp"
 #include "utility/Include/BinaryStream.hpp"
 #include "utility/Include/BoundingBox.hpp"
+
 #include "recastnavigation/Recast/Include/Recast.h"
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
+
+#include "RecastDetourBuild/Include/Common.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -21,7 +25,7 @@ class Tile
     public:
         Tile(Map *map, utility::BinaryStream &in);
         ~Tile();
-    
+
         void AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance> doodad);
 
         Map * const m_map;
@@ -31,6 +35,9 @@ class Tile
 
         int m_x;
         int m_y;
+
+        std::uint8_t m_quadHoles[8 / MeshSettings::TilesPerChunk][8 / MeshSettings::TilesPerChunk];     // FIXME: make vector so as not to hard-code size
+        std::vector<float> m_quadHeights;
 
         rcHeightfield m_heightField;
         std::vector<std::uint8_t> m_tileData;

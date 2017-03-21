@@ -58,3 +58,5 @@ add_library(parser STATIC ${SRC_MAP} ${SRC_ADT} ${SRC_WMO} ${SRC_DOODAD}
     Source/MpqManager.cpp
     Source/parser.cpp
 )
+
+add_dependencies(parser utility)
