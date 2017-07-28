@@ -2,6 +2,7 @@
 set(SRC_RECAST
     Recast/Source/Recast.cpp
     Recast/Source/RecastAlloc.cpp
+    Recast/Source/RecastAssert.cpp
     Recast/Source/RecastArea.cpp
     Recast/Source/RecastContour.cpp
     Recast/Source/RecastFilter.cpp
@@ -18,6 +19,7 @@ set(INCLUDE_RECAST
 set(SRC_DETOUR
     Detour/Source/DetourCommon.cpp
     Detour/Source/DetourAlloc.cpp
+    Detour/Source/DetourAssert.cpp
     Detour/Source/DetourNavMesh.cpp
     Detour/Source/DetourNavMeshBuilder.cpp
     Detour/Source/DetourNavMeshQuery.cpp
