@@ -2,8 +2,11 @@ project(namigator)
 
 cmake_minimum_required(VERSION 3.2.3)
 
-# namigator depends on a compiler which supports C++14 
+# namigator depends on a compiler which supports C++14
 set(CMAKE_CXX_STANDARD 14)
+
+# threading library is required
+find_package(Threads REQUIRED)
 
 # we want this definition present globally
 add_definitions(-DDT_POLYREF64)

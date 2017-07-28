@@ -1,4 +1,4 @@
-#include "ADT/Chunks/MWMO.hpp"
+#include "Adt/Chunks/MWMO.hpp"
 #include "utility/Include/Exception.hpp"
 
 #include <vector>

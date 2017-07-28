@@ -1,4 +1,4 @@
-#include "Wmo/Root File/Chunks/MODN.hpp"
+#include "Wmo/RootFile/Chunks/MODN.hpp"
 
 #include "utility/Include/BinaryStream.hpp"
 

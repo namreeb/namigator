@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "Wmo/Group File/WmoGroupChunk.hpp"
+#include "Wmo/GroupFile/WmoGroupChunk.hpp"
 
 namespace parser
 {

@@ -201,7 +201,7 @@ void AABBTree::Build(const std::vector<Vector3>& verts, const std::vector<int>& 
     m_faceBounds.reserve(numFaces);
     m_faceIndices.reserve(numFaces);
 
-    for (unsigned int i = 0; i < unsigned int(numFaces); ++i)
+    for (auto i = 0u; i < numFaces; ++i)
     {
         m_faceIndices.push_back(i);
         m_faceBounds.push_back(CalculateFaceBounds(&i, 1));
@@ -211,7 +211,7 @@ void AABBTree::Build(const std::vector<Vector3>& verts, const std::vector<int>& 
     m_nodes.clear();
     m_nodes.reserve(int(numFaces * 1.5f));
 
-    BuildRecursive(0, m_faceIndices.data(), unsigned int(numFaces));
+    BuildRecursive(0, m_faceIndices.data(), numFaces);
     m_faceBounds.clear();
 
     // Reorder the model indices according to the face indices

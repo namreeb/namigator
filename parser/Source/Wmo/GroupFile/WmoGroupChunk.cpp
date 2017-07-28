@@ -1,5 +1,5 @@
 #include "Wmo/WmoChunkHeader.hpp"
-#include "Wmo/Group File/WmoGroupChunk.hpp"
+#include "Wmo/GroupFile/WmoGroupChunk.hpp"
 
 namespace parser
 {

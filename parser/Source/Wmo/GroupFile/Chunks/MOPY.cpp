@@ -1,4 +1,4 @@
-#include "WMO/Group File/Chunks/MOPY.hpp"
+#include "Wmo/GroupFile/Chunks/MOPY.hpp"
 
 namespace parser
 {

@@ -1,4 +1,4 @@
-#include "WMO/Group File/Chunks/MOVI.hpp"
+#include "Wmo/GroupFile/Chunks/MOVI.hpp"
 
 #include <cstdint>
 

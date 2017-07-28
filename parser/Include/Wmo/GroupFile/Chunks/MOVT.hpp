@@ -1,7 +1,8 @@
 #pragma once
 
+#include "Wmo/GroupFile/WmoGroupChunk.hpp"
+
 #include "utility/Include/LinearAlgebra.hpp"
-#include "Wmo/Group File/WmoGroupChunk.hpp"
 #include "utility/Include/BinaryStream.hpp"
 
 #include <vector>

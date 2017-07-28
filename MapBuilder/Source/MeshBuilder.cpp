@@ -580,13 +580,13 @@ void MeshBuilder::LoadGameObjects(const std::string &path)
     {
         GameObjectInstance instance
         {
-            std::stoull(cells[i]),      // guid
-            std::stoul(cells[i + 1]),   // display id
-            std::stoul(cells[i + 2]),   // map
-            std::stof(cells[i + 3]),    // position x
-            std::stof(cells[i + 4]),    // position y
-            std::stof(cells[i + 5]),    // position z
-            std::stof(cells[i + 6]),    // quaternion
+            std::stoull(cells[i]),                                  // guid
+            static_cast<std::uint32_t>(std::stoul(cells[i + 1])),   // display id
+            static_cast<std::uint32_t>(std::stoul(cells[i + 2])),   // map
+            std::stof(cells[i + 3]),                                // position x
+            std::stof(cells[i + 4]),                                // position y
+            std::stof(cells[i + 5]),                                // position z
+            std::stof(cells[i + 6]),                                // quaternion
             std::stof(cells[i + 7]),
             std::stof(cells[i + 8]),
             std::stof(cells[i + 9]),
@@ -633,15 +633,15 @@ void MeshBuilder::LoadGameObjects(const std::string &path)
 
         auto const modelFullPath = BuildAbsoluteFilename(m_outputPath, modelPath);
 
-        utility::AABBTree model;
-
-        std::ifstream modelIn(modelFullPath, std::ifstream::binary);
-
         // if the file fails to open, continue to the next one silently.  this happens when the model has no collision geometry
-        if (modelIn.fail())
+        if (std::ifstream(modelFullPath, std::ifstream::binary).fail())
             continue;
 
-        if (!model.Deserialize(utility::BinaryStream(modelIn)))
+        utility::BinaryStream modelFile(modelFullPath);
+
+        utility::AABBTree model;
+
+        if (!model.Deserialize(modelFile))
         {
             std::cerr << "Failed to deserialize model " << modelPath << std::endl;
             continue;

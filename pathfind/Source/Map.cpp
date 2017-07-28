@@ -80,10 +80,7 @@ namespace pathfind
 {
 Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(dataPath), m_mapName(mapName)
 {
-    const std::experimental::filesystem::path data(dataPath);
-    auto const continentFile = data / (mapName + ".map");
-
-    utility::BinaryStream in(std::ifstream(continentFile.string(), std::ifstream::binary));
+    utility::BinaryStream in(m_dataPath / (mapName + ".map"));
 
     std::uint32_t magic;
     in >> magic;
@@ -189,50 +186,34 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         auto const result = m_navMesh.init(&params);
         assert(result == DT_SUCCESS);
         
-        std::ifstream navFile(m_dataPath / "Nav" / "Map.nav", std::ifstream::binary);
-        utility::BinaryStream navIn(navFile);
-        navFile.close();
+        utility::BinaryStream navIn(m_dataPath / "Nav" / "Map.nav");
 
         navIn.Decompress();
 
-        try
+        NavFileHeader header;
+        navIn >> header;
+
+        header.Verify(true);
+
+        if (header.x != MeshSettings::WMOcoordinate || header.y != MeshSettings::WMOcoordinate)
+            THROW("Incorrect WMO coordinates");
+
+        for (auto i = 0u; i < header.tileCount; ++i)
         {
-            NavFileHeader header;
-            navIn >> header;
+            auto tile = std::make_unique<Tile>(this, navIn);
 
-            header.Verify(true);
+            // for a global wmo, all tiles are guarunteed to contain the model
+            tile->m_staticWmos.push_back(GlobalWmoId);
+            tile->m_staticWmoModels.push_back(model);
 
-            if (header.x != MeshSettings::WMOcoordinate || header.y != MeshSettings::WMOcoordinate)
-                THROW("Incorrect WMO coordinates");
-
-            for (auto i = 0u; i < header.tileCount; ++i)
-            {
-                auto tile = std::make_unique<Tile>(this, navIn);
-
-                // for a global wmo, all tiles are guarunteed to contain the model
-                tile->m_staticWmos.push_back(GlobalWmoId);
-                tile->m_staticWmoModels.push_back(model);
-
-                m_tiles[{tile->m_x, tile->m_y}] = std::move(tile);
-            }
-        }
-        catch (std::domain_error const &e)
-        {
-            std::stringstream err;
-            err << "Failed to read navmesh file: " << e.what();
-            MessageBox(nullptr, err.str().c_str(), "ERROR", 0);
+            m_tiles[{tile->m_x, tile->m_y}] = std::move(tile);
         }
     }
 
     if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
         THROW("dtNavMeshQuery::init failed");
 
-    std::ifstream tempObstaclesIndex(m_dataPath / "BVH" / "bvh.idx", std::ifstream::binary);
-    if (tempObstaclesIndex.fail())
-        THROW("Failed to open temporary obstacles index");
-
-    utility::BinaryStream index(tempObstaclesIndex);
-    tempObstaclesIndex.close();
+    utility::BinaryStream index(m_dataPath / "BVH" / "bvh.idx");
 
     std::uint32_t size;
     index >> size;
@@ -304,7 +285,7 @@ std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& fil
     }
 
     // else, load it
-    utility::BinaryStream in(std::ifstream(m_dataPath / "BVH" / bvhFilename, std::ifstream::binary));
+    utility::BinaryStream in(m_dataPath / "BVH" / bvhFilename);
 
     auto model = std::make_shared<pathfind::DoodadModel>();
 
@@ -335,7 +316,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename,
     }
 
     // else, load it
-    utility::BinaryStream in(std::ifstream(m_dataPath / "BVH" / bvhFilename, std::ifstream::binary));
+    utility::BinaryStream in(m_dataPath / "BVH" / bvhFilename);
 
     auto model = std::make_shared<pathfind::WmoModel>();
 
@@ -392,9 +373,7 @@ bool Map::LoadADT(int x, int y)
     str << std::setfill('0') << std::setw(2) << x << "_"
         << std::setfill('0') << std::setw(2) << y << ".nav";
 
-    std::ifstream in(m_dataPath / "Nav" / m_mapName / str.str(), std::ifstream::binary);
-    utility::BinaryStream stream(in);
-    in.close();
+    utility::BinaryStream stream(m_dataPath / "Nav" / m_mapName / str.str());
 
     stream.Decompress();
 

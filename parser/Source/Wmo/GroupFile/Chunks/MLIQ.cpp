@@ -1,4 +1,4 @@
-#include "WMO/Group File/Chunks/MLIQ.hpp"
+#include "Wmo/GroupFile/Chunks/MLIQ.hpp"
 
 namespace parser
 {

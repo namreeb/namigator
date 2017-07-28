@@ -3,9 +3,14 @@
 #include <exception>
 #include <string>
 #include <sstream>
-#include <Windows.h>
 
+#ifdef WIN32
+#include <Windows.h>
 #define THROW_BASE() throw utility::exception(::GetLastError(), __FILE__, __FUNCSIG__, __LINE__)
+#else
+#define THROW_BASE() throw utility::exception(__FILE__, __func__, __LINE__)
+#endif
+
 #define THROW(x) THROW_BASE().Message(x)
 
 namespace utility
@@ -14,10 +19,17 @@ class exception : public virtual std::exception
 {
     private:
         std::string _str;
-        DWORD _err;
+
+#ifdef WIN32
+        unsigned int _err;
+#endif
 
     public:
-        exception(DWORD err, const char *file, const char *function, int line) : _err(err)
+#ifdef WIN32
+        exception(unsigned int err, const char *file, const char *function, int line) : _err(err)
+#else
+        exception(const char *file, const char *function, int line)
+#endif
         {
             std::stringstream s;
 
@@ -26,6 +38,7 @@ class exception : public virtual std::exception
             _str = s.str();
         }
 
+#ifdef WIN32
         exception &ErrorCode()
         {
             char buff[1024];
@@ -40,6 +53,9 @@ class exception : public virtual std::exception
 
             return *this;
         }
+#else
+        exception &ErrorCode() { return *this; }
+#endif
 
         exception &Message(const std::string &msg)
         {

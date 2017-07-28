@@ -1,7 +1,7 @@
 #define NOMINMAX
 
-#include "ADT/Chunks/MCNK.hpp"
-#include "ADT/Chunks/Subchunks/MCLQ.hpp"
+#include "Adt/Chunks/MCNK.hpp"
+#include "Adt/Chunks/Subchunks/MCLQ.hpp"
 
 #include "RecastDetourBuild/Include/Common.hpp"
 

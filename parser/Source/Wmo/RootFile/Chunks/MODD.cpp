@@ -1,4 +1,4 @@
-#include "Wmo/Root File/Chunks/MODD.hpp"
+#include "Wmo/RootFile/Chunks/MODD.hpp"
 
 namespace parser
 {

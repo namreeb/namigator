@@ -1,4 +1,4 @@
-#include "WMO/Group File/Chunks/MOVT.hpp"
+#include "Wmo/GroupFile/Chunks/MOVT.hpp"
 
 namespace parser
 {

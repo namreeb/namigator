@@ -1,5 +1,6 @@
+#include "Wmo/GroupFile/WmoGroupFile.hpp"
+
 #include "MpqManager.hpp"
-#include "Wmo/Group File/WmoGroupFile.hpp"
 
 #include "utility/Include/Exception.hpp"
 

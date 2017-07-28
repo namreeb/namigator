@@ -52,7 +52,7 @@ class RecastContext : public rcContext
 
             out << msg;
 
-            MessageBox(nullptr, out.str().c_str(), "Recast Failure", 0);
+            THROW("Recast Failure").Message(out.str());
         }
 
     public:

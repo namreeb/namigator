@@ -189,7 +189,7 @@ const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
 void Map::Serialize(utility::BinaryStream& stream) const
 {
     const size_t ourSize = sizeof(std::uint8_t) +
-        m_hasTerrain ?
+        (m_hasTerrain ?
             (
                 sizeof(std::uint32_t) +             // loaded wmo size
                 (
@@ -211,7 +211,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 sizeof(std::uint16_t) +             // doodad set
                 22 * sizeof(float) +                // 16 floats for transform matrix, 6 floats for bounds
                 64                                  // model file name
-            );
+            ));
 
     utility::BinaryStream ourStream(ourSize);
     ourStream << Magic;

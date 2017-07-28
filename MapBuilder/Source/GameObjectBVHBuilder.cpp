@@ -5,7 +5,7 @@
 #include "parser/Include/Wmo/Wmo.hpp"
 #include "parser/Include/DBC.hpp"
 
-#include "utility/include/AABBTree.hpp"
+#include "utility/Include/AABBTree.hpp"
 #include "utility/Include/Exception.hpp"
 #include "utility/Include/BinaryStream.hpp"
 

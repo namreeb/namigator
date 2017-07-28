@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Wmo/Group File/WmoGroupChunk.hpp"
+#include "Wmo/GroupFile/WmoGroupChunk.hpp"
 
 #include <vector>
 #include <cstdint>

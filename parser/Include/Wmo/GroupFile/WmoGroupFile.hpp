@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Wmo/Group File/Chunks/MOPY.hpp"
-#include "Wmo/Group File/Chunks/MOVI.hpp"
-#include "Wmo/Group File/Chunks/MOVT.hpp"
-#include "Wmo/Group File/Chunks/MLIQ.hpp"
+#include "Wmo/GroupFile/Chunks/MOPY.hpp"
+#include "Wmo/GroupFile/Chunks/MOVI.hpp"
+#include "Wmo/GroupFile/Chunks/MOVT.hpp"
+#include "Wmo/GroupFile/Chunks/MLIQ.hpp"
 
 #include <string>
 #include <memory>

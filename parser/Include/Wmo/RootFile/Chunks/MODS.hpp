@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Wmo/Root File/WmoRootChunk.hpp"
+#include "Wmo/RootFile/WmoRootChunk.hpp"
 
 #include <vector>
 #include <cstdint>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Wmo/WmoDoodadPlacement.hpp"
-#include "Wmo/Root File/WmoRootChunk.hpp"
+#include "Wmo/RootFile/WmoRootChunk.hpp"
 
 #include "utility/Include/BinaryStream.hpp"
 

@@ -1,5 +1,5 @@
-#include "Wmo/Root File/WmoRootChunk.hpp"
-#include "Wmo/Root File/Chunks/MODS.hpp"
+#include "Wmo/RootFile/WmoRootChunk.hpp"
+#include "Wmo/RootFile/Chunks/MODS.hpp"
 
 #include "utility/Include/BinaryStream.hpp"
 

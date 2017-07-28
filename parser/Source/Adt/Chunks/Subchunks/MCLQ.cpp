@@ -1,5 +1,5 @@
 #include "utility/Include/Exception.hpp"
-#include "ADT/Chunks/Subchunks/MCLQ.hpp"
+#include "Adt/Chunks/Subchunks/MCLQ.hpp"
 
 namespace parser
 {

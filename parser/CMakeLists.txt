@@ -27,21 +27,21 @@ set(SRC_MAP
 )
 
 set(SRC_WMO_GROUP_CHUNKS
-    "Source/Wmo/Group File/Chunks/MLIQ.cpp"
-    "Source/Wmo/Group File/Chunks/MOPY.cpp"
-    "Source/Wmo/Group File/Chunks/MOVI.cpp"
-    "Source/Wmo/Group File/Chunks/MOVT.cpp"
+    "Source/Wmo/GroupFile/Chunks/MLIQ.cpp"
+    "Source/Wmo/GroupFile/Chunks/MOPY.cpp"
+    "Source/Wmo/GroupFile/Chunks/MOVI.cpp"
+    "Source/Wmo/GroupFile/Chunks/MOVT.cpp"
 )
 
 set(SRC_WMO_GROUP ${SRC_WMO_GROUP_CHUNKS}
-    "Source/Wmo/Group File/WmoGroupChunk.cpp"
-    "Source/Wmo/Group File/WmoGroupFile.cpp"
+    "Source/Wmo/GroupFile/WmoGroupChunk.cpp"
+    "Source/Wmo/GroupFile/WmoGroupFile.cpp"
 )
 
 set(SRC_WMO_ROOT_CHUNKS
-    "Source/Wmo/Root File/Chunks/MODD.cpp"
-    "Source/Wmo/Root File/Chunks/MODN.cpp"
-    "Source/Wmo/Root File/Chunks/MODS.cpp"
+    "Source/Wmo/RootFile/Chunks/MODD.cpp"
+    "Source/Wmo/RootFile/Chunks/MODN.cpp"
+    "Source/Wmo/RootFile/Chunks/MODS.cpp"
 )
 
 set(SRC_WMO_ROOT ${SRC_WMO_ROOT_CHUNKS}

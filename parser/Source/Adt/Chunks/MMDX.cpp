@@ -1,4 +1,4 @@
-#include "ADT/Chunks/MMDX.hpp"
+#include "Adt/Chunks/MMDX.hpp"
 
 #include "utility/Include/BinaryStream.hpp"
 #include "utility/Include/Exception.hpp"

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <experimental/filesystem>
 
 namespace utility
 {
@@ -15,8 +16,13 @@ BinaryStream::BinaryStream(std::vector<std::uint8_t> &buffer) : m_buffer(std::mo
 
 BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_rpos(0), m_wpos(0) {}
 
-BinaryStream::BinaryStream(std::istream &stream) : m_rpos(0), m_wpos(0)
+BinaryStream::BinaryStream(const std::experimental::filesystem::path &path) : m_rpos(0), m_wpos(0)
 {
+    std::ifstream stream(path, std::ifstream::binary);
+
+    if (stream.fail())
+        THROW("Failed to open file for BinaryStream");
+
     stream.seekg(0, std::ios::end);
     m_wpos = static_cast<size_t>(stream.tellg());
     stream.seekg(0, std::ios::beg);

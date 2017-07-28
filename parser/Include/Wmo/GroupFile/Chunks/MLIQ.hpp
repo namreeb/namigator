@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Wmo/Group File/WmoGroupChunk.hpp"
+#include "Wmo/GroupFile/WmoGroupChunk.hpp"
 #include "utility/Include/Array2d.hpp"
 
 #include <memory>
