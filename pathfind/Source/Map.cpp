@@ -500,7 +500,7 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     // check BVH data for this tile
     // note that we assume the ground, if there is any, is within 2x
     bool rayHit;
-    utility::Ray ray{ { x,y, zHint },{ x, y, 3 * MeshSettings::DetailSampleMaxError } };
+    utility::Ray ray{ { x,y, zHint },{ x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError } };
     if ((rayHit = RayCast(ray, { tile->second.get() })))
         result = ray.GetHitPoint().Z;
 
