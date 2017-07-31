@@ -2,6 +2,7 @@
 #include "utility/Include/Exception.hpp"
 
 #include <vector>
+#include <cstring>
 
 static_assert(sizeof(char) == 1, "char must be 8 bit");
 

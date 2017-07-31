@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <ostream>
+#include <cstring>
 
 #ifndef PI
 #define PI 3.14159264f
@@ -134,7 +135,7 @@ class Matrix
 
         void PopulateArray(float *out) const
         {
-            memcpy(out, &m_matrix[0], m_matrix.size()*sizeof(float));
+            ::memcpy(out, &m_matrix[0], m_matrix.size()*sizeof(float));
         }
 };
 

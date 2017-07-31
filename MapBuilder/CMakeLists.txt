@@ -6,5 +6,5 @@ include_directories(Include ${CMAKE_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/recastnavig
 
 add_executable(${EXECUTABLE_NAME} ${SRC})
 
-target_link_libraries(${EXECUTABLE_NAME} utility parser recastnavigation storm)
+target_link_libraries(${EXECUTABLE_NAME} utility parser recastnavigation storm ${CMAKE_THREAD_LIBS_INIT})
 add_dependencies(MapBuilder utility parser recastnavigation storm)

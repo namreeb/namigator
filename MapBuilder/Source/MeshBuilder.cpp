@@ -454,8 +454,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     if (auto const wmo = m_map->GetGlobalWmoInstance())
     {
-        auto const tileWidth = static_cast<int>(std::ceilf((wmo->Bounds.MaxCorner.X - wmo->Bounds.MinCorner.X) / MeshSettings::TileSize));
-        auto const tileHeight = static_cast<int>(std::ceilf((wmo->Bounds.MaxCorner.Y - wmo->Bounds.MinCorner.Y) / MeshSettings::TileSize));
+        auto const tileWidth = static_cast<int>(::ceilf((wmo->Bounds.MaxCorner.X - wmo->Bounds.MinCorner.X) / MeshSettings::TileSize));
+        auto const tileHeight = static_cast<int>(::ceilf((wmo->Bounds.MaxCorner.Y - wmo->Bounds.MinCorner.Y) / MeshSettings::TileSize));
 
         m_globalWMO = std::make_unique<meshfiles::GlobalWMO>();
 

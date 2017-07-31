@@ -16,6 +16,7 @@
 #include <fstream>
 #include <cassert>
 #include <cstdint>
+#include <cmath>
 #include <vector>
 #include <iomanip>
 #include <list>
@@ -177,8 +178,8 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         params.orig[2] = -globalWmo.m_bounds.MaxCorner.X;
         params.tileHeight = params.tileWidth = MeshSettings::TileSize;
 
-        auto const tileWidth = static_cast<int>(std::ceilf((globalWmo.m_bounds.MaxCorner.X - globalWmo.m_bounds.MinCorner.X) / MeshSettings::TileSize));
-        auto const tileHeight = static_cast<int>(std::ceilf((globalWmo.m_bounds.MaxCorner.Y - globalWmo.m_bounds.MinCorner.Y) / MeshSettings::TileSize));
+        auto const tileWidth = static_cast<int>(::ceilf((globalWmo.m_bounds.MaxCorner.X - globalWmo.m_bounds.MinCorner.X) / MeshSettings::TileSize));
+        auto const tileHeight = static_cast<int>(::ceilf((globalWmo.m_bounds.MaxCorner.Y - globalWmo.m_bounds.MinCorner.Y) / MeshSettings::TileSize));
 
         params.maxTiles = tileWidth*tileHeight;
         params.maxPolys = 1 << DT_POLY_BITS;

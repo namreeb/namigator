@@ -8,6 +8,11 @@ set(CMAKE_CXX_STANDARD 14)
 # threading library is required
 find_package(Threads REQUIRED)
 
+# this is used a lot for serialization
+if (CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
+endif()
+
 # we want this definition present globally
 add_definitions(-DDT_POLYREF64)
 

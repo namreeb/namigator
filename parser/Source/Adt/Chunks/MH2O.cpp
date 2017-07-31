@@ -7,6 +7,8 @@
 #include <iostream>
 #include <thread>
 #include <cstdint>
+#include <cmath>
+#include <cstring>
 
 namespace parser
 {
