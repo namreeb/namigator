@@ -58,8 +58,12 @@ GameObjectBVHBuilder::~GameObjectBVHBuilder()
 
 void GameObjectBVHBuilder::Begin()
 {
-    for (auto i = 0u; i < m_workers; ++i)
-        m_threads.push_back(std::thread(&GameObjectBVHBuilder::Work, this));
+    // if zero threads are requested, execute synchronously
+    if (!m_workers)
+        Work();
+    else
+        for (auto i = 0u; i < m_workers; ++i)
+            m_threads.push_back(std::thread(&GameObjectBVHBuilder::Work, this));
 }
 
 void GameObjectBVHBuilder::Shutdown()

@@ -2,6 +2,9 @@
 
 #include "utility/Include/BinaryStream.hpp"
 
+#include "parser/Include/Wmo/WmoInstance.hpp"
+#include "parser/Include/Adt/Adt.hpp"
+
 #include <mutex>
 #include <memory>
 #include <string>
@@ -14,10 +17,8 @@
 namespace parser
 {
 class Wmo;
-class WmoInstance;
 class Doodad;
 class DoodadInstance;
-class Adt;
 
 class Map
 {

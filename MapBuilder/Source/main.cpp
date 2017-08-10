@@ -25,7 +25,7 @@ void DisplayUsage(std::ostream &o)
     o << "  -h/--help                      -- Display help message\n";
     o << "  -d/--data <data directory>     -- Path to data directory from which to draw input geometry\n";
     o << "  -m/--map <map name>            -- Which map to produce data for\n";
-    o << "  -b/--bvh                       -- Enable line of sight (BVH) data generation for all encountered game objects (note: this will NOT replace existing data)\n";
+    o << "  -b/--bvh                       -- Build line of sight (BVH) data for all models eligible for spawning by the server\n";
     o << "  -g/--gocsv <go csv file>       -- Path to CSV file containing game object data to include in static mesh output\n";
     o << "  -o/--output <output directory> -- Path to root output directory\n";
     o << "  -t/--threads <thread count>    -- How many worker threads to use\n";
