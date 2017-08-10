@@ -12,7 +12,6 @@
 #include "utility/Include/Exception.hpp"
 
 #include "RecastDetourBuild/Include/Common.hpp"
-#include "RecastDetourBuild/Include/TileCacheCompressor.hpp"
 
 #include "recastnavigation/Recast/Include/Recast.h"
 #include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
