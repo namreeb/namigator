@@ -73,6 +73,10 @@ void BinaryStream::Write(const void *data, size_t length)
 
 void BinaryStream::Write(size_t position, const void *data, size_t length)
 {
+    // without this, if the buffer is full, the memcpy() call below will read past the end of m_buffer
+    if (!length)
+        return;
+
     if (position + length > m_buffer.size())
     {
         auto const newSize = (std::max)(2 * m_buffer.size(), m_buffer.size() + length);
