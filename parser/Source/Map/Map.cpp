@@ -188,7 +188,7 @@ const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
 
 void Map::Serialize(utility::BinaryStream& stream) const
 {
-    const size_t ourSize = sizeof(std::uint8_t) +
+    const size_t ourSize = sizeof(std::uint32_t) + sizeof(std::uint8_t) +
         (m_hasTerrain ?
             (
                 sizeof(std::uint32_t) +             // loaded wmo size
