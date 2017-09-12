@@ -37,22 +37,22 @@ set(INCLUDE_DETOUR
 # path translation is done here:
 set(SRC_RECAST_ACTUAL )
 foreach(SRC ${SRC_RECAST})
-    list(APPEND SRC_RECAST_ACTUAL "${CMAKE_SOURCE_DIR}/recastnavigation/${SRC}")
+    list(APPEND SRC_RECAST_ACTUAL "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/${SRC}")
 endforeach(SRC)
 
 set(INCLUDE_RECAST_ACTUAL )
 foreach(INCLUDE ${INCLUDE_RECAST})
-    list(APPEND INCLUDE_RECAST_ACTUAL "${CMAKE_SOURCE_DIR}/recastnavigation/${INCLUDE}")
+    list(APPEND INCLUDE_RECAST_ACTUAL "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/${INCLUDE}")
 endforeach(INCLUDE)
 
 set(SRC_DETOUR_ACTUAL )
 foreach(SRC ${SRC_DETOUR})
-    list(APPEND SRC_DETOUR_ACTUAL "${CMAKE_SOURCE_DIR}/recastnavigation/${SRC}")
+    list(APPEND SRC_DETOUR_ACTUAL "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/${SRC}")
 endforeach(SRC)
 
 set(INCLUDE_DETOUR_ACTUAL )
 foreach(INCLUDE ${INCLUDE_DETOUR})
-    list(APPEND INCLUDE_DETOUR_ACTUAL "${CMAKE_SOURCE_DIR}/recastnavigation/${INCLUDE}")
+    list(APPEND INCLUDE_DETOUR_ACTUAL "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/${INCLUDE}")
 endforeach(INCLUDE)
 
 include_directories(${INCLUDE_RECAST_ACTUAL} ${INCLUDE_DETOUR_ACTUAL})
