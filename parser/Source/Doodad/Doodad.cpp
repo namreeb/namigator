@@ -7,6 +7,7 @@
 
 #include <string>
 #include <memory>
+#include <cstdint>
 
 namespace parser
 {
@@ -31,31 +32,34 @@ Doodad::Doodad(const std::string &path)
     if (!reader)
         THROW("Doodad " + path + " not found");
 
-    if (reader->Read<unsigned int>() != Magic)
+    if (reader->Read<std::uint32_t>() != Magic)
         THROW("Invalid doodad file");
 
-    const unsigned int version = reader->Read<unsigned int>();
+    auto const version = reader->Read<std::uint32_t>();
 
     switch (version)
     {
         case 256:   // Classic
         case 260:   // TBC
+        case 261:   // TBC
+        case 262:   // TBC
         case 263:   // TBC
             reader->rpos(0xEC);
             break;
 
+        case 272:   // TBC
         case 264:   // WOTLK
             reader->rpos(0xD8);
             break;
 
         default:
-            THROW("Unsupported doodad format");
+            THROW("Unsupported doodad format: " + version);
     }
 
-    const int indexCount = reader->Read<int>();
-    const int indicesPosition = reader->Read<int>();
-    const int vertexCount = reader->Read<int>();
-    const int verticesPosition = reader->Read<int>();
+    auto const indexCount = reader->Read<std::uint32_t>();
+    auto const indicesPosition = reader->Read<std::uint32_t>();
+    auto const vertexCount = reader->Read<std::uint32_t>();
+    auto const verticesPosition = reader->Read<std::uint32_t>();
 
     if (!indexCount || !vertexCount)
         return;
@@ -70,7 +74,7 @@ Doodad::Doodad(const std::string &path)
     Indices.reserve(indexCount);
 
     reader->rpos(indicesPosition);
-    for (auto i = 0; i < indexCount; ++i)
-        Indices.push_back(reader->Read<unsigned short>());
+    for (auto i = 0u; i < indexCount; ++i)
+        Indices.push_back(reader->Read<std::uint16_t>());
 }
 }
