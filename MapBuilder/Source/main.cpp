@@ -164,12 +164,12 @@ int main(int argc, char *argv[])
             }
         } while (goBuilder.Remaining() > 0);
 
+        goBuilder.Shutdown();
+        goBuilder.WriteIndexFile();
+
         std::stringstream fin;
         fin << "Finished BVH generation";
         std::cout << fin.str() << std::endl;
-
-        goBuilder.Shutdown();
-        goBuilder.WriteIndexFile();
 
         return EXIT_SUCCESS;
     }
