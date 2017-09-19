@@ -31,7 +31,7 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
-if (${PYTHON_VERSION_MAJOR} EQUAL 3)
+if (PYTHON_VERSION_MAJOR EQUAL 3)
     # not sure why this is necessary, but it seems that it is
     set(Boost_FIND_COMPONENTS python3)
 

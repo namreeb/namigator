@@ -1,10 +1,12 @@
-include_directories(Include ${CMAKE_SOURCE_DIR})
+include_directories(Include "${CMAKE_CURRENT_SOURCE_DIR}/../")
 
 add_library(utility STATIC
-    Source/AABBTree.cpp
-    Source/BinaryStream.cpp
-    Source/BoundingBox.cpp
-    Source/LinearAlgebra.cpp
-    Source/MathHelper.cpp
-    Source/Ray.cpp
+    AABBTree.cpp
+    BinaryStream.cpp
+    BoundingBox.cpp
+    Matrix.cpp
+    Vector.cpp
+    Quaternion.cpp
+    MathHelper.cpp
+    Ray.cpp
 )
