@@ -82,8 +82,8 @@ class Map
         // honor this restriction.  also, they shouldn't have to, since we want to take care of it for them
         float FindPreciseZ(float x, float y, float zHint) const;
 
-        bool RayCast(utility::Ray &ray) const;
-        bool RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) const;
+        bool RayCast(math::Ray &ray) const;
+        bool RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const;
 
         // TODO: need mechanism to cleanup expired weak pointers saved in the containers of this class
 
@@ -94,13 +94,13 @@ class Map
         void UnloadADT(int x, int y);
 
         // rotation specified in radians rotated around Z axis
-        void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, float orientation, int doodadSet = -1);
-        void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, const utility::Quaternion &rotation, int doodadSet = -1);
-        void AddGameObject(std::uint64_t guid, unsigned int displayId, const utility::Vertex &position, const utility::Matrix &rotation, int doodadSet = -1);
+        void AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vertex &position, float orientation, int doodadSet = -1);
+        void AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vertex &position, const math::Quaternion &rotation, int doodadSet = -1);
+        void AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vertex &position, const math::Matrix &rotation, int doodadSet = -1);
 
         std::shared_ptr<Model> GetOrLoadModelByDisplayId(unsigned int displayId);
 
-        bool FindPath(const utility::Vertex &start, const utility::Vertex &end, std::vector<utility::Vertex> &output, bool allowPartial = false) const;
+        bool FindPath(const math::Vertex &start, const math::Vertex &end, std::vector<math::Vertex> &output, bool allowPartial = false) const;
 
         // for finding height(s) at a given (x, y), there are two scenarios:
         // 1: we want to find exactly one z for a given path which has this (x, y) as a hop.  in this case, there should only be one correct value,
@@ -108,7 +108,7 @@ class Map
         // 2: for a given (x, y), we want to find all possible z values
         //
         // NOTE: if your usage is outside of both of these scenarios, you are probably doing something wrong
-        float FindHeight(const utility::Vertex &source, const utility::Vertex &target) const;       // scenario one
+        float FindHeight(const math::Vertex &source, const math::Vertex &target) const;       // scenario one
         bool FindHeights(float x, float y, std::vector<float> &output) const;                       // scenario two
 
         const dtNavMesh &GetNavMesh() const { return m_navMesh; }

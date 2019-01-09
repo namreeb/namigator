@@ -14,17 +14,17 @@ Camera::Camera()
 
 void Camera::UpdateViewMatrix()
 {
-    m_viewMatrix = utility::Matrix::CreateViewMatrix(m_position, m_position + m_forward, m_up);
+    m_viewMatrix = math::Matrix::CreateViewMatrix(m_position, m_position + m_forward, m_up);
 }
 
-void Camera::Move(const math::Vector3 &position)
+void Camera::Move(const math::Vertex& position)
 {
     m_position = position;
 
     UpdateViewMatrix();
 }
 
-void Camera::LookAt(const math::Vector3 &target)
+void Camera::LookAt(const math::Vertex& target)
 {
     m_forward = math::Vector3::Normalize(target - m_position);
     m_right = math::Vector3::Normalize(math::Vector3::CrossProduct(m_forward, { 0.f, 0.f, 1.f }));
@@ -60,7 +60,7 @@ void Camera::MoveVertical(float delta)
 
 void Camera::Yaw(float delta)
 {
-    auto const rotate = utility::Matrix::CreateRotationZ(delta);
+    auto const rotate = math::Matrix::CreateRotationZ(delta);
     m_forward = math::Vector3::Normalize(math::Vector3::Transform(m_forward, rotate));
     m_right = math::Vector3::Normalize(math::Vector3::Transform(m_right, rotate));
     m_up = math::Vector3::Normalize(math::Vector3::CrossProduct(m_right, m_forward));
@@ -70,7 +70,7 @@ void Camera::Yaw(float delta)
 
 void Camera::Pitch(float delta)
 {
-    auto const rotate = utility::Matrix::CreateRotation(m_right, delta);
+    auto const rotate = math::Matrix::CreateRotation(m_right, delta);
 
     auto newUp = math::Vector3::Transform(m_up, rotate);
 
@@ -124,10 +124,10 @@ void Camera::UpdateProjection(float vpX, float vpY, float width, float height, f
     m_viewportMinDepth = minDepth;
     m_viewportMaxDepth = maxDepth;
 
-    m_projMatrix = utility::Matrix::CreateProjectionMatrix(PI / 4.f, width / height, 1.f, 10000.f);
+    m_projMatrix = math::Matrix::CreateProjectionMatrix(PI / 4.f, width / height, 1.f, 10000.f);
 }
 
-math::Vector3 Camera::ProjectPoint(const math::Vector3& pos) const
+math::Vertex Camera::ProjectPoint(const math::Vertex& pos) const
 {
     math::Vector3 position = pos;
     position = math::Vector3::Transform(position, m_viewMatrix.Transposed());
@@ -139,7 +139,7 @@ math::Vector3 Camera::ProjectPoint(const math::Vector3& pos) const
     return position;
 }
 
-math::Vector3 Camera::UnprojectPoint(const math::Vector3& pos) const
+math::Vertex Camera::UnprojectPoint(const math::Vertex& pos) const
 {
     math::Vector3 position = pos;
     position.X = 2.0f * (position.X - m_viewportX) / m_viewportWidth - 1.0f;

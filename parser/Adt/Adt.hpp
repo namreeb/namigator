@@ -19,10 +19,10 @@ struct AdtChunk
 
     float m_heights[9 * 9 + 8 * 8];
 
-    std::vector<math::Vector3> m_terrainVertices;
+    std::vector<math::Vertex> m_terrainVertices;
     std::vector<int> m_terrainIndices;
 
-    std::vector<math::Vector3> m_liquidVertices;
+    std::vector<math::Vertex> m_liquidVertices;
     std::vector<int> m_liquidIndices;
 
     std::vector<std::uint32_t> m_wmoInstances;

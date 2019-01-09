@@ -33,12 +33,12 @@ class AABBTree
         AABBTree(AABBTree&& other) = default;
         ~AABBTree() = default;
 
-        AABBTree(const std::vector<Vector3>& verts, const std::vector<int>& indices);
+        AABBTree(const std::vector<Vertex>& verts, const std::vector<int>& indices);
 
         AABBTree& operator = (AABBTree&& other) = default;
 
     public:
-        void Build(const std::vector<Vector3>& verts, const std::vector<int>& indices);
+        void Build(const std::vector<Vertex>& verts, const std::vector<int>& indices);
         bool IntersectRay(Ray& ray, unsigned int* faceIndex = nullptr) const;
 
         BoundingBox GetBoundingBox() const;
@@ -68,7 +68,7 @@ class AABBTree
 
         std::vector<Node> m_nodes;
 
-        std::vector<Vector3> m_vertices;
+        std::vector<Vertex> m_vertices;
         std::vector<int> m_indices;
 
         std::vector<BoundingBox> m_faceBounds;

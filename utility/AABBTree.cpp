@@ -10,7 +10,7 @@ namespace math
 namespace {
 class ModelFaceSorter {
     public:
-        ModelFaceSorter(const Vector3* vertices, const int* indices, unsigned int axis)
+        ModelFaceSorter(const Vertex* vertices, const int* indices, unsigned int axis)
             : m_vertices(vertices)
             , m_indices(indices)
             , m_axis(axis)
@@ -33,13 +33,13 @@ class ModelFaceSorter {
         }
 
         private:
-        const Vector3* m_vertices;
+        const Vertex* m_vertices;
         const int* m_indices;
         unsigned int m_axis;
 };
 }
 
-AABBTree::AABBTree(const std::vector<Vector3>& vertices, const std::vector<int>& indices)
+AABBTree::AABBTree(const std::vector<Vertex>& vertices, const std::vector<int>& indices)
 {
     Build(vertices, indices);
 }
@@ -54,7 +54,7 @@ BoundingBox AABBTree::GetBoundingBox() const
 void AABBTree::Serialize(utility::BinaryStream& stream) const
 {
     auto const size = sizeof(std::uint32_t) * 5 + // magic, Vector3 count, index count, node count, end magic
-        sizeof(Vector3) * m_vertices.size()      + // vertices
+        sizeof(Vertex) * m_vertices.size()      + // vertices
         sizeof(std::int32_t) * m_indices.size() + // indices
         (sizeof(std::uint8_t) + sizeof(std::uint32_t) + sizeof(BoundingBox)) * m_nodes.size();  // nodes (numFaces + startFace/childen + bounds) * count
 
@@ -188,7 +188,7 @@ BoundingBox AABBTree::CalculateFaceBounds(unsigned int* faces, unsigned int numF
     return BoundingBox(minExtents, maxExtents);
 }
 
-void AABBTree::Build(const std::vector<Vector3>& verts, const std::vector<int>& indices)
+void AABBTree::Build(const std::vector<Vertex>& verts, const std::vector<int>& indices)
 {
     m_vertices = verts;
     m_indices = indices;

@@ -15,7 +15,7 @@ class Doodad
     public:
         std::string FileName;
 
-        std::vector<math::Vector3> Vertices;
+        std::vector<math::Vertex> Vertices;
         std::vector<int> Indices;
 
         Doodad(const std::string &path);

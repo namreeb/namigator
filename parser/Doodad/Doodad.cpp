@@ -58,17 +58,17 @@ Doodad::Doodad(const std::string &path)
 
     auto const indexCount = reader->Read<std::uint32_t>();
     auto const indicesPosition = reader->Read<std::uint32_t>();
-    auto const Vector3Count = reader->Read<std::uint32_t>();
+    auto const vertexCount = reader->Read<std::uint32_t>();
     auto const verticesPosition = reader->Read<std::uint32_t>();
 
-    if (!indexCount || !Vector3Count)
+    if (!indexCount || !vertexCount)
         return;
 
-    Vertices.resize(Vector3Count);
+    Vertices.resize(vertexCount);
 
     // read bounding vertices
     reader->rpos(verticesPosition);
-    reader->ReadBytes(&Vertices[0], Vector3Count * sizeof(math::Vector3));
+    reader->ReadBytes(&Vertices[0], vertexCount * sizeof(math::Vertex));
 
     // read bounding indices
     Indices.reserve(indexCount);

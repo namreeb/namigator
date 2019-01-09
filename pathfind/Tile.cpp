@@ -73,8 +73,8 @@ Tile::Tile(Map *map, utility::BinaryStream &in) : m_map(map), m_ref(0), m_x(-1),
     assert(m_heightField.width == m_heightField.height);
 
     math::Vector3 a, b;
-    utility::Convert::Vector3ToWow(m_heightField.bmin, a);
-    utility::Convert::Vector3ToWow(m_heightField.bmax, b);
+    math::Convert::VertexToWow(m_heightField.bmin, a);
+    math::Convert::VertexToWow(m_heightField.bmax, b);
 
     m_bounds.MinCorner.X = (std::min)(a.X, b.X);
     m_bounds.MaxCorner.X = (std::max)(a.X, b.X);

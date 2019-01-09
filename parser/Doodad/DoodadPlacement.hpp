@@ -19,8 +19,8 @@ struct DoodadPlacement
 {
     std::uint32_t NameId;
     std::uint32_t UniqueId;
-    math::Vector3 BasePosition;
-    math::Vector3 Orientation;
+    math::Vertex BasePosition;
+    math::Vertex Orientation;
     std::uint16_t Scale;
     std::uint16_t Flags;
 

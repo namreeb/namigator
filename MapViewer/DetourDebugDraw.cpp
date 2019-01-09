@@ -21,10 +21,10 @@ void DetourDebugDraw::begin(duDebugDrawPrimitives prim, float size)
     m_indices.clear();
 }
 
-void DetourDebugDraw::Vector3(const float* pos, unsigned int /*color*/)
+void DetourDebugDraw::vertex(const float* pos, unsigned int /*color*/)
 {
-    math::Vector3 v;
-    utility::Convert::Vector3ToWow(pos, v);
+    math::Vertex v;
+    math::Convert::VertexToWow(pos, v);
 
     if (m_uniqueVertices.find(v) == m_uniqueVertices.end())
     {
@@ -35,22 +35,22 @@ void DetourDebugDraw::Vector3(const float* pos, unsigned int /*color*/)
     m_indices.push_back(m_uniqueVertices[v]);
 }
 
-void DetourDebugDraw::Vector3(const float x, const float y, const float z, unsigned int color)
+void DetourDebugDraw::vertex(const float x, const float y, const float z, unsigned int color)
 {
     const float rv[] { x,y,z };
-    math::Vector3 v;
+    math::Vertex v;
 
-    Vector3(rv, color);
+    vertex(rv, color);
 }
 
-void DetourDebugDraw::Vector3(const float* pos, unsigned int color, const float* /*uv*/)
+void DetourDebugDraw::vertex(const float* pos, unsigned int color, const float* /*uv*/)
 {
-    Vector3(pos, color);
+    vertex(pos, color);
 }
 
-void DetourDebugDraw::Vector3(const float x, const float y, const float z, unsigned int color, const float /*u*/, const float /*v*/)
+void DetourDebugDraw::vertex(const float x, const float y, const float z, unsigned int color, const float /*u*/, const float /*v*/)
 {
-    Vector3(x, y, z, color);
+    vertex(x, y, z, color);
 }
 
 void DetourDebugDraw::end()

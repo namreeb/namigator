@@ -17,10 +17,10 @@ class Wmo
     public:
         std::string FileName;
 
-        std::vector<math::Vector3> Vertices;
+        std::vector<math::Vertex> Vertices;
         std::vector<std::int32_t> Indices;
 
-        std::vector<math::Vector3> LiquidVertices;
+        std::vector<math::Vertex> LiquidVertices;
         std::vector<std::int32_t> LiquidIndices;
 
         std::vector<std::vector<std::unique_ptr<const WmoDoodad>>> DoodadSets;

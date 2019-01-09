@@ -7,19 +7,19 @@ class Camera
 {
     private:
         // camera position in world coordinates
-        utility::Vertex m_position;
+        math::Vertex m_position;
 
         // camera view forward direction in world coordinate system
-        utility::Vertex m_forward;
+        math::Vertex m_forward;
 
         // camera view up direction in world coordinate system
-        utility::Vector3 m_up;
+        math::Vector3 m_up;
 
         // camera view right direction in world coordinate system
-        utility::Vector3 m_right;
+        math::Vector3 m_right;
 
-        utility::Matrix m_viewMatrix;
-        utility::Matrix m_projMatrix;
+        math::Matrix m_viewMatrix;
+        math::Matrix m_projMatrix;
 
         void UpdateViewMatrix();
 
@@ -40,10 +40,10 @@ class Camera
         Camera();
 
         void Move(float x, float y, float z) { Move({ x, y, z }); }
-        void Move(const utility::Vertex &position);
+        void Move(const math::Vertex &position);
 
-        void LookAt(float x, float y, float z) { LookAt(utility::Vertex(x, y, z)); }
-        void LookAt(const utility::Vertex &target);
+        void LookAt(float x, float y, float z) { LookAt(math::Vertex(x, y, z)); }
+        void LookAt(const math::Vertex &target);
 
         void MoveUp(float delta);
         void MoveIn(float delta);
@@ -62,11 +62,11 @@ class Camera
 
         void UpdateProjection(float vpX, float vpY, float width, float height, float minDepth, float maxDepth);
 
-        utility::Vector3 ProjectPoint(const utility::Vector3& pos) const;
-        utility::Vector3 UnprojectPoint(const utility::Vector3& pos) const;
+        math::Vertex ProjectPoint(const math::Vector3& pos) const;
+        math::Vertex UnprojectPoint(const math::Vector3& pos) const;
 
-        const utility::Vector3& GetPosition() const { return m_position; }
-        const utility::Vector3& GetForward() const { return m_forward; }
-        const utility::Matrix& GetViewMatrix() const { return m_viewMatrix; }
-        const utility::Matrix& GetProjMatrix() const { return m_projMatrix; }
+        const math::Vector3& GetPosition() const { return m_position; }
+        const math::Vector3& GetForward() const { return m_forward; }
+        const math::Matrix& GetViewMatrix() const { return m_viewMatrix; }
+        const math::Matrix& GetProjMatrix() const { return m_projMatrix; }
 };

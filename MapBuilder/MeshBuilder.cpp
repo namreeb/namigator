@@ -96,7 +96,7 @@ void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::ve
 }
 
 bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
-               const std::vector<math::Vector3> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
+               const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
 {
     if (!vertices.size() || !indices.size())
         return true;
@@ -940,7 +940,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             if (!tileBounds.intersect2d(wmoInstance->Bounds))
                 continue;
 
-            std::vector<math::Vector3> vertices;
+            std::vector<math::Vertex> vertices;
             std::vector<int> indices;
 
             wmoInstance->BuildTriangles(vertices, indices);
@@ -971,7 +971,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             if (!tileBounds.intersect2d(doodadInstance->Bounds))
                 continue;
 
-            std::vector<math::Vector3> vertices;
+            std::vector<math::Vertex> vertices;
             std::vector<int> indices;
 
             doodadInstance->BuildTriangles(vertices, indices);
@@ -1023,7 +1023,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     utility::BinaryStream heightFieldData;
     SerializeHeightField(*solid, heightFieldData);
 
-    // serialize ADT Vector3 height
+    // serialize ADT vertex height
     utility::BinaryStream quadHeightData;
     SerializeTileQuadHeight(tileChunk, tileX, tileY, quadHeightData);
 

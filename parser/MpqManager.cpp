@@ -67,6 +67,9 @@ void MpqManager::Initialize(const std::string &wowDir)
             patches.push_back(i->path());
     }
 
+    if (files.empty() && patches.empty())
+        THROW("Found no MPQs");
+
     std::sort(files.begin(), files.end());
     std::sort(patches.begin(), patches.end());
 

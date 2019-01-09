@@ -23,7 +23,7 @@ namespace parser
 {
 namespace
 {
-void UpdateBounds(math::BoundingBox &bounds, const math::Vector3 &Vector3, std::set<AdtChunkLocation> &adtChunks)
+void UpdateBounds(math::BoundingBox& bounds, const math::Vertex& Vector3, std::set<AdtChunkLocation>& adtChunks)
 {
     bounds.MinCorner.X = std::min(bounds.MinCorner.X, Vector3.X);
     bounds.MaxCorner.X = std::max(bounds.MaxCorner.X, Vector3.X);
@@ -59,12 +59,12 @@ WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const math::B
         UpdateBounds(Bounds, v, AdtChunks);
 }
 
-math::Vector3 WmoInstance::TransformVertex(const math::Vector3 &Vector3) const
+math::Vertex WmoInstance::TransformVertex(const math::Vertex& vertex) const
 {
-    return math::Vector3::Transform(Vector3, TransformMatrix);
+    return math::Vertex::Transform(vertex, TransformMatrix);
 }
 
-void WmoInstance::BuildTriangles(std::vector<math::Vector3> &vertices, std::vector<std::int32_t> &indices) const
+void WmoInstance::BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const
 {
     vertices.clear();
     vertices.reserve(Model->Vertices.size());
@@ -78,7 +78,7 @@ void WmoInstance::BuildTriangles(std::vector<math::Vector3> &vertices, std::vect
         vertices.push_back(TransformVertex(Vector3));
 }
 
-void WmoInstance::BuildLiquidTriangles(std::vector<math::Vector3> &vertices, std::vector<std::int32_t> &indices) const
+void WmoInstance::BuildLiquidTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const
 {
     vertices.clear();
     vertices.reserve(Model->LiquidVertices.size());
@@ -92,7 +92,7 @@ void WmoInstance::BuildLiquidTriangles(std::vector<math::Vector3> &vertices, std
         vertices.push_back(TransformVertex(Vector3));
 }
 
-void WmoInstance::BuildDoodadTriangles(std::vector<math::Vector3> &vertices, std::vector<std::int32_t> &indices) const
+void WmoInstance::BuildDoodadTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const
 {
     vertices.clear();
     indices.clear();

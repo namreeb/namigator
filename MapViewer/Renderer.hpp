@@ -57,7 +57,7 @@ class Renderer
 
         struct ColoredVertex
         {
-            utility::Vertex vertex;
+            math::Vertex vertex;
             float nx, ny, nz;
             float color[4];
         };
@@ -110,7 +110,7 @@ class Renderer
 
         void InsertBuffer(std::vector<GeometryBuffer> &buffer,
             const float *color,
-            const std::vector<utility::Vertex> &vertices,
+            const std::vector<math::Vertex> &vertices,
             const std::vector<int> &indices,
             std::uint32_t userParam = 0,
             bool genNormals = true);
@@ -123,16 +123,16 @@ class Renderer
         void ClearSprites();
         void ClearGameObjects();
 
-        void AddTerrain(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices, std::uint32_t areaId);
-        void AddLiquid(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
-        void AddWmo(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
-        void AddDoodad(unsigned int id, const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
-        void AddMesh(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
-        void AddLines(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
-        void AddSphere(const utility::Vertex& position, float size, int recursionLevel = 2);
-        void AddArrows(const utility::Vertex& start, const utility::Vertex& end, float step);
-        void AddPath(const std::vector<utility::Vertex> &path);
-        void AddGameObject(const std::vector<utility::Vertex> &vertices, const std::vector<int> &indices);
+        void AddTerrain(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, std::uint32_t areaId);
+        void AddLiquid(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
+        void AddWmo(unsigned int id, const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
+        void AddDoodad(unsigned int id, const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
+        void AddMesh(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
+        void AddLines(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
+        void AddSphere(const math::Vertex& position, float size, int recursionLevel = 2);
+        void AddArrows(const math::Vertex& start, const math::Vertex& end, float step);
+        void AddPath(const std::vector<math::Vertex> &path);
+        void AddGameObject(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
 
         bool HasWmo(unsigned int id) const;
         bool HasDoodad(unsigned int id) const;
@@ -146,7 +146,7 @@ class Renderer
         void SetRenderDoodad(bool enabled) { m_renderDoodad = enabled; }
         void SetRenderMesh(bool enabled) { m_renderMesh = enabled; }
 
-        bool HitTest(int x, int y, std::uint32_t geometryFlags, utility::Vertex &out, std::uint32_t &param) const;
+        bool HitTest(int x, int y, std::uint32_t geometryFlags, math::Vertex &out, std::uint32_t &param) const;
 
         Camera m_camera;
 };

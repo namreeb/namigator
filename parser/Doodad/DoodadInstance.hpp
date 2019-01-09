@@ -23,9 +23,9 @@ class DoodadInstance
         const Doodad * const Model;
 
         DoodadInstance(const Doodad *doodad, const math::Matrix &transformMatrix);
-        //DoodadInstance(const Doodad *doodad, const utility::Vertex &position, const utility::Quaternion &rotation);
+        //DoodadInstance(const Doodad *doodad, const math::Vertex &position, const math::Quaternion &rotation);
 
-        math::Vector3 TransformVertex(const math::Vector3 &vertex) const;
-        void BuildTriangles(std::vector<math::Vector3> &vertices, std::vector<int> &indices) const;
+        math::Vertex TransformVertex(const math::Vertex& vertex) const;
+        void BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<int>& indices) const;
 };
 }

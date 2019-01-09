@@ -33,7 +33,7 @@ struct WmoFileInstance
     std::uint32_t m_id;
     std::uint16_t m_doodadSet;
     float m_transformMatrix[16];
-    utility::BoundingBox m_bounds;
+    math::BoundingBox m_bounds;
     char m_fileName[64];
 };
 
@@ -41,7 +41,7 @@ struct DoodadFileInstance
 {
     std::uint32_t m_id;
     float m_transformMatrix[16];
-    utility::BoundingBox m_bounds;
+    math::BoundingBox m_bounds;
     char m_fileName[64];
 };
 
@@ -124,7 +124,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
                 WmoInstance ins;
 
                 ins.m_doodadSet = static_cast<unsigned short>(wmo.m_doodadSet);
-                ins.m_transformMatrix = utility::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
+                ins.m_transformMatrix = math::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = wmo.m_bounds;
                 ins.m_modelFilename = wmo.m_fileName;
@@ -145,7 +145,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
             {
                 DoodadInstance ins;
 
-                ins.m_transformMatrix = utility::Matrix::CreateFromArray(doodad.m_transformMatrix, sizeof(doodad.m_transformMatrix) / sizeof(doodad.m_transformMatrix[0]));
+                ins.m_transformMatrix = math::Matrix::CreateFromArray(doodad.m_transformMatrix, sizeof(doodad.m_transformMatrix) / sizeof(doodad.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = doodad.m_bounds;
                 ins.m_modelFilename = doodad.m_fileName;
@@ -162,7 +162,7 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
         WmoInstance ins;
 
         ins.m_doodadSet = static_cast<unsigned short>(globalWmo.m_doodadSet);
-        ins.m_transformMatrix = utility::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
+        ins.m_transformMatrix = math::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
         ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
         ins.m_bounds = globalWmo.m_bounds;
 
@@ -342,7 +342,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename,
             float transformMatrix[16];
             in >> transformMatrix;
 
-            model->m_doodadSets[set][doodad].m_transformMatrix = utility::Matrix::CreateFromArray(transformMatrix, sizeof(transformMatrix) / sizeof(transformMatrix[0]));
+            model->m_doodadSets[set][doodad].m_transformMatrix = math::Matrix::CreateFromArray(transformMatrix, sizeof(transformMatrix) / sizeof(transformMatrix[0]));
 
             in >> model->m_doodadSets[set][doodad].m_bounds;
 
@@ -437,15 +437,15 @@ std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
     //return nullptr;
 }
 
-bool Map::FindPath(const math::Vector3 &start, const math::Vector3 &end, std::vector<math::Vector3> &output, bool allowPartial) const
+bool Map::FindPath(const math::Vertex& start, const math::Vertex& end, std::vector<math::Vertex>& output, bool allowPartial) const
 {
     constexpr float extents[] = { 5.f, 5.f, 5.f };
 
     float recastStart[3];
     float recastEnd[3];
 
-    utility::Convert::Vector3ToRecast(start, recastStart);
-    utility::Convert::Vector3ToRecast(end, recastEnd);
+    math::Convert::VertexToRecast(start, recastStart);
+    math::Convert::VertexToRecast(end, recastEnd);
 
     dtPolyRef startPolyRef, endPolyRef;
     if (!(m_navQuery.findNearestPoly(recastStart, extents, &m_queryFilter, &startPolyRef, nullptr) & DT_SUCCESS))
@@ -475,7 +475,7 @@ bool Map::FindPath(const math::Vector3 &start, const math::Vector3 &end, std::ve
     output.resize(pathLength);
 
     for (auto i = 0; i < pathLength; ++i)
-        utility::Convert::Vector3ToWow(&pathBuffer[i * 3], output[i]);
+        math::Convert::VertexToWow(&pathBuffer[i * 3], output[i]);
 
     return true;
 }
@@ -491,7 +491,7 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
 
     // find the tile corresponding to this (x, y)
     int tileX, tileY;
-    utility::Convert::WorldToTile({ x,y,0.f }, tileX, tileY);
+    math::Convert::WorldToTile({ x,y,0.f }, tileX, tileY);
 
     auto const tile = m_tiles.find({ tileX, tileY });
 
@@ -501,7 +501,7 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     // check BVH data for this tile
     // note that we assume the ground, if there is any, is within 2x
     bool rayHit;
-    utility::Ray ray{ { x,y, zHint },{ x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError } };
+    math::Ray ray{ { x,y, zHint },{ x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError } };
     if ((rayHit = RayCast(ray, { tile->second.get() })))
         result = ray.GetHitPoint().Z;
 
@@ -511,7 +511,7 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     if (!tile->second->m_quadHeights.empty())
     {
         float northwestX, northwestY;
-        utility::Convert::TileToWorldNorthwestCorner(tileX, tileY, northwestX, northwestY);
+        math::Convert::TileToWorldNorthwestCorner(tileX, tileY, northwestX, northwestY);
 
         auto constexpr quadWidth = MeshSettings::AdtChunkSize / 8;
 
@@ -601,7 +601,7 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
     constexpr float extents[] = { 0.f, (std::numeric_limits<float>::max)(), 0.f };
     float recastCenter[3];
 
-    utility::Convert::Vector3ToRecast({ x, y, 0.f }, recastCenter);
+    math::Convert::VertexToRecast({ x, y, 0.f }, recastCenter);
 
     dtPolyRef polys[MaxStackedPolys];
     int polyCount;
@@ -623,7 +623,7 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
     return !output.empty();
 }
 
-bool Map::RayCast(utility::Ray &ray) const
+bool Map::RayCast(math::Ray &ray) const
 {
     std::vector<const Tile *> tiles;
 
@@ -635,7 +635,7 @@ bool Map::RayCast(utility::Ray &ray) const
     return RayCast(ray, tiles);
 }
 
-bool Map::RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) const
+bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
 {
     auto const start = ray.GetStartPoint();
     auto const end = ray.GetEndPoint();
@@ -671,7 +671,7 @@ bool Map::RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) con
             if (!ray.IntersectBoundingBox(instance.m_bounds))
                 continue;
 
-            utility::Ray rayInverse(math::Vector3::Transform(start, instance.m_inverseTransformMatrix),
+            math::Ray rayInverse(math::Vector3::Transform(start, instance.m_inverseTransformMatrix),
                                     math::Vector3::Transform(end,   instance.m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
@@ -698,7 +698,7 @@ bool Map::RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) con
             if (!ray.IntersectBoundingBox(instance.m_bounds))
                 continue;
 
-            utility::Ray rayInverse(math::Vector3::Transform(start, instance.m_inverseTransformMatrix),
+            math::Ray rayInverse(math::Vector3::Transform(start, instance.m_inverseTransformMatrix),
                                     math::Vector3::Transform(end,   instance.m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
@@ -723,7 +723,7 @@ bool Map::RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) con
             if (!ray.IntersectBoundingBox(wmo.second->m_bounds))
                 continue;
 
-            utility::Ray rayInverse(math::Vector3::Transform(start, wmo.second->m_inverseTransformMatrix),
+            math::Ray rayInverse(math::Vector3::Transform(start, wmo.second->m_inverseTransformMatrix),
                                     math::Vector3::Transform(end,   wmo.second->m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
@@ -748,7 +748,7 @@ bool Map::RayCast(utility::Ray &ray, const std::vector<const Tile *> &tiles) con
             if (!ray.IntersectBoundingBox(doodad.second->m_bounds))
                 continue;
 
-            utility::Ray rayInverse(math::Vector3::Transform(start, doodad.second->m_inverseTransformMatrix),
+            math::Ray rayInverse(math::Vector3::Transform(start, doodad.second->m_inverseTransformMatrix),
                                     math::Vector3::Transform(end, doodad.second->m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance

@@ -17,7 +17,7 @@ struct WmoPlacement
 {
     std::uint32_t NameId;
     std::uint32_t UniqueId;
-    math::Vector3 BasePosition;
+    math::Vertex BasePosition;
     math::Vector3 Orientation;
     math::BoundingBox Bounds;
     std::uint16_t Flags;
@@ -27,7 +27,7 @@ struct WmoPlacement
 
     void GetBoundingBox(math::BoundingBox &bounds) const
     {
-        math::Vector3 minCorner, maxCorner;
+        math::Vertex minCorner, maxCorner;
 
         if (UniqueId == 0xFFFFFFFF)
         {

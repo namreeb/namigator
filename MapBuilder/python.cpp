@@ -4,7 +4,6 @@
 
 #include "parser/parser.hpp"
 
-#define BOOST_PYTHON_STATIC_LIB
 #include <boost/python.hpp>
 
 #include <string>

@@ -122,66 +122,66 @@ int main(int argc, char *argv[])
 
     auto lastStatus = static_cast<time_t>(0);
 
-    parser::Parser::Initialize(dataPath);
-
-    if (!std::experimental::filesystem::is_directory(outputPath))
-        std::experimental::filesystem::create_directory(outputPath);
-
-    if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
-        std::experimental::filesystem::create_directory(outputPath + "/BVH");
-
-    if (bvh)
-    {
-        if (!goCSVPath.empty())
-        {
-            std::cerr << "ERROR: Specifying gameobject data for BVH generation is meaningless" << std::endl;
-            DisplayUsage(std::cerr);
-            return EXIT_FAILURE;
-        }
-
-        GameObjectBVHBuilder goBuilder(outputPath, threads);
-
-        auto const startSize = goBuilder.Remaining();
-
-        goBuilder.Begin();
-
-        do
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-            auto const now = time(nullptr);
-
-            // periodically output current status
-            if (now - lastStatus >= STATUS_INTERVAL_SECONDS)
-            {
-                std::stringstream str;
-
-                auto const percentComplete = static_cast<int>(100.f * static_cast<float>(startSize - goBuilder.Remaining()) / startSize);
-                str << "% Complete: " << percentComplete << "\n";
-                std::cout << str.str();
-
-                lastStatus = now;
-            }
-        } while (goBuilder.Remaining() > 0);
-
-        goBuilder.Shutdown();
-        goBuilder.WriteIndexFile();
-
-        std::stringstream fin;
-        fin << "Finished BVH generation";
-        std::cout << fin.str() << std::endl;
-
-        return EXIT_SUCCESS;
-    }
-
-    if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
-        std::experimental::filesystem::create_directory(outputPath + "/Nav");
-
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
 
     try
     {
+        parser::Parser::Initialize(dataPath);
+
+        if (!std::experimental::filesystem::is_directory(outputPath))
+            std::experimental::filesystem::create_directory(outputPath);
+
+        if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
+            std::experimental::filesystem::create_directory(outputPath + "/BVH");
+
+        if (bvh)
+        {
+            if (!goCSVPath.empty())
+            {
+                std::cerr << "ERROR: Specifying gameobject data for BVH generation is meaningless" << std::endl;
+                DisplayUsage(std::cerr);
+                return EXIT_FAILURE;
+            }
+
+            GameObjectBVHBuilder goBuilder(outputPath, threads);
+
+            auto const startSize = goBuilder.Remaining();
+
+            goBuilder.Begin();
+
+            do
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+                auto const now = time(nullptr);
+
+                // periodically output current status
+                if (now - lastStatus >= STATUS_INTERVAL_SECONDS)
+                {
+                    std::stringstream str;
+
+                    auto const percentComplete = static_cast<int>(100.f * static_cast<float>(startSize - goBuilder.Remaining()) / startSize);
+                    str << "% Complete: " << percentComplete << "\n";
+                    std::cout << str.str();
+
+                    lastStatus = now;
+                }
+            } while (goBuilder.Remaining() > 0);
+
+            goBuilder.Shutdown();
+            goBuilder.WriteIndexFile();
+
+            std::stringstream fin;
+            fin << "Finished BVH generation";
+            std::cout << fin.str() << std::endl;
+
+            return EXIT_SUCCESS;
+        }
+
+        if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
+            std::experimental::filesystem::create_directory(outputPath + "/Nav");
+
         if (adtX >= 0 && adtY >= 0)
         {
             builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel, adtX, adtY);

@@ -27,9 +27,9 @@ class WmoInstance
 
         WmoInstance(const Wmo *wmo, unsigned short doodadSet, const math::BoundingBox &bounds, const math::Matrix &transformMatrix);
 
-        math::Vector3 TransformVertex(const math::Vector3 &vertex) const;
-        void BuildTriangles(std::vector<math::Vector3> &vertices, std::vector<std::int32_t> &indices) const;
-        void BuildLiquidTriangles(std::vector<math::Vector3> &vertices, std::vector<std::int32_t> &indices) const;
-        void BuildDoodadTriangles(std::vector<math::Vector3> &vertices, std::vector<std::int32_t> &indices) const;  // note: this assembles the triangles from all doodads in this wmo into one collection
+        math::Vertex TransformVertex(const math::Vertex& vertex) const;
+        void BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const;
+        void BuildLiquidTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const;
+        void BuildDoodadTriangles(std::vector<math::Vertex> &vertices, std::vector<std::int32_t> &indices) const;  // note: this assembles the triangles from all doodads in this wmo into one collection
 };
 }

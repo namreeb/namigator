@@ -31,7 +31,7 @@ class Tile
         Map * const m_map;
         dtTileRef m_ref;
 
-        utility::BoundingBox m_bounds;
+        math::BoundingBox m_bounds;
 
         int m_x;
         int m_y;

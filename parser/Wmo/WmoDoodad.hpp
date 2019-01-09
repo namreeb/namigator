@@ -22,7 +22,7 @@ class WmoDoodad
 
         WmoDoodad(std::shared_ptr<const Doodad> &doodad, const math::Matrix &transformMatrix);
 
-        math::Vector3 TransformVertex(const math::Vector3 &vertex) const;
-        void BuildTriangles(std::vector<math::Vector3> &vertices, std::vector<int> &indices) const;
+        math::Vertex TransformVertex(const math::Vertex& vertex) const;
+        void BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<int>& indices) const;
 };
 }

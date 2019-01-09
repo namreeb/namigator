@@ -12,9 +12,9 @@
 namespace std
 {
 template <>
-struct hash<utility::Vertex>
+struct hash<math::Vertex>
 {
-    std::size_t operator()(const utility::Vertex& vertex) const
+    std::size_t operator()(const math::Vertex& vertex) const
     {
         return std::hash<float>()(vertex.X) + std::hash<float>()(vertex.Y);
     }
@@ -28,8 +28,8 @@ class DetourDebugDraw : public duDebugDraw
         duDebugDrawPrimitives m_type;
         float m_size;
 
-        std::unordered_map<utility::Vertex, int> m_uniqueVertices;
-        std::vector<utility::Vertex> m_vertices;
+        std::unordered_map<math::Vertex, int> m_uniqueVertices;
+        std::vector<math::Vertex> m_vertices;
         std::vector<int> m_indices;
 
         Renderer * const m_renderer;

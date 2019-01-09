@@ -246,22 +246,22 @@ namespace pathfind
 {
 void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, float orientation, int doodadSet)
 {
-    auto const matrix = utility::Matrix::CreateRotationZ(orientation);
+    auto const matrix = math::Matrix::CreateRotationZ(orientation);
     AddGameObject(guid, displayId, position, matrix, doodadSet);
 }
 
-void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, const utility::Quaternion &rotation, int doodadSet)
+void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, const math::Quaternion &rotation, int doodadSet)
 {
-    auto const matrix = utility::Matrix::CreateFromQuaternion(rotation);
+    auto const matrix = math::Matrix::CreateFromQuaternion(rotation);
     AddGameObject(guid, displayId, position, matrix, doodadSet);
 }
 
-void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, const utility::Matrix &rotation, int /*doodadSet*/)
+void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, const math::Matrix &rotation, int /*doodadSet*/)
 {
     if (m_temporaryDoodads.find(guid) != m_temporaryDoodads.end() || m_temporaryWmos.find(guid) != m_temporaryWmos.end())
         THROW("Game object with specified GUID already exists");
 
-    auto const matrix = utility::Matrix::CreateTranslationMatrix(position) * rotation;
+    auto const matrix = math::Matrix::CreateTranslationMatrix(position) * rotation;
 
     auto const doodad = m_temporaryObstaclePaths[displayId][0] == 'd' || m_temporaryObstaclePaths[displayId][0] == 'D';
 
@@ -282,7 +282,7 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
             instance->m_translatedVertices.emplace_back(math::Vector3::Transform(v, matrix));
 
         // models are guarunteed to have more than zero vertices
-        utility::BoundingBox bounds { instance->m_translatedVertices[0], instance->m_translatedVertices[0] };
+        math::BoundingBox bounds { instance->m_translatedVertices[0], instance->m_translatedVertices[0] };
 
         for (auto i = 1u; i < instance->m_translatedVertices.size(); ++i)
             bounds.update(instance->m_translatedVertices[i]);
@@ -311,7 +311,7 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
         //if (doodadSet < 0)
         //    doodadSet = 0;
 
-        //WmoInstance instance { static_cast<unsigned short>(doodadSet), matrix, matrix.ComputeInverse(), utility::BoundingBox(), model };
+        //WmoInstance instance { static_cast<unsigned short>(doodadSet), matrix, matrix.ComputeInverse(), math::BoundingBox(), model };
     }
 }
 
@@ -320,7 +320,7 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
     auto const model = doodad->m_model.lock();
 
     std::vector<float> recastVertices;
-    utility::Convert::VerticesToRecast(doodad->m_translatedVertices, recastVertices);
+    math::Convert::VerticesToRecast(doodad->m_translatedVertices, recastVertices);
 
     std::vector<unsigned char> areas(model->m_aabbTree.Indices().size(), AreaFlags::Doodad);
 

@@ -13,7 +13,7 @@ public:
     SphereMesh(int recursionLevel);
     ~SphereMesh() = default;
 
-    std::vector<utility::Vertex> const& GetVertices() const
+    std::vector<math::Vertex> const& GetVertices() const
     {
         return m_vertices;
     }
@@ -24,10 +24,10 @@ public:
     }
 
 private:
-    int AddVertex(utility::Vertex const& v);
+    int AddVertex(math::Vertex const& v);
     int AddMiddlePoint(int p1, int p2);
 
-    std::vector<utility::Vertex> m_vertices;
+    std::vector<math::Vertex> m_vertices;
     std::vector<int> m_indices;
     int m_index = 0;
 
@@ -43,20 +43,20 @@ inline SphereMesh::SphereMesh(int recursionLevel)
 
     float t = (1.0f + std::sqrtf(5.0f)) / 2.0f;
 
-    AddVertex(utility::Vertex{ -1, t, 0 });
-    AddVertex(utility::Vertex{ 1, t, 0 });
-    AddVertex(utility::Vertex{ -1, -t, 0 });
-    AddVertex(utility::Vertex{ 1, -t, 0 });
+    AddVertex(math::Vertex{ -1, t, 0 });
+    AddVertex(math::Vertex{ 1, t, 0 });
+    AddVertex(math::Vertex{ -1, -t, 0 });
+    AddVertex(math::Vertex{ 1, -t, 0 });
 
-    AddVertex(utility::Vertex{ 0, -1, t });
-    AddVertex(utility::Vertex{ 0, 1, t });
-    AddVertex(utility::Vertex{ 0, -1, -t });
-    AddVertex(utility::Vertex{ 0, 1, -t });
+    AddVertex(math::Vertex{ 0, -1, t });
+    AddVertex(math::Vertex{ 0, 1, t });
+    AddVertex(math::Vertex{ 0, -1, -t });
+    AddVertex(math::Vertex{ 0, 1, -t });
 
-    AddVertex(utility::Vertex{ t, 0, -1 });
-    AddVertex(utility::Vertex{ t, 0, 1 });
-    AddVertex(utility::Vertex{ -t, 0, -1 });
-    AddVertex(utility::Vertex{ -t, 0, 1 });
+    AddVertex(math::Vertex{ t, 0, -1 });
+    AddVertex(math::Vertex{ t, 0, 1 });
+    AddVertex(math::Vertex{ -t, 0, -1 });
+    AddVertex(math::Vertex{ -t, 0, 1 });
 
     std::vector<TriFace> faces;
     faces.reserve(20);
@@ -118,9 +118,9 @@ inline SphereMesh::SphereMesh(int recursionLevel)
     }
 }
 
-inline int SphereMesh::AddVertex(utility::Vertex const& v)
+inline int SphereMesh::AddVertex(math::Vertex const& v)
 {
-    m_vertices.push_back(utility::Vertex::Normalize(v));
+    m_vertices.push_back(math::Vertex::Normalize(v));
     return m_index++;
 }
 

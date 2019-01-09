@@ -14,19 +14,19 @@ namespace parser
 {
 namespace
 {
-void UpdateBounds(math::BoundingBox &bounds, const math::Vector3 &Vector3, std::set<AdtChunkLocation> &adtChunks)
+void UpdateBounds(math::BoundingBox& bounds, const math::Vertex& vertex, std::set<AdtChunkLocation>& adtChunks)
 {
-    bounds.update(Vector3);
+    bounds.update(vertex);
 
     int adtX, adtY, chunkX, chunkY;
-    math::Convert::WorldToAdt(Vector3, adtX, adtY, chunkX, chunkY);
+    math::Convert::WorldToAdt(vertex, adtX, adtY, chunkX, chunkY);
     adtChunks.insert({ static_cast<std::uint8_t>(adtX), static_cast<std::uint8_t>(adtY), static_cast<std::uint8_t>(chunkX), static_cast<std::uint8_t>(chunkY) });
 }
 }
 
 DoodadInstance::DoodadInstance(const Doodad *doodad, const math::Matrix &transformMatrix) : TransformMatrix(transformMatrix), Model(doodad)
 {
-    std::vector<math::Vector3> vertices;
+    std::vector<math::Vertex> vertices;
     std::vector<int> indices;
 
     BuildTriangles(vertices, indices);
@@ -37,17 +37,17 @@ DoodadInstance::DoodadInstance(const Doodad *doodad, const math::Matrix &transfo
         UpdateBounds(Bounds, v, AdtChunks);
 }
 
-//DoodadInstance::DoodadInstance(const Doodad *doodad, const math::Vector3 &position, const utility::Quaternion &rotation) : TransformMatrix()
+//DoodadInstance::DoodadInstance(const Doodad *doodad, const math::Vector3 &position, const math::Quaternion &rotation) : TransformMatrix()
 //{
 //    
 //}
 
-math::Vector3 DoodadInstance::TransformVertex(const math::Vector3 &Vector3) const
+math::Vertex DoodadInstance::TransformVertex(const math::Vertex& vertex) const
 {
-    return math::Vector3::Transform(Vector3, TransformMatrix);
+    return math::Vertex::Transform(vertex, TransformMatrix);
 }
 
-void DoodadInstance::BuildTriangles(std::vector<math::Vector3> &vertices, std::vector<int> &indices) const
+void DoodadInstance::BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<int>& indices) const
 {
     vertices.clear();
     vertices.reserve(Model->Vertices.size());
@@ -57,7 +57,7 @@ void DoodadInstance::BuildTriangles(std::vector<math::Vector3> &vertices, std::v
 
     std::copy(Model->Indices.cbegin(), Model->Indices.cend(), indices.begin());
 
-    for (auto &Vector3 : Model->Vertices)
-        vertices.push_back(TransformVertex(Vector3));
+    for (auto &vertex : Model->Vertices)
+        vertices.push_back(TransformVertex(vertex));
 }
 }

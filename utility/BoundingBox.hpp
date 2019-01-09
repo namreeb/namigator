@@ -12,24 +12,24 @@ class BoundingBox
         BoundingBox() = default;
         ~BoundingBox() = default;
 
-        BoundingBox(const Vector3& min, const Vector3& max);
+        BoundingBox(const Vertex& min, const Vertex& max);
 
         void transform(const Matrix& mat);
         void connectWith(const BoundingBox& b);
         void update(const Vector3& v);
 
-        void setCorners(const Vector3& min, const Vector3& max);
-        void getCorners(Vector3 corners[8]) const;
+        void setCorners(const Vertex& min, const Vertex& max);
+        void getCorners(Vertex corners[8]) const;
 
         float getVolume() const;
         float getSurfaceArea() const;
 
-        Vector3 getCenter() const;
+        Vertex getCenter() const;
         Vector3 getExtent() const;
         Vector3 getVector() const;
 
-        const Vector3& getMinimum() const;
-        const Vector3& getMaximum() const;
+        const Vertex& getMinimum() const;
+        const Vertex& getMaximum() const;
 
         bool intersect2d(const BoundingBox& b) const;
         bool intersect(const BoundingBox& b) const;

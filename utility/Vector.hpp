@@ -56,4 +56,6 @@ bool operator == (const Vector3 &a, const Vector3 &b);
 
 Vector3 takeMinimum(const Vector3& a, const Vector3& b);
 Vector3 takeMaximum(const Vector3& a, const Vector3& b);
+
+typedef Vector3 Vertex;
 }

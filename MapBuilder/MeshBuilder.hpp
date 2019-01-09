@@ -97,13 +97,13 @@ class MeshBuilder
         std::vector<std::pair<int, int>> m_pendingTiles;
         std::vector<int> m_chunkReferences; // this is a fixed size, but it is so big that it can single-handedly overflow the stack
 
-        std::vector<math::Vector3> m_globalWMOVertices;
+        std::vector<math::Vertex> m_globalWMOVertices;
         std::vector<int> m_globalWMOIndices;
 
-        std::vector<math::Vector3> m_globalWMOLiquidVertices;
+        std::vector<math::Vertex> m_globalWMOLiquidVertices;
         std::vector<int> m_globalWMOLiquidIndices;
 
-        std::vector<math::Vector3> m_globalWMODoodadVertices;
+        std::vector<math::Vertex> m_globalWMODoodadVertices;
         std::vector<int> m_globalWMODoodadIndices;
 
         std::unordered_set<std::string> m_bvhWmos;

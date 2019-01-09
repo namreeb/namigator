@@ -11,7 +11,7 @@ namespace pathfind
 {
 struct Model
 {
-    utility::AABBTree m_aabbTree;
+    math::AABBTree m_aabbTree;
 };
 
 // only loaded as needed
@@ -22,11 +22,11 @@ struct DoodadModel : Model
 // always loaded
 struct DoodadInstance
 {
-    utility::Matrix m_transformMatrix;
-    utility::Matrix m_inverseTransformMatrix;
-    utility::BoundingBox m_bounds;
+    math::Matrix m_transformMatrix;
+    math::Matrix m_inverseTransformMatrix;
+    math::BoundingBox m_bounds;
     std::string m_modelFilename;
-    std::vector<utility::Vertex> m_translatedVertices;  // wow coordinate space.  indices are obtained from model.
+    std::vector<math::Vertex> m_translatedVertices;  // wow coordinate space.  indices are obtained from model.
     std::weak_ptr<DoodadModel> m_model;
 };
 
@@ -41,9 +41,9 @@ struct WmoModel : Model
 struct WmoInstance
 {
     unsigned short m_doodadSet;
-    utility::Matrix m_transformMatrix;
-    utility::Matrix m_inverseTransformMatrix;
-    utility::BoundingBox m_bounds;
+    math::Matrix m_transformMatrix;
+    math::Matrix m_inverseTransformMatrix;
+    math::BoundingBox m_bounds;
     std::string m_modelFilename;
     std::weak_ptr<WmoModel> m_model;
 };

@@ -4,7 +4,8 @@
 
 namespace math
 {
-BoundingBox::BoundingBox(const math::Vector3& min, const math::Vector3& max) {
+BoundingBox::BoundingBox(const math::Vertex& min, const math::Vertex& max)
+{
     setCorners(min, max);
 }
 
@@ -12,14 +13,14 @@ void BoundingBox::transform(const math::Matrix& mat) {
     float min = std::numeric_limits<float>::lowest();
     float max = std::numeric_limits<float>::max();
 
-    math::Vector3 newMin = { max, max, max };
-    math::Vector3 newMax = { min, min, min };
+    math::Vertex newMin = {max, max, max};
+    math::Vertex newMax = {min, min, min};
 
-    math::Vector3 corners[8];
+    math::Vertex corners[8];
     getCorners(corners);
 
     for (auto& v : corners) {
-        v = math::Vector3::Transform(v, mat);
+        v = math::Vertex::Transform(v, mat);
         newMin = takeMinimum(newMin, v);
         newMax = takeMaximum(newMax, v);
     }
@@ -27,12 +28,14 @@ void BoundingBox::transform(const math::Matrix& mat) {
     setCorners(newMin, newMax);
 }
 
-void BoundingBox::setCorners(const math::Vector3& min, const math::Vector3& max) {
+void BoundingBox::setCorners(const math::Vertex& min, const math::Vertex& max)
+{
     MinCorner = min;
     MaxCorner = max;
 }
 
-void BoundingBox::getCorners(math::Vector3 corners[8]) const {
+void BoundingBox::getCorners(math::Vertex corners[8]) const
+{
     corners[0] = { MinCorner.X, MinCorner.Y, MinCorner.Z };
     corners[1] = { MaxCorner.X, MinCorner.Y, MinCorner.Z };
     corners[2] = { MaxCorner.X, MaxCorner.Y, MinCorner.Z };

@@ -56,30 +56,30 @@ struct MouseDoodad
 
     unsigned int DisplayId = 0;
 
-    math::Vector3 Position;
-    utility::Quaternion Rotation;
+    math::Vertex Position;
+    math::Quaternion Rotation;
     float Scale = 1.0f;
 
-    utility::Matrix Transform;
+    math::Matrix Transform;
 };
 
 std::unique_ptr<MouseDoodad> gMouseDoodad;
 
 void UpdateMouseDoodadTransform()
 {
-    gMouseDoodad->Transform = utility::Matrix::CreateFromQuaternion(gMouseDoodad->Rotation)
-        * utility::Matrix::CreateScalingMatrix(gMouseDoodad->Scale)
-        * utility::Matrix::CreateTranslationMatrix(gMouseDoodad->Position);
+    gMouseDoodad->Transform = math::Matrix::CreateFromQuaternion(gMouseDoodad->Rotation)
+        * math::Matrix::CreateScalingMatrix(gMouseDoodad->Scale)
+        * math::Matrix::CreateTranslationMatrix(gMouseDoodad->Position);
 }
 
-void MoveMouseDoodad(math::Vector3 const& position)
+void MoveMouseDoodad(math::Vertex const& position)
 {
     gMouseDoodad->Position = position;
     UpdateMouseDoodadTransform();
 
     auto vertices = gMouseDoodad->Model->m_aabbTree.Vertices();
-    for (auto& Vector3 : vertices)
-        Vector3 = math::Vector3::Transform(Vector3, gMouseDoodad->Transform);
+    for (auto& vertex : vertices)
+        vertex = math::Vector3::Transform(vertex, gMouseDoodad->Transform);
 
     gRenderer->ClearGameObjects();
     gRenderer->AddGameObject(vertices, gMouseDoodad->Model->m_aabbTree.Indices());
@@ -91,7 +91,7 @@ int gMovingRight = 0;
 int gMovingForward = 0;
 
 bool gHasStart;
-math::Vector3 gStart;
+math::Vertex gStart;
 
 // this is the main message handler for the program
 LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -194,7 +194,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
         case WM_LBUTTONDOWN:
         {
             std::uint32_t param = 0;
-            math::Vector3 hit;
+            math::Vertex hit;
 
             if (!!(wParam & MK_SHIFT))
             {
@@ -225,7 +225,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
                     if (gHasStart)
                     {
-                        std::vector<math::Vector3> path;
+                        std::vector<math::Vertex> path;
 
                         gHasStart = false;
 
@@ -282,7 +282,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             else if (!!gMouseDoodad)
             {
                 std::uint32_t param = 0;
-                math::Vector3 hit;
+                math::Vertex hit;
 
                 if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::CollidableGeometryFlag, hit, param))
                 {
@@ -421,7 +421,7 @@ void LoadAdt(const parser::Adt *adt)
 
                 assert(doodad);
 
-                std::vector<math::Vector3> vertices;
+                std::vector<math::Vertex> vertices;
                 std::vector<int> indices;
 
                 doodad->BuildTriangles(vertices, indices);
@@ -437,7 +437,7 @@ void LoadAdt(const parser::Adt *adt)
 
                 assert(wmo);
 
-                std::vector<math::Vector3> vertices;
+                std::vector<math::Vertex> vertices;
                 std::vector<int> indices;
 
                 wmo->BuildTriangles(vertices, indices);
@@ -531,7 +531,7 @@ void ChangeMap(const std::string &cn)
     // if the loaded map has no ADTs, but instead a global WMO, load it now, including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
     {
-        std::vector<math::Vector3> vertices;
+        std::vector<math::Vertex> vertices;
         std::vector<int> indices;
 
         wmo->BuildTriangles(vertices, indices);
@@ -585,7 +585,7 @@ void LoadPositionFromGUI()
         auto const posX = std::stof(gControls->GetText(Controls::PositionX));
         auto const posY = std::stof(gControls->GetText(Controls::PositionY));
 
-        utility::Convert::WorldToAdt({ posX, posY, 0.f }, x, y);
+        math::Convert::WorldToAdt({ posX, posY, 0.f }, x, y);
     }
     else
     {
@@ -595,7 +595,7 @@ void LoadPositionFromGUI()
         // if either is negative, it is a world coordinate, or
         // if either is greater than or equal to 64, it is a world coordinate
         if (intX < 0 || intY < 0 || intX >= MeshSettings::Adts || intY >= MeshSettings::Adts)
-            utility::Convert::WorldToAdt({ static_cast<float>(intX), static_cast<float>(intY), 0.f }, x, y);
+            math::Convert::WorldToAdt({ static_cast<float>(intX), static_cast<float>(intY), 0.f }, x, y);
         // otherwise, it is an adt coordinate
         else
         {
@@ -613,16 +613,23 @@ void LoadPositionFromGUI()
             return;
         }
 
-        auto const adt = gMap->GetAdt(x, y);
+        try
+        {
+            auto const adt = gMap->GetAdt(x, y);
 
-        LoadAdt(adt);
+            LoadAdt(adt);
 
-        const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
-        const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;
-        const float cz = (adt->Bounds.MaxCorner.Z + adt->Bounds.MinCorner.Z) / 2.f;
+            const float cx = (adt->Bounds.MaxCorner.X + adt->Bounds.MinCorner.X) / 2.f;
+            const float cy = (adt->Bounds.MaxCorner.Y + adt->Bounds.MinCorner.Y) / 2.f;
+            const float cz = (adt->Bounds.MaxCorner.Z + adt->Bounds.MinCorner.Z) / 2.f;
 
-        gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
-        gRenderer->m_camera.LookAt(cx, cy, cz);
+            gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
+            gRenderer->m_camera.LookAt(cx, cy, cz);
+        }
+        catch (const std::exception &e)
+        {
+            MessageBox(nullptr, e.what(), "Error loading ADT", MB_OK | MB_ICONERROR);
+        }
     }
 }
 
@@ -659,7 +666,7 @@ void SpawnGOFromGUI()
     gMouseDoodad->DisplayId = displayId;
     gMouseDoodad->Model = model;
     gMouseDoodad->Scale = 1.0f;
-    gMouseDoodad->Rotation = utility::Quaternion(0, 0, 0, 1);
+    gMouseDoodad->Rotation = math::Quaternion(0, 0, 0, 1);
 
     UpdateMouseDoodadTransform();
 }
