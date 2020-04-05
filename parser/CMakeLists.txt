@@ -60,3 +60,7 @@ add_library(parser STATIC ${SRC_MAP} ${SRC_ADT} ${SRC_WMO} ${SRC_DOODAD}
 )
 
 add_dependencies(parser utility)
+
+if ("x_${CMAKE_CXX_COMPILER_ID}" STREQUAL "x_GNU")
+    target_link_libraries(parser stdc++fs)
+endif()

@@ -1,6 +1,8 @@
 #include "utility/Vector.hpp"
 #include "utility/Matrix.hpp"
 
+#include <cmath>
+
 namespace math
 {
 float Vector3::DotProduct(const Vector3 &a, const Vector3 &b)

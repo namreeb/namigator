@@ -6,6 +6,7 @@
 #include "RecastDetourBuild/Common.hpp"
 
 #include <limits>
+#include <cstring>
 
 namespace parser
 {

@@ -24,15 +24,13 @@ if (MSVC)
     endif()
 endif()
 
-#find_package(Python COMPONENTS Interpreter Development)
-
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(PYTHON_COMPONENT "python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}")
 
-#find_package(Boost REQUIRED COMPONENTS "${PYTHON_COMPONENT}")
+find_package(Boost REQUIRED COMPONENTS "${PYTHON_COMPONENT}")
 
 # we want this definition present globally
 add_definitions(-DDT_POLYREF64)
