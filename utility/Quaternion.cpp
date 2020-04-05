@@ -4,7 +4,6 @@
 
 namespace math
 {
-__attribute__((__visibility__("default")))
 Quaternion::Quaternion(float x, float y, float z, float w) : X(x), Y(y), Z(z), W(w) {}
 
 Quaternion operator * (const Quaternion &a, const Quaternion &b)
