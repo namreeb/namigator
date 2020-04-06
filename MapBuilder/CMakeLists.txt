@@ -9,6 +9,8 @@ add_executable(${EXECUTABLE_NAME} ${SRC} main.cpp)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE parser utility recastnavigation storm ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(${EXECUTABLE_NAME} parser utility recastnavigation storm)
 
+install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
+
 if (PYTHON_COMPONENT)
     if (Python3_FOUND)
         Python3_add_library(${PYTHON_NAME} ${SRC} python.cpp)
@@ -22,4 +24,6 @@ if (PYTHON_COMPONENT)
     include_directories(${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
     add_dependencies(${PYTHON_NAME} parser utility recastnavigation storm)
     target_link_libraries(${PYTHON_NAME} PRIVATE parser utility recastnavigation storm ${Boost_LIBRARIES})
+
+    install(TARGETS ${PYTHON_NAME} DESTINATION lib)
 endif()

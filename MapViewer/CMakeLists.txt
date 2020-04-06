@@ -37,3 +37,5 @@ add_executable(${EXECUTABLE_NAME} WIN32 ${SRC} ${SHADERS})
 
 target_link_libraries(${EXECUTABLE_NAME} utility parser pathfind storm recastnavigation)
 add_dependencies(MapViewer utility parser pathfind recastnavigation)
+
+install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
