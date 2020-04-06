@@ -160,7 +160,7 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
 void BinaryStream::Compress()
 {
     std::vector<std::uint8_t> buffer(compressBound(static_cast<mz_ulong>(m_wpos)));
-    mz_ulong newSize;
+    mz_ulong newSize = 0;
     compress(&buffer[0], &newSize, reinterpret_cast<const unsigned char *>(&m_buffer[0]), static_cast<mz_ulong>(m_wpos));
 
     m_wpos = static_cast<size_t>(newSize);
