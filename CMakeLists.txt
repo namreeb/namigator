@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.12)
 # namigator depends on a compiler which supports C++14
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # threading library is required
 find_package(Threads REQUIRED)
 
@@ -37,7 +39,16 @@ endif()
 #set(Boost_DETAILED_FAILURE_MSG ON)
 
 if (PYTHON_COMPONENT)
-    set(Boost_USE_STATIC_LIBS ON)
+    # There currently seems to be a bug with the Linux distro of boost binaries
+    # where some symbols are not built with position independent code (-fPIC).
+    # So rather than requiring our users to build boost themselves, we can just
+    # disable static linking of Boost libraries for now.
+    if (MSVC)
+        set(Boost_USE_STATIC_LIBS ON)
+    else()
+        set(Boost_USE_STATIC_LIBS OFF)
+    endif()
+
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_RUNTIME OFF)
     set(Boost_FIND_QUIETLY ON)
