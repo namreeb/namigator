@@ -5,7 +5,13 @@ cmake_minimum_required(VERSION 3.12)
 # namigator depends on a compiler which supports C++14
 set(CMAKE_CXX_STANDARD 14)
 
+# generate position independent code for everything
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Default to release build type if none is specified
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE)
+endif()
 
 # threading library is required
 find_package(Threads REQUIRED)
