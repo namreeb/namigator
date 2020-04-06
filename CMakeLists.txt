@@ -1,6 +1,6 @@
 project(namigator)
 
-cmake_minimum_required(VERSION 3.2.3)
+cmake_minimum_required(VERSION 3.12)
 
 # namigator depends on a compiler which supports C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -13,15 +13,60 @@ if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
 endif()
 
-# if we have python and boost.python, enable generation of python bindings
+unset(Python3_FOUND CACHE)
+unset(PYTHON_COMPONENT CACHE)
 
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
+# First try finding python 3 development files
+find_package(Python3 COMPONENTS Development)
 
-set(PYTHON_COMPONENT "python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}")
+if (Python3_FOUND)
+    set(PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+    set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
+    set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
+else()
+    find_package(Python2 COMPONENTS Development)
+    if (Python2_FOUND)
+        set(PYTHON_COMPONENT "python${Python2_VERSION_MAJOR}${Python2_VERSION_MINOR}")
+        set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
+        set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
+    endif()
+endif()
 
-find_package(Boost REQUIRED COMPONENTS "${PYTHON_COMPONENT}")
+# Enable debug output from FindBoost
+#set(Boost_DEBUG ON)
+#set(Boost_DETAILED_FAILURE_MSG ON)
+
+if (PYTHON_COMPONENT)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
+    set(Boost_USE_STATIC_RUNTIME OFF)
+    set(Boost_FIND_QUIETLY ON)
+
+    find_package(Boost COMPONENTS "${PYTHON_COMPONENT}")
+
+    # If we found python 3 and boost rejected it, try again with python 2
+    if (NOT Boost_FOUND AND Python3_FOUND)
+        find_package(Python2 COMPONENTS Development)
+
+        if (Python2_FOUND)
+            set(PYTHON_COMPONENT "python${Python2_VERSION_MAJOR}${Python2_VERSION_MINOR}")
+            set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
+            set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
+            find_package(Boost COMPONENTS "${PYTHON_COMPONENT}")
+        endif()
+
+        # Failed?  Give up
+        if (NOT Boost_FOUND)
+            unset(PYTHON_COMPONENT)
+            unset(PYTHON_LIBRARIES)
+            unset(PYTHON_INCLUDE_DIRS)
+        endif()
+    endif()
+endif()
+
+if (NOT PYTHON_COMPONENT)
+    message(STATUS "Python not found.  Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
+endif()
 
 # we want this definition present globally
 add_definitions(-DDT_POLYREF64)
