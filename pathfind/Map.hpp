@@ -88,6 +88,8 @@ class Map
         // TODO: need mechanism to cleanup expired weak pointers saved in the containers of this class
 
     public:
+        Map() = delete;
+        Map(const Map&) = delete;
         Map(const std::string &dataPath, const std::string &mapName);
 
         bool LoadADT(int x, int y);
@@ -108,8 +110,8 @@ class Map
         // 2: for a given (x, y), we want to find all possible z values
         //
         // NOTE: if your usage is outside of both of these scenarios, you are probably doing something wrong
-        float FindHeight(const math::Vertex &source, const math::Vertex &target) const;       // scenario one
-        bool FindHeights(float x, float y, std::vector<float> &output) const;                       // scenario two
+        float FindHeight(const math::Vertex &source, const math::Vertex &target) const; // scenario one
+        bool FindHeights(float x, float y, std::vector<float> &output) const;           // scenario two
 
         const dtNavMesh &GetNavMesh() const { return m_navMesh; }
         const dtNavMeshQuery &GetNavMeshQuery() const { return m_navQuery; }
