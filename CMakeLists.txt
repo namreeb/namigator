@@ -10,7 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Default to release build type if none is specified
 if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default build type")
 endif()
 
 # threading library is required
