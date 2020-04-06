@@ -90,6 +90,11 @@ add_definitions(-DDT_POLYREF64)
 
 # third party dependencies
 add_subdirectory(RecastDetourBuild)
+
+# we do not need the install files from stormlib
+set(STORM_SKIP_INSTALL ON CACHE BOOL "Skip stormlib install files" FORCE)
+
+add_definitions(-DSTORMLIB_NO_AUTO_LINK)
 add_subdirectory(stormlib)
 
 # namigator libraries
