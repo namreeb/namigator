@@ -40,6 +40,7 @@ Doodad::Doodad(const std::string &path)
     switch (version)
     {
         case 256:   // Classic
+        case 257:   // Classic
         case 260:   // TBC
         case 261:   // TBC
         case 262:   // TBC
