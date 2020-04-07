@@ -28,7 +28,7 @@ Wmo::Wmo(const std::string &path)
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(path));
 
     if (!reader)
-        THROW("Doodad " + path + " not found");
+        THROW("WMO " + path + " not found");
 
     size_t mohdLocation;
     if (!reader->GetChunkLocation("MOHD", mohdLocation))
