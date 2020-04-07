@@ -56,7 +56,7 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t
         // mark existing files as already serialized so that they are included in the index file
         if (fs::exists(output))
         {
-            m_serialized[row] = fs::path(output).filename().string();
+            m_serialized[row] = output.filename().string();
             continue;
         }
 
