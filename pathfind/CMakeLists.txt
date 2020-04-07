@@ -23,8 +23,8 @@ if (PYTHON_COMPONENT)
 
     target_compile_definitions(${LIBRARY_NAME} PUBLIC PYTHON BOOST_PYTHON_STATIC_LIB)
     include_directories(${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
-    add_dependencies(${LIBRARY_NAME} parser utility recastnavigation storm)
-    target_link_libraries(${LIBRARY_NAME} PRIVATE parser utility recastnavigation storm ${Boost_LIBRARIES})
+    add_dependencies(${LIBRARY_NAME} utility recastnavigation storm)
+    target_link_libraries(${LIBRARY_NAME} PRIVATE utility recastnavigation storm ${Boost_LIBRARIES})
 
     install(TARGETS ${LIBRARY_NAME} DESTINATION lib)
 endif()
