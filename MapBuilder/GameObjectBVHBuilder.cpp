@@ -16,8 +16,28 @@
 #include <mutex>
 #include <iostream>
 #include <sstream>
-#include <experimental/filesystem>
+#include <filesystem>
 
+namespace fs = std::experimental::filesystem;
+
+namespace
+{
+fs::path BuildAbsoluteFilename(const fs::path &output_path, const fs::path &in, std::uint32_t id)
+{
+    auto const extension = in.extension().string();
+
+    std::string kind;
+    if (extension[1] == 'm' || extension[1] == 'M')
+        kind = "Doodad";
+    else if (extension[1] == 'w' || extension[1] == 'W')
+        kind = "WMO";
+    else
+        THROW("Unrecognized extension");
+
+    // files are based on id rather than their path to make handling those filenames easier on Linux
+    return (output_path / "BVH" / (kind + "_" + std::to_string(id))).replace_extension("bvh");
+}
+}
 GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t workers)
     : m_outputPath(outputPath), m_workers(workers), m_shutdownRequested(false)
 {
@@ -31,16 +51,16 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t
         if (!path.length())
             continue;
 
-        auto const output = BuildAbsoluteFilename(path);
+        auto const output = BuildAbsoluteFilename(m_outputPath, path, row);
 
         // mark existing files as already serialized so that they are included in the index file
-        if (std::experimental::filesystem::exists(output))
+        if (fs::exists(output))
         {
-            m_serialized[row] = std::experimental::filesystem::path(output).filename().string();
+            m_serialized[row] = fs::path(output).filename().string();
             continue;
         }
 
-        auto const extension = std::experimental::filesystem::path(path).extension().string();
+        auto const extension = fs::path(path).extension().string();
 
         if (extension[1] == 'm' || extension[1] == 'M')
             m_doodads[row] = path;
@@ -92,21 +112,6 @@ void GameObjectBVHBuilder::WriteIndexFile() const
 
     std::ofstream o(m_outputPath / "BVH" / "bvh.idx", std::ofstream::binary | std::ofstream::trunc);
     o << out;
-}
-
-std::experimental::filesystem::path GameObjectBVHBuilder::BuildAbsoluteFilename(const std::experimental::filesystem::path &in) const
-{
-    auto const extension = in.extension().string();
-
-    std::string kind;
-    if (extension[1] == 'm' || extension[1] == 'M')
-        kind = "Doodad";
-    else if (extension[1] == 'w' || extension[1] == 'W')
-        kind = "WMO";
-    else
-        THROW("Unrecognized extension");
-
-    return m_outputPath / "BVH" / (kind + "_" + in.filename().replace_extension("bvh").string());
 }
 
 void GameObjectBVHBuilder::Work()
@@ -161,7 +166,7 @@ void GameObjectBVHBuilder::Work()
             }
         }
 
-        auto const output = BuildAbsoluteFilename(filename);
+        auto const output = BuildAbsoluteFilename(m_outputPath, filename, entry);
 
         try
         {

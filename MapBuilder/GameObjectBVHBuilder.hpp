@@ -24,8 +24,6 @@ class GameObjectBVHBuilder
 
         bool m_shutdownRequested;
 
-        std::experimental::filesystem::path BuildAbsoluteFilename(const std::experimental::filesystem::path &in) const;
-
         void Work();
 
     public:
