@@ -41,7 +41,7 @@ void DisplayUsage(std::ostream &o)
 int main(int argc, char *argv[])
 {
     std::string dataPath, map, outputPath, goCSVPath;
-    int adtX = -1, adtY = -1, threads, logLevel;
+    int adtX = -1, adtY = -1, threads = 1, logLevel;
     bool bvh = false;
 
     try
