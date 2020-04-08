@@ -28,7 +28,9 @@ BinaryStream::BinaryStream(const std::experimental::filesystem::path &path) : m_
     stream.seekg(0, std::ios::beg);
 
     m_buffer.resize(m_wpos);
-    stream.read(reinterpret_cast<char *>(&m_buffer[0]), m_buffer.size());
+
+    if (m_wpos > 0)
+        stream.read(reinterpret_cast<char *>(&m_buffer[0]), m_buffer.size());
 }
 
 BinaryStream::BinaryStream(BinaryStream &&other) noexcept : m_buffer(std::move(other.m_buffer)), m_rpos(other.m_rpos), m_wpos(other.m_wpos)
@@ -160,8 +162,11 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
 void BinaryStream::Compress()
 {
     std::vector<std::uint8_t> buffer(compressBound(static_cast<mz_ulong>(m_wpos)));
-    mz_ulong newSize = 0;
-    compress(&buffer[0], &newSize, reinterpret_cast<const unsigned char *>(&m_buffer[0]), static_cast<mz_ulong>(m_wpos));
+    auto newSize = static_cast<mz_ulong>(buffer.size());
+    auto const result = compress(&buffer[0], &newSize, reinterpret_cast<const unsigned char *>(&m_buffer[0]), static_cast<mz_ulong>(m_wpos));
+
+    if (result != MZ_OK)
+        THROW("BinaryStream::Compress failed");
 
     m_wpos = static_cast<size_t>(newSize);
     buffer.resize(m_wpos);
