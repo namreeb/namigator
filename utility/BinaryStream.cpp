@@ -91,7 +91,7 @@ void BinaryStream::Write(size_t position, const void *data, size_t length)
 void BinaryStream::WriteString(const std::string &str, size_t length)
 {
     std::vector<std::uint8_t> buffer(length);
-    memcpy(&buffer[0], str.c_str(), (std::min)(length, str.length()));
+    memcpy(&buffer[0], str.c_str(), (std::min)(length-1, str.length()));
     Write(&buffer[0], buffer.size());
 }
 
