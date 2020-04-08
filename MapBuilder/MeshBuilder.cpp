@@ -1,4 +1,5 @@
 #include "MeshBuilder.hpp"
+#include "BVHConstructor.hpp"
 #include "RecastContext.hpp"
 
 #include "parser/parser.hpp"
@@ -43,9 +44,9 @@ static_assert(sizeof(unsigned char) == 1, "unsigned char must be size 1");
 
 namespace
 {
-std::experimental::filesystem::path BuildAbsoluteFilename(const std::experimental::filesystem::path &outputPath, const std::string &in)
+fs::path BuildAbsoluteFilename(const fs::path &outputPath, const std::string &in)
 {
-    const std::experimental::filesystem::path path(in);
+    const fs::path path(in);
     auto const filename = path.filename().replace_extension("bvh").string();
 
     auto const extension = path.extension().string();
@@ -446,7 +447,7 @@ bool IsHeightFieldEmpty(rcHeightfield const& solid)
 }
 
 MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel)
-    : m_outputPath(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
+    : m_outputPath(outputPath), m_bvhConstructor(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
 {
     // this must follow the parser initialization
     m_map = std::make_unique<parser::Map>(mapName);
@@ -517,12 +518,12 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    if (!std::experimental::filesystem::is_directory(m_outputPath / "Nav" / mapName))
-        std::experimental::filesystem::create_directory(m_outputPath / "Nav" / mapName);
+    if (!fs::is_directory(m_outputPath / "Nav" / mapName))
+        fs::create_directory(m_outputPath / "Nav" / mapName);
 }
 
 MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapName, int logLevel, int adtX, int adtY)
-    : m_outputPath(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
+    : m_outputPath(outputPath), m_bvhConstructor(outputPath), m_chunkReferences(MeshSettings::ChunkCount*MeshSettings::ChunkCount), m_completedTiles(0), m_logLevel(logLevel)
 {
     // this must follow the parser initialization
     m_map = std::make_unique<parser::Map>(mapName);
@@ -542,8 +543,8 @@ MeshBuilder::MeshBuilder(const std::string &outputPath, const std::string &mapNa
 
     m_totalTiles = m_pendingTiles.size();
 
-    if (!std::experimental::filesystem::is_directory(m_outputPath / "Nav" / mapName))
-        std::experimental::filesystem::create_directory(m_outputPath / "Nav" / mapName);
+    if (!fs::is_directory(m_outputPath / "Nav" / mapName))
+        fs::create_directory(m_outputPath / "Nav" / mapName);
 }
 
 void MeshBuilder::LoadGameObjects(const std::string &path)
@@ -611,7 +612,7 @@ void MeshBuilder::LoadGameObjects(const std::string &path)
         if (modelPath.length() == 0)
             continue;
 
-        auto const extension = std::experimental::filesystem::path(modelPath).extension().string();
+        auto const extension = fs::path(modelPath).extension().string();
 
         // doodad
         if (extension[1] == 'm' || extension[1] == 'M')
@@ -723,29 +724,29 @@ void MeshBuilder::RemoveChunkReference(int chunkX, int chunkY)
 
 void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
 {
-    if (m_bvhWmos.find(wmo->FileName) != m_bvhWmos.end())
+    if (m_bvhWmos.find(wmo->MpqPath) != m_bvhWmos.end())
         return;
 
-    meshfiles::SerializeWmo(wmo, m_outputPath / "BVH" / ("WMO_" + wmo->FileName + ".bvh"));
+    meshfiles::SerializeWmo(wmo, m_bvhConstructor);
 
     // the above serialization routine will also serialize all doodads in all
     // doodad sets for this wmo, therefore we should mark them as serialized
 
     for (auto const &doodadSet : wmo->DoodadSets)
         for (auto const &wmoDoodad : doodadSet)
-            m_bvhDoodads.insert(wmoDoodad->Parent->FileName);
+            m_bvhDoodads.insert(wmoDoodad->Parent->MpqPath);
 
-    m_bvhWmos.insert(wmo->FileName);
+    m_bvhWmos.insert(wmo->MpqPath);
 }
 
 void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
 {
-    if (m_bvhDoodads.find(doodad->FileName) != m_bvhDoodads.end())
+    if (m_bvhDoodads.find(doodad->MpqPath) != m_bvhDoodads.end())
         return;
 
-    meshfiles::SerializeDoodad(doodad, m_outputPath / "BVH" / ("Doodad_" + doodad->FileName + ".bvh"));
+    meshfiles::SerializeDoodad(doodad, m_bvhConstructor.AddFile(doodad->MpqPath));
 
-    m_bvhDoodads.insert(doodad->FileName);
+    m_bvhDoodads.insert(doodad->MpqPath);
 }
 
 bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
@@ -1118,7 +1119,7 @@ void ADT::AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::
     m_quadHeights[{x, y}] = std::move(quadHeights);
 }
 
-void ADT::Serialize(const std::experimental::filesystem::path &filename) const
+void ADT::Serialize(const fs::path &filename) const
 {
     size_t bufferSize = 6 * sizeof(std::uint32_t);
 
@@ -1192,7 +1193,7 @@ void GlobalWMO::AddTile(int x, int y, utility::BinaryStream &heightField, utilit
     File::AddTile(x, y, heightField, mesh);
 }
 
-void GlobalWMO::Serialize(const std::experimental::filesystem::path &filename) const
+void GlobalWMO::Serialize(const fs::path &filename) const
 {
     size_t bufferSize = 6 * sizeof(std::uint32_t);
 
@@ -1239,14 +1240,12 @@ void GlobalWMO::Serialize(const std::experimental::filesystem::path &filename) c
     out << outBuffer;
 }
 
-void SerializeWmo(const parser::Wmo *wmo, const std::experimental::filesystem::path &path)
+void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor)
 {
     math::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
 
     utility::BinaryStream o;
     aabbTree.Serialize(o);
-
-    auto const dataDir = path.parent_path();
 
     o << static_cast<std::uint32_t>(wmo->DoodadSets.size());
 
@@ -1260,18 +1259,20 @@ void SerializeWmo(const parser::Wmo *wmo, const std::experimental::filesystem::p
 
             o << wmoDoodad->TransformMatrix;
             o << wmoDoodad->Bounds;
-            o << std::left << std::setw(64) << std::setfill('\000') << doodad->FileName;
+            o << std::left << std::setw(64) << std::setfill('\000') << doodad->MpqPath;
 
             // also serialize this doodad
-            SerializeDoodad(wmoDoodad->Parent.get(), dataDir / ("Doodad_" + doodad->FileName + ".bvh"));
+            SerializeDoodad(wmoDoodad->Parent.get(), constructor.AddFile(doodad->MpqPath));
         }
     }
+
+    auto const path = constructor.AddFile(wmo->MpqPath);
 
     std::ofstream of(path, std::ofstream::binary | std::ofstream::trunc);
     of << o;
 }
 
-void SerializeDoodad(const parser::Doodad *doodad, const std::experimental::filesystem::path &path)
+void SerializeDoodad(const parser::Doodad *doodad, const fs::path &path)
 {
     math::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
 

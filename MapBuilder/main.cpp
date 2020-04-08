@@ -7,6 +7,7 @@
 #include "parser/Wmo/WmoInstance.hpp"
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <thread>
 #include <chrono>
@@ -161,8 +162,10 @@ int main(int argc, char *argv[])
                 {
                     std::stringstream str;
 
-                    auto const percentComplete = static_cast<int>(100.f * static_cast<float>(startSize - goBuilder.Remaining()) / startSize);
-                    str << "% Complete: " << percentComplete << "\n";
+                    auto const a = static_cast<float>(startSize - goBuilder.Remaining()) / startSize;
+                    auto const b = static_cast<float>(startSize - goBuilder.Remaining()) / (float)startSize;
+                    auto const percentComplete = 100.f * static_cast<float>(startSize - goBuilder.Remaining()) / startSize;
+                    str << "% Complete: " << std::setprecision(4) << percentComplete << "\n";
                     std::cout << str.str();
 
                     lastStatus = now;
@@ -170,7 +173,6 @@ int main(int argc, char *argv[])
             } while (goBuilder.Remaining() > 0);
 
             goBuilder.Shutdown();
-            goBuilder.WriteIndexFile();
 
             std::stringstream fin;
             fin << "Finished BVH generation";

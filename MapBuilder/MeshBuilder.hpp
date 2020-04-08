@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BVHConstructor.hpp"
+
 #include "parser/Map/Map.hpp"
 #include "parser/Wmo/Wmo.hpp"
 
@@ -68,7 +70,7 @@ class GlobalWMO : File
         void Serialize(const std::experimental::filesystem::path &filename) const override;
 };
 
-void SerializeWmo(const parser::Wmo *wmo, const std::experimental::filesystem::path &path);
+void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor);
 void SerializeDoodad(const parser::Doodad *doodad, const std::experimental::filesystem::path &path);
 }
 
@@ -76,6 +78,7 @@ class MeshBuilder
 {
     private:
         std::unique_ptr<parser::Map> m_map;
+        BVHConstructor m_bvhConstructor;
         const std::experimental::filesystem::path m_outputPath;
 
 #pragma pack (push, 1)

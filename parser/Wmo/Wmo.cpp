@@ -20,10 +20,10 @@
 
 namespace parser
 {
-Wmo::Wmo(const std::string &path)
+Wmo::Wmo(const std::string &path) : MpqPath(path)
 {
-    FileName = path.substr(path.rfind('\\') + 1);
-    FileName = FileName.substr(0, FileName.rfind('.'));
+    auto fileName = path.substr(path.rfind('\\') + 1);
+    fileName = fileName.substr(0, fileName.rfind('.'));
 
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(path));
 
@@ -47,7 +47,7 @@ Wmo::Wmo(const std::string &path)
     {
         std::stringstream ss;
 
-        ss << dirName << "\\" << FileName << "_" << std::setfill('0') << std::setw(3) << i << ".wmo";
+        ss << dirName << "\\" << fileName << "_" << std::setfill('0') << std::setw(3) << i << ".wmo";
         groupFiles.push_back(std::make_unique<input::WmoGroupFile>(ss.str()));
     }
 

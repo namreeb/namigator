@@ -1,7 +1,7 @@
 set(EXECUTABLE_NAME MapBuilder)
 set(PYTHON_NAME mapbuild)
 
-set(SRC GameObjectBVHBuilder.cpp MeshBuilder.cpp RecastContext.cpp Worker.cpp)
+set(SRC BVHConstructor.cpp GameObjectBVHBuilder.cpp MeshBuilder.cpp RecastContext.cpp Worker.cpp)
 
 include_directories(Include "${CMAKE_CURRENT_SOURCE_DIR}/../" "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/Detour/Include")
 

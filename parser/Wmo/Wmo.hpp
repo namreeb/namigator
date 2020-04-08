@@ -15,7 +15,7 @@ namespace parser
 class Wmo
 {
     public:
-        std::string FileName;
+        const std::string MpqPath;
 
         std::vector<math::Vertex> Vertices;
         std::vector<std::int32_t> Indices;

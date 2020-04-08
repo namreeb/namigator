@@ -119,7 +119,7 @@ const Wmo *Map::GetWmo(const std::string &name)
     std::lock_guard<std::mutex> guard(m_wmoMutex);
     
     for (auto const &wmo : m_loadedWmos)
-        if (wmo->FileName == filename)
+        if (wmo->MpqPath == filename)
             return wmo.get();
 
     auto ret = new Wmo(name);
@@ -163,7 +163,7 @@ const Doodad *Map::GetDoodad(const std::string &name)
     std::lock_guard<std::mutex> guard(m_doodadMutex);
 
     for (auto const &doodad : m_loadedDoodads)
-        if (doodad->FileName == filename)
+        if (doodad->MpqPath == filename)
             return doodad.get();
 
     auto ret = new Doodad(name);
@@ -231,7 +231,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 ourStream << static_cast<std::uint16_t>(wmo.second->DoodadSet);
                 ourStream << wmo.second->TransformMatrix;
                 ourStream << wmo.second->Bounds;
-                ourStream.WriteString(wmo.second->Model->FileName, ModelFileNameLength);
+                ourStream.WriteString(wmo.second->Model->MpqPath, ModelFileNameLength);
             }
         }
 
@@ -245,7 +245,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 ourStream << static_cast<std::uint32_t>(doodad.first);
                 ourStream << doodad.second->TransformMatrix;
                 ourStream << doodad.second->Bounds;
-                ourStream.WriteString(doodad.second->Model->FileName, ModelFileNameLength);
+                ourStream.WriteString(doodad.second->Model->MpqPath, ModelFileNameLength);
             }
         }
     }
@@ -261,7 +261,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
         ourStream << static_cast<std::uint16_t>(wmo->DoodadSet);
         ourStream << wmo->TransformMatrix;
         ourStream << wmo->Bounds;
-        ourStream.WriteString(wmo->Model->FileName, ModelFileNameLength);
+        ourStream.WriteString(wmo->Model->MpqPath, ModelFileNameLength);
     }
 
     // make sure our prediction of the final size is correct, to avoid reallocations

@@ -79,7 +79,8 @@ struct NavFileHeader
 
 namespace pathfind
 {
-Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(dataPath), m_mapName(mapName)
+Map::Map(const std::string &dataPath, const std::string &mapName)
+    : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName)
 {
     utility::BinaryStream in(m_dataPath / (mapName + ".map"));
 
@@ -213,19 +214,6 @@ Map::Map(const std::string &dataPath, const std::string &mapName) : m_dataPath(d
 
     if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
         THROW("dtNavMeshQuery::init failed");
-
-    utility::BinaryStream index(m_dataPath / "BVH" / "bvh.idx");
-
-    std::uint32_t size;
-    index >> size;
-
-    for (auto i = 0u; i < size; ++i)
-    {
-        std::uint32_t entry, length;
-        index >> entry >> length;
-        
-        m_temporaryObstaclePaths[entry] = index.ReadString(length);
-    }
 }
 
 std::shared_ptr<WmoModel> Map::LoadModelForWmoInstance(unsigned int instanceId)
@@ -266,27 +254,17 @@ std::shared_ptr<DoodadModel> Map::LoadModelForDoodadInstance(unsigned int instan
     return model;
 }
 
-std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& filename, bool isBvhFilename)
+std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& mpq_path)
 {
-    std::string bvhFilename;
-
-    if (!isBvhFilename)
-        bvhFilename += "Doodad_";
-
-    bvhFilename += filename;
-
-    if (!isBvhFilename)
-        bvhFilename += ".bvh";
+    auto const bvhFilename = m_bvhLoader.GetBVHPath(mpq_path);
 
     // if this model is currently loaded, return it
-    {
-        auto const i = m_loadedDoodadModels.find(bvhFilename);
-        if (i != m_loadedDoodadModels.end() && !i->second.expired())
-            return i->second.lock();
-    }
+    auto const i = m_loadedDoodadModels.find(bvhFilename);
+    if (i != m_loadedDoodadModels.end() && !i->second.expired())
+        return i->second.lock();
 
     // else, load it
-    utility::BinaryStream in(m_dataPath / "BVH" / bvhFilename);
+    utility::BinaryStream in(bvhFilename);
 
     auto model = std::make_shared<pathfind::DoodadModel>();
 
@@ -297,27 +275,17 @@ std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& fil
     return std::move(model);
 }
 
-std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &filename, bool isBvhFilename)
+std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &mpq_path)
 {
-    std::string bvhFilename;
-
-    if (!isBvhFilename)
-        bvhFilename += "WMO_";
-
-    bvhFilename += filename;
-
-    if (!isBvhFilename)
-        bvhFilename += ".bvh";
+    auto const bvhFilename = m_bvhLoader.GetBVHPath(mpq_path);
 
     // if this model is currently loaded, return it
-    {
-        auto const i = m_loadedWmoModels.find(bvhFilename);
-        if (i != m_loadedWmoModels.end() && !i->second.expired())
-            return i->second.lock();
-    }
+    auto const i = m_loadedWmoModels.find(bvhFilename);
+    if (i != m_loadedWmoModels.end() && !i->second.expired())
+        return i->second.lock();
 
     // else, load it
-    utility::BinaryStream in(m_dataPath / "BVH" / bvhFilename);
+    utility::BinaryStream in(bvhFilename);
 
     auto model = std::make_shared<pathfind::WmoModel>();
 
@@ -410,12 +378,11 @@ void Map::UnloadADT(int x, int y)
 std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
 {
     // Get the BVH file for this display ID
-    auto const it = m_temporaryObstaclePaths.find(displayId);
-    if (it == m_temporaryObstaclePaths.end() || it->second.empty())
-        return nullptr;
+    auto const bvh_path = m_bvhLoader.GetBVHPath(displayId);
 
-    auto const fileName = it->second;
-    auto const doodad = fileName[0] == 'd' || fileName[0] == 'D';
+    // TODO: add logic based on mpq_path
+    auto const doodad = false;
+    //auto const doodad = fileName[0] == 'd' || fileName[0] == 'D';
 
     if (doodad)
     {
@@ -423,7 +390,7 @@ std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
         //if (i != m_loadedDoodadModels.end() && !i->second.expired())
         //    return i->second.lock();
 
-        return EnsureDoodadModelLoaded(fileName, true);
+        return EnsureDoodadModelLoaded(bvh_path);
     }
     else
     {
@@ -431,7 +398,7 @@ std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
         //if (i != m_loadedWmoModels.end() && !i->second.expired())
         //    return i->second.lock();
 
-        return EnsureWmoModelLoaded(fileName, true);
+        return EnsureWmoModelLoaded(bvh_path);
     }
 
     //return nullptr;

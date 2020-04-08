@@ -13,7 +13,7 @@ class Doodad
         static constexpr unsigned int Magic = '02DM';
 
     public:
-        std::string FileName;
+        const std::string MpqPath;
 
         std::vector<math::Vertex> Vertices;
         std::vector<int> Indices;

@@ -3,6 +3,7 @@ set(LIBRARY_NAME pathfind)
 include_directories(Include ${CMAKE_SOURCE_DIR})
 
 set(SRC
+    BVH.cpp
     Map.cpp
     TemporaryObstacle.cpp
     Tile.cpp

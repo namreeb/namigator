@@ -9,8 +9,6 @@
 #include <memory>
 #include <cstdint>
 
-namespace parser
-{
 namespace
 {
 std::string GetRealModelPath(const std::string &path)
@@ -22,11 +20,10 @@ std::string GetRealModelPath(const std::string &path)
 }
 }
 
-Doodad::Doodad(const std::string &path)
+namespace parser
 {
-    FileName = path.substr(path.rfind('\\') + 1);
-    FileName = FileName.substr(0, FileName.rfind('.'));
-
+Doodad::Doodad(const std::string &path) : MpqPath(path)
+{
     std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(GetRealModelPath(path)));
 
     if (!reader)

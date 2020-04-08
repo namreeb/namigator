@@ -1,4 +1,5 @@
 #include "GameObjectBVHBuilder.hpp"
+#include "BVHConstructor.hpp"
 #include "MeshBuilder.hpp"
 
 #include "parser/Doodad/Doodad.hpp"
@@ -18,28 +19,8 @@
 #include <sstream>
 #include <experimental/filesystem>
 
-namespace fs = std::experimental::filesystem;
-
-namespace
-{
-fs::path BuildAbsoluteFilename(const fs::path &output_path, const fs::path &in, std::uint32_t id)
-{
-    auto const extension = in.extension().string();
-
-    std::string kind;
-    if (extension[1] == 'm' || extension[1] == 'M')
-        kind = "Doodad";
-    else if (extension[1] == 'w' || extension[1] == 'W')
-        kind = "WMO";
-    else
-        THROW("Unrecognized extension");
-
-    // files are based on id rather than their path to make handling those filenames easier on Linux
-    return (output_path / "BVH" / (kind + "_" + std::to_string(id))).replace_extension("bvh");
-}
-}
 GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t workers)
-    : m_outputPath(outputPath), m_workers(workers), m_shutdownRequested(false)
+    : m_bvhConstructor(outputPath), m_workers(workers), m_shutdownRequested(false)
 {
     const parser::DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
 
@@ -50,15 +31,6 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t
 
         if (!path.length())
             continue;
-
-        auto const output = BuildAbsoluteFilename(m_outputPath, path, row);
-
-        // mark existing files as already serialized so that they are included in the index file
-        if (fs::exists(output))
-        {
-            m_serialized[row] = output.filename().string();
-            continue;
-        }
 
         auto const extension = fs::path(path).extension().string();
 
@@ -93,25 +65,8 @@ void GameObjectBVHBuilder::Shutdown()
         thread.join();
     
     m_threads.clear();
-}
 
-void GameObjectBVHBuilder::WriteIndexFile() const
-{
-    std::lock_guard<std::mutex> guard(m_mutex);
-
-    // sort the final results because why not?
-    std::vector<std::pair<std::uint32_t, std::string>> serialized(m_serialized.begin(), m_serialized.end());
-    std::sort(serialized.begin(), serialized.end());
-
-    utility::BinaryStream out;
-
-    out << static_cast<std::uint32_t>(serialized.size());   // entry count
-
-    for (auto const &entry : serialized)
-        out << entry.first << static_cast<std::uint32_t>(entry.second.length()) << entry.second;
-
-    std::ofstream o(m_outputPath / "BVH" / "bvh.idx", std::ofstream::binary | std::ofstream::trunc);
-    o << out;
+    m_bvhConstructor.Shutdown();
 }
 
 void GameObjectBVHBuilder::Work()
@@ -166,10 +121,10 @@ void GameObjectBVHBuilder::Work()
             }
         }
 
-        auto const output = BuildAbsoluteFilename(m_outputPath, filename, entry);
-
         try
         {
+            fs::path output;
+
             if (isDoodad)
             {
                 const parser::Doodad doodad(filename);
@@ -182,6 +137,7 @@ void GameObjectBVHBuilder::Work()
                     continue;
                 }
 
+                output = m_bvhConstructor.AddTemporaryObstacle(entry, filename);
                 meshfiles::SerializeDoodad(&doodad, output);
             }
             else
@@ -196,8 +152,10 @@ void GameObjectBVHBuilder::Work()
                     continue;
                 }
 
+                output = m_bvhConstructor.AddTemporaryObstacle(entry, filename);
+
                 // note that this will also serialize all doodads referenced in all doodad sets within this wmo
-                meshfiles::SerializeWmo(&wmo, output);
+                meshfiles::SerializeWmo(&wmo, m_bvhConstructor);
             }
 
             std::lock_guard<std::mutex> guard(m_mutex);

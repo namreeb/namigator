@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BVHConstructor.hpp"
+
 #include <string>
 #include <unordered_map>
 #include <cstdint>
@@ -12,7 +14,7 @@
 class GameObjectBVHBuilder
 {
     private:
-        const std::experimental::filesystem::path m_outputPath;
+        BVHConstructor m_bvhConstructor;
         const size_t m_workers;
 
         std::unordered_map<std::uint32_t, std::string> m_doodads;
@@ -32,8 +34,6 @@ class GameObjectBVHBuilder
 
         void Begin();
         void Shutdown();
-
-        void WriteIndexFile() const;
 
         size_t Remaining() const { std::lock_guard<std::mutex> guard(m_mutex); return m_doodads.size() + m_wmos.size(); }
 };

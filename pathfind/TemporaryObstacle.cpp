@@ -263,17 +263,19 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
 
     auto const matrix = math::Matrix::CreateTranslationMatrix(position) * rotation;
 
-    auto const doodad = m_temporaryObstaclePaths[displayId][0] == 'd' || m_temporaryObstaclePaths[displayId][0] == 'D';
+    auto const bvh_path = m_bvhLoader.GetBVHPath(displayId);
+    // TODO: Add logic based on bvh_path
+    auto const doodad = true;
+    //auto const doodad = m_temporaryObstaclePaths[displayId][0] == 'd' || m_temporaryObstaclePaths[displayId][0] == 'D';
 
     if (doodad)
     {
-        auto const fileName = m_temporaryObstaclePaths[displayId].substr(7, m_temporaryObstaclePaths[displayId].length() - 11);
         auto instance = std::make_shared<DoodadInstance>();
 
         instance->m_transformMatrix = matrix;
         instance->m_inverseTransformMatrix = matrix.ComputeInverse();
-        instance->m_modelFilename = fileName;
-        auto model = EnsureDoodadModelLoaded(fileName);
+        instance->m_modelFilename = bvh_path;
+        auto model = EnsureDoodadModelLoaded(bvh_path);
         instance->m_model = model;
 
         instance->m_translatedVertices.reserve(model->m_aabbTree.Vertices().size());

@@ -38,7 +38,6 @@ int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t 
     } while (goBuilder.Remaining() > 0);
 
     goBuilder.Shutdown();
-    goBuilder.WriteIndexFile();
 
     return static_cast<int>(time(nullptr) - start);
 }

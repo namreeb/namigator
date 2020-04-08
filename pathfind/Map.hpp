@@ -2,6 +2,7 @@
 
 #include "Tile.hpp"
 #include "Model.hpp"
+#include "BVH.hpp"
 
 #include "utility/Vector.hpp"
 #include "utility/Ray.hpp"
@@ -39,6 +40,8 @@ class Map
         static constexpr int MaxPathHops = 128;
         static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
 
+        BVH m_bvhLoader;
+
         const std::experimental::filesystem::path m_dataPath;
         const std::string m_mapName;
 
@@ -47,9 +50,6 @@ class Map
         dtQueryFilter m_queryFilter;
         
         std::unordered_map<std::pair<int, int>, std::unique_ptr<Tile>> m_tiles;
-
-        // indexed by display id
-        std::unordered_map<unsigned int, std::string> m_temporaryObstaclePaths;     // same for all maps, but no global object to store it in
 
         // indexed by unique instance id.  this data is always loaded.  whenever a tile using one of these instances is loaded, the corresponding
         // model is loaded also.  whenever all tiles referencing a model (possibly through distinct instances) are unloaded, the model is unloaded.
@@ -71,10 +71,10 @@ class Map
         std::shared_ptr<DoodadModel> LoadModelForDoodadInstance(unsigned int instanceId);
 
         // ensure that the given WMO model is loaded
-        std::shared_ptr<WmoModel> EnsureWmoModelLoaded(const std::string &filename, bool isBvhFilename = false);
+        std::shared_ptr<WmoModel> EnsureWmoModelLoaded(const std::string &mpq_path);
 
         // ensure that the given doodad model is loaded
-        std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &filename, bool isBvhFilename = false);
+        std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &mpq_path);
 
         // find a more precise z value at or below the given hint.  the purpose of this is to refine
         // the z value for the final hop on a path, and should not be exposed to clients, as it assumes
