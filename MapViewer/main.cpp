@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <windows.h>
+#include <shellapi.h>
 #include <windowsx.h>
 #include <sstream>
 #include <cassert>
@@ -43,6 +44,8 @@
 namespace
 {
 HWND gGuiWindow, gControlWindow;
+
+fs::path gNavData;
 
 std::unique_ptr<Renderer> gRenderer;
 std::unique_ptr<CommonControl> gControls;
@@ -229,7 +232,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
                         gHasStart = false;
 
-                        if (gNavMesh->FindPath(gStart, hit, path, true))
+                        if (gNavMesh->FindPath(gStart, hit, path, false))
                             gRenderer->AddPath(path);
                         else
                             MessageBox(nullptr, "FindPath failed", "Path Find", 0);
@@ -479,11 +482,11 @@ void ChangeMap(const std::string &cn)
     try
     {
         gMap = std::make_unique<parser::Map>(mapName);
-        gNavMesh = std::make_unique<pathfind::Map>("Maps", mapName);
+        gNavMesh = std::make_unique<pathfind::Map>(gNavData.string(), mapName);
     }
     catch (utility::exception const &e)
     {
-        MessageBoxA(nullptr, e.what(), "ERROR", 0);
+        MessageBoxA(nullptr, e.what(), "ERROR", MB_ICONERROR);
 
         if (!gMap)
             return;
@@ -675,31 +678,34 @@ void SpawnGOFromGUI()
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmdLine, int nCmdShow)
 {
-    auto const root = std::experimental::filesystem::path(::strlen(lpCmdLine) > 0 ? lpCmdLine : ".");
+    int argc;
+    auto argv = ::CommandLineToArgvW(GetCommandLineW(), &argc);
 
-    if (!std::experimental::filesystem::is_directory(root))
+    if (!argv || argc != 3)
     {
-        MessageBox(nullptr, "Root folder does not exist", "ERROR", 0);
+        MessageBox(nullptr, "Usage: <nav data> <wow data>", "ERROR", MB_ICONERROR);
         return EXIT_FAILURE;
     }
 
-    std::experimental::filesystem::current_path(root);
+    gNavData = fs::path(argv[1]);
 
-    if (!std::experimental::filesystem::is_directory("Data"))
+    if (!fs::is_directory(gNavData))
     {
-        MessageBox(nullptr, "Data folder does not exist", "ERROR", 0);
+        MessageBox(nullptr, "Navigation data directory not found", "ERROR", MB_ICONERROR);
         return EXIT_FAILURE;
     }
 
-    if (!std::experimental::filesystem::is_directory("Maps"))
+    const fs::path wow_path(argv[2]);
+
+    if (!fs::is_directory(wow_path))
     {
-        MessageBox(nullptr, "Maps folder does not exist", "ERROR", 0);
+        MessageBox(nullptr, "Wow data directory not found", "ERROR", MB_ICONERROR);
         return EXIT_FAILURE;
     }
 
     gHasStart = false;
 
-    parser::Parser::Initialize("Data");
+    parser::Parser::Initialize(wow_path.string());
 
     InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 
