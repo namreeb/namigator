@@ -4,6 +4,7 @@ import time
 import sys
 import os
 import math
+import argparse
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
@@ -19,9 +20,11 @@ def try_print_mem_usage():
     except ModuleNotFoundError:
         return
 
-def time_load():
+def time_load(data_path):
+    print('Loading Azeroth from %s' % data_path)
+
     start = time.time()
-    map = pathfind.Map(r'f:\nav_vanilla', 'Azeroth')
+    map = pathfind.Map(data_path, 'Azeroth')
     load_time = time.time() - start
 
     print('Loaded Azeroth map in %.2f seconds' % load_time)
@@ -46,8 +49,16 @@ def path_length(path):
     return math.sqrt(result)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--navdata', help='Path to navigation data', default=r'f:\nav_vanilla')
+
+    args = parser.parse_args()
+
     try:
-        map = time_load()
+        if not os.path.isdir(args.navdata):
+            raise RuntimeError('Navigation data directory %s does not exist' % args.navdata)
+
+        map = time_load(args.navdata)
 
         start = time.time()
         test_path = map.find_path(-8949.95, -132.493, 83.5312, -8833.38, 628.628, 94.0066)
