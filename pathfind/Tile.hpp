@@ -22,8 +22,12 @@ class Map;
 
 class Tile
 {
+    private:
+        rcHeightfield m_heightField;
+
     public:
-        Tile(Map *map, utility::BinaryStream &in);
+        // the height field should only be loaded for tiles that will have temporary obstacles inserted frequently
+        Tile(Map *map, utility::BinaryStream &in, bool load_heightfield=false);
         ~Tile();
 
         void AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance> doodad);
@@ -33,13 +37,12 @@ class Tile
 
         math::BoundingBox m_bounds;
 
-        int m_x;
-        int m_y;
+        const int m_x;
+        const int m_y;
 
-        std::uint8_t m_quadHoles[8 / MeshSettings::TilesPerChunk][8 / MeshSettings::TilesPerChunk];     // FIXME: make vector so as not to hard-code size
+        std::uint8_t m_quadHoles[8 / MeshSettings::TilesPerChunk][8 / MeshSettings::TilesPerChunk];
         std::vector<float> m_quadHeights;
 
-        rcHeightfield m_heightField;
         std::vector<std::uint8_t> m_tileData;
 
         // static instance ids, loaded per map
