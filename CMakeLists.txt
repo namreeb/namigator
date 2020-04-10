@@ -106,6 +106,9 @@ add_subdirectory(pathfind)
 # namigator executables
 add_subdirectory(MapBuilder)
 
+# tests
+add_subdirectory(test)
+
 if (WIN32)
     add_subdirectory(MapViewer)
 endif()
