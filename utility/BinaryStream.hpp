@@ -41,6 +41,7 @@ class BinaryStream
             return ret;
         }
 
+        // TODO: enable_if<is_assignable && is_trivially_copyable> for assignment instead of memcpy
         template <typename T> void Read(T &out)
         {
             static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
