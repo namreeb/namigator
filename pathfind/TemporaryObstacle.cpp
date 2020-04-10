@@ -319,6 +319,9 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
 
 void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance> doodad)
 {
+    if (!m_heightField.spans)
+        LoadHeightField();
+
     auto const model = doodad->m_model.lock();
 
     std::vector<float> recastVertices;

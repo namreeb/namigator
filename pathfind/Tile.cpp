@@ -19,8 +19,8 @@
 
 namespace pathfind
 {
-Tile::Tile(Map *map, utility::BinaryStream &in, bool load_heightfield)
-    : m_map(map), m_ref(0), m_x(in.Read<std::uint32_t>()), m_y(in.Read<std::uint32_t>())
+Tile::Tile(Map *map, utility::BinaryStream &in, const fs::path &navPath, bool load_heightfield)
+    : m_map(map), m_navPath(navPath), m_ref(0), m_x(in.Read<std::uint32_t>()), m_y(in.Read<std::uint32_t>())
 {
     std::uint32_t wmoCount;
     in >> wmoCount;
@@ -78,38 +78,10 @@ Tile::Tile(Map *map, utility::BinaryStream &in, bool load_heightfield)
     m_bounds.MinCorner.Z = (std::min)(a.Z, b.Z);
     m_bounds.MaxCorner.Z = (std::max)(a.Z, b.Z);
 
+    m_heightFieldSpanStart = in.rpos();
+
     if (load_heightfield)
-    {
-        m_heightField.spans = reinterpret_cast<rcSpan **>(rcAlloc(m_heightField.width*m_heightField.height * sizeof(rcSpan*), RC_ALLOC_PERM));
-
-        for (auto i = 0; i < m_heightField.width*m_heightField.height; ++i)
-        {
-            std::uint32_t columnSize;
-            in >> columnSize;
-
-            if (!columnSize)
-            {
-                m_heightField.spans[i] = nullptr;
-                continue;
-            }
-
-            m_heightField.spans[i] = reinterpret_cast<rcSpan *>(rcAlloc(columnSize * sizeof(rcSpan), RC_ALLOC_PERM));
-
-            for (auto s = 0u; s < columnSize; ++s)
-            {
-                std::uint32_t smin, smax, area;
-                in >> smin >> smax >> area;
-
-                m_heightField.spans[i][s].smin = smin;
-                m_heightField.spans[i][s].smax = smax;
-                m_heightField.spans[i][s].area = area;
-                m_heightField.spans[i][s].next = nullptr;
-
-                if (s > 0)
-                    m_heightField.spans[i][s - 1].next = &m_heightField.spans[i][s];
-            }
-        }
-    }
+        LoadHeightField(in);
     else
     {
         m_heightField.spans = nullptr;
@@ -148,5 +120,47 @@ Tile::~Tile()
     if (!!m_heightField.spans)
         for (auto i = 0; i < m_heightField.width*m_heightField.height; ++i)
             rcFree(m_heightField.spans[i]);
+}
+
+void Tile::LoadHeightField()
+{
+    utility::BinaryStream in(m_navPath);
+    in.rpos(m_heightFieldSpanStart);
+    LoadHeightField(in);
+}
+
+void Tile::LoadHeightField(utility::BinaryStream &in)
+{
+    assert(!m_heightField.spans);
+
+    m_heightField.spans = reinterpret_cast<rcSpan **>(rcAlloc(m_heightField.width*m_heightField.height * sizeof(rcSpan*), RC_ALLOC_PERM));
+
+    for (auto i = 0; i < m_heightField.width*m_heightField.height; ++i)
+    {
+        std::uint32_t columnSize;
+        in >> columnSize;
+
+        if (!columnSize)
+        {
+            m_heightField.spans[i] = nullptr;
+            continue;
+        }
+
+        m_heightField.spans[i] = reinterpret_cast<rcSpan *>(rcAlloc(columnSize * sizeof(rcSpan), RC_ALLOC_PERM));
+
+        for (auto s = 0u; s < columnSize; ++s)
+        {
+            std::uint32_t smin, smax, area;
+            in >> smin >> smax >> area;
+
+            m_heightField.spans[i][s].smin = smin;
+            m_heightField.spans[i][s].smax = smax;
+            m_heightField.spans[i][s].area = area;
+            m_heightField.spans[i][s].next = nullptr;
+
+            if (s > 0)
+                m_heightField.spans[i][s - 1].next = &m_heightField.spans[i][s];
+        }
+    }
 }
 }

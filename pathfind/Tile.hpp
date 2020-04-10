@@ -15,6 +15,9 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
 
 namespace pathfind
 {
@@ -23,16 +26,25 @@ class Map;
 class Tile
 {
     private:
+        Map * const m_map;
+        const fs::path m_navPath;
+
+        std::vector<std::uint8_t> m_tileData;
+
+        // store this for possible delayed load of the data
+        size_t m_heightFieldSpanStart;
         rcHeightfield m_heightField;
+
+        void LoadHeightField(utility::BinaryStream &in);
+        void LoadHeightField();
 
     public:
         // the height field should only be loaded for tiles that will have temporary obstacles inserted frequently
-        Tile(Map *map, utility::BinaryStream &in, bool load_heightfield=false);
+        Tile(Map *map, utility::BinaryStream &in, const fs::path &navPath, bool load_heightfield=false);
         ~Tile();
 
         void AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance> doodad);
 
-        Map * const m_map;
         dtTileRef m_ref;
 
         math::BoundingBox m_bounds;
@@ -42,8 +54,6 @@ class Tile
 
         std::uint8_t m_quadHoles[8 / MeshSettings::TilesPerChunk][8 / MeshSettings::TilesPerChunk];
         std::vector<float> m_quadHeights;
-
-        std::vector<std::uint8_t> m_tileData;
 
         // static instance ids, loaded per map
         std::vector<std::uint32_t> m_staticWmos;

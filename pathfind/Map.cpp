@@ -209,7 +209,9 @@ Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(d
         auto const result = m_navMesh.init(&params);
         assert(result == DT_SUCCESS);
 
-        utility::BinaryStream navIn(m_dataPath / "Nav" / "Map.nav");
+        auto const nav_path = m_dataPath / "Nav" / "Map.nav";
+
+        utility::BinaryStream navIn(nav_path);
 
         navIn.Decompress();
 
@@ -223,7 +225,7 @@ Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(d
 
         for (auto i = 0u; i < header.tileCount; ++i)
         {
-            auto tile = std::make_unique<Tile>(this, navIn);
+            auto tile = std::make_unique<Tile>(this, navIn, nav_path);
 
             // for a global wmo, all tiles are guarunteed to contain the model
             tile->m_staticWmos.push_back(GlobalWmoId);
@@ -373,7 +375,9 @@ bool Map::LoadADT(int x, int y)
     std::stringstream str;
     str << std::setfill('0') << std::setw(2) << x << "_" << std::setfill('0') << std::setw(2) << y << ".nav";
 
-    utility::BinaryStream stream(m_dataPath / "Nav" / m_mapName / str.str());
+    auto const nav_path = m_dataPath / "Nav" / m_mapName / str.str();
+
+    utility::BinaryStream stream(nav_path);
 
     stream.Decompress();
 
@@ -387,7 +391,7 @@ bool Map::LoadADT(int x, int y)
 
     for (auto i = 0u; i < header.tileCount; ++i)
     {
-        auto tile = std::make_unique<Tile>(this, stream);
+        auto tile = std::make_unique<Tile>(this, stream, nav_path);
         m_tiles[{tile->m_x, tile->m_y}] = std::move(tile);
     }
 
