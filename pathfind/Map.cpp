@@ -235,7 +235,7 @@ Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(d
         }
     }
 
-    if (m_navQuery.init(&m_navMesh, 2048) != DT_SUCCESS)
+    if (m_navQuery.init(&m_navMesh, 65535) != DT_SUCCESS)
         THROW("dtNavMeshQuery::init failed");
 }
 

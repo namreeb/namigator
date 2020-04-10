@@ -39,7 +39,7 @@ class Map
 
     private:
         static constexpr int MaxStackedPolys = 128;
-        static constexpr int MaxPathHops = 128;
+        static constexpr int MaxPathHops = 4096;
         static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
 
         BVH m_bvhLoader;
