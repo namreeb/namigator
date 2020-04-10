@@ -5,6 +5,8 @@
 #include "parser/Wmo/WmoInstance.hpp"
 #include "parser/Adt/Adt.hpp"
 
+#include "RecastDetourBuild/Common.hpp"
+
 #include <mutex>
 #include <memory>
 #include <string>
@@ -24,13 +26,12 @@ class Map
 {
     private:
         static constexpr std::uint32_t Magic = 'MAP1';
-        static constexpr size_t ModelFileNameLength = 64;
 
-        bool m_hasAdt[64][64];
+        bool m_hasAdt[MeshSettings::Adts][MeshSettings::Adts];
         bool m_hasTerrain;
 
         mutable std::mutex m_adtMutex;
-        std::unique_ptr<Adt> m_adts[64][64];
+        std::unique_ptr<Adt> m_adts[MeshSettings::Adts][MeshSettings::Adts];
         std::unique_ptr<WmoInstance> m_globalWmo;
 
         mutable std::mutex m_wmoMutex;

@@ -15,6 +15,7 @@ using PolyFlags = AreaFlags;
 
 struct MeshSettings
 {
+    static constexpr int MaxMPQPathLength = 128;
     static constexpr int TilesPerChunk = 1;                 // number of rows and columns of tiles per ADT MCNK chunk
     static constexpr int TileVoxelSize = 112;               // number of voxel rows and columns per tile
 

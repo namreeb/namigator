@@ -1259,7 +1259,7 @@ void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor)
 
             o << wmoDoodad->TransformMatrix;
             o << wmoDoodad->Bounds;
-            o << std::left << std::setw(64) << std::setfill('\000') << doodad->MpqPath;
+            o.WriteString(doodad->MpqPath, MeshSettings::MaxMPQPathLength);
 
             // also serialize this doodad
             SerializeDoodad(wmoDoodad->Parent.get(), constructor.AddFile(doodad->MpqPath));

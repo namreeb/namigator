@@ -7,6 +7,8 @@
 #include "utility/Vector.hpp"
 #include "utility/Ray.hpp"
 
+#include "RecastDetourBuild/Common.hpp"
+
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "recastnavigation/Detour/Include/DetourNavMeshQuery.h"
 
@@ -41,6 +43,9 @@ class Map
         static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
 
         BVH m_bvhLoader;
+
+        bool m_hasADT[MeshSettings::Adts][MeshSettings::Adts];
+        bool m_loadedADT[MeshSettings::Adts][MeshSettings::Adts];
 
         const std::experimental::filesystem::path m_dataPath;
         const std::string m_mapName;
@@ -92,8 +97,11 @@ class Map
         Map(const Map&) = delete;
         Map(const std::string &dataPath, const std::string &mapName);
 
+        bool HasADT(int x, int y) const;
+        bool IsADTLoaded(int x, int y) const;
         bool LoadADT(int x, int y);
         void UnloadADT(int x, int y);
+        int LoadAllADTs();
 
         // rotation specified in radians rotated around Z axis
         void AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vertex &position, float orientation, int doodadSet = -1);

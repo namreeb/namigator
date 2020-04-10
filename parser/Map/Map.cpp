@@ -216,9 +216,44 @@ void Map::Serialize(utility::BinaryStream& stream) const
     utility::BinaryStream ourStream(ourSize);
     ourStream << Magic;
 
+    static_assert(sizeof(bool) == 1, "bool must be only 1 byte");
+
     if (m_hasTerrain)
     {
         ourStream << (std::uint8_t)1;
+
+        std::uint8_t has_adt[sizeof(m_hasAdt) / 8];
+        ::memset(has_adt, 0, sizeof(has_adt));
+
+        std::stringstream str;
+
+        str << "Map ADTs:\n";
+
+        for (auto y = 0; y < MeshSettings::Adts; ++y)
+        {
+            for (auto x = 0; x < MeshSettings::Adts; ++x)
+            {
+                if (!m_hasAdt[x][y])
+                {
+                    str << " ";
+                    continue;
+                }
+
+                auto const offset = y * MeshSettings::Adts + x;
+                auto const byte_offset = offset / 8;
+                auto const bit_offset = offset % 8;
+
+                has_adt[byte_offset] |= (1 << bit_offset);
+                str << "X";
+            }
+
+            str << "\n";
+        }
+
+        std::cout << str.str();
+        std::cout.flush();
+
+        ourStream.Write(has_adt, sizeof(has_adt));
 
         {
             std::lock_guard<std::mutex> guard(m_wmoMutex);
@@ -231,7 +266,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 ourStream << static_cast<std::uint16_t>(wmo.second->DoodadSet);
                 ourStream << wmo.second->TransformMatrix;
                 ourStream << wmo.second->Bounds;
-                ourStream.WriteString(wmo.second->Model->MpqPath, ModelFileNameLength);
+                ourStream.WriteString(wmo.second->Model->MpqPath, MeshSettings::MaxMPQPathLength);
             }
         }
 
@@ -245,7 +280,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 ourStream << static_cast<std::uint32_t>(doodad.first);
                 ourStream << doodad.second->TransformMatrix;
                 ourStream << doodad.second->Bounds;
-                ourStream.WriteString(doodad.second->Model->MpqPath, ModelFileNameLength);
+                ourStream.WriteString(doodad.second->Model->MpqPath, MeshSettings::MaxMPQPathLength);
             }
         }
     }
@@ -261,7 +296,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
         ourStream << static_cast<std::uint16_t>(wmo->DoodadSet);
         ourStream << wmo->TransformMatrix;
         ourStream << wmo->Bounds;
-        ourStream.WriteString(wmo->Model->MpqPath, ModelFileNameLength);
+        ourStream.WriteString(wmo->Model->MpqPath, MeshSettings::MaxMPQPathLength);
     }
 
     // make sure our prediction of the final size is correct, to avoid reallocations

@@ -2,28 +2,28 @@
 #include "Tile.hpp"
 
 #include "RecastDetourBuild/Common.hpp"
-#include "utility/MathHelper.hpp"
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
+#include "utility/MathHelper.hpp"
 #include "utility/Ray.hpp"
 
 #include "recastnavigation/Detour/Include/DetourCommon.h"
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "recastnavigation/Detour/Include/DetourNavMeshQuery.h"
 
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <cassert>
-#include <cstdint>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <list>
-#include <limits>
 #include <algorithm>
-#include <unordered_set>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
 #include <experimental/filesystem>
+#include <fstream>
+#include <iomanip>
+#include <limits>
+#include <list>
+#include <sstream>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -34,7 +34,7 @@ struct WmoFileInstance
     std::uint16_t m_doodadSet;
     float m_transformMatrix[16];
     math::BoundingBox m_bounds;
-    char m_fileName[64];
+    char m_fileName[MeshSettings::MaxMPQPathLength];
 };
 
 struct DoodadFileInstance
@@ -42,7 +42,7 @@ struct DoodadFileInstance
     std::uint32_t m_id;
     float m_transformMatrix[16];
     math::BoundingBox m_bounds;
-    char m_fileName[64];
+    char m_fileName[MeshSettings::MaxMPQPathLength];
 };
 
 struct NavFileHeader
@@ -70,7 +70,7 @@ struct NavFileHeader
             if (x != MeshSettings::WMOcoordinate || y != MeshSettings::WMOcoordinate)
                 THROW("Not WMO tile coordinates");
         }
-        
+
         if (!globalWmo && kind != MeshSettings::FileADT)
             THROW("Not ADT nav file");
     }
@@ -79,8 +79,7 @@ struct NavFileHeader
 
 namespace pathfind
 {
-Map::Map(const std::string &dataPath, const std::string &mapName)
-    : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName)
+Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName)
 {
     utility::BinaryStream in(m_dataPath / (mapName + ".map"));
 
@@ -90,6 +89,8 @@ Map::Map(const std::string &dataPath, const std::string &mapName)
     if (magic != 'MAP1')
         THROW("Invalid map file");
 
+    ::memset(m_loadedADT, 0, sizeof(m_loadedADT));
+
     std::uint8_t hasTerrain;
     in >> hasTerrain;
 
@@ -97,6 +98,20 @@ Map::Map(const std::string &dataPath, const std::string &mapName)
 
     if (hasTerrain)
     {
+        std::uint8_t has_adt[MeshSettings::Adts * MeshSettings::Adts / 8];
+
+        in.ReadBytes(has_adt, sizeof(has_adt));
+
+        for (auto y = 0; y < MeshSettings::Adts; ++y)
+            for (auto x = 0; x < MeshSettings::Adts; ++x)
+            {
+                auto const offset = y * MeshSettings::Adts + x;
+                auto const byte_offset = offset / 8;
+                auto const bit_offset = offset % 8;
+
+                m_hasADT[x][y] = (has_adt[byte_offset] & (1 << bit_offset)) != 0;
+            }
+
         dtNavMeshParams params;
 
         constexpr float mapOrigin = -32.f * MeshSettings::AdtSize;
@@ -120,17 +135,18 @@ Map::Map(const std::string &dataPath, const std::string &mapName)
             std::vector<WmoFileInstance> wmoInstances(wmoInstanceCount);
             in.ReadBytes(&wmoInstances[0], wmoInstanceCount * sizeof(WmoFileInstance));
 
-            for (auto const &wmo : wmoInstances)
+            for (auto const& wmo : wmoInstances)
             {
                 WmoInstance ins;
 
                 ins.m_doodadSet = static_cast<unsigned short>(wmo.m_doodadSet);
-                ins.m_transformMatrix = math::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
+                ins.m_transformMatrix =
+                    math::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = wmo.m_bounds;
                 ins.m_modelFilename = wmo.m_fileName;
 
-                m_staticWmos.insert({ static_cast<unsigned int>(wmo.m_id), ins });
+                m_staticWmos.insert({static_cast<unsigned int>(wmo.m_id), ins});
             }
         }
 
@@ -142,52 +158,57 @@ Map::Map(const std::string &dataPath, const std::string &mapName)
             std::vector<DoodadFileInstance> doodadInstances(doodadInstanceCount);
             in.ReadBytes(&doodadInstances[0], doodadInstanceCount * sizeof(DoodadFileInstance));
 
-            for (auto const &doodad : doodadInstances)
+            for (auto const& doodad : doodadInstances)
             {
                 DoodadInstance ins;
 
-                ins.m_transformMatrix = math::Matrix::CreateFromArray(doodad.m_transformMatrix, sizeof(doodad.m_transformMatrix) / sizeof(doodad.m_transformMatrix[0]));
+                ins.m_transformMatrix =
+                    math::Matrix::CreateFromArray(doodad.m_transformMatrix, sizeof(doodad.m_transformMatrix) / sizeof(doodad.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
                 ins.m_bounds = doodad.m_bounds;
                 ins.m_modelFilename = doodad.m_fileName;
 
-                m_staticDoodads.insert({ static_cast<unsigned int>(doodad.m_id), ins });
+                m_staticDoodads.insert({static_cast<unsigned int>(doodad.m_id), ins});
             }
         }
     }
     else
     {
+        // no ADTs in this map
+        ::memset(m_hasADT, 0, sizeof(m_hasADT));
+
         WmoFileInstance globalWmo;
         in >> globalWmo;
 
         WmoInstance ins;
 
         ins.m_doodadSet = static_cast<unsigned short>(globalWmo.m_doodadSet);
-        ins.m_transformMatrix = math::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
+        ins.m_transformMatrix =
+            math::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
         ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
         ins.m_bounds = globalWmo.m_bounds;
 
         auto model = EnsureWmoModelLoaded(globalWmo.m_fileName);
         ins.m_model = model;
 
-        m_staticWmos.insert({ GlobalWmoId, ins });
+        m_staticWmos.insert({GlobalWmoId, ins});
 
         dtNavMeshParams params;
 
         params.orig[0] = -globalWmo.m_bounds.MaxCorner.Y;
-        params.orig[1] =  globalWmo.m_bounds.MinCorner.Z;
+        params.orig[1] = globalWmo.m_bounds.MinCorner.Z;
         params.orig[2] = -globalWmo.m_bounds.MaxCorner.X;
         params.tileHeight = params.tileWidth = MeshSettings::TileSize;
 
         auto const tileWidth = static_cast<int>(::ceilf((globalWmo.m_bounds.MaxCorner.X - globalWmo.m_bounds.MinCorner.X) / MeshSettings::TileSize));
         auto const tileHeight = static_cast<int>(::ceilf((globalWmo.m_bounds.MaxCorner.Y - globalWmo.m_bounds.MinCorner.Y) / MeshSettings::TileSize));
 
-        params.maxTiles = tileWidth*tileHeight;
+        params.maxTiles = tileWidth * tileHeight;
         params.maxPolys = 1 << DT_POLY_BITS;
 
         auto const result = m_navMesh.init(&params);
         assert(result == DT_SUCCESS);
-        
+
         utility::BinaryStream navIn(m_dataPath / "Nav" / "Map.nav");
 
         navIn.Decompress();
@@ -275,7 +296,7 @@ std::shared_ptr<DoodadModel> Map::EnsureDoodadModelLoaded(const std::string& mpq
     return std::move(model);
 }
 
-std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &mpq_path)
+std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
 {
     auto const bvhFilename = m_bvhLoader.GetBVHPath(mpq_path);
 
@@ -310,11 +331,12 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &mpq_path)
             float transformMatrix[16];
             in >> transformMatrix;
 
-            model->m_doodadSets[set][doodad].m_transformMatrix = math::Matrix::CreateFromArray(transformMatrix, sizeof(transformMatrix) / sizeof(transformMatrix[0]));
+            model->m_doodadSets[set][doodad].m_transformMatrix =
+                math::Matrix::CreateFromArray(transformMatrix, sizeof(transformMatrix) / sizeof(transformMatrix[0]));
 
             in >> model->m_doodadSets[set][doodad].m_bounds;
 
-            char doodadFileName[64];
+            char doodadFileName[MeshSettings::MaxMPQPathLength];
             in >> doodadFileName;
 
             auto doodadModel = EnsureDoodadModelLoaded(doodadFileName);
@@ -330,17 +352,26 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string &mpq_path)
     return std::move(model);
 }
 
+bool Map::HasADT(int x, int y) const
+{
+    return m_hasADT[x][y];
+}
+
+bool Map::IsADTLoaded(int x, int y) const
+{
+    return m_loadedADT[x][y];
+}
+
 bool Map::LoadADT(int x, int y)
 {
-    // if any of the tiles for this ADT are loaded, it is already loaded
-    for (auto tileY = y * MeshSettings::TilesPerADT; tileY < (y + 1)*MeshSettings::TilesPerADT; ++tileY)
-        for (auto tileX = x * MeshSettings::TilesPerADT; tileX < (x + 1)*MeshSettings::TilesPerADT; ++tileX)
-            if (m_tiles.find({ x, y }) != m_tiles.end())
-                return true;
+    if (m_loadedADT[x][y])
+        return true;
+
+    if (!m_hasADT[x][y])
+        return false;
 
     std::stringstream str;
-    str << std::setfill('0') << std::setw(2) << x << "_"
-        << std::setfill('0') << std::setw(2) << y << ".nav";
+    str << std::setfill('0') << std::setw(2) << x << "_" << std::setfill('0') << std::setw(2) << y << ".nav";
 
     utility::BinaryStream stream(m_dataPath / "Nav" / m_mapName / str.str());
 
@@ -360,19 +391,38 @@ bool Map::LoadADT(int x, int y)
         m_tiles[{tile->m_x, tile->m_y}] = std::move(tile);
     }
 
+    m_loadedADT[x][y] = true;
+
     return true;
 }
 
 void Map::UnloadADT(int x, int y)
 {
-    for (auto tileY = y * MeshSettings::TilesPerADT; tileY < (y + 1)*MeshSettings::TilesPerADT; ++tileY)
-        for (auto tileX = x * MeshSettings::TilesPerADT; tileX < (x + 1)*MeshSettings::TilesPerADT; ++tileX)
+    if (!m_loadedADT[x][y])
+        return;
+
+    for (auto tileY = y * MeshSettings::TilesPerADT; tileY < (y + 1) * MeshSettings::TilesPerADT; ++tileY)
+        for (auto tileX = x * MeshSettings::TilesPerADT; tileX < (x + 1) * MeshSettings::TilesPerADT; ++tileX)
         {
-            auto i = m_tiles.find({ tileX, tileY });
+            auto i = m_tiles.find({tileX, tileY});
 
             if (i != m_tiles.end())
                 m_tiles.erase(i);
         }
+
+    m_loadedADT[x][y] = false;
+}
+
+int Map::LoadAllADTs()
+{
+    int result = 0;
+
+    for (auto y = 0; y < MeshSettings::Adts; ++y)
+        for (auto x = 0; x < MeshSettings::Adts; ++x)
+            if (m_hasADT[x][y] && LoadADT(x, y))
+                ++result;
+
+    return result;
 }
 
 std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
@@ -382,31 +432,31 @@ std::shared_ptr<Model> Map::GetOrLoadModelByDisplayId(unsigned int displayId)
 
     // TODO: add logic based on mpq_path
     auto const doodad = false;
-    //auto const doodad = fileName[0] == 'd' || fileName[0] == 'D';
+    // auto const doodad = fileName[0] == 'd' || fileName[0] == 'D';
 
     if (doodad)
     {
-        //auto const i = m_loadedDoodadModels.find(fileName);
-        //if (i != m_loadedDoodadModels.end() && !i->second.expired())
+        // auto const i = m_loadedDoodadModels.find(fileName);
+        // if (i != m_loadedDoodadModels.end() && !i->second.expired())
         //    return i->second.lock();
 
         return EnsureDoodadModelLoaded(bvh_path);
     }
     else
     {
-        //auto const i = m_loadedWmoModels.find(fileName);
-        //if (i != m_loadedWmoModels.end() && !i->second.expired())
+        // auto const i = m_loadedWmoModels.find(fileName);
+        // if (i != m_loadedWmoModels.end() && !i->second.expired())
         //    return i->second.lock();
 
         return EnsureWmoModelLoaded(bvh_path);
     }
 
-    //return nullptr;
+    // return nullptr;
 }
 
 bool Map::FindPath(const math::Vertex& start, const math::Vertex& end, std::vector<math::Vertex>& output, bool allowPartial) const
 {
-    constexpr float extents[] = { 5.f, 5.f, 5.f };
+    constexpr float extents[] = {5.f, 5.f, 5.f};
 
     float recastStart[3];
     float recastEnd[3];
@@ -428,14 +478,16 @@ bool Map::FindPath(const math::Vertex& start, const math::Vertex& end, std::vect
         return false;
 
     dtPolyRef polyRefBuffer[MaxPathHops];
-    
+
     int pathLength;
-    auto const findPathResult = m_navQuery.findPath(startPolyRef, endPolyRef, recastStart, recastEnd, &m_queryFilter, polyRefBuffer, &pathLength, MaxPathHops);
+    auto const findPathResult =
+        m_navQuery.findPath(startPolyRef, endPolyRef, recastStart, recastEnd, &m_queryFilter, polyRefBuffer, &pathLength, MaxPathHops);
     if (!(findPathResult & DT_SUCCESS) || (!allowPartial && !!(findPathResult & DT_PARTIAL_RESULT)))
         return false;
 
-    float pathBuffer[MaxPathHops*3];
-    auto const findStraightPathResult = m_navQuery.findStraightPath(recastStart, recastEnd, polyRefBuffer, pathLength, pathBuffer, nullptr, nullptr, &pathLength, MaxPathHops);
+    float pathBuffer[MaxPathHops * 3];
+    auto const findStraightPathResult =
+        m_navQuery.findStraightPath(recastStart, recastEnd, polyRefBuffer, pathLength, pathBuffer, nullptr, nullptr, &pathLength, MaxPathHops);
     if (!(findStraightPathResult & DT_SUCCESS) || (!allowPartial && !!(findStraightPathResult & DT_PARTIAL_RESULT)))
         return false;
 
@@ -458,9 +510,9 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
 
     // find the tile corresponding to this (x, y)
     int tileX, tileY;
-    math::Convert::WorldToTile({ x,y,0.f }, tileX, tileY);
+    math::Convert::WorldToTile({x, y, 0.f}, tileX, tileY);
 
-    auto const tile = m_tiles.find({ tileX, tileY });
+    auto const tile = m_tiles.find({tileX, tileY});
 
     if (tile == m_tiles.end())
         THROW("Tile not found for requested (x, y)");
@@ -468,8 +520,8 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     // check BVH data for this tile
     // note that we assume the ground, if there is any, is within 2x
     bool rayHit;
-    math::Ray ray{ { x,y, zHint },{ x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError } };
-    if ((rayHit = RayCast(ray, { tile->second.get() })))
+    math::Ray ray{{x, y, zHint}, {x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError}};
+    if ((rayHit = RayCast(ray, {tile->second.get()})))
         result = ray.GetHitPoint().Z;
 
     bool adtHit = false;
@@ -499,51 +551,33 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
             //   c
             // d   e
 
-            const float a[] =
-            {
-                -(northwestY - quadWidth * quadX),
-                tile->second->m_quadHeights[yMultiplier*quadY + quadX],
-                -(northwestX - quadWidth * quadY)
-            };
+            const float a[] = {
+                -(northwestY - quadWidth * quadX), tile->second->m_quadHeights[yMultiplier * quadY + quadX], -(northwestX - quadWidth * quadY)};
 
-            const float b[] =
-            {
-                -(northwestY - quadWidth * (quadX + 1)),
-                tile->second->m_quadHeights[yMultiplier*quadY + quadX + 1],
-                -(northwestX - quadWidth * quadY)
-            };
+            const float b[] = {-(northwestY - quadWidth * (quadX + 1)),
+                               tile->second->m_quadHeights[yMultiplier * quadY + quadX + 1],
+                               -(northwestX - quadWidth * quadY)};
 
-            const float c[] =
-            {
-                -(northwestY - quadWidth * (quadX + 0.5f)),
-                tile->second->m_quadHeights[yMultiplier*quadY + quadX + midOffset],
-                -(northwestX - quadWidth * (quadY + 0.5f))
-            };
+            const float c[] = {-(northwestY - quadWidth * (quadX + 0.5f)),
+                               tile->second->m_quadHeights[yMultiplier * quadY + quadX + midOffset],
+                               -(northwestX - quadWidth * (quadY + 0.5f))};
 
-            const float d[] =
-            {
-                -(northwestY - quadWidth * quadX),
-                tile->second->m_quadHeights[yMultiplier*(quadY + 1) + quadX],
-                -(northwestX - quadWidth * (quadY + 1))
-            };
+            const float d[] = {-(northwestY - quadWidth * quadX),
+                               tile->second->m_quadHeights[yMultiplier * (quadY + 1) + quadX],
+                               -(northwestX - quadWidth * (quadY + 1))};
 
-            const float e[] =
-            {
-                -(northwestY - quadWidth * (quadX + 1)),
-                tile->second->m_quadHeights[yMultiplier*(quadY + 1) + quadX + 1],
-                -(northwestX - quadWidth * (quadY + 1))
-            };
+            const float e[] = {-(northwestY - quadWidth * (quadX + 1)),
+                               tile->second->m_quadHeights[yMultiplier * (quadY + 1) + quadX + 1],
+                               -(northwestX - quadWidth * (quadY + 1))};
 
             // the point we want to intersect with each triangle
-            const float p[] = { -y, result, -x };
+            const float p[] = {-y, result, -x};
 
             float height;
 
             // this if-statement will ensure that at most one of these calls will succeed, which is what we want
-            if (dtClosestHeightPointTriangle(p, a, b, c, height) ||
-                dtClosestHeightPointTriangle(p, b, e, c, height) ||
-                dtClosestHeightPointTriangle(p, c, e, d, height) ||
-                dtClosestHeightPointTriangle(p, a, c, d, height))
+            if (dtClosestHeightPointTriangle(p, a, b, c, height) || dtClosestHeightPointTriangle(p, b, e, c, height) ||
+                dtClosestHeightPointTriangle(p, c, e, d, height) || dtClosestHeightPointTriangle(p, a, c, d, height))
             {
                 adtHit = true;
 
@@ -563,12 +597,12 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     return result;
 }
 
-bool Map::FindHeights(float x, float y, std::vector<float> &output) const
+bool Map::FindHeights(float x, float y, std::vector<float>& output) const
 {
-    constexpr float extents[] = { 0.f, (std::numeric_limits<float>::max)(), 0.f };
+    constexpr float extents[] = {0.f, (std::numeric_limits<float>::max)(), 0.f};
     float recastCenter[3];
 
-    math::Convert::VertexToRecast({ x, y, 0.f }, recastCenter);
+    math::Convert::VertexToRecast({x, y, 0.f}, recastCenter);
 
     dtPolyRef polys[MaxStackedPolys];
     int polyCount;
@@ -590,19 +624,19 @@ bool Map::FindHeights(float x, float y, std::vector<float> &output) const
     return !output.empty();
 }
 
-bool Map::RayCast(math::Ray &ray) const
+bool Map::RayCast(math::Ray& ray) const
 {
-    std::vector<const Tile *> tiles;
+    std::vector<const Tile*> tiles;
 
     // find affected tiles
-    for (auto const &tile : m_tiles)
+    for (auto const& tile : m_tiles)
         if (ray.IntersectBoundingBox(tile.second->m_bounds))
             tiles.push_back(tile.second.get());
 
     return RayCast(ray, tiles);
 }
 
-bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
+bool Map::RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles) const
 {
     auto const start = ray.GetStartPoint();
     auto const end = ray.GetEndPoint();
@@ -623,7 +657,7 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
             continue;
 
         // measure intersection for all static wmos on the tile
-        for (auto const &id : tile->m_staticWmos)
+        for (auto const& id : tile->m_staticWmos)
         {
             // skip static wmos we have already seen (possibly from a previous tile)
             if (staticWmos.find(id) != staticWmos.end())
@@ -632,14 +666,14 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
             // record this static wmo as having been tested
             staticWmos.insert(id);
 
-            auto const &instance = m_staticWmos.at(id);
+            auto const& instance = m_staticWmos.at(id);
 
             // skip this wmo if the bbox doesn't intersect, saves us from calculating the inverse ray
             if (!ray.IntersectBoundingBox(instance.m_bounds))
                 continue;
 
             math::Ray rayInverse(math::Vector3::Transform(start, instance.m_inverseTransformMatrix),
-                                    math::Vector3::Transform(end,   instance.m_inverseTransformMatrix));
+                                 math::Vector3::Transform(end, instance.m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
             if (instance.m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
@@ -650,7 +684,7 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
         }
 
         // measure intersection for all static doodads on this tile
-        for (auto const &id : tile->m_staticDoodads)
+        for (auto const& id : tile->m_staticDoodads)
         {
             // skip static doodads we have already seen (possibly from a previous tile)
             if (staticDoodads.find(id) != staticDoodads.end())
@@ -659,14 +693,14 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
             // record this static doodad as having been tested
             staticDoodads.insert(id);
 
-            auto const &instance = m_staticDoodads.at(id);
+            auto const& instance = m_staticDoodads.at(id);
 
             // skip this doodad if the bbox doesn't intersect, saves us from calculating the inverse ray
             if (!ray.IntersectBoundingBox(instance.m_bounds))
                 continue;
 
             math::Ray rayInverse(math::Vector3::Transform(start, instance.m_inverseTransformMatrix),
-                                    math::Vector3::Transform(end,   instance.m_inverseTransformMatrix));
+                                 math::Vector3::Transform(end, instance.m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
             if (instance.m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
@@ -677,7 +711,7 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
         }
 
         // measure intersection for all temporary wmos on this tile
-        for (auto const &wmo : tile->m_temporaryWmos)
+        for (auto const& wmo : tile->m_temporaryWmos)
         {
             // skip static wmos we have already seen (possibly from a previous tile)
             if (temporaryWmos.find(wmo.first) != temporaryWmos.end())
@@ -691,7 +725,7 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
                 continue;
 
             math::Ray rayInverse(math::Vector3::Transform(start, wmo.second->m_inverseTransformMatrix),
-                                    math::Vector3::Transform(end,   wmo.second->m_inverseTransformMatrix));
+                                 math::Vector3::Transform(end, wmo.second->m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
             if (wmo.second->m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
@@ -702,7 +736,7 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
         }
 
         // measure intersection for all temporary doodads on this tile
-        for (auto const &doodad : tile->m_temporaryDoodads)
+        for (auto const& doodad : tile->m_temporaryDoodads)
         {
             // skip static wmos we have already seen (possibly from a previous tile)
             if (temporaryDoodads.find(doodad.first) != temporaryDoodads.end())
@@ -716,7 +750,7 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
                 continue;
 
             math::Ray rayInverse(math::Vector3::Transform(start, doodad.second->m_inverseTransformMatrix),
-                                    math::Vector3::Transform(end, doodad.second->m_inverseTransformMatrix));
+                                 math::Vector3::Transform(end, doodad.second->m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
             if (doodad.second->m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
@@ -729,4 +763,4 @@ bool Map::RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const
 
     return hit;
 }
-}
+} // namespace pathfind
