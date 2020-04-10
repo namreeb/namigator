@@ -12,10 +12,8 @@
 #include <thread>
 #include <experimental/filesystem>
 
-int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
+void BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
 {
-    auto const start = time(nullptr);
-
     parser::Parser::Initialize(dataPath);
 
     if (!std::experimental::filesystem::is_directory(outputPath))
@@ -38,8 +36,6 @@ int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t 
     } while (goBuilder.Remaining() > 0);
 
     goBuilder.Shutdown();
-
-    return static_cast<int>(time(nullptr) - start);
 }
 
 bool BuildMap(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, size_t threads, const std::string &goCSV)
