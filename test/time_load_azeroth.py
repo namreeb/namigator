@@ -3,6 +3,7 @@
 import time
 import sys
 import os
+import math
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
@@ -33,13 +34,28 @@ def time_load():
 
     return map
 
+def path_length(path):
+    result = 0
+    for i in range(1, len(path)):
+        delta_x = path[i-1][0] - path[i][0]
+        delta_y = path[i-1][1] - path[i][1]
+        delta_z = path[i-1][2] - path[i][2]
+
+        result += delta_x * delta_x + delta_y * delta_y + delta_z * delta_z
+
+    return math.sqrt(result)
+
 if __name__ == '__main__':
     try:
         map = time_load()
 
+        start = time.time()
         test_path = map.find_path(-8949.95, -132.493, 83.5312, -8833.38, 628.628, 94.0066)
+        find_path_time = time.time() - start
 
-        print('Path from Human start to Stormwind:\n%s' % test_path)
+        print('Path from Human start to Stormwind (length = %.2f, took %.2f seconds):' % (path_length(test_path), find_path_time))
+        for point in test_path:
+            print('    (%.2f, %.2f, %.2f)' % (point[0], point[1], point[2]))
     except:
         raise
         sys.exit(1)
