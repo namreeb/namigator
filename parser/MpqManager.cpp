@@ -39,8 +39,6 @@ void MpqManager::Initialize()
 // TODO examine how the retail clients determine MPQ loading order
 void MpqManager::Initialize(const std::string &wowDir)
 {
-    std::lock_guard<std::mutex> guard(_mutex);
-
     auto const wowPath = fs::path(wowDir);
 
     std::vector<fs::directory_entry> directories;
