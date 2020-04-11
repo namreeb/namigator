@@ -9,14 +9,16 @@
 #include <cstdint>
 #include <cctype>
 #include <algorithm>
-#include <map>
+#include <unordered_map>
 #include <experimental/filesystem>
+#include <iostream>
+
+namespace fs = std::experimental::filesystem;
 
 namespace parser
 {
-std::list<HANDLE> MpqManager::MpqHandles;
-std::string MpqManager::WowDir;
-std::map<unsigned int, std::string> MpqManager::Maps;
+std::vector<HANDLE> MpqManager::MpqHandles;
+std::unordered_map<std::string, unsigned int> MpqManager::Maps;
 
 void MpqManager::LoadMpq(const std::string &filePath)
 {
@@ -25,7 +27,9 @@ void MpqManager::LoadMpq(const std::string &filePath)
     if (!SFileOpenArchive(filePath.c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
         THROW("Could not open MPQ").ErrorCode();
 
-    MpqHandles.push_front(archive);
+    std::cout << "Opened " << filePath << ".  Handle: 0x" << std::hex << archive << std::endl;
+
+    MpqHandles.push_back(archive);
 }
 
 void MpqManager::Initialize()
@@ -36,23 +40,21 @@ void MpqManager::Initialize()
 // TODO examine how the retail clients determine MPQ loading order
 void MpqManager::Initialize(const std::string &wowDir)
 {
-    WowDir = wowDir;
+    auto const wowPath = fs::path(wowDir);
 
-    auto wowPath = std::experimental::filesystem::path(wowDir);
+    std::vector<fs::directory_entry> directories;
+    std::vector<fs::path> files;
+    std::vector<fs::path> patches;
 
-    std::vector<std::experimental::filesystem::directory_entry> directories;
-    std::vector<std::experimental::filesystem::path> files;
-    std::vector<std::experimental::filesystem::path> patches;
-
-    for (auto i = std::experimental::filesystem::directory_iterator(wowPath); i != std::experimental::filesystem::directory_iterator(); ++i)
+    for (auto i = fs::directory_iterator(wowPath); i != fs::directory_iterator(); ++i)
     {
-        if (std::experimental::filesystem::is_directory(i->status()))
+        if (fs::is_directory(i->status()))
         {
             directories.push_back(*i);
             continue;
         }
 
-        if (!std::experimental::filesystem::is_regular_file(i->status()))
+        if (!fs::is_regular_file(i->status()))
             continue;
 
         auto path = i->path().string();
@@ -84,11 +86,11 @@ void MpqManager::Initialize(const std::string &wowDir)
         auto const localeMpq = wowPath / dirString / ("locale-" + dirString + ".MPQ");
         auto found = false;
 
-        std::vector<std::experimental::filesystem::path> localePatches;
-        std::experimental::filesystem::path firstPatch;
-        for (auto i = std::experimental::filesystem::directory_iterator(dir); i != std::experimental::filesystem::directory_iterator(); ++i)
+        std::vector<fs::path> localePatches;
+        fs::path firstPatch;
+        for (auto i = fs::directory_iterator(dir); i != fs::directory_iterator(); ++i)
         {
-            if (std::experimental::filesystem::equivalent(*i, localeMpq))
+            if (fs::equivalent(*i, localeMpq))
                 found = true;
 
             auto const filename = i->path().filename().string();
@@ -102,13 +104,18 @@ void MpqManager::Initialize(const std::string &wowDir)
         if (found)
         {
             files.push_back(localeMpq);
-            if (!std::experimental::filesystem::is_empty(firstPatch))
+            if (!fs::is_empty(firstPatch))
                 files.push_back(firstPatch);
 
             std::sort(localePatches.begin(), localePatches.end());
             std::copy(localePatches.cbegin(), localePatches.cend(), std::back_inserter(files));
         }
     }
+
+    // the current belief is that the game uses files from mpqs in reverse alphabetical order
+    // this still needs to be checked.
+    std::reverse(std::begin(files), std::end(files));
+    std::reverse(std::begin(patches), std::end(patches));
 
     for (auto const &file : files)
         LoadMpq(file.string());
@@ -121,13 +128,20 @@ void MpqManager::Initialize(const std::string &wowDir)
     DBC maps("DBFilesClient\\Map.dbc");
 
     for (auto i = 0u; i < maps.RecordCount(); ++i)
-        Maps[maps.GetField(i, 0)] = maps.GetStringField(i, 1);
+    {
+        auto const map_name = maps.GetStringField(i, 1);
+        std::string map_name_lower;
+        std::transform(map_name.begin(), map_name.end(), std::back_inserter(map_name_lower), ::tolower);
+
+        Maps[map_name_lower] = maps.GetField(i, 0);
+    }
 }
 
 utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 {
     for (auto const &handle : MpqHandles)
     {
+        auto const has_file = SFileHasFile(handle, file.c_str());
         // XXX - disabled temporarily due to bug, reported to ladik
         //if (!SFileHasFile(*i, (char *)file.c_str()))
         //    continue;
@@ -146,10 +160,23 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
         if (!fileSize)
             continue;
 
+        if (!has_file)
+        {
+            std::stringstream str;
+            str << "stormlib reported that file 0x" << std::hex << handle << " does not have file " << file << " but it does (size = " << std::dec << fileSize << ")\n";
+            std::cerr << str.str();
+            std::cerr.flush();
+        }
+
         std::vector<std::uint8_t> inFileData(fileSize);
 
         if (!SFileReadFile(fileHandle, &inFileData[0], static_cast<DWORD>(inFileData.size()), nullptr, nullptr))
+        {
+            SFileCloseFile(fileHandle);
             THROW("Error in SFileReadFile").ErrorCode();
+        }
+
+        SFileCloseFile(fileHandle);
 
         return new utility::BinaryStream(inFileData);
     }
@@ -159,18 +186,14 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 
 unsigned int MpqManager::GetMapId(const std::string &name)
 {
-    for (auto const &entry : Maps)
-    {
-        std::string entryLower;
-        std::transform(entry.second.begin(), entry.second.end(), std::back_inserter(entryLower), ::tolower);
+    std::string nameLower;
+    std::transform(name.begin(), name.end(), std::back_inserter(nameLower), ::tolower);
 
-        std::string nameLower;
-        std::transform(name.begin(), name.end(), std::back_inserter(nameLower), ::tolower);
+    auto const i = Maps.find(nameLower);
 
-        if (entryLower == nameLower)
-            return entry.first;
-    }
+    if (i == Maps.end())
+        THROW("Map ID for " + name + " not found");
 
-    THROW("Map ID for " + name + " not found");
+    return i->second;
 }
 }

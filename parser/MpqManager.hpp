@@ -3,25 +3,22 @@
 #include "utility/BinaryStream.hpp"
 
 #include <string>
-#include <list>
-#include <map>
-
-using HANDLE = void *;
+#include <vector>
+#include <unordered_map>
 
 namespace parser
 {
 class MpqManager
 {
     private:
-        static std::list<HANDLE> MpqHandles;
-        static std::map<unsigned int, std::string> Maps;
+        using HANDLE = void *;
+
+        static std::vector<HANDLE> MpqHandles;
+        static std::unordered_map<std::string, unsigned int> Maps;
 
         static void LoadMpq(const std::string &filePath);
 
     public:
-        static std::string WowDir;
-        static std::list<std::string> Archives;
-
         static void Initialize();
         static void Initialize(const std::string &wowDir);
 
