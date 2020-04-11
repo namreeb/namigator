@@ -157,8 +157,11 @@ int main(int argc, char *argv[])
 
                 auto const now = time(nullptr);
 
+                auto const finished = goBuilder.Remaining() > 0;
+                auto const update_status = finished || now - lastStatus >= STATUS_INTERVAL_SECONDS;
+
                 // periodically output current status
-                if (now - lastStatus >= STATUS_INTERVAL_SECONDS)
+                if (update_status)
                 {
                     std::stringstream str;
 
@@ -172,7 +175,10 @@ int main(int argc, char *argv[])
 
                     lastStatus = now;
                 }
-            } while (goBuilder.Remaining() > 0);
+
+                if (finished)
+                    break;
+            } while (true);
 
             goBuilder.Shutdown();
 
