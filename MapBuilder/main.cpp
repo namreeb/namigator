@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
                 auto const now = time(nullptr);
 
-                auto const finished = goBuilder.Remaining() > 0;
+                auto const finished = goBuilder.Remaining() == 0;
                 auto const update_status = finished || now - lastStatus >= STATUS_INTERVAL_SECONDS;
 
                 // periodically output current status
