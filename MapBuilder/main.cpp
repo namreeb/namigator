@@ -162,11 +162,13 @@ int main(int argc, char *argv[])
                 {
                     std::stringstream str;
 
-                    auto const a = static_cast<float>(startSize - goBuilder.Remaining()) / startSize;
-                    auto const b = static_cast<float>(startSize - goBuilder.Remaining()) / (float)startSize;
-                    auto const percentComplete = 100.f * static_cast<float>(startSize - goBuilder.Remaining()) / startSize;
-                    str << "% Complete: " << std::setprecision(4) << percentComplete << "\n";
+                    auto const completed = startSize - goBuilder.Remaining();
+
+                    auto const percentComplete = 100.f * static_cast<float>(completed) / startSize;
+                    str << "% Complete: " << std::setprecision(4) << percentComplete
+                        << " (" << std::dec << completed << " / " << startSize << ")\n";
                     std::cout << str.str();
+                    std::cout.flush();
 
                     lastStatus = now;
                 }
