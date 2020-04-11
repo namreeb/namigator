@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 namespace parser
 {
@@ -12,6 +13,8 @@ class MpqManager
 {
     private:
         using HANDLE = void *;
+
+        static std::mutex _mutex;
 
         static std::vector<HANDLE> MpqHandles;
         static std::unordered_map<std::string, unsigned int> Maps;

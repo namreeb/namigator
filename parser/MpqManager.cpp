@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <experimental/filesystem>
-#include <iostream>
+#include <mutex>
 
 namespace fs = std::experimental::filesystem;
 
@@ -19,6 +19,7 @@ namespace parser
 {
 std::vector<HANDLE> MpqManager::MpqHandles;
 std::unordered_map<std::string, unsigned int> MpqManager::Maps;
+std::mutex MpqManager::_mutex;
 
 void MpqManager::LoadMpq(const std::string &filePath)
 {
@@ -26,8 +27,6 @@ void MpqManager::LoadMpq(const std::string &filePath)
         
     if (!SFileOpenArchive(filePath.c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
         THROW("Could not open MPQ").ErrorCode();
-
-    std::cout << "Opened " << filePath << ".  Handle: 0x" << std::hex << archive << std::endl;
 
     MpqHandles.push_back(archive);
 }
@@ -40,6 +39,8 @@ void MpqManager::Initialize()
 // TODO examine how the retail clients determine MPQ loading order
 void MpqManager::Initialize(const std::string &wowDir)
 {
+    std::lock_guard<std::mutex> guard(_mutex);
+
     auto const wowPath = fs::path(wowDir);
 
     std::vector<fs::directory_entry> directories;
@@ -139,9 +140,10 @@ void MpqManager::Initialize(const std::string &wowDir)
 
 utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 {
+    std::lock_guard<std::mutex> guard(_mutex);
+
     for (auto const &handle : MpqHandles)
     {
-        auto const has_file = SFileHasFile(handle, file.c_str());
         // XXX - disabled temporarily due to bug, reported to ladik
         //if (!SFileHasFile(*i, (char *)file.c_str()))
         //    continue;
@@ -159,14 +161,6 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 
         if (!fileSize)
             continue;
-
-        if (!has_file)
-        {
-            std::stringstream str;
-            str << "stormlib reported that file 0x" << std::hex << handle << " does not have file " << file << " but it does (size = " << std::dec << fileSize << ")\n";
-            std::cerr << str.str();
-            std::cerr.flush();
-        }
 
         std::vector<std::uint8_t> inFileData(fileSize);
 
