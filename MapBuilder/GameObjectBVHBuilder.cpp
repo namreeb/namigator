@@ -83,10 +83,11 @@ void GameObjectBVHBuilder::Work()
             if (m_doodads.empty() && m_wmos.empty())
                 break;
 
-            // the following logic is probably more clever than it needs to be
+            // if there are any wmos, start them first.  they take longer and
+            // if we are using multiple threads this will let them get started
+            // sooner in the process.
 
-            // if there is only one choice, choose it
-            if (m_doodads.empty())
+            if (!m_wmos.empty())
             {
                 auto const i = m_wmos.begin();
                 entry = i->first;
@@ -94,23 +95,8 @@ void GameObjectBVHBuilder::Work()
                 m_wmos.erase(i);
                 isDoodad = false;
             }
-            else if (m_wmos.empty())
-            {
-                auto const i = m_doodads.begin();
-                entry = i->first;
-                filename = i->second;
-                m_doodads.erase(i);
-                isDoodad = true;
-            }
-            // else, choose one at random
-            else if (!(rand() % 2))
-            {
-                auto const i = m_wmos.begin();
-                entry = i->first;
-                filename = i->second;
-                m_wmos.erase(i);
-                isDoodad = false;
-            }
+            // otherwise there must be a doodad or we would have bailed out, so
+            // pick it and continue.
             else
             {
                 auto const i = m_doodads.begin();
