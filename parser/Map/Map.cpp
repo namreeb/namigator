@@ -191,6 +191,9 @@ void Map::Serialize(utility::BinaryStream& stream) const
     const size_t ourSize = sizeof(std::uint32_t) + sizeof(std::uint8_t) +
         (m_hasTerrain ?
             (
+                sizeof(std::uint8_t) * (            // has_adt map compressed into bitfield
+                    sizeof(m_hasAdt) / 8
+                ) +
                 sizeof(std::uint32_t) +             // loaded wmo size
                 (
                     sizeof(std::uint32_t) +         // id
