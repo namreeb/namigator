@@ -199,13 +199,13 @@ void Map::Serialize(utility::BinaryStream& stream) const
                     sizeof(std::uint32_t) +         // id
                     sizeof(std::uint16_t) +         // doodad set
                     22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
-                    64                              // model file name
+                    MeshSettings::MaxMPQPathLength  // model file name
                 ) * m_loadedWmoInstances.size() +   // for each wmo instance
                 sizeof(std::uint32_t) +             // loaded doodad size
                 (
                     sizeof(std::uint32_t) +         // id
                     22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
-                    64                              // model file name
+                    MeshSettings::MaxMPQPathLength  // model file name
                 ) * m_loadedDoodadInstances.size()
             )
         :
@@ -213,7 +213,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 sizeof(std::uint32_t) +             // id
                 sizeof(std::uint16_t) +             // doodad set
                 22 * sizeof(float) +                // 16 floats for transform matrix, 6 floats for bounds
-                64                                  // model file name
+                MeshSettings::MaxMPQPathLength      // model file name
             ));
 
     utility::BinaryStream ourStream(ourSize);
