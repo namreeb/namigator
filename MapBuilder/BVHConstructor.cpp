@@ -55,11 +55,6 @@ BVHConstructor::~BVHConstructor()
 
 fs::path BVHConstructor::InternalAddFile(const fs::path& mpq_path)
 {
-    if (mpq_path.string().find("nyxia") != std::string::npos)
-    {
-        volatile int asdf = 1234;
-    }
-
     auto const it = m_files.find(mpq_path.string());
 
     if (it != m_files.end())
