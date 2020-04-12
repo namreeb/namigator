@@ -21,11 +21,11 @@
 
 namespace parser
 {
-Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(MpqManager::GetMapId(name))
+Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqManager.GetMapId(name))
 {
     auto const file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
-    std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(file));
+    std::unique_ptr<utility::BinaryStream> reader(sMpqManager.OpenFile(file));
 
     if (!reader)
         THROW("WDT open failed");

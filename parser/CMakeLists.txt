@@ -56,7 +56,6 @@ set(SRC_WMO ${SRC_WMO_GROUP} ${SRC_WMO_ROOT}
 add_library(parser STATIC ${SRC_MAP} ${SRC_ADT} ${SRC_WMO} ${SRC_DOODAD}
     DBC.cpp
     MpqManager.cpp
-    parser.cpp
 )
 
 add_dependencies(parser utility)

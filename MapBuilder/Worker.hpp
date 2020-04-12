@@ -10,6 +10,8 @@
 class Worker
 {
     private:
+        const std::string m_dataPath;
+
         MeshBuilder * const m_meshBuilder;
 
         const bool m_wmo;
@@ -21,7 +23,7 @@ class Worker
         void Work();
 
     public:
-        Worker(MeshBuilder *meshBuilder);
+        Worker(const std::string& dataPath, MeshBuilder *meshBuilder);
         ~Worker();
 
         bool IsRunning() const;

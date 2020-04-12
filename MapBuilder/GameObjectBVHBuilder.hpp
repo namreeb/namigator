@@ -10,10 +10,14 @@
 #include <mutex>
 #include <experimental/filesystem>
 
+namespace parser
+{
 // TODO: make generic Builder class for this and MeshBuilder?
 class GameObjectBVHBuilder
 {
     private:
+        const std::string m_dataPath;
+
         BVHConstructor m_bvhConstructor;
         const size_t m_workers;
 
@@ -29,7 +33,7 @@ class GameObjectBVHBuilder
         void Work();
 
     public:
-        GameObjectBVHBuilder(const std::string &outputPath, size_t workers);
+        GameObjectBVHBuilder(const std::string &dataPath, const std::string &outputPath, size_t workers);
         ~GameObjectBVHBuilder();
 
         void Begin();
@@ -37,3 +41,4 @@ class GameObjectBVHBuilder
 
         size_t Remaining() const { std::lock_guard<std::mutex> guard(m_mutex); return m_doodads.size() + m_wmos.size(); }
 };
+}

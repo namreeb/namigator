@@ -2,7 +2,6 @@
 #include "BVHConstructor.hpp"
 #include "RecastContext.hpp"
 
-#include "parser/parser.hpp"
 #include "parser/Adt/Adt.hpp"
 #include "parser/Adt/AdtChunk.hpp"
 #include "parser/DBC.hpp"

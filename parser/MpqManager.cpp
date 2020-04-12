@@ -11,15 +11,13 @@
 #include <algorithm>
 #include <unordered_map>
 #include <experimental/filesystem>
-#include <mutex>
+#include <iostream>
 
 namespace fs = std::experimental::filesystem;
 
 namespace parser
 {
-std::vector<HANDLE> MpqManager::MpqHandles;
-std::unordered_map<std::string, unsigned int> MpqManager::Maps;
-std::mutex MpqManager::_mutex;
+thread_local MpqManager sMpqManager;
 
 void MpqManager::LoadMpq(const std::string &filePath)
 {
@@ -138,7 +136,8 @@ void MpqManager::Initialize(const std::string &wowDir)
 
 utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 {
-    std::lock_guard<std::mutex> guard(_mutex);
+    if (MpqHandles.empty())
+        THROW("MpqManager not initialized");
 
     for (auto const &handle : MpqHandles)
     {

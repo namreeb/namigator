@@ -25,7 +25,7 @@ Wmo::Wmo(const std::string &path) : MpqPath(path)
     auto fileName = path.substr(path.rfind('\\') + 1);
     fileName = fileName.substr(0, fileName.rfind('.'));
 
-    std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(path));
+    std::unique_ptr<utility::BinaryStream> reader(sMpqManager.OpenFile(path));
 
     if (!reader)
         THROW("WMO " + path + " not found");

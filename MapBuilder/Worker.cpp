@@ -3,6 +3,8 @@
 
 #include "RecastDetourBuild/Common.hpp"
 
+#include "parser/MpqManager.hpp"
+
 #include <thread>
 #include <chrono>
 #include <mutex>
@@ -13,8 +15,8 @@
 #include <sstream>
 #include <exception>
 
-Worker::Worker(MeshBuilder *meshBuilder)
-    : m_meshBuilder(meshBuilder), m_shutdownRequested(false),
+Worker::Worker(const std::string& dataPath, MeshBuilder *meshBuilder)
+    : m_dataPath(dataPath), m_meshBuilder(meshBuilder), m_shutdownRequested(false),
       m_wmo(meshBuilder->IsGlobalWMO()), m_isRunning(false), m_thread(&Worker::Work, this) {}
 
 Worker::~Worker()
@@ -26,6 +28,8 @@ Worker::~Worker()
 void Worker::Work()
 {
     m_isRunning = true;
+
+    parser::sMpqManager.Initialize(m_dataPath);
 
     try
     {

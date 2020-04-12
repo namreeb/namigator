@@ -2,7 +2,7 @@
 #include "GameObjectBVHBuilder.hpp"
 #include "Worker.hpp"
 
-#include "parser/parser.hpp"
+#include "parser/MpqManager.hpp"
 
 #include <boost/python.hpp>
 
@@ -14,7 +14,7 @@
 
 void BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
 {
-    parser::Parser::Initialize(dataPath);
+    parser::sMpqManager.Initialize(dataPath);
 
     if (!std::experimental::filesystem::is_directory(outputPath))
         std::experimental::filesystem::create_directory(outputPath);
@@ -22,7 +22,7 @@ void BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t
     if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
         std::experimental::filesystem::create_directory(outputPath + "/BVH");
 
-    GameObjectBVHBuilder goBuilder(outputPath, workers);
+    parser::GameObjectBVHBuilder goBuilder(dataPath, outputPath, workers);
 
     goBuilder.Begin();
 
@@ -42,8 +42,6 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
 {
     if (!threads)
         return false;
-
-    parser::Parser::Initialize(dataPath);
 
     if (!std::experimental::filesystem::is_directory(outputPath))
         std::experimental::filesystem::create_directory(outputPath);
@@ -65,7 +63,7 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
             builder->LoadGameObjects(goCSV);
 
         for (auto i = 0u; i < threads; ++i)
-            workers.push_back(std::make_unique<Worker>(builder.get()));
+            workers.push_back(std::make_unique<Worker>(dataPath, builder.get()));
     }
     catch (std::exception const &e)
     {
@@ -99,8 +97,6 @@ bool BuildADT(const std::string &dataPath, const std::string &outputPath, const 
     if (x < 0 || y < 0)
         return false;
 
-    parser::Parser::Initialize(dataPath);
-
     if (!std::experimental::filesystem::is_directory(outputPath))
         std::experimental::filesystem::create_directory(outputPath);
 
@@ -121,7 +117,7 @@ bool BuildADT(const std::string &dataPath, const std::string &outputPath, const 
     if (builder->IsGlobalWMO())
         return false;
 
-    workers.push_back(std::make_unique<Worker>(builder.get()));
+    workers.push_back(std::make_unique<Worker>(dataPath, builder.get()));
 
     for (;;)
     {

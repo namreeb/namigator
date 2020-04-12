@@ -53,7 +53,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
 
     ss << "World\\maps\\" << map->Name << "\\" << map->Name << "_" << adtX << "_" << adtY << ".adt";
 
-    std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(ss.str()));
+    std::unique_ptr<utility::BinaryStream> reader(sMpqManager.OpenFile(ss.str()));
 
     if (!reader)
         THROW("Failed to open ADT");

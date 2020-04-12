@@ -2,7 +2,7 @@
 #include "CommonControl.hpp"
 #include "DetourDebugDraw.hpp"
 
-#include "parser/parser.hpp"
+#include "parser/MpqManager.hpp"
 #include "parser/Map/Map.hpp"
 #include "parser/Adt/Adt.hpp"
 #include "parser/Wmo/WmoInstance.hpp"
@@ -705,7 +705,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
 
     gHasStart = false;
 
-    parser::Parser::Initialize(wow_path.string());
+    parser::sMpqManager.Initialize(wow_path.string());
 
     InitializeWindows(hInstance, gGuiWindow, gControlWindow);
 

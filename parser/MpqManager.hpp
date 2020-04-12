@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <mutex>
 
 namespace parser
 {
@@ -14,19 +13,19 @@ class MpqManager
     private:
         using HANDLE = void *;
 
-        static std::mutex _mutex;
+        std::vector<HANDLE> MpqHandles;
+        std::unordered_map<std::string, unsigned int> Maps;
 
-        static std::vector<HANDLE> MpqHandles;
-        static std::unordered_map<std::string, unsigned int> Maps;
-
-        static void LoadMpq(const std::string &filePath);
+        void LoadMpq(const std::string &filePath);
 
     public:
-        static void Initialize();
-        static void Initialize(const std::string &wowDir);
+        void Initialize();
+        void Initialize(const std::string &wowDir);
 
-        static utility::BinaryStream *OpenFile(const std::string &file);
+        utility::BinaryStream *OpenFile(const std::string &file);
 
-        static unsigned int GetMapId(const std::string &name);
+        unsigned int GetMapId(const std::string &name);
 };
+
+extern thread_local MpqManager sMpqManager;
 };

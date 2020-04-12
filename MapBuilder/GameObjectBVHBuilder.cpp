@@ -2,6 +2,7 @@
 #include "BVHConstructor.hpp"
 #include "MeshBuilder.hpp"
 
+#include "parser/MpqManager.hpp"
 #include "parser/Doodad/Doodad.hpp"
 #include "parser/Wmo/Wmo.hpp"
 #include "parser/DBC.hpp"
@@ -19,9 +20,13 @@
 #include <sstream>
 #include <experimental/filesystem>
 
-GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& outputPath, size_t workers)
-    : m_bvhConstructor(outputPath), m_workers(workers), m_shutdownRequested(false)
+namespace parser
 {
+GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& dataPath, const std::string& outputPath, size_t workers)
+    : m_dataPath(dataPath), m_bvhConstructor(outputPath), m_workers(workers), m_shutdownRequested(false)
+{
+    sMpqManager.Initialize(m_dataPath);
+
     const parser::DBC displayInfo("DBFilesClient\\GameObjectDisplayInfo.dbc");
 
     for (auto i = 0u; i < displayInfo.RecordCount(); ++i)
@@ -50,8 +55,8 @@ GameObjectBVHBuilder::~GameObjectBVHBuilder()
 
 void GameObjectBVHBuilder::Begin()
 {
-    // if zero threads are requested, execute synchronously
-    if (!m_workers)
+    // if zero or one threads are requested, execute synchronously
+    if (m_workers <= 1)
         Work();
     else
         for (auto i = 0u; i < m_workers; ++i)
@@ -63,7 +68,7 @@ void GameObjectBVHBuilder::Shutdown()
     m_shutdownRequested = true;
     for (auto &thread : m_threads)
         thread.join();
-    
+
     m_threads.clear();
 
     m_bvhConstructor.Shutdown();
@@ -71,6 +76,8 @@ void GameObjectBVHBuilder::Shutdown()
 
 void GameObjectBVHBuilder::Work()
 {
+    sMpqManager.Initialize(m_dataPath);
+
     while (!m_shutdownRequested)
     {
         std::uint32_t entry;
@@ -156,4 +163,4 @@ void GameObjectBVHBuilder::Work()
         }
     }
 }
-
+}

@@ -25,7 +25,7 @@ namespace parser
 {
 DBC::DBC(const std::string& filename)
 {
-    std::unique_ptr<utility::BinaryStream> in(MpqManager::OpenFile(filename));
+    std::unique_ptr<utility::BinaryStream> in(sMpqManager.OpenFile(filename));
 
     if (!in)
         THROW("Failed to open DBC " + filename);

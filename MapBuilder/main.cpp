@@ -2,7 +2,7 @@
 #include "GameObjectBVHBuilder.hpp"
 #include "Worker.hpp"
 
-#include "parser/parser.hpp"
+#include "parser/MpqManager.hpp"
 #include "parser/Adt/Adt.hpp"
 #include "parser/Wmo/WmoInstance.hpp"
 
@@ -128,8 +128,6 @@ int main(int argc, char *argv[])
 
     try
     {
-        parser::Parser::Initialize(dataPath);
-
         if (!std::experimental::filesystem::is_directory(outputPath))
             std::experimental::filesystem::create_directory(outputPath);
 
@@ -145,7 +143,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            GameObjectBVHBuilder goBuilder(outputPath, threads);
+            parser::GameObjectBVHBuilder goBuilder(dataPath, outputPath, threads);
 
             auto const startSize = goBuilder.Remaining();
 
@@ -192,6 +190,11 @@ int main(int argc, char *argv[])
         if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
             std::experimental::filesystem::create_directory(outputPath + "/Nav");
 
+        // nav mesh generation requires that the MPQ manager be initialized for
+        // the main thread, whereas BVH generation above does not.
+
+        parser::sMpqManager.Initialize(dataPath);
+
         if (adtX >= 0 && adtY >= 0)
         {
             builder = std::make_unique<MeshBuilder>(outputPath, map, logLevel, adtX, adtY);
@@ -208,7 +211,7 @@ int main(int argc, char *argv[])
 
             std::cout << "Building " << map << " (" << adtX << ", " << adtY << ")..." << std::endl;
 
-            workers.push_back(std::make_unique<Worker>(builder.get()));
+            workers.push_back(std::make_unique<Worker>(dataPath, builder.get()));
         }
         // either both, or neither should be specified
         else if (adtX >= 0 || adtY >= 0)
@@ -225,7 +228,7 @@ int main(int argc, char *argv[])
                 builder->LoadGameObjects(goCSVPath);
 
             for (auto i = 0; i < threads; ++i)
-                workers.push_back(std::make_unique<Worker>(builder.get()));
+                workers.push_back(std::make_unique<Worker>(dataPath, builder.get()));
         }
     }
     catch (std::exception const &e)

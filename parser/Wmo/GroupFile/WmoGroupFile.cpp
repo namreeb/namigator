@@ -12,7 +12,7 @@ namespace input
 {
 WmoGroupFile::WmoGroupFile(const std::string &path)
 {
-    std::unique_ptr<utility::BinaryStream> reader(MpqManager::OpenFile(path));
+    std::unique_ptr<utility::BinaryStream> reader(sMpqManager.OpenFile(path));
 
     // MOGP
     size_t mogpLocation;
