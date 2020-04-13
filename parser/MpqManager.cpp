@@ -141,18 +141,12 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 
     for (auto const &handle : MpqHandles)
     {
-        // XXX - disabled temporarily due to bug, reported to ladik
-        //if (!SFileHasFile(*i, (char *)file.c_str()))
-        //    continue;
+        if (!SFileHasFile(handle, file.c_str()))
+            continue;
 
         HANDLE fileHandle;
         if (!SFileOpenFileEx(handle, file.c_str(), SFILE_OPEN_FROM_MPQ, &fileHandle))
-        {
-            if (GetLastError() == ERROR_FILE_NOT_FOUND)
-                continue;
-            else
-                THROW("Error in SFileOpenFileEx").ErrorCode();
-        }
+            THROW("Error in SFileOpenFileEx").ErrorCode();
 
         auto const fileSize = SFileGetFileSize(fileHandle, nullptr);
 
