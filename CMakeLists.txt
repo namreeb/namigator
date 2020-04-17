@@ -85,6 +85,13 @@ if (NOT PYTHON_COMPONENT)
     message(STATUS "Python not found.  Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
 endif()
 
+# GCC 7 requires an extra lib for this, but MSVC does not
+if (MSVC)
+    set(FILESYSTEM_LIBRARY "")
+else()
+    set(FILESYSTEM_LIBRARY "stdc++fs")
+endif()
+
 # we want this definition present globally
 add_definitions(-DDT_POLYREF64)
 
