@@ -27,6 +27,8 @@
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
+static constexpr unsigned int GlobalWmoId = 0xFFFFFFFF;
+
 #pragma pack(push, 1)
 struct WmoFileInstance
 {
