@@ -232,7 +232,7 @@ Matrix Matrix::ComputeInverse() const
         THROW("Only 4x4 matrix is supported");
 
     float det = ComputeDeterminant();
-    if (abs(det) < 1e-6f) {
+    if (fabs(det) < 1e-6f) {
         THROW("Not invertible!");
     }
 
