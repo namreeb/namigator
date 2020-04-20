@@ -63,7 +63,7 @@ void GameObjectBVHBuilder::Begin()
             m_threads.push_back(std::thread(&GameObjectBVHBuilder::Work, this));
 }
 
-void GameObjectBVHBuilder::Shutdown()
+size_t GameObjectBVHBuilder::Shutdown()
 {
     m_shutdownRequested = true;
     for (auto &thread : m_threads)
@@ -72,6 +72,13 @@ void GameObjectBVHBuilder::Shutdown()
     m_threads.clear();
 
     m_bvhConstructor.Shutdown();
+
+    size_t result = 0;
+    for (auto const &entry : m_serialized)
+        if (entry.second != "")
+            ++result;
+
+    return result;
 }
 
 void GameObjectBVHBuilder::Work()

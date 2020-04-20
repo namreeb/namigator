@@ -12,7 +12,7 @@
 #include <thread>
 #include <experimental/filesystem>
 
-void BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
+int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
 {
     parser::sMpqManager.Initialize(dataPath);
 
@@ -26,16 +26,12 @@ void BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t
 
     goBuilder.Begin();
 
-    auto const startSize = goBuilder.Remaining();
-
-    goBuilder.Begin();
-
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } while (goBuilder.Remaining() > 0);
 
-    goBuilder.Shutdown();
+    return static_cast<int>(goBuilder.Shutdown());
 }
 
 bool BuildMap(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, size_t threads, const std::string &goCSV)

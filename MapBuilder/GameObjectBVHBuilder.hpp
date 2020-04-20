@@ -28,7 +28,7 @@ class GameObjectBVHBuilder
 
         mutable std::mutex m_mutex;
 
-        bool m_shutdownRequested;
+        std::atomic_bool m_shutdownRequested;
 
         void Work();
 
@@ -37,7 +37,7 @@ class GameObjectBVHBuilder
         ~GameObjectBVHBuilder();
 
         void Begin();
-        void Shutdown();
+        size_t Shutdown();
 
         size_t Remaining() const { std::lock_guard<std::mutex> guard(m_mutex); return m_doodads.size() + m_wmos.size(); }
 };
