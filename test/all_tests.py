@@ -89,7 +89,7 @@ def test_use_data(nav_data):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-w', '--wowdata', help='Path to wow data', default=r'f:\wow 1.12.1\Data')
+    parser.add_argument('-w', '--wowdata', help='Path to wow data', required=True)
     parser.add_argument('-n', '--navdata', help='Use existing navigation data')
     parser.add_argument('-j', '--jobs', help='How many jobs to run', type=int, default=4)
 
