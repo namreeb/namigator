@@ -735,7 +735,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
     maps.push_back("043 WailingCaverns");
     maps.push_back("489 PVPzone03 (Warsong Gulch)");
     maps.push_back("529 PVPzone04 (Arathi Basin)");
-    maps.push_back("530 Expansion01 (Outland");
+    maps.push_back("530 Expansion01 (Outland)");
     maps.push_back("571 Northrend");
     maps.push_back("603 UlduarRaid");
 
