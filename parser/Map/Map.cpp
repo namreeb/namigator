@@ -228,34 +228,6 @@ void Map::Serialize(utility::BinaryStream& stream) const
         std::uint8_t has_adt[sizeof(m_hasAdt) / 8];
         ::memset(has_adt, 0, sizeof(has_adt));
 
-        std::stringstream str;
-
-        str << "Map ADTs:\n";
-
-        for (auto y = 0; y < MeshSettings::Adts; ++y)
-        {
-            for (auto x = 0; x < MeshSettings::Adts; ++x)
-            {
-                if (!m_hasAdt[x][y])
-                {
-                    str << " ";
-                    continue;
-                }
-
-                auto const offset = y * MeshSettings::Adts + x;
-                auto const byte_offset = offset / 8;
-                auto const bit_offset = offset % 8;
-
-                has_adt[byte_offset] |= (1 << bit_offset);
-                str << "X";
-            }
-
-            str << "\n";
-        }
-
-        std::cout << str.str();
-        std::cout.flush();
-
         ourStream.Write(has_adt, sizeof(has_adt));
 
         {
