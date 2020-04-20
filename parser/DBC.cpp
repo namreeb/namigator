@@ -54,7 +54,7 @@ std::uint32_t DBC::GetField(int row, int column) const
 {
     auto const offset = row * m_fieldCount + column;
 
-    if (offset > m_data.size())
+    if (offset > m_data.size() || column >= m_fieldCount)
         THROW("Invalid row, column requested from DBC");
 
     return m_data[offset];
