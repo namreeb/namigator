@@ -99,13 +99,10 @@ add_definitions(-DDT_POLYREF64)
 set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "Build demo")
 set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "Build tests")
 set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "Build examples")
-add_subdirectory(recastnavigation)
-
-# we do not need the install files from stormlib
-set(STORM_SKIP_INSTALL ON CACHE BOOL "Skip stormlib install files" FORCE)
+add_subdirectory(recastnavigation EXCLUDE_FROM_ALL)
 
 add_definitions(-DSTORMLIB_NO_AUTO_LINK)
-add_subdirectory(stormlib)
+add_subdirectory(stormlib EXCLUDE_FROM_ALL)
 
 # namigator libraries
 add_subdirectory(utility)
