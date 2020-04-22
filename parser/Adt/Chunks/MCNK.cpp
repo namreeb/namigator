@@ -3,7 +3,7 @@
 #include "Adt/Chunks/MCNK.hpp"
 #include "Adt/Chunks/Subchunks/MCLQ.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <limits>
 #include <cstring>

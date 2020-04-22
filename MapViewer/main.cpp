@@ -15,7 +15,7 @@
 #include "pathfind/Map.hpp"
 
 #include "recastnavigation/DebugUtils/Include/DetourDebugDraw.h"
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include "resource.h"
 

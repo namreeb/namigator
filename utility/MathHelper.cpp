@@ -1,7 +1,7 @@
 #include "utility/Vector.hpp"
 #include "utility/MathHelper.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <algorithm>
 #include <vector>

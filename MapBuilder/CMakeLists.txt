@@ -3,11 +3,9 @@ set(PYTHON_NAME mapbuild)
 
 set(SRC BVHConstructor.cpp GameObjectBVHBuilder.cpp MeshBuilder.cpp RecastContext.cpp Worker.cpp)
 
-include_directories(Include "${CMAKE_CURRENT_SOURCE_DIR}/../" "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/Detour/Include")
-
 add_executable(${EXECUTABLE_NAME} ${SRC} main.cpp)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE parser utility recastnavigation storm ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(${EXECUTABLE_NAME} parser utility recastnavigation storm)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../")
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
 
@@ -21,9 +19,8 @@ if (PYTHON_COMPONENT)
     endif()
 
     target_compile_definitions(${PYTHON_NAME} PUBLIC PYTHON BOOST_PYTHON_STATIC_LIB)
-    include_directories(${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
-    add_dependencies(${PYTHON_NAME} parser utility recastnavigation storm)
-    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility recastnavigation storm ${Boost_LIBRARIES})
+    target_include_directories(${PYTHON_NAME} PUBLIC ${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
+    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
 
     install(TARGETS ${PYTHON_NAME} DESTINATION lib)
 endif()

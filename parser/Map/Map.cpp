@@ -8,7 +8,7 @@
 #include "utility/Exception.hpp"
 #include "utility/Vector.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <memory>
 #include <sstream>

@@ -11,7 +11,7 @@
 #include "recastnavigation/Recast/Include/RecastAlloc.h"
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <vector>
 #include <cassert>

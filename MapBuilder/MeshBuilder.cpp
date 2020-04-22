@@ -11,12 +11,11 @@
 #include "utility/AABBTree.hpp"
 #include "utility/Exception.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include "recastnavigation/Recast/Include/Recast.h"
 #include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
 #include "recastnavigation/Detour/Include/DetourAlloc.h"
-#include "recastnavigation/DetourTileCache/Include/DetourTileCacheBuilder.h"
 
 #include <cassert>
 #include <string>

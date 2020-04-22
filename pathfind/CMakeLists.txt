@@ -1,7 +1,5 @@
 set(LIBRARY_NAME pathfind)
 
-include_directories(Include ${CMAKE_SOURCE_DIR})
-
 set(SRC
     BVH.cpp
     Map.cpp
@@ -10,8 +8,8 @@ set(SRC
 )
 
 add_library(lib${LIBRARY_NAME} STATIC ${SRC})
-
-add_dependencies(lib${LIBRARY_NAME} utility recastnavigation)
+target_include_directories(lib${LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
+target_link_libraries(lib${LIBRARY_NAME} PRIVATE ${FILESYSTEM_LIBRARY} utility RecastNavigation::Recast RecastNavigation::Detour)
 
 if (PYTHON_COMPONENT)
     if (Python3_FOUND)
@@ -23,9 +21,8 @@ if (PYTHON_COMPONENT)
     endif()
 
     target_compile_definitions(${LIBRARY_NAME} PUBLIC PYTHON BOOST_PYTHON_STATIC_LIB)
-    include_directories(${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
-    add_dependencies(${LIBRARY_NAME} utility recastnavigation storm)
-    target_link_libraries(${LIBRARY_NAME} PRIVATE ${FILESYSTEM_LIBRARY} utility recastnavigation storm ${Boost_LIBRARIES})
+    target_include_directories(${LIBRARY_NAME} PRIVATE ${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
+    target_link_libraries(${LIBRARY_NAME} PRIVATE ${FILESYSTEM_LIBRARY} utility RecastNavigation::Recast RecastNavigation::Detour storm ${Boost_LIBRARIES})
 
     install(TARGETS ${LIBRARY_NAME} DESTINATION lib)
 endif()

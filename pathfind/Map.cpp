@@ -1,7 +1,6 @@
 #include "Map.hpp"
 #include "Tile.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
 #include "utility/MathHelper.hpp"
@@ -10,6 +9,8 @@
 #include "recastnavigation/Detour/Include/DetourCommon.h"
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "recastnavigation/Detour/Include/DetourNavMeshQuery.h"
+
+#include "Common.hpp"
 
 #include <algorithm>
 #include <cassert>

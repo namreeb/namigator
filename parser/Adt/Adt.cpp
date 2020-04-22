@@ -19,7 +19,7 @@
 #include "Map/Map.hpp"
 
 #include "utility/Vector.hpp"
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <fstream>
 #include <sstream>

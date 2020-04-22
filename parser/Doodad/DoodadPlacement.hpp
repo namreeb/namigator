@@ -3,7 +3,7 @@
 #include "utility/MathHelper.hpp"
 #include "utility/Vector.hpp"
 #include "utility/Matrix.hpp"
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <string>
 #include <algorithm>

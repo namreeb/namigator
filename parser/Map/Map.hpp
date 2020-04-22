@@ -5,7 +5,7 @@
 #include "parser/Wmo/WmoInstance.hpp"
 #include "parser/Adt/Adt.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <mutex>
 #include <memory>

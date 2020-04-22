@@ -7,7 +7,8 @@
 
 #include "utility/Vector.hpp"
 #include "utility/BinaryStream.hpp"
-#include "RecastDetourBuild/Common.hpp"
+
+#include "Common.hpp"
 
 #include <vector>
 #include <string>

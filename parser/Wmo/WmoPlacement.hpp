@@ -4,7 +4,8 @@
 #include "utility/Matrix.hpp"
 #include "utility/MathHelper.hpp"
 #include "utility/BoundingBox.hpp"
-#include "RecastDetourBuild/Common.hpp"
+
+#include "Common.hpp"
 
 #include <cstdint>
 

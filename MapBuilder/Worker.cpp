@@ -1,7 +1,7 @@
 #include "MeshBuilder.hpp"
 #include "Worker.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include "parser/MpqManager.hpp"
 

@@ -1,5 +1,3 @@
-include_directories(Include "${CMAKE_CURRENT_SOURCE_DIR}/../")
-
 add_library(utility STATIC
     AABBTree.cpp
     BinaryStream.cpp
@@ -10,3 +8,5 @@ add_library(utility STATIC
     MathHelper.cpp
     Ray.cpp
 )
+
+target_include_directories(utility PUBLIC ..)

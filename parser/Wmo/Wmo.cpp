@@ -9,7 +9,8 @@
 
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
-#include "RecastDetourBuild/Common.hpp"
+
+#include "Common.hpp"
 
 #include <vector>
 #include <sstream>

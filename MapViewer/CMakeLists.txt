@@ -27,15 +27,8 @@ set_source_files_properties(VertexShader.hlsl PROPERTIES
     VS_SHADER_FLAGS "/Fh \"${CMAKE_CURRENT_SOURCE_DIR}/VertexShader.hpp\""
 )
 
-include_directories(Include
-    "${CMAKE_CURRENT_SOURCE_DIR}/../"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/Detour/Include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../recastnavigation/DetourTileCache/Include"
-)
-
 add_executable(${EXECUTABLE_NAME} WIN32 ${SRC} ${SHADERS})
 
-target_link_libraries(${EXECUTABLE_NAME} utility parser libpathfind storm recastnavigation)
-add_dependencies(MapViewer utility parser libpathfind recastnavigation)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE utility parser libpathfind storm RecastNavigation::Detour RecastNavigation::DebugUtils)
 
 install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)

@@ -9,7 +9,7 @@
 #include "recastnavigation/Recast/Include/Recast.h"
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 
-#include "RecastDetourBuild/Common.hpp"
+#include "Common.hpp"
 
 #include <unordered_map>
 #include <vector>

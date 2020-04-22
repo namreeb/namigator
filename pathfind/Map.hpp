@@ -7,10 +7,10 @@
 #include "utility/Vector.hpp"
 #include "utility/Ray.hpp"
 
-#include "RecastDetourBuild/Common.hpp"
-
 #include "recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "recastnavigation/Detour/Include/DetourNavMeshQuery.h"
+
+#include "Common.hpp"
 
 #include <string>
 #include <vector>

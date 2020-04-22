@@ -96,7 +96,10 @@ endif()
 add_definitions(-DDT_POLYREF64)
 
 # third party dependencies
-add_subdirectory(RecastDetourBuild)
+set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "Build demo")
+set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "Build tests")
+set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "Build examples")
+add_subdirectory(recastnavigation)
 
 # we do not need the install files from stormlib
 set(STORM_SKIP_INSTALL ON CACHE BOOL "Skip stormlib install files" FORCE)
