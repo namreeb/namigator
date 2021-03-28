@@ -27,7 +27,7 @@ set_source_files_properties(VertexShader.hlsl PROPERTIES
     VS_SHADER_FLAGS "/Fh \"${CMAKE_CURRENT_SOURCE_DIR}/VertexShader.hpp\""
 )
 
-add_executable(${EXECUTABLE_NAME} WIN32 ${SRC} ${SHADERS})
+add_executable(${EXECUTABLE_NAME} WIN32 ${SHADERS} ${SRC})
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE utility parser libpathfind storm RecastNavigation::Detour RecastNavigation::DebugUtils)
 
