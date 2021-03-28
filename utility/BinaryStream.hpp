@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <ostream>
 #include <fstream>
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace utility
 {
@@ -26,7 +26,7 @@ class BinaryStream
     public:
         BinaryStream(std::vector<std::uint8_t> &buffer);
         BinaryStream(size_t length = DEFAULT_BUFFER_LENGTH);
-        BinaryStream(const std::experimental::filesystem::path &path);
+        BinaryStream(const std::filesystem::path &path);
         BinaryStream(BinaryStream &&other) noexcept;
 
         BinaryStream& operator = (BinaryStream&& other) noexcept;

@@ -7,7 +7,6 @@
 #include <memory>
 #include <vector>
 #include <thread>
-#include <experimental/filesystem>
 
 namespace py = boost::python;
 

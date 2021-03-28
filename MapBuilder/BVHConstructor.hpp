@@ -3,11 +3,11 @@
 #include <mutex>
 #include <string>
 #include <cstdint>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <unordered_map>
 #include <atomic>
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 class BVHConstructor
 {

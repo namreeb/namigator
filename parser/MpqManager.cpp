@@ -10,10 +10,10 @@
 #include <cctype>
 #include <algorithm>
 #include <unordered_map>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <iostream>
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace parser
 {

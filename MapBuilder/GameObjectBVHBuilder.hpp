@@ -8,7 +8,6 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include <experimental/filesystem>
 
 namespace parser
 {

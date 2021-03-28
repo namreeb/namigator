@@ -16,7 +16,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace std
 {
@@ -46,7 +46,7 @@ class Map
         bool m_hasADT[MeshSettings::Adts][MeshSettings::Adts];
         bool m_loadedADT[MeshSettings::Adts][MeshSettings::Adts];
 
-        const std::experimental::filesystem::path m_dataPath;
+        const std::filesystem::path m_dataPath;
         const std::string m_mapName;
 
         dtNavMesh m_navMesh;

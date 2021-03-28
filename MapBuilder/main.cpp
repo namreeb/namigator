@@ -14,7 +14,7 @@
 #include <map>
 #include <cstdint>
 #include <sstream>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #define STATUS_INTERVAL_SECONDS     10
 
@@ -128,11 +128,11 @@ int main(int argc, char *argv[])
 
     try
     {
-        if (!std::experimental::filesystem::is_directory(outputPath))
-            std::experimental::filesystem::create_directory(outputPath);
+        if (!std::filesystem::is_directory(outputPath))
+            std::filesystem::create_directory(outputPath);
 
-        if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
-            std::experimental::filesystem::create_directory(outputPath + "/BVH");
+        if (!std::filesystem::is_directory(outputPath + "/BVH"))
+            std::filesystem::create_directory(outputPath + "/BVH");
 
         if (bvh)
         {
@@ -187,8 +187,8 @@ int main(int argc, char *argv[])
             return EXIT_SUCCESS;
         }
 
-        if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
-            std::experimental::filesystem::create_directory(outputPath + "/Nav");
+        if (!std::filesystem::is_directory(outputPath + "/Nav"))
+            std::filesystem::create_directory(outputPath + "/Nav");
 
         // nav mesh generation requires that the MPQ manager be initialized for
         // the main thread, whereas BVH generation above does not.

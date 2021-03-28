@@ -16,7 +16,7 @@
 #include <unordered_set>
 #include <map>
 #include <cstdint>
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace meshfiles
 {
@@ -34,7 +34,7 @@ class File
     public:
         virtual ~File() = default;
 
-        virtual void Serialize(const std::experimental::filesystem::path &filename) const = 0;
+        virtual void Serialize(const std::filesystem::path &filename) const = 0;
 };
 
 class ADT : File
@@ -58,7 +58,7 @@ class ADT : File
         void AddTile(int x, int y, utility::BinaryStream &wmosAndDoodads, utility::BinaryStream &quadHeights, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
         bool IsComplete() const { return m_tiles.size() == (MeshSettings::TilesPerADT*MeshSettings::TilesPerADT); }
-        void Serialize(const std::experimental::filesystem::path &filename) const override;
+        void Serialize(const std::filesystem::path &filename) const override;
 };
 
 class GlobalWMO : File
@@ -68,11 +68,11 @@ class GlobalWMO : File
 
         void AddTile(int x, int y, utility::BinaryStream &heightField, utility::BinaryStream &mesh);
 
-        void Serialize(const std::experimental::filesystem::path &filename) const override;
+        void Serialize(const std::filesystem::path &filename) const override;
 };
 
 void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor);
-void SerializeDoodad(const parser::Doodad *doodad, const std::experimental::filesystem::path &path);
+void SerializeDoodad(const parser::Doodad *doodad, const std::filesystem::path &path);
 }
 
 class MeshBuilder
@@ -80,7 +80,7 @@ class MeshBuilder
     private:
         std::unique_ptr<parser::Map> m_map;
         BVHConstructor m_bvhConstructor;
-        const std::experimental::filesystem::path m_outputPath;
+        const std::filesystem::path m_outputPath;
 
 #pragma pack (push, 1)
         struct GameObjectInstance

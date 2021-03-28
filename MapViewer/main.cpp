@@ -26,7 +26,6 @@
 #include <sstream>
 #include <cassert>
 #include <vector>
-#include <experimental/filesystem>
 
 #define START_X             100
 #define START_Y             100

@@ -10,17 +10,19 @@
 #include <memory>
 #include <vector>
 #include <thread>
-#include <experimental/filesystem>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
 {
     parser::sMpqManager.Initialize(dataPath);
 
-    if (!std::experimental::filesystem::is_directory(outputPath))
-        std::experimental::filesystem::create_directory(outputPath);
+    if (!fs::is_directory(outputPath))
+        fs::create_directory(outputPath);
 
-    if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
-        std::experimental::filesystem::create_directory(outputPath + "/BVH");
+    if (!fs::is_directory(outputPath + "/BVH"))
+        fs::create_directory(outputPath + "/BVH");
 
     parser::GameObjectBVHBuilder goBuilder(dataPath, outputPath, workers);
 
@@ -39,14 +41,14 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
     if (!threads)
         return false;
 
-    if (!std::experimental::filesystem::is_directory(outputPath))
-        std::experimental::filesystem::create_directory(outputPath);
+    if (!fs::is_directory(outputPath))
+        fs::create_directory(outputPath);
 
-    if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
-        std::experimental::filesystem::create_directory(outputPath + "/BVH");
+    if (!fs::is_directory(outputPath + "/BVH"))
+        fs::create_directory(outputPath + "/BVH");
 
-    if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
-        std::experimental::filesystem::create_directory(outputPath + "/Nav");
+    if (!fs::is_directory(outputPath + "/Nav"))
+        fs::create_directory(outputPath + "/Nav");
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
@@ -93,14 +95,14 @@ bool BuildADT(const std::string &dataPath, const std::string &outputPath, const 
     if (x < 0 || y < 0)
         return false;
 
-    if (!std::experimental::filesystem::is_directory(outputPath))
-        std::experimental::filesystem::create_directory(outputPath);
+    if (!fs::is_directory(outputPath))
+        fs::create_directory(outputPath);
 
-    if (!std::experimental::filesystem::is_directory(outputPath + "/BVH"))
-        std::experimental::filesystem::create_directory(outputPath + "/BVH");
+    if (!fs::is_directory(outputPath + "/BVH"))
+        fs::create_directory(outputPath + "/BVH");
 
-    if (!std::experimental::filesystem::is_directory(outputPath + "/Nav"))
-        std::experimental::filesystem::create_directory(outputPath + "/Nav");
+    if (!fs::is_directory(outputPath + "/Nav"))
+        fs::create_directory(outputPath + "/Nav");
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;

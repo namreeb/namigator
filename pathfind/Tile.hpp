@@ -15,9 +15,9 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
-#include <experimental/filesystem>
+#include <filesystem>
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace pathfind
 {

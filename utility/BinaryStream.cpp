@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace utility
 {
@@ -16,7 +16,7 @@ BinaryStream::BinaryStream(std::vector<std::uint8_t> &buffer) : m_buffer(std::mo
 
 BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_rpos(0), m_wpos(0) {}
 
-BinaryStream::BinaryStream(const std::experimental::filesystem::path &path) : m_rpos(0), m_wpos(0)
+BinaryStream::BinaryStream(const std::filesystem::path &path) : m_rpos(0), m_wpos(0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 

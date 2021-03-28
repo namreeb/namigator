@@ -2,8 +2,8 @@ project(namigator)
 
 cmake_minimum_required(VERSION 3.12)
 
-# namigator depends on a compiler which supports C++14
-set(CMAKE_CXX_STANDARD 14)
+# namigator depends on a compiler which supports C++17
+set(CMAKE_CXX_STANDARD 17)
 
 # generate position independent code for everything
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
