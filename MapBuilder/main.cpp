@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
     {
         bool done = true;
         for (auto const &worker : workers)
-            if (worker->IsRunning())
+            if (!worker->IsFinished())
             {
                 done = false;
                 break;

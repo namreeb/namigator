@@ -17,7 +17,11 @@
 
 Worker::Worker(const std::string& dataPath, MeshBuilder *meshBuilder)
     : m_dataPath(dataPath), m_meshBuilder(meshBuilder), m_shutdownRequested(false),
-      m_wmo(meshBuilder->IsGlobalWMO()), m_isRunning(false), m_thread(&Worker::Work, this) {}
+      m_wmo(meshBuilder->IsGlobalWMO()),
+      m_isFinished(false),
+      m_thread(&Worker::Work, this)
+{
+}
 
 Worker::~Worker()
 {
@@ -27,8 +31,6 @@ Worker::~Worker()
 
 void Worker::Work()
 {
-    m_isRunning = true;
-
     parser::sMpqManager.Initialize(m_dataPath);
 
     try
@@ -83,10 +85,10 @@ void Worker::Work()
     std::cout << str.str();
 #endif
 
-    m_isRunning = false;
+    m_isFinished = true;
 }
 
-bool Worker::IsRunning() const
+bool Worker::IsFinished() const
 {
-    return m_isRunning;
+    return m_isFinished;
 }

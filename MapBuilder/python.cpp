@@ -73,7 +73,7 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
     {
         bool done = true;
         for (auto const &worker : workers)
-            if (worker->IsRunning())
+            if (!worker->IsFinished())
             {
                 done = false;
                 break;
@@ -121,7 +121,7 @@ bool BuildADT(const std::string &dataPath, const std::string &outputPath, const 
     {
         bool done = true;
         for (auto const &worker : workers)
-            if (worker->IsRunning())
+            if (!worker->IsFinished())
             {
                 done = false;
                 break;

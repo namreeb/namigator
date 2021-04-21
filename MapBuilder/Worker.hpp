@@ -3,9 +3,9 @@
 #include "MeshBuilder.hpp"
 
 #include <thread>
-#include <list>
 #include <mutex>
 #include <utility>
+#include <atomic>
 
 class Worker
 {
@@ -16,7 +16,7 @@ class Worker
 
         const bool m_wmo;
         bool m_shutdownRequested;
-        bool m_isRunning;
+        std::atomic_bool m_isFinished;
 
         std::thread m_thread;
 
@@ -26,5 +26,5 @@ class Worker
         Worker(const std::string& dataPath, MeshBuilder *meshBuilder);
         ~Worker();
 
-        bool IsRunning() const;
+        bool IsFinished() const;
 };
