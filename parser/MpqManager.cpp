@@ -35,6 +35,9 @@ void MpqManager::Initialize()
 }
 
 // TODO examine how the retail clients determine MPQ loading order
+// NOTES:
+//     World\maps\Azeroth\Azeroth_33_28.adt exists in world.mpq and common.mpq,
+//     and common.mpq contains the correct version
 void MpqManager::Initialize(const std::string &wowDir)
 {
     auto const wowPath = fs::path(wowDir);
@@ -108,11 +111,6 @@ void MpqManager::Initialize(const std::string &wowDir)
             std::copy(localePatches.cbegin(), localePatches.cend(), std::back_inserter(files));
         }
     }
-
-    // the current belief is that the game uses files from mpqs in reverse alphabetical order
-    // this still needs to be checked.
-    std::reverse(std::begin(files), std::end(files));
-    std::reverse(std::begin(patches), std::end(patches));
 
     for (auto const &file : files)
         LoadMpq(file.string());
