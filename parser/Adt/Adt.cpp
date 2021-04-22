@@ -58,12 +58,12 @@ Adt::Adt(Map *map, int adtX, int adtY)
     if (!reader)
         THROW("Failed to open ADT");
 
-    if (reader->Read<unsigned int>() != input::AdtChunkType::MVER)
+    if (reader->Read<std::uint32_t>() != input::AdtChunkType::MVER)
         THROW("MVER does not begin ADT file");
 
     reader->rpos(reader->rpos() + 4);
 
-    if (reader->Read<unsigned int>() != ADT_VERSION)
+    if (reader->Read<std::uint32_t>() != ADT_VERSION)
         THROW("ADT version is incorrect");
 
     size_t mhdrLocation;

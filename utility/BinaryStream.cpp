@@ -152,7 +152,7 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
             return true;
         }
 
-        unsigned int size = *reinterpret_cast<const unsigned int *>(&m_buffer[i + 4]);
+        auto const size = *reinterpret_cast<const std::uint32_t *>(&m_buffer[i + 4]);
         i += size + 8;
     }
 
