@@ -556,9 +556,11 @@ void ChangeMap(const std::string &cn)
         gControls->Enable(Controls::PositionY, false);
         gControls->Enable(Controls::Load, false);
 
-        DetourDebugDraw dd(gRenderer.get());
-
-        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+        if (gNavMesh)
+        {
+            DetourDebugDraw dd(gRenderer.get());
+            duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+        }
     }
     else
     {
@@ -732,6 +734,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
     maps.push_back("036 DeadminesInstance");
     maps.push_back("037 PVPZone02 (Azshara Crater)");
     maps.push_back("043 WailingCaverns");
+    maps.push_back("429 DireMaul");
     maps.push_back("489 PVPzone03 (Warsong Gulch)");
     maps.push_back("529 PVPzone04 (Arathi Basin)");
     maps.push_back("530 Expansion01 (Outland)");
