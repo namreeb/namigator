@@ -45,15 +45,16 @@ class Renderer
         };
 
     private:
-        static const float LiquidColor[4];
-        static const float WmoColor[4];
-        static const float DoodadColor[4];
-        static const float BackgroundColor[4];
-        static const float MeshColor[4];
-        static const float SphereColor[4];
-        static const float LineColor[4];
-        static const float ArrowColor[4];
-        static const float GameObjectColor[4];
+        static constexpr float LiquidColor[] = { 0.25f, 0.28f, 0.9f, 0.5f };
+        static constexpr float WmoColor[] = { 1.f, 0.95f, 0.f, 1.f };
+        static constexpr float DoodadColor[] = { 1.f, 0.f, 0.f, 1.f };
+        static constexpr float BackgroundColor[] = { 0.f, 0.2f, 0.4f, 1.f };
+        static constexpr float SphereColor[] = { 1.f, 0.5f, 0.25f, 0.75f };
+        static constexpr float LineColor[] = { 0.5f, 0.25f, 0.0f, 1.f };
+        static constexpr float ArrowColor[] = { 0.5f, 0.25f, 0.0f, 1.f };
+        static constexpr float GameObjectColor[] = { 0.8f, 0.5f, 0.1f, 1.f };
+        static constexpr float MeshColor[] = { 1.f, 1.f, 1.f, 0.75f };
+        static constexpr float MeshSteepColor[] = { 0.3f, 0.3f, 0.3f, 0.75f };
 
         struct ColoredVertex
         {
@@ -127,8 +128,8 @@ class Renderer
         void AddLiquid(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
         void AddWmo(unsigned int id, const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
         void AddDoodad(unsigned int id, const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
-        void AddMesh(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
-        void AddLines(const std::vector<math::Vertex> &vertices, const std::vector<int> &indices);
+        void AddMesh(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices, bool steep);
+        void AddLines(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices);
         void AddSphere(const math::Vertex& position, float size, int recursionLevel = 2);
         void AddArrows(const math::Vertex& start, const math::Vertex& end, float step);
         void AddPath(const std::vector<math::Vertex> &path);

@@ -27,15 +27,19 @@ class DetourDebugDraw : public duDebugDraw
         static constexpr float IgnoreLineSize = 1.5f;
         duDebugDrawPrimitives m_type;
         float m_size;
+        bool m_steep;
 
         std::unordered_map<math::Vertex, int> m_uniqueVertices;
         std::vector<math::Vertex> m_vertices;
         std::vector<int> m_indices;
+        std::vector<unsigned int> m_colors;
 
         Renderer * const m_renderer;
 
     public:
         DetourDebugDraw(Renderer *renderer);
+
+        void Steep(bool steep) { m_steep = steep; }
 
         virtual void depthMask(bool /*state*/) {}
         virtual void texture(bool /*state*/) {}

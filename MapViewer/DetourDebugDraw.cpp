@@ -6,7 +6,7 @@
 #include <iostream>
 #include <unordered_map>
 
-DetourDebugDraw::DetourDebugDraw(Renderer *renderer) : m_type(DU_DRAW_TRIS), m_size(0.f), m_renderer(renderer)
+DetourDebugDraw::DetourDebugDraw(Renderer *renderer) : m_type(DU_DRAW_TRIS), m_size(0.f), m_renderer(renderer), m_steep(false)
 {
     m_renderer->ClearBuffers(Renderer::Geometry::LineGeometry);
     m_renderer->ClearBuffers(Renderer::Geometry::NavMeshGeometry);
@@ -19,9 +19,10 @@ void DetourDebugDraw::begin(duDebugDrawPrimitives prim, float size)
     m_uniqueVertices.clear();
     m_vertices.clear();
     m_indices.clear();
+    m_colors.clear();
 }
 
-void DetourDebugDraw::vertex(const float* pos, unsigned int /*color*/)
+void DetourDebugDraw::vertex(const float* pos, unsigned int color)
 {
     math::Vertex v;
     math::Convert::VertexToWow(pos, v);
@@ -30,6 +31,7 @@ void DetourDebugDraw::vertex(const float* pos, unsigned int /*color*/)
     {
         m_uniqueVertices[v] = static_cast<int>(m_vertices.size());
         m_vertices.push_back(v);
+        m_colors.push_back(color);
     }
 
     m_indices.push_back(m_uniqueVertices[v]);
@@ -65,7 +67,7 @@ void DetourDebugDraw::end()
             break;
 
         case duDebugDrawPrimitives::DU_DRAW_TRIS:
-            m_renderer->AddMesh(m_vertices, m_indices);
+            m_renderer->AddMesh(m_vertices, m_indices, m_steep);
             break;
 
         default:

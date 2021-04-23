@@ -22,15 +22,7 @@
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
 #define ThrowIfFail(x) if (FAILED(x)) throw "Renderer initialization error"
 
-const float Renderer::LiquidColor[4]        = { 0.25f, 0.28f, 0.9f, 0.5f };
-const float Renderer::WmoColor[4]           = { 1.f, 0.95f, 0.f, 1.f };
-const float Renderer::DoodadColor[4]        = { 1.f, 0.f, 0.f, 1.f };
-const float Renderer::MeshColor[4]          = { 1.f, 1.f, 1.f, 0.75f };
-const float Renderer::BackgroundColor[4]    = { 0.f, 0.2f, 0.4f, 1.f };
-const float Renderer::SphereColor[4]        = { 1.f, 0.5f, 0.25f, 0.75f };
-const float Renderer::LineColor[4]          = { 0.5f, 0.25f, 0.0f, 1.f };
-const float Renderer::ArrowColor[4]         = { 0.5f, 0.25f, 0.0f, 1.f };
-const float Renderer::GameObjectColor[4]    = { 0.8f, 0.5f, 0.1f, 1.f };
+
 
 Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true), m_wireframeEnabled(false)
 {
@@ -263,9 +255,9 @@ void Renderer::AddDoodad(unsigned int id, const std::vector<math::Vertex>& verti
     InsertBuffer(m_buffers[DoodadGeometry], DoodadColor, vertices, indices);
 }
 
-void Renderer::AddMesh(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)
+void Renderer::AddMesh(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices, bool steep)
 {
-    InsertBuffer(m_buffers[NavMeshGeometry], MeshColor, vertices, indices);
+    InsertBuffer(m_buffers[NavMeshGeometry], steep ? MeshSteepColor : MeshColor, vertices, indices);
 }
 
 void Renderer::AddLines(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)

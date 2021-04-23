@@ -87,6 +87,26 @@ void MoveMouseDoodad(math::Vertex const& position)
     gRenderer->AddGameObject(vertices, gMouseDoodad->Model->m_aabbTree.Indices());
 }
 
+void duDebugDrawNavMeshPolysWithoutFlags(struct duDebugDraw* dd, const dtNavMesh& mesh,
+    const unsigned short polyFlags, const unsigned int col)
+{
+    if (!dd) return;
+
+    for (int i = 0; i < mesh.getMaxTiles(); ++i)
+    {
+        const dtMeshTile* tile = mesh.getTile(i);
+        if (!tile->header) continue;
+        dtPolyRef base = mesh.getPolyRefBase(tile);
+
+        for (int j = 0; j < tile->header->polyCount; ++j)
+        {
+            const dtPoly* p = &tile->polys[j];
+            if ((p->flags & polyFlags) != 0) continue;
+            duDebugDrawNavMeshPoly(dd, mesh, base | (dtPolyRef)j, col);
+        }
+    }
+}
+
 int gMovingUp = 0;
 int gMovingVertical = 0;
 int gMovingRight = 0;
@@ -215,8 +235,10 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     gMouseDoodad.reset();
 
                     DetourDebugDraw dd(gRenderer.get());
-
-                    duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+                    dd.Steep(true);
+                    duDebugDrawNavMeshPolysWithFlags(&dd, gNavMesh->GetNavMesh(), PolyFlags::Steep, 0);
+                    dd.Steep(false);
+                    duDebugDrawNavMeshPolysWithoutFlags(&dd, gNavMesh->GetNavMesh(), PolyFlags::Steep, 0);
 
                     return TRUE;
                 }
@@ -459,8 +481,10 @@ void LoadAdt(const parser::Adt *adt)
     if (!!gNavMesh && gNavMesh->LoadADT(adt->X, adt->Y))
     {
         DetourDebugDraw dd(gRenderer.get());
-
-        duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+        dd.Steep(true);
+        duDebugDrawNavMeshPolysWithFlags(&dd, gNavMesh->GetNavMesh(), PolyFlags::Steep, 0);
+        dd.Steep(false);
+        duDebugDrawNavMeshPolysWithoutFlags(&dd, gNavMesh->GetNavMesh(), PolyFlags::Steep, 0);
     }
 }
 
@@ -559,7 +583,10 @@ void ChangeMap(const std::string &cn)
         if (gNavMesh)
         {
             DetourDebugDraw dd(gRenderer.get());
-            duDebugDrawNavMeshWithClosedList(&dd, gNavMesh->GetNavMesh(), gNavMesh->GetNavMeshQuery(), 0);
+            dd.Steep(true);
+            duDebugDrawNavMeshPolysWithFlags(&dd, gNavMesh->GetNavMesh(), PolyFlags::Steep, 0);
+            dd.Steep(false);
+            duDebugDrawNavMeshPolysWithoutFlags(&dd, gNavMesh->GetNavMesh(), PolyFlags::Steep, 0);
         }
     }
     else
