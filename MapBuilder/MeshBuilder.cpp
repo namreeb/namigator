@@ -93,7 +93,7 @@ void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::ve
         }
 }
 
-bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, bool filterWalkable, float slope,
+bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, float slope,
                const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
 {
     if (!vertices.size() || !indices.size())
@@ -104,7 +104,24 @@ bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, bool filt
 
     std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
 
-    if (filterWalkable)
+    // if these triangles are ADT, mark steep
+    if (areaFlags & PolyFlags::ADT)
+    {
+        rcMarkWalkableTriangles(&ctx, slope, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], static_cast<int>(indices.size() / 3), &areas[0]);
+
+        // this will override the area for all walkable triangles, but what we
+        // want is to flag the unwalkable ones.  so a little massaging of flags
+        // is necessary here
+        for (auto& a : areas)
+        {
+            if (a == RC_WALKABLE_AREA)
+                a = areaFlags;
+            else
+                a = areaFlags | PolyFlags::Steep;
+        }
+    }
+    // otherwise, if they are also not liquid, clear steep
+    else if (!(areaFlags & PolyFlags::Liquid))
         rcClearUnwalkableTriangles(&ctx, slope, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], static_cast<int>(indices.size() / 3), &areas[0]);
 
     return rcRasterizeTriangles(&ctx, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], &areas[0], static_cast<int>(indices.size() / 3), heightField);
@@ -120,7 +137,7 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
         for (rcSpan *s = solid.spans[i]; s; s = s->next)
         {
             // if we found a non-wmo liquid span, remove everything beneath it
-            if (!!(s->area & AreaFlags::Liquid) && !(s->area & AreaFlags::WMO))
+            if (!!(s->area & PolyFlags::Liquid) && !(s->area & PolyFlags::WMO))
             {
                 for (auto ns : spans)
                     ns->area = RC_NULL_AREA;
@@ -128,10 +145,10 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
                 spans.clear();
             }
             // if we found a wmo liquid span, remove every wmo span beneath it
-            else if (!!(s->area & (AreaFlags::Liquid | AreaFlags::WMO)))
+            else if (!!(s->area & (PolyFlags::Liquid | PolyFlags::WMO)))
             {
                 for (auto ns : spans)
-                    if (!!(ns->area & AreaFlags::WMO))
+                    if (!!(ns->area & PolyFlags::WMO))
                         ns->area = RC_NULL_AREA;
 
                 spans.clear();
@@ -140,63 +157,6 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
                 spans.push_back(s);
         }
     }
-}
-
-void RestoreAdtSpans(const std::vector<rcSpan *> &spans)
-{
-    for (auto s : spans)
-        s->area |= AreaFlags::ADT;
-}
-
-// Recast does not support multiple walkable climb values.  However, when being used for NPCs, who can walk up ADT terrain of any slope, this is what we need.
-// As a workaround for this situation, we will have Recast build the compact height field with an 'infinite' value for walkable climb, and then run our own
-// custom filter on the compact heightfield to enforce the walkable climb for WMOs and doodads
-void SelectivelyEnforceWalkableClimb(rcCompactHeightfield &chf, int walkableClimb)
-{
-    for (int y = 0; y < chf.height; ++y)
-        for (int x = 0; x < chf.width; ++x)
-        {
-            auto const &cell = chf.cells[y*chf.width + x];
-
-            // for each span in this cell of the compact heightfield...
-            for (int i = static_cast<int>(cell.index), ni = static_cast<int>(cell.index + cell.count); i < ni; ++i)
-            {
-                auto &span = chf.spans[i];
-                const AreaFlags spanArea = static_cast<AreaFlags>(chf.areas[i]);
-
-                // check all four directions for this span
-                for (int dir = 0; dir < 4; ++dir)
-                {
-                    // there will be at most one connection for this span in this direction
-                    auto const k = rcGetCon(span, dir);
-
-                    // if there is no connection, do nothing
-                    if (k == RC_NOT_CONNECTED)
-                        continue;
-
-                    auto const nx = x + rcGetDirOffsetX(dir);
-                    auto const ny = y + rcGetDirOffsetY(dir);
-
-                    // this should never happen since we already know there is a connection in this direction
-                    assert(nx >= 0 && ny >= 0 && nx < chf.width && ny < chf.height);
-
-                    auto const &neighborCell = chf.cells[ny*chf.width + nx];
-                    auto const &neighborSpan = chf.spans[k + neighborCell.index];
-
-                    // if the span height difference is <= the walkable climb, nothing else matters.  skip it
-                    if (rcAbs(static_cast<int>(neighborSpan.y) - static_cast<int>(span.y)) <= walkableClimb)
-                        continue;
-
-                    const AreaFlags neighborSpanArea = static_cast<AreaFlags>(chf.areas[k + neighborCell.index]);
-
-                    // if both the current span and the neighbor span are ADTs, do nothing
-                    if (spanArea == AreaFlags::ADT && neighborSpanArea == AreaFlags::ADT)
-                        continue;
-
-                    rcSetCon(span, dir, RC_NOT_CONNECTED);
-                }
-            }
-        }
 }
 
 // NOTE: this does not set bmin/bmax
@@ -344,8 +304,6 @@ bool SerializeMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int ti
     if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, (std::numeric_limits<int>::max)(), solid, *chf))
         return false;
 
-    SelectivelyEnforceWalkableClimb(*chf, config.walkableClimb);
-
     if (!rcBuildDistanceField(&ctx, *chf))
         return false;
 
@@ -383,12 +341,13 @@ bool SerializeMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int ti
         return false;
     }
 
+    // TODO: build flags[] based on areas[], and replace areas[] with wow area ids (?)
     for (int i = 0; i < polyMesh->npolys; ++i)
     {
         if (!polyMesh->areas[i])
             continue;
 
-        polyMesh->flags[i] = static_cast<unsigned short>(PolyFlags::Walkable | polyMesh->areas[i]);
+        polyMesh->flags[i] = static_cast<unsigned short>(polyMesh->areas[i]);
     }
 
     dtNavMeshCreateParams params;
@@ -786,15 +745,15 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
         return false;
 
     // wmo terrain
-    if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, AreaFlags::WMO))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, PolyFlags::WMO))
         return false;
 
     // wmo liquid
-    if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, AreaFlags::WMO | AreaFlags::Liquid))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, PolyFlags::WMO | PolyFlags::Liquid))
         return false;
 
     // wmo doodads
-    if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, AreaFlags::WMO | AreaFlags::Doodad))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, PolyFlags::WMO | PolyFlags::Doodad))
         return false;
 
     auto const solidEmpty = IsHeightFieldEmpty(*solid);
@@ -905,15 +864,17 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     std::unordered_set<std::uint32_t> rasterizedWmos;
     std::unordered_set<std::uint32_t> rasterizedDoodads;
 
-    // incrementally rasterize mesh geometry into the height field, setting area flags as appropriate
+    // incrementally rasterize mesh geometry into the height field, setting poly flags as appropriate
     for (auto const &chunk : chunks)
     {
         // adt terrain
-        if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, AreaFlags::ADT))
+        if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, PolyFlags::ADT))
             return false;
 
+        // for adt terrain, and adt terrain only
+
         // liquid
-        if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, AreaFlags::Liquid))
+        if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, PolyFlags::Liquid))
             return false;
 
         // wmos (and included doodads and liquid)
@@ -942,15 +903,15 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             std::vector<int> indices;
 
             wmoInstance->BuildTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO))
                 return false;
 
             wmoInstance->BuildLiquidTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, false, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Liquid))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO | PolyFlags::Liquid))
                 return false;
 
             wmoInstance->BuildDoodadTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::WMO | AreaFlags::Doodad))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO | PolyFlags::Doodad))
                 return false;
 
             rasterizedWmos.insert(wmoId);
@@ -973,7 +934,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             std::vector<int> indices;
 
             doodadInstance->BuildTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, true, config.walkableSlopeAngle, vertices, indices, AreaFlags::Doodad))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::Doodad))
                 return false;
 
             rasterizedDoodads.insert(doodadId);
@@ -990,12 +951,13 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
         for (int i = 0; i < solid->width * solid->height; ++i)
             for (rcSpan *s = solid->spans[i]; s; s = s->next)
-                if (!!(s->area & AreaFlags::ADT))
+                if (!!(s->area & PolyFlags::ADT))
                     adtSpans.push_back(s);
 
         rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
 
-        RestoreAdtSpans(adtSpans);
+        for (auto s : adtSpans)
+            s->area |= PolyFlags::ADT;
     }
 
     rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);

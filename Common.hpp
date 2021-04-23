@@ -1,15 +1,13 @@
 #pragma once
 
-enum AreaFlags : unsigned char
+enum PolyFlags : unsigned char
 {
-    Walkable    = 1 << 0,
-    ADT         = 1 << 1,
-    Liquid      = 1 << 2,
-    WMO         = 1 << 3,
-    Doodad      = 1 << 4,
+    ADT         = 1 << 0,
+    Liquid      = 1 << 1,
+    WMO         = 1 << 2,
+    Doodad      = 1 << 3,
+    Steep       = 1 << 4,
 };
-
-using PolyFlags = AreaFlags;
 
 // WARNING!!!  If these values are changed, existing data must be regenerated.  It is assumed that the client and generator values match EXACTLY!
 
@@ -35,7 +33,7 @@ struct MeshSettings
     static constexpr int VerticesPerPolygon = 6;
 
     static constexpr std::uint32_t FileSignature = 'NNAV';
-    static constexpr std::uint32_t FileVersion = '0004';
+    static constexpr std::uint32_t FileVersion = '0005';
     static constexpr std::uint32_t FileADT = 'ADT\0';
     static constexpr std::uint32_t FileWMO = 'WMO\0';
     static constexpr std::uint32_t WMOcoordinate = 0xFFFFFFFF;

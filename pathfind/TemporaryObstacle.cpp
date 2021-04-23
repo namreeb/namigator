@@ -59,8 +59,6 @@ class RecastContext : public rcContext
         RecastContext(int logLevel) : m_logLevel(static_cast<rcLogCategory>(logLevel)) {}
 };
 
-// TODO these next two functions are essentially copied from MapBuilder.  do something to remove the code duplication!
-
 // Recast does not support multiple walkable climb values.  However, when being used for NPCs, who can walk up ADT terrain of any slope, this is what we need.
 // As a workaround for this situation, we will have Recast build the compact height field with an 'infinite' value for walkable climb, and then run our own
 // custom filter on the compact heightfield to enforce the walkable climb for WMOs and doodads
@@ -75,7 +73,7 @@ void SelectivelyEnforceWalkableClimb(rcCompactHeightfield &chf, int walkableClim
             for (int i = static_cast<int>(cell.index), ni = static_cast<int>(cell.index + cell.count); i < ni; ++i)
             {
                 auto &span = chf.spans[i];
-                const AreaFlags spanArea = static_cast<AreaFlags>(chf.areas[i]);
+                auto const spanArea = static_cast<PolyFlags>(chf.areas[i]);
 
                 // check all four directions for this span
                 for (int dir = 0; dir < 4; ++dir)
@@ -100,10 +98,10 @@ void SelectivelyEnforceWalkableClimb(rcCompactHeightfield &chf, int walkableClim
                     if (rcAbs(static_cast<int>(neighborSpan.y) - static_cast<int>(span.y)) <= walkableClimb)
                         continue;
 
-                    const AreaFlags neighborSpanArea = static_cast<AreaFlags>(chf.areas[k + neighborCell.index]);
+                    auto const neighborSpanArea = static_cast<PolyFlags>(chf.areas[k + neighborCell.index]);
 
                     // if both the current span and the neighbor span are ADTs, do nothing
-                    if (spanArea == AreaFlags::ADT && neighborSpanArea == AreaFlags::ADT)
+                    if (spanArea == PolyFlags::ADT && neighborSpanArea == PolyFlags::ADT)
                         continue;
 
                     rcSetCon(span, dir, RC_NOT_CONNECTED);
@@ -137,6 +135,8 @@ void InitializeRecastConfig(rcConfig &config)
     config.detailSampleDist = MeshSettings::DetailSampleDistance;
     config.detailSampleMaxError = MeshSettings::DetailSampleMaxError;
 }
+
+// TODO: Combine with MeshBuilder.cpp version?
 
 using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
 using SmartHeightFieldLayerSetPtr = std::unique_ptr<rcHeightfieldLayerSet, decltype(&rcFreeHeightfieldLayerSet)>;
@@ -197,7 +197,7 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
         if (!polyMesh->areas[i])
             continue;
 
-        polyMesh->flags[i] = static_cast<unsigned short>(PolyFlags::Walkable | polyMesh->areas[i]);
+        polyMesh->flags[i] = static_cast<unsigned short>(polyMesh->areas[i]);
     }
 
     dtNavMeshCreateParams params;
@@ -327,7 +327,7 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
     std::vector<float> recastVertices;
     math::Convert::VerticesToRecast(doodad->m_translatedVertices, recastVertices);
 
-    std::vector<unsigned char> areas(model->m_aabbTree.Indices().size(), AreaFlags::Doodad);
+    std::vector<unsigned char> areas(model->m_aabbTree.Indices().size(), PolyFlags::Doodad);
 
     m_temporaryDoodads[guid] = std::move(doodad);
 
@@ -345,13 +345,13 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
 
         for (int i = 0; i < m_heightField.width * m_heightField.height; ++i)
             for (rcSpan *s = m_heightField.spans[i]; s; s = s->next)
-                if (!!(s->area & AreaFlags::ADT))
+                if (!!(s->area & PolyFlags::ADT))
                     adtSpans.push_back(s);
 
         rcFilterLedgeSpans(&ctx, MeshSettings::VoxelWalkableHeight, MeshSettings::VoxelWalkableClimb, m_heightField);
 
         for (auto s : adtSpans)
-            s->area |= AreaFlags::ADT;
+            s->area |= PolyFlags::ADT;
     }
 
     rcFilterWalkableLowHeightSpans(&ctx, MeshSettings::VoxelWalkableHeight, m_heightField);
