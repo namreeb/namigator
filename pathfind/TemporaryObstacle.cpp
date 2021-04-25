@@ -59,57 +59,6 @@ class RecastContext : public rcContext
         RecastContext(int logLevel) : m_logLevel(static_cast<rcLogCategory>(logLevel)) {}
 };
 
-// Recast does not support multiple walkable climb values.  However, when being used for NPCs, who can walk up ADT terrain of any slope, this is what we need.
-// As a workaround for this situation, we will have Recast build the compact height field with an 'infinite' value for walkable climb, and then run our own
-// custom filter on the compact heightfield to enforce the walkable climb for WMOs and doodads
-void SelectivelyEnforceWalkableClimb(rcCompactHeightfield &chf, int walkableClimb)
-{
-    for (int y = 0; y < chf.height; ++y)
-        for (int x = 0; x < chf.width; ++x)
-        {
-            auto const &cell = chf.cells[y*chf.width + x];
-
-            // for each span in this cell of the compact heightfield...
-            for (int i = static_cast<int>(cell.index), ni = static_cast<int>(cell.index + cell.count); i < ni; ++i)
-            {
-                auto &span = chf.spans[i];
-                auto const spanArea = static_cast<PolyFlags>(chf.areas[i]);
-
-                // check all four directions for this span
-                for (int dir = 0; dir < 4; ++dir)
-                {
-                    // there will be at most one connection for this span in this direction
-                    auto const k = rcGetCon(span, dir);
-
-                    // if there is no connection, do nothing
-                    if (k == RC_NOT_CONNECTED)
-                        continue;
-
-                    auto const nx = x + rcGetDirOffsetX(dir);
-                    auto const ny = y + rcGetDirOffsetY(dir);
-
-                    // this should never happen since we already know there is a connection in this direction
-                    assert(nx >= 0 && ny >= 0 && nx < chf.width && ny < chf.height);
-
-                    auto const &neighborCell = chf.cells[ny*chf.width + nx];
-                    auto const &neighborSpan = chf.spans[k + neighborCell.index];
-
-                    // if the span height difference is <= the walkable climb, nothing else matters.  skip it
-                    if (rcAbs(static_cast<int>(neighborSpan.y) - static_cast<int>(span.y)) <= walkableClimb)
-                        continue;
-
-                    auto const neighborSpanArea = static_cast<PolyFlags>(chf.areas[k + neighborCell.index]);
-
-                    // if both the current span and the neighbor span are ADTs, do nothing
-                    if (spanArea == PolyFlags::ADT && neighborSpanArea == PolyFlags::ADT)
-                        continue;
-
-                    rcSetCon(span, dir, RC_NOT_CONNECTED);
-                }
-            }
-        }
-}
-
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
 // NOTE: this does not set bmin/bmax
@@ -152,8 +101,6 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
 
     if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, (std::numeric_limits<int>::max)(), solid, *chf))
         return false;
-
-    SelectivelyEnforceWalkableClimb(*chf, config.walkableClimb);
 
     if (!rcBuildDistanceField(&ctx, *chf))
         return false;
