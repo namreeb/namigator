@@ -94,7 +94,7 @@ void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::ve
 }
 
 bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, float slope,
-               const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
+               const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags = 0)
 {
     if (!vertices.size() || !indices.size())
         return true;
@@ -753,7 +753,7 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
         return false;
 
     // wmo doodads
-    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, PolyFlags::WMO | PolyFlags::Doodad))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, PolyFlags::WMO))
         return false;
 
     auto const solidEmpty = IsHeightFieldEmpty(*solid);
@@ -909,7 +909,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
                 return false;
 
             wmoInstance->BuildDoodadTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO | PolyFlags::Doodad))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO))
                 return false;
 
             rasterizedWmos.insert(wmoId);
@@ -932,7 +932,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             std::vector<int> indices;
 
             doodadInstance->BuildTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::Doodad))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices))
                 return false;
 
             rasterizedDoodads.insert(doodadId);

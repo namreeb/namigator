@@ -5,8 +5,7 @@ enum PolyFlags : unsigned char
     ADT         = 1 << 0,
     Liquid      = 1 << 1,
     WMO         = 1 << 2,
-    Doodad      = 1 << 3,
-    Steep       = 1 << 4,
+    Steep       = 1 << 3,
 };
 
 // WARNING!!!  If these values are changed, existing data must be regenerated.  It is assumed that the client and generator values match EXACTLY!

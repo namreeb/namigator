@@ -327,7 +327,7 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
     std::vector<float> recastVertices;
     math::Convert::VerticesToRecast(doodad->m_translatedVertices, recastVertices);
 
-    std::vector<unsigned char> areas(model->m_aabbTree.Indices().size(), PolyFlags::Doodad);
+    std::vector<unsigned char> areas(model->m_aabbTree.Indices().size());
 
     m_temporaryDoodads[guid] = std::move(doodad);
 
