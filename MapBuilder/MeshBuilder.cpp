@@ -112,7 +112,7 @@ bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, float slo
         // this will override the area for all walkable triangles, but what we
         // want is to flag the unwalkable ones.  so a little massaging of flags
         // is necessary here
-        for (auto& a : areas)
+        for (auto &a: areas)
         {
             if (a == RC_WALKABLE_AREA)
                 a = areaFlags;
@@ -124,7 +124,7 @@ bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, float slo
     else if (!(areaFlags & PolyFlags::Liquid))
         rcClearUnwalkableTriangles(&ctx, slope, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], static_cast<int>(indices.size() / 3), &areas[0]);
 
-    return rcRasterizeTriangles(&ctx, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], &areas[0], static_cast<int>(indices.size() / 3), heightField);
+    return rcRasterizeTriangles(&ctx, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], &areas[0], static_cast<int>(indices.size() / 3), heightField, -1);
 }
 
 void FilterGroundBeneathLiquid(rcHeightfield &solid)
@@ -871,8 +871,6 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
         if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, PolyFlags::ADT))
             return false;
 
-        // for adt terrain, and adt terrain only
-
         // liquid
         if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, chunk->m_liquidVertices, chunk->m_liquidIndices, PolyFlags::Liquid))
             return false;
@@ -943,21 +941,22 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
     FilterGroundBeneathLiquid(*solid);
 
-    // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
+    // we don't want to filter ledge spans from ADT terrain.  this will restore
+    // the area for these spans, which we are using for flags
     {
-        std::vector<rcSpan *> adtSpans;
+        std::vector<std::pair<rcSpan*, unsigned int>> adtSpanAreas;
 
-        adtSpans.reserve(solid->width*solid->height);
+        adtSpanAreas.reserve(solid->width * solid->height);
 
-        for (int i = 0; i < solid->width * solid->height; ++i)
-            for (rcSpan *s = solid->spans[i]; s; s = s->next)
+        for (auto i = 0; i < solid->width * solid->height; ++i)
+            for (rcSpan* s = solid->spans[i]; s; s = s->next)
                 if (!!(s->area & PolyFlags::ADT))
-                    adtSpans.push_back(s);
+                    adtSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(s, s->area));
 
         rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
 
-        for (auto s : adtSpans)
-            s->area |= PolyFlags::ADT;
+        for (auto p : adtSpanAreas)
+            p.first->area = p.second;
     }
 
     rcFilterWalkableLowHeightSpans(&ctx, config.walkableHeight, *solid);
