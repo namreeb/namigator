@@ -337,21 +337,22 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
     rcRasterizeTriangles(&ctx, &recastVertices[0], static_cast<int>(recastVertices.size() / 3), &model->m_aabbTree.Indices()[0],
         &areas[0], static_cast<int>(model->m_aabbTree.Indices().size() / 3), m_heightField);
 
-    // save all span area flags because we dont want the upcoming filtering to apply to ADT terrain
+    // we don't want to filter ledge spans from ADT terrain.  this will restore
+    // the area for these spans, which we are using for flags
     {
-        std::vector<rcSpan *> adtSpans;
+        std::vector<std::pair<rcSpan*, unsigned int>> adtSpanAreas;
 
-        adtSpans.reserve(m_heightField.width*m_heightField.height);
+        adtSpanAreas.reserve(m_heightField.width * m_heightField.height);
 
-        for (int i = 0; i < m_heightField.width * m_heightField.height; ++i)
-            for (rcSpan *s = m_heightField.spans[i]; s; s = s->next)
+        for (auto i = 0; i < m_heightField.width * m_heightField.height; ++i)
+            for (rcSpan* s = m_heightField.spans[i]; s; s = s->next)
                 if (!!(s->area & PolyFlags::ADT))
-                    adtSpans.push_back(s);
+                    adtSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(s, s->area));
 
         rcFilterLedgeSpans(&ctx, MeshSettings::VoxelWalkableHeight, MeshSettings::VoxelWalkableClimb, m_heightField);
 
-        for (auto s : adtSpans)
-            s->area |= PolyFlags::ADT;
+        for (auto p : adtSpanAreas)
+            p.first->area = p.second;
     }
 
     rcFilterWalkableLowHeightSpans(&ctx, MeshSettings::VoxelWalkableHeight, m_heightField);
