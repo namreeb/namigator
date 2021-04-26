@@ -74,10 +74,9 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
             m_hasAdt[x][y] = !!(flag & 1);
         }
 
-    DBC area("DBFilesClient\\AreaTable.dbc");
 
-    std::unordered_map<std::uint32_t, std::uint32_t> area_to_zone;
-
+    const DBC area("DBFilesClient\\AreaTable.dbc");
+    std::unordered_map<std::uint32_t, std::uint32_t> areaToZone;
     for (auto i = 0; i < area.RecordCount(); ++i)
     {
         auto const map = area.GetField(i, 1);
@@ -89,11 +88,11 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
         auto const id = area.GetField(i, 0);
         auto const parent = area.GetField(i, 2);
 
-        area_to_zone[id] = parent;
+        areaToZone[id] = parent;
     }
 
-    for (auto const &i : area_to_zone)
-        m_areaToZone[i.first] = GetRootAreaId(area_to_zone, i.first);
+    for (auto const &i : areaToZone)
+        m_areaToZone[i.first] = GetRootAreaId(areaToZone, i.first);
 
     // for worlds with terrain, parsing stops here.  else, load single wmo
     if (m_hasTerrain)
