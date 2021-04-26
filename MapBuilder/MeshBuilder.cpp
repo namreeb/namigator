@@ -682,9 +682,9 @@ void MeshBuilder::RemoveChunkReference(int chunkX, int chunkY)
     }
 }
 
-void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
+void MeshBuilder::SerializeWmo(const parser::Wmo &wmo)
 {
-    if (m_bvhWmos.find(wmo->MpqPath) != m_bvhWmos.end())
+    if (m_bvhWmos.find(wmo.MpqPath) != m_bvhWmos.end())
         return;
 
     meshfiles::SerializeWmo(wmo, m_bvhConstructor);
@@ -692,21 +692,21 @@ void MeshBuilder::SerializeWmo(const parser::Wmo *wmo)
     // the above serialization routine will also serialize all doodads in all
     // doodad sets for this wmo, therefore we should mark them as serialized
 
-    for (auto const &doodadSet : wmo->DoodadSets)
+    for (auto const &doodadSet : wmo.DoodadSets)
         for (auto const &wmoDoodad : doodadSet)
             m_bvhDoodads.insert(wmoDoodad->Parent->MpqPath);
 
-    m_bvhWmos.insert(wmo->MpqPath);
+    m_bvhWmos.insert(wmo.MpqPath);
 }
 
-void MeshBuilder::SerializeDoodad(const parser::Doodad *doodad)
+void MeshBuilder::SerializeDoodad(const parser::Doodad &doodad)
 {
-    if (m_bvhDoodads.find(doodad->MpqPath) != m_bvhDoodads.end())
+    if (m_bvhDoodads.find(doodad.MpqPath) != m_bvhDoodads.end())
         return;
 
-    meshfiles::SerializeDoodad(doodad, m_bvhConstructor.AddFile(doodad->MpqPath));
+    meshfiles::SerializeDoodad(doodad, m_bvhConstructor.AddFile(doodad.MpqPath));
 
-    m_bvhDoodads.insert(doodad->MpqPath);
+    m_bvhDoodads.insert(doodad.MpqPath);
 }
 
 bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
@@ -715,7 +715,7 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
 
     assert(!!wmoInstance);
 
-    SerializeWmo(wmoInstance->Model);
+    SerializeWmo(*wmoInstance->Model);
 
     rcConfig config;
     InitializeRecastConfig(config);
@@ -971,11 +971,11 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
         // Write the BVH for every new WMO
         for (auto const& wmoId : rasterizedWmos)
-            SerializeWmo(m_map->GetWmoInstance(wmoId)->Model);
+            SerializeWmo(*m_map->GetWmoInstance(wmoId)->Model);
 
         // Write the BVH for every new doodad
         for (auto const& doodadId : rasterizedDoodads)
-            SerializeDoodad(m_map->GetDoodadInstance(doodadId)->Model);
+            SerializeDoodad(*m_map->GetDoodadInstance(doodadId)->Model);
     }
 
     // serialize WMO and doodad IDs for this tile
@@ -1202,16 +1202,16 @@ void GlobalWMO::Serialize(const fs::path &filename) const
     out << outBuffer;
 }
 
-void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor)
+void SerializeWmo(const parser::Wmo &wmo, BVHConstructor &constructor)
 {
-    math::AABBTree aabbTree(wmo->Vertices, wmo->Indices);
+    math::AABBTree aabbTree(wmo.Vertices, wmo.Indices);
 
     utility::BinaryStream o;
     aabbTree.Serialize(o);
 
-    o << static_cast<std::uint32_t>(wmo->DoodadSets.size());
+    o << static_cast<std::uint32_t>(wmo.DoodadSets.size());
 
-    for (auto const &doodadSet : wmo->DoodadSets)
+    for (auto const &doodadSet : wmo.DoodadSets)
     {
         o << static_cast<std::uint32_t>(doodadSet.size());
 
@@ -1224,19 +1224,19 @@ void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor)
             o.WriteString(doodad->MpqPath, MeshSettings::MaxMPQPathLength);
 
             // also serialize this doodad
-            SerializeDoodad(wmoDoodad->Parent.get(), constructor.AddFile(doodad->MpqPath));
+            SerializeDoodad(*wmoDoodad->Parent.get(), constructor.AddFile(doodad->MpqPath));
         }
     }
 
-    auto const path = constructor.AddFile(wmo->MpqPath);
+    auto const path = constructor.AddFile(wmo.MpqPath);
 
     std::ofstream of(path, std::ofstream::binary | std::ofstream::trunc);
     of << o;
 }
 
-void SerializeDoodad(const parser::Doodad *doodad, const fs::path &path)
+void SerializeDoodad(const parser::Doodad &doodad, const fs::path &path)
 {
-    math::AABBTree doodadTree(doodad->Vertices, doodad->Indices);
+    math::AABBTree doodadTree(doodad.Vertices, doodad.Indices);
 
     utility::BinaryStream doodadOut;
     doodadTree.Serialize(doodadOut);

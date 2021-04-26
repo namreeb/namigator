@@ -71,8 +71,8 @@ class GlobalWMO : File
         void Serialize(const std::filesystem::path &filename) const override;
 };
 
-void SerializeWmo(const parser::Wmo *wmo, BVHConstructor &constructor);
-void SerializeDoodad(const parser::Doodad *doodad, const std::filesystem::path &path);
+void SerializeWmo(const parser::Wmo &wmo, BVHConstructor &constructor);
+void SerializeDoodad(const parser::Doodad &doodad, const std::filesystem::path &path);
 }
 
 class MeshBuilder
@@ -125,8 +125,8 @@ class MeshBuilder
         void AddChunkReference(int chunkX, int chunkY);
         void RemoveChunkReference(int chunkX, int chunkY);
 
-        void SerializeWmo(const parser::Wmo *wmo);
-        void SerializeDoodad(const parser::Doodad *doodad);
+        void SerializeWmo(const parser::Wmo &wmo);
+        void SerializeDoodad(const parser::Doodad &doodad);
 
         // these two functions assume ownership of the mutex
         meshfiles::ADT *GetInProgressADT(int x, int y);

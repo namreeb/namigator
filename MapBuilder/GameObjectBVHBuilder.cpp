@@ -137,7 +137,7 @@ void GameObjectBVHBuilder::Work()
                 }
 
                 output = m_bvhConstructor.AddTemporaryObstacle(entry, filename);
-                meshfiles::SerializeDoodad(&doodad, output);
+                meshfiles::SerializeDoodad(doodad, output);
             }
             else
             {
@@ -154,7 +154,7 @@ void GameObjectBVHBuilder::Work()
                 output = m_bvhConstructor.AddTemporaryObstacle(entry, filename);
 
                 // note that this will also serialize all doodads referenced in all doodad sets within this wmo
-                meshfiles::SerializeWmo(&wmo, m_bvhConstructor);
+                meshfiles::SerializeWmo(wmo, m_bvhConstructor);
             }
 
             std::lock_guard<std::mutex> guard(m_mutex);
