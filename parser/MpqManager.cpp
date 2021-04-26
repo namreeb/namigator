@@ -37,7 +37,10 @@ void MpqManager::Initialize()
 // TODO examine how the retail clients determine MPQ loading order
 // NOTES:
 //     World\maps\Azeroth\Azeroth_33_28.adt exists in world.mpq and common.mpq,
-//     and common.mpq contains the correct version
+//         and common.mpq contains the correct version
+//     DBFilesClient\AreaTable.dbc exists in enUS\locale-enUs.mpq,
+//         enUS\patch-enUS.mpq, and enUS\patch-enUS-2.mpq.  not sure which is
+//         correct but locale-enUS.mpq is definitely wrong.
 void MpqManager::Initialize(const std::string &wowDir)
 {
     auto const wowPath = fs::path(wowDir);
@@ -103,12 +106,14 @@ void MpqManager::Initialize(const std::string &wowDir)
 
         if (found)
         {
-            files.push_back(localeMpq);
+            std::sort(localePatches.begin(), localePatches.end());
+            std::reverse(localePatches.begin(), localePatches.end());
+            std::copy(localePatches.cbegin(), localePatches.cend(), std::back_inserter(files));
+
             if (!fs::is_empty(firstPatch))
                 files.push_back(firstPatch);
 
-            std::sort(localePatches.begin(), localePatches.end());
-            std::copy(localePatches.cbegin(), localePatches.cend(), std::back_inserter(files));
+            files.push_back(localeMpq);
         }
     }
 
