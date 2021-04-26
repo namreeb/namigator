@@ -348,6 +348,7 @@ bool SerializeMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int ti
             continue;
 
         polyMesh->flags[i] = static_cast<unsigned short>(polyMesh->areas[i]);
+        polyMesh->areas[i] = 0;
     }
 
     dtNavMeshCreateParams params;
@@ -950,7 +951,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
         for (auto i = 0; i < solid->width * solid->height; ++i)
             for (rcSpan* s = solid->spans[i]; s; s = s->next)
-                if (!!(s->area & PolyFlags::ADT))
+                if (s->area & PolyFlags::ADT)
                     adtSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(s, s->area));
 
         rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);

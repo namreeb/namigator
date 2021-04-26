@@ -145,6 +145,7 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
             continue;
 
         polyMesh->flags[i] = static_cast<unsigned short>(polyMesh->areas[i]);
+        polyMesh->areas[i] = 0;
     }
 
     dtNavMeshCreateParams params;
