@@ -6,7 +6,6 @@
 #include "utility/BoundingBox.hpp"
 
 #include <string>
-#include <list>
 #include <vector>
 #include <memory>
 #include <cstdint>
@@ -29,6 +28,7 @@ struct AdtChunk
     std::vector<std::uint32_t> m_doodadInstances;
 
     std::uint32_t m_areaId;
+    std::uint32_t m_zoneId;
 
     float m_minZ;
     float m_maxZ;

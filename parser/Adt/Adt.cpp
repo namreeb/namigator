@@ -137,6 +137,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
             chunk->m_minZ = mapChunk->MinZ;
             chunk->m_maxZ = mapChunk->MaxZ;
             chunk->m_areaId = mapChunk->AreaId;
+            chunk->m_zoneId = map->ZoneFromArea(chunk->m_areaId);
 
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mapChunk->MinZ);

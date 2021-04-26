@@ -14,7 +14,7 @@ namespace parser
 {
 namespace input
 {
-const unsigned int HoleFlags[4][4] =
+constexpr unsigned int HoleFlags[4][4] =
 {
     {0x1,     0x10,     0x100,     0x1000},
     {0x2,     0x20,     0x200,     0x2000},

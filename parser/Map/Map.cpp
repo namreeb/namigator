@@ -1,4 +1,5 @@
 #include "MpqManager.hpp"
+#include "DBC.hpp"
 #include "Map/Map.hpp"
 #include "Adt/Adt.hpp"
 #include "Wmo/Wmo.hpp"
@@ -18,6 +19,24 @@
 #include <iomanip>
 #include <cassert>
 #include <cstdint>
+
+namespace
+{
+std::uint32_t GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t> &areas, std::uint32_t id)
+{
+    auto const i = areas.find(id);
+
+    if (i == areas.end())
+        THROW("GetRootAreaId invalid id");
+
+    // roots have no parent
+    if (i->second == 0)
+        return i->first;
+
+    // roots are the root of the parent
+    return GetRootAreaId(areas, i->second);
+}
+}
 
 namespace parser
 {
@@ -55,6 +74,27 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
             m_hasAdt[x][y] = !!(flag & 1);
         }
 
+    DBC area("DBFilesClient\\AreaTable.dbc");
+
+    std::unordered_map<std::uint32_t, std::uint32_t> area_to_zone;
+
+    for (auto i = 0; i < area.RecordCount(); ++i)
+    {
+        auto const map = area.GetField(i, 1);
+
+        // we don't care about the areas not associated with this map
+        if (map != Id)
+            continue;
+
+        auto const id = area.GetField(i, 0);
+        auto const parent = area.GetField(i, 2);
+
+        area_to_zone[id] = parent;
+    }
+
+    for (auto const &i : area_to_zone)
+        m_areaToZone[i.first] = GetRootAreaId(area_to_zone, i.first);
+
     // for worlds with terrain, parsing stops here.  else, load single wmo
     if (m_hasTerrain)
         return;
@@ -81,6 +121,16 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
     placement.GetTransformMatrix(transformMatrix);
 
     m_globalWmo = std::make_unique<WmoInstance>(GetWmo(wmoName), placement.DoodadSet, bounds, transformMatrix);
+}
+
+std::uint32_t Map::ZoneFromArea(std::uint32_t areaId) const
+{
+    auto const i = m_areaToZone.find(areaId);
+
+    if (i == m_areaToZone.end())
+        THROW("Area ID not found");
+
+    return i->second;
 }
 
 bool Map::HasAdt(int x, int y) const

@@ -20,7 +20,7 @@
 namespace pathfind
 {
 Tile::Tile(Map *map, utility::BinaryStream &in, const fs::path &navPath, bool load_heightfield)
-    : m_map(map), m_navPath(navPath), m_ref(0), m_x(in.Read<std::uint32_t>()), m_y(in.Read<std::uint32_t>())
+    : m_map(map), m_navPath(navPath), m_ref(0), m_x(in.Read<std::uint32_t>()), m_y(in.Read<std::uint32_t>()), m_areaId(0)
 {
     std::uint32_t wmoCount;
     in >> wmoCount;
@@ -56,6 +56,9 @@ Tile::Tile(Map *map, utility::BinaryStream &in, const fs::path &navPath, bool lo
     // optional quad height data for ADT based tiles
     if (quadHeight)
     {
+        in >> m_zoneId;
+        in >> m_areaId;
+
         in.ReadBytes(&m_quadHoles, sizeof(m_quadHoles));
         m_quadHeights.resize(MeshSettings::QuadValuesPerTile);
         in.ReadBytes(&m_quadHeights[0], sizeof(float)*m_quadHeights.size());

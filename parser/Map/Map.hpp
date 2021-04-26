@@ -30,6 +30,9 @@ class Map
         bool m_hasAdt[MeshSettings::Adts][MeshSettings::Adts];
         bool m_hasTerrain;
 
+        // map area ids to their zone (aka root area id)
+        std::map<std::uint32_t, std::uint32_t> m_areaToZone;
+
         mutable std::mutex m_adtMutex;
         std::unique_ptr<Adt> m_adts[MeshSettings::Adts][MeshSettings::Adts];
         std::unique_ptr<WmoInstance> m_globalWmo;
@@ -49,6 +52,8 @@ class Map
         const unsigned int Id;
 
         Map(const std::string &MapName);
+
+        std::uint32_t ZoneFromArea(std::uint32_t areaId) const;
 
         bool HasAdt(int x, int y) const;
         const Adt *GetAdt(int x, int y);

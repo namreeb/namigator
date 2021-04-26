@@ -52,6 +52,9 @@ class Tile
         const int m_x;
         const int m_y;
 
+        std::uint32_t m_zoneId;
+        std::uint32_t m_areaId;
+
         std::uint8_t m_quadHoles[8 / MeshSettings::TilesPerChunk][8 / MeshSettings::TilesPerChunk];
         std::vector<float> m_quadHeights;
 

@@ -240,10 +240,13 @@ void SerializeTileQuadHeight(const parser::AdtChunk *chunk, int tileX, int tileY
     // how many quads are on this tile
     auto constexpr width = 8 / MeshSettings::TilesPerChunk;
 
-    utility::BinaryStream result(1 + width*width + sizeof(float)*MeshSettings::QuadValuesPerTile);
+    utility::BinaryStream result(1 + 4 + width*width + sizeof(float)*MeshSettings::QuadValuesPerTile);
 
     // the '1' signifies that quad height data follows
     result << static_cast<std::uint8_t>(1);
+
+    result << chunk->m_zoneId;
+    result << chunk->m_areaId;
 
     auto const startX = (tileX % MeshSettings::TilesPerChunk) * width;
     auto const startY = (tileY % MeshSettings::TilesPerChunk) * width;
