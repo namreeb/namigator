@@ -74,7 +74,7 @@ Wmo::Wmo(const std::string &path) : MpqPath(path)
 
         // process MOPY data
 
-        // maps a Vector3 index from the .wmo to it's index in our new index/Vector3 list.
+        // maps a vertex index from the .wmo to it's index in our new index/vertex list.
         // this is necessary because the indices will change as non-collideable vertices are discarded.
         // it also has the side-effect of ensuring we have no duplicate vertices
 

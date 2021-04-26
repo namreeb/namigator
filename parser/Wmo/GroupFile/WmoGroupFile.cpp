@@ -19,9 +19,11 @@ WmoGroupFile::WmoGroupFile(const std::string &path)
     if (!reader->GetChunkLocation("MOGP", 12, mogpLocation))
         THROW("No MOGP chunk");
 
-    // since all we want are flags + bounding box, we needn't bother creating an MOGP chunk class
-    reader->rpos(mogpLocation + 16);
-    Flags = reader->Read<unsigned int>();
+    reader->rpos(mogpLocation + 8 + 0x08);  // +0x08: flags
+    Flags = reader->Read<std::uint32_t>();
+
+    reader->rpos(mogpLocation + 8 + 0x38);  // +0x38: area id
+    GroupId = reader->Read<std::uint32_t>();
 
     // MOPY
     size_t mopyLocation;

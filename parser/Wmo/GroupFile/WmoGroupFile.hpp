@@ -16,6 +16,7 @@ class WmoGroupFile
 {
     public:
         unsigned int Flags;
+        unsigned int GroupId;
 
         std::unique_ptr<MOPY> MaterialsChunk;
         std::unique_ptr<MOVI> IndicesChunk;
