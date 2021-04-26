@@ -125,6 +125,9 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
 
 std::uint32_t Map::ZoneFromArea(std::uint32_t areaId) const
 {
+    if (areaId == 0)
+        return 0;
+
     auto const i = m_areaToZone.find(areaId);
 
     if (i == m_areaToZone.end())
