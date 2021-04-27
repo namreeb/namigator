@@ -12,7 +12,7 @@ namespace input
 class MOVI : public WmoGroupChunk
 {
     public:
-        std::vector<std::int16_t> Indices;
+        std::vector<std::uint16_t> Indices;
 
         MOVI(size_t position, utility::BinaryStream *fileStream);
 };
