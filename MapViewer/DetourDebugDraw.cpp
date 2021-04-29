@@ -2,11 +2,12 @@
 
 #include "utility/MathHelper.hpp"
 
-#include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
-DetourDebugDraw::DetourDebugDraw(Renderer *renderer) : m_type(DU_DRAW_TRIS), m_size(0.f), m_renderer(renderer), m_steep(false)
+DetourDebugDraw::DetourDebugDraw(Renderer* renderer)
+    : m_type(DU_DRAW_TRIS), m_size(0.f), m_renderer(renderer), m_steep(false)
 {
     m_renderer->ClearBuffers(Renderer::Geometry::LineGeometry);
     m_renderer->ClearBuffers(Renderer::Geometry::NavMeshGeometry);
@@ -37,20 +38,24 @@ void DetourDebugDraw::vertex(const float* pos, unsigned int color)
     m_indices.push_back(m_uniqueVertices[v]);
 }
 
-void DetourDebugDraw::vertex(const float x, const float y, const float z, unsigned int color)
+void DetourDebugDraw::vertex(const float x, const float y, const float z,
+                             unsigned int color)
 {
-    const float rv[] { x,y,z };
+    const float rv[] {x, y, z};
     math::Vertex v;
 
     vertex(rv, color);
 }
 
-void DetourDebugDraw::vertex(const float* pos, unsigned int color, const float* /*uv*/)
+void DetourDebugDraw::vertex(const float* pos, unsigned int color,
+                             const float* /*uv*/)
 {
     vertex(pos, color);
 }
 
-void DetourDebugDraw::vertex(const float x, const float y, const float z, unsigned int color, const float /*u*/, const float /*v*/)
+void DetourDebugDraw::vertex(const float x, const float y, const float z,
+                             unsigned int color, const float /*u*/,
+                             const float /*v*/)
 {
     vertex(x, y, z, color);
 }

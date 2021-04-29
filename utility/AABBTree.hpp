@@ -1,77 +1,85 @@
 #pragma once
 
-#include "Ray.hpp"
 #include "BinaryStream.hpp"
-#include "Vector.hpp"
 #include "BoundingBox.hpp"
+#include "Ray.hpp"
+#include "Vector.hpp"
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 namespace math
 {
 class AABBTree
 {
-    private:
-        struct Node
+private:
+    struct Node
+    {
+        union
         {
-            union
-            {
-                std::uint32_t children = 0;
-                std::uint32_t startFace;
-            };
-
-            unsigned int numFaces = 0;
-            BoundingBox bounds;
+            std::uint32_t children = 0;
+            std::uint32_t startFace;
         };
 
-        static constexpr std::uint32_t StartMagic = 'BVH1';
-        static constexpr std::uint32_t EndMagic = 'FOOB';
+        unsigned int numFaces = 0;
+        BoundingBox bounds;
+    };
 
-    public:
-        AABBTree() = default;
-        AABBTree(AABBTree&& other) = default;
-        ~AABBTree() = default;
+    static constexpr std::uint32_t StartMagic = 'BVH1';
+    static constexpr std::uint32_t EndMagic = 'FOOB';
 
-        AABBTree(const std::vector<Vertex>& verts, const std::vector<int>& indices);
+public:
+    AABBTree() = default;
+    AABBTree(AABBTree&& other) = default;
+    ~AABBTree() = default;
 
-        AABBTree& operator = (AABBTree&& other) = default;
+    AABBTree(const std::vector<Vertex>& verts, const std::vector<int>& indices);
 
-    public:
-        void Build(const std::vector<Vertex>& verts, const std::vector<int>& indices);
-        bool IntersectRay(Ray& ray, unsigned int* faceIndex = nullptr) const;
+    AABBTree& operator=(AABBTree&& other) = default;
 
-        BoundingBox GetBoundingBox() const;
+public:
+    void Build(const std::vector<Vertex>& verts,
+               const std::vector<int>& indices);
+    bool IntersectRay(Ray& ray, unsigned int* faceIndex = nullptr) const;
 
-        void Serialize(utility::BinaryStream& stream) const;
-        bool Deserialize(utility::BinaryStream& stream);
+    BoundingBox GetBoundingBox() const;
 
-        const std::vector<Vector3> &Vertices() const { return m_vertices; }
-        const std::vector<int> &Indices() const { return m_indices; }
+    void Serialize(utility::BinaryStream& stream) const;
+    bool Deserialize(utility::BinaryStream& stream);
 
-    private:
-        unsigned int PartitionMedian(Node& node, unsigned int* faces, unsigned int numFaces);
-        unsigned int PartitionSurfaceArea(Node& node, unsigned int* faces, unsigned int numFaces);
+    const std::vector<Vector3>& Vertices() const { return m_vertices; }
+    const std::vector<int>& Indices() const { return m_indices; }
 
-        void BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsigned int numFaces);
-        BoundingBox CalculateFaceBounds(unsigned int* faces, unsigned int numFaces) const;
+private:
+    unsigned int PartitionMedian(Node& node, unsigned int* faces,
+                                 unsigned int numFaces);
+    unsigned int PartitionSurfaceArea(Node& node, unsigned int* faces,
+                                      unsigned int numFaces);
 
-        void Trace(Ray& ray, unsigned int* faceIndex) const;
-        void TraceRecursive(unsigned int nodeIndex, Ray& ray, unsigned int* faceIndex) const;
-        void TraceInnerNode(const Node& node, Ray& ray, unsigned int* faceIndex) const;
-        void TraceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex) const;
+    void BuildRecursive(unsigned int nodeIndex, unsigned int* faces,
+                        unsigned int numFaces);
+    BoundingBox CalculateFaceBounds(unsigned int* faces,
+                                    unsigned int numFaces) const;
 
-        static unsigned int GetLongestAxis(const Vector3& v);
+    void Trace(Ray& ray, unsigned int* faceIndex) const;
+    void TraceRecursive(unsigned int nodeIndex, Ray& ray,
+                        unsigned int* faceIndex) const;
+    void TraceInnerNode(const Node& node, Ray& ray,
+                        unsigned int* faceIndex) const;
+    void TraceLeafNode(const Node& node, Ray& ray,
+                       unsigned int* faceIndex) const;
 
-    private:
-        unsigned int m_freeNode = 0;
+    static unsigned int GetLongestAxis(const Vector3& v);
 
-        std::vector<Node> m_nodes;
+private:
+    unsigned int m_freeNode = 0;
 
-        std::vector<Vertex> m_vertices;
-        std::vector<int> m_indices;
+    std::vector<Node> m_nodes;
 
-        std::vector<BoundingBox> m_faceBounds;
-        std::vector<unsigned int> m_faceIndices;
+    std::vector<Vertex> m_vertices;
+    std::vector<int> m_indices;
+
+    std::vector<BoundingBox> m_faceBounds;
+    std::vector<unsigned int> m_faceIndices;
 };
-}
+} // namespace math

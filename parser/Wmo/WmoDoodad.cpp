@@ -1,16 +1,18 @@
 #include "Wmo/WmoDoodad.hpp"
 
-#include "utility/Vector.hpp"
-#include "utility/Matrix.hpp"
 #include "utility/Exception.hpp"
+#include "utility/Matrix.hpp"
+#include "utility/Vector.hpp"
 
-#include <vector>
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 namespace parser
 {
-WmoDoodad::WmoDoodad(std::shared_ptr<const Doodad> &doodad, const math::Matrix &transformMatrix) : Parent(std::move(doodad)), TransformMatrix(transformMatrix)
+WmoDoodad::WmoDoodad(std::shared_ptr<const Doodad>& doodad,
+                     const math::Matrix& transformMatrix)
+    : Parent(std::move(doodad)), TransformMatrix(transformMatrix)
 {
     std::vector<math::Vector3> vertices;
     std::vector<int> indices;
@@ -33,12 +35,13 @@ WmoDoodad::WmoDoodad(std::shared_ptr<const Doodad> &doodad, const math::Matrix &
     }
 }
 
-math::Vector3 WmoDoodad::TransformVertex(const math::Vector3 &Vector3) const
+math::Vector3 WmoDoodad::TransformVertex(const math::Vector3& Vector3) const
 {
     return math::Vector3::Transform(Vector3, TransformMatrix);
 }
 
-void WmoDoodad::BuildTriangles(std::vector<math::Vector3> &vertices, std::vector<int> &indices) const
+void WmoDoodad::BuildTriangles(std::vector<math::Vector3>& vertices,
+                               std::vector<int>& indices) const
 {
     vertices.clear();
     vertices.reserve(Parent->Vertices.size());
@@ -46,9 +49,10 @@ void WmoDoodad::BuildTriangles(std::vector<math::Vector3> &vertices, std::vector
     indices.clear();
     indices.resize(Parent->Indices.size());
 
-    std::copy(Parent->Indices.cbegin(), Parent->Indices.cend(), indices.begin());
+    std::copy(Parent->Indices.cbegin(), Parent->Indices.cend(),
+              indices.begin());
 
-    for (auto &Vector3 : Parent->Vertices)
+    for (auto& Vector3 : Parent->Vertices)
         vertices.push_back(TransformVertex(Vector3));
 }
-}
+} // namespace parser

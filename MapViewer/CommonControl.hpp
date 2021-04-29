@@ -1,36 +1,41 @@
 #pragma once
 
 #include <Windows.h>
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <functional>
 
 class CommonControl
 {
-    private:
-        LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+private:
+    LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam,
+                                LPARAM lParam);
 
-        const HINSTANCE m_instance;
-        const HWND m_window;
-        const HFONT m_labelFont;
-        const HFONT m_textBoxFont;
+    const HINSTANCE m_instance;
+    const HWND m_window;
+    const HFONT m_labelFont;
+    const HFONT m_textBoxFont;
 
-        std::map<int, HWND> m_controls;
-        std::map<int, std::function<void(const std::string &)>> m_comboBoxHandlers;
-        std::map<int, std::function<void()>> m_buttonHandlers;
-        std::map<int, std::function<void(bool)>> m_checkboxHandlers;
+    std::map<int, HWND> m_controls;
+    std::map<int, std::function<void(const std::string&)>> m_comboBoxHandlers;
+    std::map<int, std::function<void()>> m_buttonHandlers;
+    std::map<int, std::function<void(bool)>> m_checkboxHandlers;
 
-    public:
-        CommonControl(HWND window);
+public:
+    CommonControl(HWND window);
 
-        // adding controls
-        void AddLabel(const std::string &text, int x, int y);
-        void AddTextBox(int id, const std::string &text, int x, int y, int width, int height);
-        void AddComboBox(int id, const std::vector<std::string> &items, int x, int y, std::function<void (const std::string &)> handler);
-        void AddButton(int id, const std::string &text, int x, int y, int width, int height, std::function<void()> handler);
-        void AddCheckBox(int id, const std::string &text, int x, int y, bool checked, std::function<void (bool)> handler);
+    // adding controls
+    void AddLabel(const std::string& text, int x, int y);
+    void AddTextBox(int id, const std::string& text, int x, int y, int width,
+                    int height);
+    void AddComboBox(int id, const std::vector<std::string>& items, int x,
+                     int y, std::function<void(const std::string&)> handler);
+    void AddButton(int id, const std::string& text, int x, int y, int width,
+                   int height, std::function<void()> handler);
+    void AddCheckBox(int id, const std::string& text, int x, int y,
+                     bool checked, std::function<void(bool)> handler);
 
-        const std::string GetText(int id) const;
-        void Enable(int id, bool enabled) const;
+    const std::string GetText(int id) const;
+    void Enable(int id, bool enabled) const;
 };

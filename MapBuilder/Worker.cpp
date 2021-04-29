@@ -1,25 +1,23 @@
-#include "MeshBuilder.hpp"
 #include "Worker.hpp"
 
 #include "Common.hpp"
-
+#include "MeshBuilder.hpp"
 #include "parser/MpqManager.hpp"
 
-#include <thread>
-#include <chrono>
-#include <mutex>
-#include <utility>
 #include <cassert>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+#include <chrono>
 #include <exception>
+#include <iomanip>
+#include <iostream>
+#include <mutex>
+#include <sstream>
+#include <thread>
+#include <utility>
 
-Worker::Worker(const std::string& dataPath, MeshBuilder *meshBuilder)
-    : m_dataPath(dataPath), m_meshBuilder(meshBuilder), m_shutdownRequested(false),
-      m_wmo(meshBuilder->IsGlobalWMO()),
-      m_isFinished(false),
-      m_thread(&Worker::Work, this)
+Worker::Worker(const std::string& dataPath, MeshBuilder* meshBuilder)
+    : m_dataPath(dataPath), m_meshBuilder(meshBuilder),
+      m_shutdownRequested(false), m_wmo(meshBuilder->IsGlobalWMO()),
+      m_isFinished(false), m_thread(&Worker::Work, this)
 {
 }
 
@@ -46,9 +44,12 @@ void Worker::Work()
                 if (!m_meshBuilder->BuildAndSerializeWMOTile(tileX, tileY))
                 {
                     std::stringstream error;
-                    error << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " Global WMO tile ("
-                        << std::setfill(' ') << std::setw(3) << tileX << ", "
-                        << std::setfill(' ') << std::setw(3) << tileY << ") FAILED!  cell size = " << MeshSettings::CellSize << " voxels = " << MeshSettings::TileVoxelSize;
+                    error << "Thread #" << std::setfill(' ') << std::setw(6)
+                          << std::this_thread::get_id() << " Global WMO tile ("
+                          << std::setfill(' ') << std::setw(3) << tileX << ", "
+                          << std::setfill(' ') << std::setw(3) << tileY
+                          << ") FAILED!  cell size = " << MeshSettings::CellSize
+                          << " voxels = " << MeshSettings::TileVoxelSize;
                     std::cout << error.str() << std::endl;
                     exit(1);
                 }
@@ -61,24 +62,28 @@ void Worker::Work()
                 auto const y = tileY % MeshSettings::TilesPerADT;
 
                 std::stringstream error;
-                error << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ADT ("
-                    << std::setfill(' ') << std::setw(2) << adtX << ", "
-                    << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
-                    << x << ", " << y << ") FAILED!  cell size = " << MeshSettings::CellSize << " voxels = " << MeshSettings::TileVoxelSize;
+                error << "Thread #" << std::setfill(' ') << std::setw(6)
+                      << std::this_thread::get_id() << " ADT ("
+                      << std::setfill(' ') << std::setw(2) << adtX << ", "
+                      << std::setfill(' ') << std::setw(2) << adtY << ") tile ("
+                      << x << ", " << y
+                      << ") FAILED!  cell size = " << MeshSettings::CellSize
+                      << " voxels = " << MeshSettings::TileVoxelSize;
                 std::cout << error.str() << std::endl;
                 exit(1);
             }
         } while (!m_shutdownRequested);
     }
-    catch (std::exception const &e)
+    catch (std::exception const& e)
     {
         std::stringstream s;
 
-        s << "\nThread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << ": " << e.what() << "\n";
+        s << "\nThread #" << std::setfill(' ') << std::setw(6)
+          << std::this_thread::get_id() << ": " << e.what() << "\n";
 
         std::cerr << s.str();
     }
-    
+
 #ifdef _DEBUG
     std::stringstream str;
     str << "Thread #" << std::this_thread::get_id() << " finished.\n";

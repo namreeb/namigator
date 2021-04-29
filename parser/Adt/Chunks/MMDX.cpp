@@ -3,8 +3,8 @@
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
 
-#include <vector>
 #include <cstring>
+#include <vector>
 
 static_assert(sizeof(char) == 1, "char must be 8 bits");
 
@@ -12,7 +12,8 @@ namespace parser
 {
 namespace input
 {
-MMDX::MMDX(size_t position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+MMDX::MMDX(size_t position, utility::BinaryStream* reader)
+    : AdtChunk(position, reader)
 {
     if (Size == 0)
         return;
@@ -22,9 +23,10 @@ MMDX::MMDX(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     std::vector<char> doodadNames(Size);
     reader->ReadBytes(&doodadNames[0], Size);
 
-    char *p;
+    char* p;
 
-    for (p = &doodadNames[0]; *p == '\0'; ++p);
+    for (p = &doodadNames[0]; *p == '\0'; ++p)
+        ;
 
     do
     {
@@ -36,7 +38,7 @@ MMDX::MMDX(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
             break;
 
         p++;
-    } while (p <= &doodadNames[Size-1]);
+    } while (p <= &doodadNames[Size - 1]);
 }
-}
-}
+} // namespace input
+} // namespace parser

@@ -1,18 +1,20 @@
 #include "RecastContext.hpp"
 
-#include <sstream>
-#include <iostream>
-#include <thread>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <thread>
 
-void RecastContext::doLog(const rcLogCategory category, const char *msg, const int /*len*/)
+void RecastContext::doLog(const rcLogCategory category, const char* msg,
+                          const int /*len*/)
 {
     if (!m_logLevel || category < m_logLevel)
         return;
 
     std::stringstream out;
 
-    out << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ";
+    out << "Thread #" << std::setfill(' ') << std::setw(6)
+        << std::this_thread::get_id() << " ";
 
     switch (category)
     {

@@ -1,11 +1,10 @@
 #pragma once
 
-#include "utility/Vector.hpp"
-#include "utility/Matrix.hpp"
-#include "utility/MathHelper.hpp"
-#include "utility/BoundingBox.hpp"
-
 #include "Common.hpp"
+#include "utility/BoundingBox.hpp"
+#include "utility/MathHelper.hpp"
+#include "utility/Matrix.hpp"
+#include "utility/Vector.hpp"
 
 #include <cstdint>
 
@@ -26,27 +25,31 @@ struct WmoPlacement
     std::uint16_t NameSet;
     std::uint16_t _pad;
 
-    void GetBoundingBox(math::BoundingBox &bounds) const
+    void GetBoundingBox(math::BoundingBox& bounds) const
     {
         math::Vertex minCorner, maxCorner;
 
         if (UniqueId == 0xFFFFFFFF)
         {
-            minCorner = { Bounds.MinCorner.Z, Bounds.MinCorner.X, Bounds.MinCorner.Y };
-            maxCorner = { Bounds.MaxCorner.Z, Bounds.MaxCorner.Y, Bounds.MaxCorner.Y };
+            minCorner = {Bounds.MinCorner.Z, Bounds.MinCorner.X,
+                         Bounds.MinCorner.Y};
+            maxCorner = {Bounds.MaxCorner.Z, Bounds.MaxCorner.Y,
+                         Bounds.MaxCorner.Y};
         }
         else
         {
             constexpr float mid = 32.f * MeshSettings::AdtSize;
 
-            minCorner = { mid - Bounds.MaxCorner.Z, mid - Bounds.MaxCorner.X, Bounds.MinCorner.Y };
-            maxCorner = { mid - Bounds.MinCorner.Z, mid - Bounds.MinCorner.X, Bounds.MaxCorner.Y };
+            minCorner = {mid - Bounds.MaxCorner.Z, mid - Bounds.MaxCorner.X,
+                         Bounds.MinCorner.Y};
+            maxCorner = {mid - Bounds.MinCorner.Z, mid - Bounds.MinCorner.X,
+                         Bounds.MaxCorner.Y};
         }
 
         bounds = math::BoundingBox(minCorner, maxCorner);
     }
 
-    void GetTransformMatrix(math::Matrix &matrix) const
+    void GetTransformMatrix(math::Matrix& matrix) const
     {
         auto constexpr mid = 32.f * MeshSettings::AdtSize;
 
@@ -54,17 +57,21 @@ struct WmoPlacement
         auto const rotY = math::Convert::ToRadians(Orientation.X);
         auto const rotZ = math::Convert::ToRadians(Orientation.Y + 180.f);
 
-        // 0xFFFFFFFF is the unique id used for a global WMO (a map which has no ADTs but instead spawns a single WMO)
-        auto const translationMatrix = UniqueId == 0xFFFFFFFF ?
-            math::Matrix::CreateTranslationMatrix({ BasePosition.Z, BasePosition.X, BasePosition.Y }) :
-            math::Matrix::CreateTranslationMatrix({ mid - BasePosition.Z, mid - BasePosition.X, BasePosition.Y });
+        // 0xFFFFFFFF is the unique id used for a global WMO (a map which has no
+        // ADTs but instead spawns a single WMO)
+        auto const translationMatrix =
+            UniqueId == 0xFFFFFFFF ?
+                math::Matrix::CreateTranslationMatrix(
+                    {BasePosition.Z, BasePosition.X, BasePosition.Y}) :
+                math::Matrix::CreateTranslationMatrix({mid - BasePosition.Z,
+                                                       mid - BasePosition.X,
+                                                       BasePosition.Y});
 
-        matrix = translationMatrix *
-            math::Matrix::CreateRotationX(rotX) *
-            math::Matrix::CreateRotationY(rotY) *
-            math::Matrix::CreateRotationZ(rotZ);
+        matrix = translationMatrix * math::Matrix::CreateRotationX(rotX) *
+                 math::Matrix::CreateRotationY(rotY) *
+                 math::Matrix::CreateRotationZ(rotZ);
     }
 };
 #pragma pack(pop)
-}
-}
+} // namespace input
+} // namespace parser

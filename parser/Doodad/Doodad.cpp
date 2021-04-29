@@ -1,30 +1,32 @@
-#include "MpqManager.hpp"
 #include "Doodad/Doodad.hpp"
 
-#include "utility/Vector.hpp"
+#include "MpqManager.hpp"
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
+#include "utility/Vector.hpp"
 
-#include <string>
-#include <memory>
 #include <cstdint>
+#include <memory>
+#include <string>
 
 namespace
 {
-std::string GetRealModelPath(const std::string &path)
+std::string GetRealModelPath(const std::string& path)
 {
-    if (path.substr(path.length() - 3, 3) == ".m2" || path.substr(path.length() - 3, 3) == ".M2")
+    if (path.substr(path.length() - 3, 3) == ".m2" ||
+        path.substr(path.length() - 3, 3) == ".M2")
         return path;
 
     return std::string(path.substr(0, path.rfind('.')) + ".m2");
 }
-}
+} // namespace
 
 namespace parser
 {
-Doodad::Doodad(const std::string &path) : MpqPath(path)
+Doodad::Doodad(const std::string& path) : MpqPath(path)
 {
-    std::unique_ptr<utility::BinaryStream> reader(sMpqManager.OpenFile(GetRealModelPath(path)));
+    std::unique_ptr<utility::BinaryStream> reader(
+        sMpqManager.OpenFile(GetRealModelPath(path)));
 
     if (!reader)
         THROW("Doodad " + path + " not found");
@@ -36,17 +38,17 @@ Doodad::Doodad(const std::string &path) : MpqPath(path)
 
     switch (version)
     {
-        case 256:   // Classic
-        case 257:   // Classic
-        case 260:   // TBC
-        case 261:   // TBC
-        case 262:   // TBC
-        case 263:   // TBC
+        case 256: // Classic
+        case 257: // Classic
+        case 260: // TBC
+        case 261: // TBC
+        case 262: // TBC
+        case 263: // TBC
             reader->rpos(0xEC);
             break;
 
-        case 272:   // TBC
-        case 264:   // WOTLK
+        case 272: // TBC
+        case 264: // WOTLK
             reader->rpos(0xD8);
             break;
 
@@ -75,4 +77,4 @@ Doodad::Doodad(const std::string &path) : MpqPath(path)
     for (auto i = 0u; i < indexCount; ++i)
         Indices.push_back(reader->Read<std::uint16_t>());
 }
-}
+} // namespace parser

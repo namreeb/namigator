@@ -6,7 +6,9 @@ namespace parser
 {
 namespace input
 {
-MODN::MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream *reader) : WmoRootChunk(position, reader)
+MODN::MODN(unsigned int doodadNamesCount, size_t position,
+           utility::BinaryStream* reader)
+    : WmoRootChunk(position, reader)
 {
     reader->rpos(position + 8);
 
@@ -27,5 +29,5 @@ MODN::MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream
         currOffset += static_cast<unsigned int>(currFileName.length() + 1);
     }
 }
-}
-}
+} // namespace input
+} // namespace parser

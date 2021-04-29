@@ -1,6 +1,6 @@
-#include "Adt/AdtChunk.hpp"
 #include "Adt/Chunks/MHDR.hpp"
 
+#include "Adt/AdtChunk.hpp"
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
 
@@ -8,7 +8,8 @@ namespace parser
 {
 namespace input
 {
-MHDR::MHDR(size_t position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+MHDR::MHDR(size_t position, utility::BinaryStream* reader)
+    : AdtChunk(position, reader)
 {
 #ifdef DEBUG
     if (Type != AdtChunkType::MHDR)
@@ -20,5 +21,5 @@ MHDR::MHDR(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
 
     reader->ReadBytes(&Offsets, sizeof(Offsets));
 }
-}
-}
+} // namespace input
+} // namespace parser

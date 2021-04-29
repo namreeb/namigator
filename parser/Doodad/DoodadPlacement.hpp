@@ -1,14 +1,14 @@
 #pragma once
 
-#include "utility/MathHelper.hpp"
-#include "utility/Vector.hpp"
-#include "utility/Matrix.hpp"
 #include "Common.hpp"
+#include "utility/MathHelper.hpp"
+#include "utility/Matrix.hpp"
+#include "utility/Vector.hpp"
 
-#include <string>
 #include <algorithm>
-#include <vector>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace parser
 {
@@ -24,7 +24,7 @@ struct DoodadPlacement
     std::uint16_t Scale;
     std::uint16_t Flags;
 
-    void GetTransformMatrix(math::Matrix &matrix) const
+    void GetTransformMatrix(math::Matrix& matrix) const
     {
         auto constexpr mid = 32.f * MeshSettings::AdtSize;
 
@@ -33,7 +33,8 @@ struct DoodadPlacement
         auto const rotZ = math::Convert::ToRadians(Orientation.Y + 180.f);
 
         matrix =
-            math::Matrix::CreateTranslationMatrix({ mid - BasePosition.Z, mid - BasePosition.X, BasePosition.Y }) *
+            math::Matrix::CreateTranslationMatrix(
+                {mid - BasePosition.Z, mid - BasePosition.X, BasePosition.Y}) *
             math::Matrix::CreateScalingMatrix(Scale / 1024.f) *
             math::Matrix::CreateRotationZ(rotZ) *
             math::Matrix::CreateRotationY(rotY) *
@@ -41,5 +42,5 @@ struct DoodadPlacement
     }
 };
 #pragma pack(pop)
-}
-}
+} // namespace input
+} // namespace parser

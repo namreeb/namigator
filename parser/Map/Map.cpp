@@ -1,28 +1,28 @@
-#include "MpqManager.hpp"
-#include "DBC.hpp"
 #include "Map/Map.hpp"
+
 #include "Adt/Adt.hpp"
+#include "Common.hpp"
+#include "DBC.hpp"
+#include "MpqManager.hpp"
 #include "Wmo/Wmo.hpp"
 #include "Wmo/WmoPlacement.hpp"
-
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
 #include "utility/Vector.hpp"
 
-#include "Common.hpp"
-
-#include <memory>
-#include <sstream>
-#include <fstream>
-#include <ostream>
-#include <iostream>
-#include <iomanip>
 #include <cassert>
 #include <cstdint>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <ostream>
+#include <sstream>
 
 namespace parser
 {
-Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqManager.GetMapId(name))
+Map::Map(const std::string& name)
+    : m_globalWmo(nullptr), Name(name), Id(sMpqManager.GetMapId(name))
 {
     auto const file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
@@ -81,19 +81,23 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
     math::Matrix transformMatrix;
     placement.GetTransformMatrix(transformMatrix);
 
-    m_globalWmo = std::make_unique<WmoInstance>(GetWmo(wmoName), placement.DoodadSet, placement.NameSet, bounds, transformMatrix);
+    m_globalWmo = std::make_unique<WmoInstance>(
+        GetWmo(wmoName), placement.DoodadSet, placement.NameSet, bounds,
+        transformMatrix);
 }
 
 bool Map::HasAdt(int x, int y) const
 {
-    assert(x >= 0 && y >= 0 && x < MeshSettings::Adts && y < MeshSettings::Adts);
+    assert(x >= 0 && y >= 0 && x < MeshSettings::Adts &&
+           y < MeshSettings::Adts);
 
     return m_hasAdt[x][y];
 }
 
-const Adt *Map::GetAdt(int x, int y)
+const Adt* Map::GetAdt(int x, int y)
 {
-    assert(x >= 0 && y >= 0 && x < MeshSettings::Adts && y < MeshSettings::Adts);
+    assert(x >= 0 && y >= 0 && x < MeshSettings::Adts &&
+           y < MeshSettings::Adts);
 
     std::lock_guard<std::mutex> guard(m_adtMutex);
 
@@ -112,14 +116,14 @@ void Map::UnloadAdt(int x, int y)
     m_adts[x][y].reset();
 }
 
-const Wmo *Map::GetWmo(const std::string &name)
+const Wmo* Map::GetWmo(const std::string& name)
 {
     auto filename = name.substr(name.rfind('\\') + 1);
     filename = filename.substr(0, filename.rfind('.'));
 
     std::lock_guard<std::mutex> guard(m_wmoMutex);
-    
-    for (auto const &wmo : m_loadedWmos)
+
+    for (auto const& wmo : m_loadedWmos)
         if (wmo->MpqPath == filename)
             return wmo.get();
 
@@ -127,22 +131,22 @@ const Wmo *Map::GetWmo(const std::string &name)
 
     m_loadedWmos.push_back(std::unique_ptr<const Wmo>(ret));
 
-    // loading this WMO also loaded all referenced doodads in all doodad sets for the wmo.
-    // for now, let us share ownership between the WMO and this map
-    for (auto const &doodadSet : ret->DoodadSets)
-        for (auto const &wmoDoodad : doodadSet)
+    // loading this WMO also loaded all referenced doodads in all doodad sets
+    // for the wmo. for now, let us share ownership between the WMO and this map
+    for (auto const& doodadSet : ret->DoodadSets)
+        for (auto const& wmoDoodad : doodadSet)
             m_loadedDoodads.push_back(wmoDoodad->Parent);
 
     return ret;
 }
 
-void Map::InsertWmoInstance(unsigned int uniqueId, const WmoInstance *wmo)
+void Map::InsertWmoInstance(unsigned int uniqueId, const WmoInstance* wmo)
 {
     std::lock_guard<std::mutex> guard(m_wmoMutex);
     m_loadedWmoInstances[uniqueId].reset(wmo);
 }
 
-const WmoInstance *Map::GetWmoInstance(unsigned int uniqueId) const
+const WmoInstance* Map::GetWmoInstance(unsigned int uniqueId) const
 {
     std::lock_guard<std::mutex> guard(m_wmoMutex);
 
@@ -151,19 +155,19 @@ const WmoInstance *Map::GetWmoInstance(unsigned int uniqueId) const
     return itr == m_loadedWmoInstances.end() ? nullptr : itr->second.get();
 }
 
-const WmoInstance *Map::GetGlobalWmoInstance() const
+const WmoInstance* Map::GetGlobalWmoInstance() const
 {
     return m_globalWmo.get();
 }
 
-const Doodad *Map::GetDoodad(const std::string &name)
+const Doodad* Map::GetDoodad(const std::string& name)
 {
     auto filename = name.substr(name.rfind('\\') + 1);
     filename = filename.substr(0, filename.rfind('.'));
 
     std::lock_guard<std::mutex> guard(m_doodadMutex);
 
-    for (auto const &doodad : m_loadedDoodads)
+    for (auto const& doodad : m_loadedDoodads)
         if (doodad->MpqPath == filename)
             return doodad.get();
 
@@ -172,13 +176,14 @@ const Doodad *Map::GetDoodad(const std::string &name)
     return ret;
 }
 
-void Map::InsertDoodadInstance(unsigned int uniqueId, const DoodadInstance *doodad)
+void Map::InsertDoodadInstance(unsigned int uniqueId,
+                               const DoodadInstance* doodad)
 {
     std::lock_guard<std::mutex> guard(m_doodadMutex);
     m_loadedDoodadInstances[uniqueId].reset(doodad);
 }
 
-const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
+const DoodadInstance* Map::GetDoodadInstance(unsigned int uniqueId) const
 {
     std::lock_guard<std::mutex> guard(m_doodadMutex);
 
@@ -189,35 +194,32 @@ const DoodadInstance *Map::GetDoodadInstance(unsigned int uniqueId) const
 
 void Map::Serialize(utility::BinaryStream& stream) const
 {
-    const size_t ourSize = sizeof(std::uint32_t) + sizeof(std::uint8_t) +
+    const size_t ourSize =
+        sizeof(std::uint32_t) + sizeof(std::uint8_t) +
         (m_hasTerrain ?
-            (
-                sizeof(std::uint8_t) * (            // has_adt map compressed into bitfield
-                    sizeof(m_hasAdt) / 8
-                ) +
-                sizeof(std::uint32_t) +             // loaded wmo size
-                (
-                    sizeof(std::uint32_t) +         // id
-                    sizeof(std::uint16_t) +         // doodad set
-                    sizeof(std::uint16_t) +         // name set
-                    22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
-                    MeshSettings::MaxMPQPathLength  // model file name
-                ) * m_loadedWmoInstances.size() +   // for each wmo instance
-                sizeof(std::uint32_t) +             // loaded doodad size
-                (
-                    sizeof(std::uint32_t) +         // id
-                    22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
-                    MeshSettings::MaxMPQPathLength  // model file name
-                ) * m_loadedDoodadInstances.size()
-            )
-        :
-            (
-                sizeof(std::uint32_t) +             // id
-                sizeof(std::uint16_t) +             // doodad set
-                sizeof(std::uint16_t) +             // name set
-                22 * sizeof(float) +                // 16 floats for transform matrix, 6 floats for bounds
-                MeshSettings::MaxMPQPathLength      // model file name
-            ));
+             (sizeof(std::uint8_t) * ( // has_adt map compressed into bitfield
+                                         sizeof(m_hasAdt) / 8) +
+              sizeof(std::uint32_t) +  // loaded wmo size
+              (sizeof(std::uint32_t) + // id
+               sizeof(std::uint16_t) + // doodad set
+               sizeof(std::uint16_t) + // name set
+               22 * sizeof(float) + // 16 floats for transform matrix, 6 floats
+                                    // for bounds
+               MeshSettings::MaxMPQPathLength    // model file name
+               ) * m_loadedWmoInstances.size() + // for each wmo instance
+              sizeof(std::uint32_t) +            // loaded doodad size
+              (sizeof(std::uint32_t) +           // id
+               22 * sizeof(float) + // 16 floats for transform matrix, 6 floats
+                                    // for bounds
+               MeshSettings::MaxMPQPathLength // model file name
+               ) * m_loadedDoodadInstances.size()) :
+             (sizeof(std::uint32_t) + // id
+              sizeof(std::uint16_t) + // doodad set
+              sizeof(std::uint16_t) + // name set
+              22 * sizeof(float) + // 16 floats for transform matrix, 6 floats
+                                   // for bounds
+              MeshSettings::MaxMPQPathLength // model file name
+              ));
 
     utility::BinaryStream ourStream(ourSize);
     ourStream << MeshSettings::FileMap;
@@ -249,30 +251,34 @@ void Map::Serialize(utility::BinaryStream& stream) const
         {
             std::lock_guard<std::mutex> guard(m_wmoMutex);
 
-            ourStream << static_cast<std::uint32_t>(m_loadedWmoInstances.size());
+            ourStream << static_cast<std::uint32_t>(
+                m_loadedWmoInstances.size());
 
-            for (auto const &wmo : m_loadedWmoInstances)
+            for (auto const& wmo : m_loadedWmoInstances)
             {
                 ourStream << static_cast<std::uint32_t>(wmo.first);
                 ourStream << static_cast<std::uint16_t>(wmo.second->DoodadSet);
                 ourStream << static_cast<std::uint16_t>(wmo.second->NameSet);
                 ourStream << wmo.second->TransformMatrix;
                 ourStream << wmo.second->Bounds;
-                ourStream.WriteString(wmo.second->Model->MpqPath, MeshSettings::MaxMPQPathLength);
+                ourStream.WriteString(wmo.second->Model->MpqPath,
+                                      MeshSettings::MaxMPQPathLength);
             }
         }
 
         {
             std::lock_guard<std::mutex> guard(m_doodadMutex);
 
-            ourStream << static_cast<std::uint32_t>(m_loadedDoodadInstances.size());
+            ourStream << static_cast<std::uint32_t>(
+                m_loadedDoodadInstances.size());
 
-            for (auto const &doodad : m_loadedDoodadInstances)
+            for (auto const& doodad : m_loadedDoodadInstances)
             {
                 ourStream << static_cast<std::uint32_t>(doodad.first);
                 ourStream << doodad.second->TransformMatrix;
                 ourStream << doodad.second->Bounds;
-                ourStream.WriteString(doodad.second->Model->MpqPath, MeshSettings::MaxMPQPathLength);
+                ourStream.WriteString(doodad.second->Model->MpqPath,
+                                      MeshSettings::MaxMPQPathLength);
             }
         }
     }
@@ -289,12 +295,14 @@ void Map::Serialize(utility::BinaryStream& stream) const
         ourStream << static_cast<std::uint16_t>(wmo->NameSet);
         ourStream << wmo->TransformMatrix;
         ourStream << wmo->Bounds;
-        ourStream.WriteString(wmo->Model->MpqPath, MeshSettings::MaxMPQPathLength);
+        ourStream.WriteString(wmo->Model->MpqPath,
+                              MeshSettings::MaxMPQPathLength);
     }
 
-    // make sure our prediction of the final size is correct, to avoid reallocations
+    // make sure our prediction of the final size is correct, to avoid
+    // reallocations
     assert(ourSize == ourStream.wpos());
 
     stream << ourStream;
 }
-}
+} // namespace parser

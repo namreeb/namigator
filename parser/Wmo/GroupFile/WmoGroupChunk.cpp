@@ -1,11 +1,14 @@
-#include "Wmo/WmoChunkHeader.hpp"
 #include "Wmo/GroupFile/WmoGroupChunk.hpp"
+
+#include "Wmo/WmoChunkHeader.hpp"
 
 namespace parser
 {
 namespace input
 {
-WmoGroupChunk::WmoGroupChunk(size_t position, utility::BinaryStream *groupFileStream) : Position(position)
+WmoGroupChunk::WmoGroupChunk(size_t position,
+                             utility::BinaryStream* groupFileStream)
+    : Position(position)
 {
     groupFileStream->rpos(position);
 
@@ -15,5 +18,5 @@ WmoGroupChunk::WmoGroupChunk(size_t position, utility::BinaryStream *groupFileSt
     Type = static_cast<WmoGroupChunkType>(header.Type);
     Size = header.Size;
 }
-}
-}
+} // namespace input
+} // namespace parser

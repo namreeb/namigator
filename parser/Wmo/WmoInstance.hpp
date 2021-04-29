@@ -1,36 +1,42 @@
 #pragma once
 
-#include "parser/Wmo/Wmo.hpp"
 #include "parser/Adt/AdtChunkLocation.hpp"
-
-#include "utility/Vector.hpp"
-#include "utility/Matrix.hpp"
+#include "parser/Wmo/Wmo.hpp"
 #include "utility/BoundingBox.hpp"
+#include "utility/Matrix.hpp"
+#include "utility/Vector.hpp"
 
-#include <vector>
-#include <set>
 #include <cstdint>
+#include <set>
+#include <vector>
 
 namespace parser
 {
 class WmoInstance
 {
-    public:
-        const math::Matrix TransformMatrix;
-        math::BoundingBox Bounds;
+public:
+    const math::Matrix TransformMatrix;
+    math::BoundingBox Bounds;
 
-        const Wmo * const Model;
+    const Wmo* const Model;
 
-        std::set<AdtChunkLocation> AdtChunks;
+    std::set<AdtChunkLocation> AdtChunks;
 
-        const unsigned int DoodadSet;
-        const unsigned int NameSet;
+    const unsigned int DoodadSet;
+    const unsigned int NameSet;
 
-        WmoInstance(const Wmo *wmo, unsigned int doodadSet, unsigned int nameSet, const math::BoundingBox &bounds, const math::Matrix &transformMatrix);
+    WmoInstance(const Wmo* wmo, unsigned int doodadSet, unsigned int nameSet,
+                const math::BoundingBox& bounds,
+                const math::Matrix& transformMatrix);
 
-        math::Vertex TransformVertex(const math::Vertex& vertex) const;
-        void BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const;
-        void BuildLiquidTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const;
-        void BuildDoodadTriangles(std::vector<math::Vertex> &vertices, std::vector<std::int32_t> &indices) const;  // note: this assembles the triangles from all doodads in this wmo into one collection
+    math::Vertex TransformVertex(const math::Vertex& vertex) const;
+    void BuildTriangles(std::vector<math::Vertex>& vertices,
+                        std::vector<std::int32_t>& indices) const;
+    void BuildLiquidTriangles(std::vector<math::Vertex>& vertices,
+                              std::vector<std::int32_t>& indices) const;
+    void BuildDoodadTriangles(std::vector<math::Vertex>& vertices,
+                              std::vector<std::int32_t>& indices)
+        const; // note: this assembles the triangles from all doodads in this
+               // wmo into one collection
 };
-}
+} // namespace parser

@@ -1,30 +1,32 @@
-#include <vector>
-#include <cassert>
-#include <set>
-#include <sstream>
-
-#include <d3d11.h>
-#include <dxgi1_3.h>
-
 #include "Renderer.hpp"
 
 #include "utility/Ray.hpp"
 #include "utility/Vector.hpp"
 
-// include the Direct3D Library file
-#pragma comment (lib, "d3d11.lib")
-#pragma comment (lib, "dxgi.lib")
+#include <cassert>
+#include <d3d11.h>
+#include <dxgi1_3.h>
+#include <set>
+#include <sstream>
+#include <vector>
 
+// include the Direct3D Library file
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
+
+#include "SphereMesh.hpp"
 #include "pixelShader.hpp"
 #include "vertexShader.hpp"
-#include "SphereMesh.hpp"
 
 #define ZERO(x) memset(&x, 0, sizeof(decltype(x)))
-#define ThrowIfFail(x) if (FAILED(x)) throw "Renderer initialization error"
+#define ThrowIfFail(x) \
+    if (FAILED(x))     \
+    throw "Renderer initialization error"
 
-
-
-Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderLiquid(true), m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true), m_renderPathfind(true), m_wireframeEnabled(false)
+Renderer::Renderer(HWND window)
+    : m_window(window), m_renderADT(true), m_renderLiquid(true),
+      m_renderWMO(true), m_renderDoodad(true), m_renderMesh(true),
+      m_renderPathfind(true), m_wireframeEnabled(false)
 {
     RECT wr;
     GetClientRect(window, &wr);
@@ -36,29 +38,36 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     ZERO(scd);
 
     // fill the swap chain description struct
-    scd.BufferCount = 1;                                    // one back buffer
-    scd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;                // use 32-bit color
-    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
+    scd.BufferCount = 1;                     // one back buffer
+    scd.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // use 32-bit color
+    scd.BufferUsage =
+        DXGI_USAGE_RENDER_TARGET_OUTPUT; // how swap chain is to be used
     scd.Width = wr.right - wr.left;
     scd.Height = wr.bottom - wr.top;
-    scd.SampleDesc.Count = 1;                               // how many multisamples
-    scd.SampleDesc.Quality = 0;                             // multisample quality level
+    scd.SampleDesc.Count = 1;   // how many multisamples
+    scd.SampleDesc.Quality = 0; // multisample quality level
     scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     scd.Scaling = DXGI_SCALING_STRETCH;
 
-    ThrowIfFail(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &m_device, nullptr, &m_deviceContext));
+    ThrowIfFail(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+                                  nullptr, 0, D3D11_SDK_VERSION, &m_device,
+                                  nullptr, &m_deviceContext));
 
     UINT quality = 0;
-    if (SUCCEEDED(m_device->CheckMultisampleQualityLevels(scd.Format, 8, &quality))) {
+    if (SUCCEEDED(
+            m_device->CheckMultisampleQualityLevels(scd.Format, 8, &quality)))
+    {
         scd.SampleDesc.Count = 8;
         scd.SampleDesc.Quality = quality - 1;
     }
 
     ThrowIfFail(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_dxgiFactory)));
-    ThrowIfFail(m_dxgiFactory->CreateSwapChainForHwnd(m_device, m_window, &scd, NULL, NULL, &m_swapChain));
+    ThrowIfFail(m_dxgiFactory->CreateSwapChainForHwnd(
+        m_device, m_window, &scd, NULL, NULL, &m_swapChain));
 
-    // create a device, device context and swap chain using the information in the scd struct
-    //ThrowIfFail(D3D11CreateDeviceAndSwapChain(nullptr,
+    // create a device, device context and swap chain using the information in
+    // the scd struct
+    // ThrowIfFail(D3D11CreateDeviceAndSwapChain(nullptr,
     //    D3D_DRIVER_TYPE_HARDWARE,
     //    nullptr,
     //    0,
@@ -71,14 +80,16 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     //    nullptr,
     //    &m_deviceContext));
 
-    //assert(m_swapChain);
+    // assert(m_swapChain);
 
     // get the address of the back buffer
-    ID3D11Texture2D *backBuffer;
-    ThrowIfFail(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID *>(&backBuffer)));
+    ID3D11Texture2D* backBuffer;
+    ThrowIfFail(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+                                       reinterpret_cast<LPVOID*>(&backBuffer)));
 
     // use the back buffer address to create the render target
-    ThrowIfFail(m_device->CreateRenderTargetView(backBuffer, nullptr, &m_backBuffer));
+    ThrowIfFail(
+        m_device->CreateRenderTargetView(backBuffer, nullptr, &m_backBuffer));
     backBuffer->Release();
 
     // Set the viewport
@@ -94,20 +105,25 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
 
     m_deviceContext->RSSetViewports(1, &viewport);
 
-    ThrowIfFail(m_device->CreateVertexShader(g_VShader, sizeof(g_VShader), nullptr, &m_vertexShader));
-    ThrowIfFail(m_device->CreatePixelShader(g_PShader, sizeof(g_PShader), nullptr, &m_pixelShader));
+    ThrowIfFail(m_device->CreateVertexShader(g_VShader, sizeof(g_VShader),
+                                             nullptr, &m_vertexShader));
+    ThrowIfFail(m_device->CreatePixelShader(g_PShader, sizeof(g_PShader),
+                                            nullptr, &m_pixelShader));
 
     m_deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
     m_deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
 
-    D3D11_INPUT_ELEMENT_DESC ied[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
-    ThrowIfFail(m_device->CreateInputLayout(ied, _countof(ied), g_VShader, sizeof(g_VShader), &m_inputLayout));
+    ThrowIfFail(m_device->CreateInputLayout(ied, _countof(ied), g_VShader,
+                                            sizeof(g_VShader), &m_inputLayout));
     m_deviceContext->IASetInputLayout(m_inputLayout);
 
     D3D11_BUFFER_DESC cbbd;
@@ -137,8 +153,10 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     dsdtex.CPUAccessFlags = 0;
     dsdtex.MiscFlags = 0;
 
-    ThrowIfFail(m_device->CreateTexture2D(&dsdtex, nullptr, &m_depthStencilBuffer));
-    ThrowIfFail(m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr, &m_depthStencilView));
+    ThrowIfFail(
+        m_device->CreateTexture2D(&dsdtex, nullptr, &m_depthStencilBuffer));
+    ThrowIfFail(m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr,
+                                                 &m_depthStencilView));
 
     D3D11_DEPTH_STENCIL_DESC dsd;
     ZERO(dsd);
@@ -151,7 +169,7 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     ThrowIfFail(m_device->CreateDepthStencilState(&dsd, &m_depthStencilState));
 
     m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 0);
-    ID3D11RenderTargetView * pBackBuffer[] = { m_backBuffer };
+    ID3D11RenderTargetView* pBackBuffer[] = {m_backBuffer};
     m_deviceContext->OMSetRenderTargets(1, pBackBuffer, m_depthStencilView);
 
     D3D11_BLEND_DESC bd;
@@ -179,14 +197,17 @@ Renderer::Renderer(HWND window) : m_window(window), m_renderADT(true), m_renderL
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_BACK;
 
-    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
+    ThrowIfFail(
+        m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState));
     m_deviceContext->RSSetState(m_rasterizerState);
 
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
-    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerStateNoCull));
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc,
+                                                &m_rasterizerStateNoCull));
 
     rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
-    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerStateWireframe));
+    ThrowIfFail(m_device->CreateRasterizerState(&rasterizerDesc,
+                                                &m_rasterizerStateWireframe));
 }
 
 void Renderer::ClearBuffers(Geometry type)
@@ -213,28 +234,29 @@ void Renderer::ClearGameObjects()
     m_buffers[GameObjectGeometry].clear();
 }
 
-void Renderer::AddTerrain(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices, std::uint32_t areaId)
+void Renderer::AddTerrain(const std::vector<math::Vertex>& vertices,
+                          const std::vector<int>& indices, std::uint32_t areaId)
 {
     static const float colorsByAreaId[][4] = {
-        { 0.0f, 0.9f, 0.4f, 1.f },
-        { 0.1f, 0.8f, 0.3f, 1.f },
-        { 0.2f, 0.7f, 0.2f, 1.f },
-        { 0.3f, 0.6f, 0.1f, 1.f },
-        { 0.4f, 0.5f, 0.2f, 1.f },
-        { 0.5f, 0.4f, 0.3f, 1.f },
-        { 0.6f, 0.3f, 0.4f, 1.f },
+        {0.0f, 0.9f, 0.4f, 1.f}, {0.1f, 0.8f, 0.3f, 1.f},
+        {0.2f, 0.7f, 0.2f, 1.f}, {0.3f, 0.6f, 0.1f, 1.f},
+        {0.4f, 0.5f, 0.2f, 1.f}, {0.5f, 0.4f, 0.3f, 1.f},
+        {0.6f, 0.3f, 0.4f, 1.f},
     };
 
     auto color = colorsByAreaId[areaId % 7];
     InsertBuffer(m_buffers[TerrainGeometry], color, vertices, indices, areaId);
 }
 
-void Renderer::AddLiquid(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)
+void Renderer::AddLiquid(const std::vector<math::Vertex>& vertices,
+                         const std::vector<int>& indices)
 {
     InsertBuffer(m_buffers[LiquidGeometry], LiquidColor, vertices, indices);
 }
 
-void Renderer::AddWmo(unsigned int id, const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)
+void Renderer::AddWmo(unsigned int id,
+                      const std::vector<math::Vertex>& vertices,
+                      const std::vector<int>& indices)
 {
     // if we are already rendering this wmo, do nothing
     if (m_wmos.find(id) != m_wmos.end())
@@ -245,7 +267,9 @@ void Renderer::AddWmo(unsigned int id, const std::vector<math::Vertex>& vertices
     InsertBuffer(m_buffers[WmoGeometry], WmoColor, vertices, indices);
 }
 
-void Renderer::AddDoodad(unsigned int id, const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)
+void Renderer::AddDoodad(unsigned int id,
+                         const std::vector<math::Vertex>& vertices,
+                         const std::vector<int>& indices)
 {
     // if we are already rendering this doodad, do nothing
     if (m_doodads.find(id) != m_doodads.end())
@@ -255,40 +279,47 @@ void Renderer::AddDoodad(unsigned int id, const std::vector<math::Vertex>& verti
     InsertBuffer(m_buffers[DoodadGeometry], DoodadColor, vertices, indices);
 }
 
-void Renderer::AddMesh(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices, bool steep)
+void Renderer::AddMesh(const std::vector<math::Vertex>& vertices,
+                       const std::vector<int>& indices, bool steep)
 {
-    InsertBuffer(m_buffers[NavMeshGeometry], steep ? MeshSteepColor : MeshColor, vertices, indices);
+    InsertBuffer(m_buffers[NavMeshGeometry], steep ? MeshSteepColor : MeshColor,
+                 vertices, indices);
 }
 
-void Renderer::AddLines(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)
+void Renderer::AddLines(const std::vector<math::Vertex>& vertices,
+                        const std::vector<int>& indices)
 {
-    InsertBuffer(m_buffers[LineGeometry], LineColor, vertices, indices, 0, false);
+    InsertBuffer(m_buffers[LineGeometry], LineColor, vertices, indices, 0,
+                 false);
 }
 
-void Renderer::AddSphere(const math::Vertex& position, float size, int recursionLevel)
+void Renderer::AddSphere(const math::Vertex& position, float size,
+                         int recursionLevel)
 {
-    auto transform = math::Matrix::CreateTranslationMatrix(position)
-        * math::Matrix::CreateScalingMatrix(size);
+    auto transform = math::Matrix::CreateTranslationMatrix(position) *
+                     math::Matrix::CreateScalingMatrix(size);
 
-    SphereMesh sphereMesh{ recursionLevel };
+    SphereMesh sphereMesh {recursionLevel};
 
     auto vertices = sphereMesh.GetVertices();
     for (auto& vertex : vertices)
         vertex = math::Vector3::Transform(vertex, transform);
 
-    InsertBuffer(m_buffers[SphereGeometry], SphereColor, vertices, sphereMesh.GetIndices());
+    InsertBuffer(m_buffers[SphereGeometry], SphereColor, vertices,
+                 sphereMesh.GetIndices());
 }
 
-void Renderer::AddArrows(const math::Vertex& start, const math::Vertex& end, float step)
+void Renderer::AddArrows(const math::Vertex& start, const math::Vertex& end,
+                         float step)
 {
     constexpr float width = 4.f;
     constexpr float height = 5.f;
 
-    std::vector<math::Vertex> vertices{
-        { -width / 2.f, -height / 2.f, 0.f },
-        {          0.f, +height / 2.f, 0.f },
-        {          0.f,           0.f, 0.f },
-        { +width / 2.f, -height / 2.f, 0.f },
+    std::vector<math::Vertex> vertices {
+        {-width / 2.f, -height / 2.f, 0.f},
+        {0.f, +height / 2.f, 0.f},
+        {0.f, 0.f, 0.f},
+        {+width / 2.f, -height / 2.f, 0.f},
     };
 
     math::Vector3 targetVec = end - start;
@@ -296,14 +327,15 @@ void Renderer::AddArrows(const math::Vertex& start, const math::Vertex& end, flo
     float numArrows = targetVec.Length() / step;
     targetVec = targetVec * (1.f / (numArrows + 0.5f));
 
-    float len2D = std::sqrt(targetVec.X*targetVec.X + targetVec.Y*targetVec.Y);
+    float len2D =
+        std::sqrt(targetVec.X * targetVec.X + targetVec.Y * targetVec.Y);
 
     float yaw = std::atan2(-targetVec.X, targetVec.Y);
     float pitch = std::atan2(targetVec.Z, len2D);
 
     // My brain hurts...
     auto rotation = math::Matrix::CreateRotationZ(yaw);
-    auto xyPlaneAxis = math::Vector3::Transform({ 1.f, 0.f, 0.f }, rotation);
+    auto xyPlaneAxis = math::Vector3::Transform({1.f, 0.f, 0.f}, rotation);
 
     // Don't ask me how or why this works
     rotation = math::Matrix::CreateRotation(xyPlaneAxis, pitch) * rotation;
@@ -314,15 +346,18 @@ void Renderer::AddArrows(const math::Vertex& start, const math::Vertex& end, flo
     {
         position += targetVec;
 
-        auto transform = math::Matrix::CreateTranslationMatrix(position) * rotation;
+        auto transform =
+            math::Matrix::CreateTranslationMatrix(position) * rotation;
         auto transformedVerts = vertices;
 
         for (auto& vertex : transformedVerts)
             vertex = math::Vector3::Transform(vertex, transform);
 
         // Yeah I know, not very efficient...
-        // Should change InsertBuffer to append verts + indices instead of allocating new buffers all the time.
-        InsertBuffer(m_buffers[ArrowGeometry], ArrowColor, transformedVerts, std::vector<int>{}, 0, false);
+        // Should change InsertBuffer to append verts + indices instead of
+        // allocating new buffers all the time.
+        InsertBuffer(m_buffers[ArrowGeometry], ArrowColor, transformedVerts,
+                     std::vector<int> {}, 0, false);
     }
 }
 
@@ -337,9 +372,11 @@ void Renderer::AddPath(const std::vector<math::Vertex>& path)
     }
 }
 
-void Renderer::AddGameObject(const std::vector<math::Vertex>& vertices, const std::vector<int>& indices)
+void Renderer::AddGameObject(const std::vector<math::Vertex>& vertices,
+                             const std::vector<int>& indices)
 {
-    InsertBuffer(m_buffers[GameObjectGeometry], GameObjectColor, vertices, indices);
+    InsertBuffer(m_buffers[GameObjectGeometry], GameObjectColor, vertices,
+                 indices);
 }
 
 bool Renderer::HasWmo(unsigned int id) const
@@ -352,31 +389,34 @@ bool Renderer::HasDoodad(unsigned int id) const
     return m_doodads.find(id) != m_doodads.end();
 }
 
-void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer,
-    const float *color,
-    const std::vector<math::Vertex> &vertices,
-    const std::vector<int> &indices,
-    std::uint32_t userParam,
-    bool genNormals)
+void Renderer::InsertBuffer(std::vector<GeometryBuffer>& buffer,
+                            const float* color,
+                            const std::vector<math::Vertex>& vertices,
+                            const std::vector<int>& indices,
+                            std::uint32_t userParam, bool genNormals)
 {
     if (vertices.empty())
         return;
 
     D3D11_BUFFER_DESC vertexBufferDesc;
-    
+
     ZERO(vertexBufferDesc);
 
     vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    vertexBufferDesc.ByteWidth = static_cast<decltype(vertexBufferDesc.ByteWidth)>(sizeof(ColoredVertex) * vertices.size());
+    vertexBufferDesc.ByteWidth =
+        static_cast<decltype(vertexBufferDesc.ByteWidth)>(
+            sizeof(ColoredVertex) * vertices.size());
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    ID3D11Buffer *vertexBuffer;
+    ID3D11Buffer* vertexBuffer;
 
-    ThrowIfFail(m_device->CreateBuffer(&vertexBufferDesc, nullptr, &vertexBuffer));
+    ThrowIfFail(
+        m_device->CreateBuffer(&vertexBufferDesc, nullptr, &vertexBuffer));
 
     D3D11_MAPPED_SUBRESOURCE ms;
-    ThrowIfFail(m_deviceContext->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
+    ThrowIfFail(
+        m_deviceContext->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
 
     std::vector<ColoredVertex> vertexBufferCpu;
     vertexBufferCpu.reserve(vertices.size());
@@ -427,7 +467,8 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer,
             vertexBufferCpu.emplace_back(vertex);
         }
 
-        memcpy(ms.pData, &vertexBufferCpu[0], sizeof(ColoredVertex)*vertexBufferCpu.size());
+        memcpy(ms.pData, &vertexBufferCpu[0],
+               sizeof(ColoredVertex) * vertexBufferCpu.size());
     }
 
     m_deviceContext->Unmap(vertexBuffer, 0);
@@ -444,16 +485,20 @@ void Renderer::InsertBuffer(std::vector<GeometryBuffer> &buffer,
         ZERO(indexBufferDesc);
 
         indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-        indexBufferDesc.ByteWidth = static_cast<decltype(indexBufferDesc.ByteWidth)>(sizeof(int) * indices.size());
+        indexBufferDesc.ByteWidth =
+            static_cast<decltype(indexBufferDesc.ByteWidth)>(sizeof(int) *
+                                                             indices.size());
         indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
         indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        ID3D11Buffer *indexBuffer;
+        ID3D11Buffer* indexBuffer;
 
-        ThrowIfFail(m_device->CreateBuffer(&indexBufferDesc, nullptr, &indexBuffer));
+        ThrowIfFail(
+            m_device->CreateBuffer(&indexBufferDesc, nullptr, &indexBuffer));
 
-        ThrowIfFail(m_deviceContext->Map(indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
-        memcpy(ms.pData, &indices[0], sizeof(int)*indices.size());
+        ThrowIfFail(m_deviceContext->Map(indexBuffer, 0,
+                                         D3D11_MAP_WRITE_DISCARD, 0, &ms));
+        memcpy(ms.pData, &indices[0], sizeof(int) * indices.size());
         m_deviceContext->Unmap(indexBuffer, 0);
 
         geometry.IndexBufferGpu = indexBuffer;
@@ -466,9 +511,11 @@ void Renderer::Render()
 {
     // clear the back buffer to a deep blue
     m_deviceContext->ClearRenderTargetView(m_backBuffer, BackgroundColor);
-    m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+    m_deviceContext->ClearDepthStencilView(
+        m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
-    struct VSConstants {
+    struct VSConstants
+    {
         float viewMatrix[16];
         float projMatrix[16];
     } constants;
@@ -477,44 +524,64 @@ void Renderer::Render()
     UINT viewportCount = 1;
 
     m_deviceContext->RSGetViewports(&viewportCount, &viewport);
-    m_deviceContext->RSSetState(m_wireframeEnabled ? m_rasterizerStateWireframe : m_rasterizerState);
+    m_deviceContext->RSSetState(
+        m_wireframeEnabled ? m_rasterizerStateWireframe : m_rasterizerState);
 
     m_camera.UpdateProjection(viewport.TopLeftX, viewport.TopLeftY,
-        viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
+                              viewport.Width, viewport.Height,
+                              viewport.MinDepth, viewport.MaxDepth);
 
     m_camera.GetViewMatrix().PopulateArray(constants.viewMatrix);
     m_camera.GetProjMatrix().PopulateArray(constants.projMatrix);
 
-    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr, &constants, 0, 0);
+    m_deviceContext->UpdateSubresource(m_cbPerObjectBuffer, 0, nullptr,
+                                       &constants, 0, 0);
     m_deviceContext->VSSetConstantBuffers(0, 1, &m_cbPerObjectBuffer.p);
 
     const unsigned int stride = sizeof(ColoredVertex);
     const unsigned int offset = 0;
 
-    /// TODO: Rework all this duplicated code to use the geometry flags in order to determine which buffers should be rendered in a general way
+    /// TODO: Rework all this duplicated code to use the geometry flags in order
+    /// to determine which buffers should be rendered in a general way
 
     // draw terrain
     if (m_renderADT)
         for (size_t i = 0; i < m_buffers[TerrainGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_buffers[TerrainGeometry][i].VertexBufferGpu };
-            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_buffers[TerrainGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            ID3D11Buffer* const pBuffer[] = {
+                m_buffers[TerrainGeometry][i].VertexBufferGpu};
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                &offset);
+            m_deviceContext->IASetIndexBuffer(
+                m_buffers[TerrainGeometry][i].IndexBufferGpu,
+                DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(
+                D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[TerrainGeometry][i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(
+                static_cast<UINT>(
+                    m_buffers[TerrainGeometry][i].IndexBufferCpu.size()),
+                0, 0);
         }
 
     // draw wmos
     if (m_renderWMO)
         for (size_t i = 0; i < m_buffers[WmoGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_buffers[WmoGeometry][i].VertexBufferGpu };
-            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_buffers[WmoGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            ID3D11Buffer* const pBuffer[] = {
+                m_buffers[WmoGeometry][i].VertexBufferGpu};
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                &offset);
+            m_deviceContext->IASetIndexBuffer(
+                m_buffers[WmoGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT,
+                0);
+            m_deviceContext->IASetPrimitiveTopology(
+                D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[WmoGeometry][i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(
+                static_cast<UINT>(
+                    m_buffers[WmoGeometry][i].IndexBufferCpu.size()),
+                0, 0);
         }
 
     // draw doodads
@@ -522,39 +589,64 @@ void Renderer::Render()
     {
         for (size_t i = 0; i < m_buffers[DoodadGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_buffers[DoodadGeometry][i].VertexBufferGpu };
-            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_buffers[DoodadGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            ID3D11Buffer* const pBuffer[] = {
+                m_buffers[DoodadGeometry][i].VertexBufferGpu};
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                &offset);
+            m_deviceContext->IASetIndexBuffer(
+                m_buffers[DoodadGeometry][i].IndexBufferGpu,
+                DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(
+                D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[DoodadGeometry][i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(
+                static_cast<UINT>(
+                    m_buffers[DoodadGeometry][i].IndexBufferCpu.size()),
+                0, 0);
         }
         for (size_t i = 0; i < m_buffers[GameObjectGeometry].size(); ++i)
         {
-            ID3D11Buffer *const pBuffer[] = { m_buffers[GameObjectGeometry][i].VertexBufferGpu };
-            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-            m_deviceContext->IASetIndexBuffer(m_buffers[GameObjectGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-            m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            ID3D11Buffer* const pBuffer[] = {
+                m_buffers[GameObjectGeometry][i].VertexBufferGpu};
+            m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                &offset);
+            m_deviceContext->IASetIndexBuffer(
+                m_buffers[GameObjectGeometry][i].IndexBufferGpu,
+                DXGI_FORMAT_R32_UINT, 0);
+            m_deviceContext->IASetPrimitiveTopology(
+                D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[GameObjectGeometry][i].IndexBufferCpu.size()), 0, 0);
+            m_deviceContext->DrawIndexed(
+                static_cast<UINT>(
+                    m_buffers[GameObjectGeometry][i].IndexBufferCpu.size()),
+                0, 0);
         }
     }
 
     if (m_renderLiquid || m_renderMesh || m_renderPathfind)
     {
-        const static float blendFactor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        m_deviceContext->OMSetBlendState(m_liquidBlendState, blendFactor, 0xffffffff);
+        const static float blendFactor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        m_deviceContext->OMSetBlendState(m_liquidBlendState, blendFactor,
+                                         0xffffffff);
 
         // draw liquid (with alpha blending)
         if (m_renderLiquid)
             for (size_t i = 0; i < m_buffers[LiquidGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_buffers[LiquidGeometry][i].VertexBufferGpu };
-                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_buffers[LiquidGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                ID3D11Buffer* const pBuffer[] = {
+                    m_buffers[LiquidGeometry][i].VertexBufferGpu};
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                    &offset);
+                m_deviceContext->IASetIndexBuffer(
+                    m_buffers[LiquidGeometry][i].IndexBufferGpu,
+                    DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(
+                    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[LiquidGeometry][i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(
+                    static_cast<UINT>(
+                        m_buffers[LiquidGeometry][i].IndexBufferCpu.size()),
+                    0, 0);
             }
 
         // draw meshes (also with alpha blending)
@@ -562,21 +654,37 @@ void Renderer::Render()
         {
             for (size_t i = 0; i < m_buffers[NavMeshGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_buffers[NavMeshGeometry][i].VertexBufferGpu };
-                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_buffers[NavMeshGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                ID3D11Buffer* const pBuffer[] = {
+                    m_buffers[NavMeshGeometry][i].VertexBufferGpu};
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                    &offset);
+                m_deviceContext->IASetIndexBuffer(
+                    m_buffers[NavMeshGeometry][i].IndexBufferGpu,
+                    DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(
+                    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[NavMeshGeometry][i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(
+                    static_cast<UINT>(
+                        m_buffers[NavMeshGeometry][i].IndexBufferCpu.size()),
+                    0, 0);
             }
 
             for (size_t i = 0; i < m_buffers[LineGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_buffers[LineGeometry][i].VertexBufferGpu };
-                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_buffers[LineGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[LineGeometry][i].IndexBufferCpu.size()), 0, 0);
+                ID3D11Buffer* const pBuffer[] = {
+                    m_buffers[LineGeometry][i].VertexBufferGpu};
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                    &offset);
+                m_deviceContext->IASetIndexBuffer(
+                    m_buffers[LineGeometry][i].IndexBufferGpu,
+                    DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(
+                    D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+                m_deviceContext->DrawIndexed(
+                    static_cast<UINT>(
+                        m_buffers[LineGeometry][i].IndexBufferCpu.size()),
+                    0, 0);
             }
         }
 
@@ -587,25 +695,40 @@ void Renderer::Render()
         {
             for (size_t i = 0; i < m_buffers[SphereGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_buffers[SphereGeometry][i].VertexBufferGpu };
-                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetIndexBuffer(m_buffers[SphereGeometry][i].IndexBufferGpu, DXGI_FORMAT_R32_UINT, 0);
-                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                ID3D11Buffer* const pBuffer[] = {
+                    m_buffers[SphereGeometry][i].VertexBufferGpu};
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                    &offset);
+                m_deviceContext->IASetIndexBuffer(
+                    m_buffers[SphereGeometry][i].IndexBufferGpu,
+                    DXGI_FORMAT_R32_UINT, 0);
+                m_deviceContext->IASetPrimitiveTopology(
+                    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                m_deviceContext->DrawIndexed(static_cast<UINT>(m_buffers[SphereGeometry][i].IndexBufferCpu.size()), 0, 0);
+                m_deviceContext->DrawIndexed(
+                    static_cast<UINT>(
+                        m_buffers[SphereGeometry][i].IndexBufferCpu.size()),
+                    0, 0);
             }
 
             for (size_t i = 0; i < m_buffers[ArrowGeometry].size(); ++i)
             {
-                ID3D11Buffer *const pBuffer[] = { m_buffers[ArrowGeometry][i].VertexBufferGpu };
-                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride, &offset);
-                m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+                ID3D11Buffer* const pBuffer[] = {
+                    m_buffers[ArrowGeometry][i].VertexBufferGpu};
+                m_deviceContext->IASetVertexBuffers(0, 1, pBuffer, &stride,
+                                                    &offset);
+                m_deviceContext->IASetPrimitiveTopology(
+                    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-                m_deviceContext->Draw(static_cast<UINT>(m_buffers[ArrowGeometry][i].VertexBufferCpu.size()), 0);
+                m_deviceContext->Draw(
+                    static_cast<UINT>(
+                        m_buffers[ArrowGeometry][i].VertexBufferCpu.size()),
+                    0);
             }
         }
 
-        m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor, 0xffffffff);
+        m_deviceContext->OMSetBlendState(m_opaqueBlendState, blendFactor,
+                                         0xffffffff);
     }
 
     // switch the back buffer and the front buffer
@@ -620,7 +743,8 @@ void Renderer::SetWireframe(bool enabled)
     m_wireframeEnabled = enabled;
 }
 
-bool Renderer::HitTest(int x, int y, std::uint32_t geometryFlags, math::Vertex &out, std::uint32_t& param) const
+bool Renderer::HitTest(int x, int y, std::uint32_t geometryFlags,
+                       math::Vertex& out, std::uint32_t& param) const
 {
     math::Vertex nearPosition;
     nearPosition.X = static_cast<float>(x);
@@ -650,12 +774,19 @@ bool Renderer::HitTest(int x, int y, std::uint32_t geometryFlags, math::Vertex &
             const auto& buffer = m_buffers[geometry][i];
             for (size_t j = 0; j < buffer.IndexBufferCpu.size() / 3; ++j)
             {
-                const auto& v0 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 0]].vertex;
-                const auto& v1 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 1]].vertex;
-                const auto& v2 = buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 2]].vertex;
+                const auto& v0 =
+                    buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 0]]
+                        .vertex;
+                const auto& v1 =
+                    buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 1]]
+                        .vertex;
+                const auto& v2 =
+                    buffer.VertexBufferCpu[buffer.IndexBufferCpu[j * 3 + 2]]
+                        .vertex;
 
                 float distance = 1.0f;
-                if (ray.IntersectTriangle(v0, v1, v2, &distance) && distance < ray.GetDistance())
+                if (ray.IntersectTriangle(v0, v1, v2, &distance) &&
+                    distance < ray.GetDistance())
                 {
                     ray.SetHitPoint(distance);
 

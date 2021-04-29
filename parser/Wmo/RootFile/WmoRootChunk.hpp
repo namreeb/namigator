@@ -30,26 +30,26 @@ enum class WmoRootChunkType : unsigned int
 
 class WmoRootChunk
 {
-    public:
-        size_t Position;
-        unsigned int Size;
-        unsigned int Type;
+public:
+    size_t Position;
+    unsigned int Size;
+    unsigned int Type;
 
-        utility::BinaryStream *Reader;
+    utility::BinaryStream* Reader;
 
-        WmoRootChunk(size_t position, utility::BinaryStream *reader)
-        {
-            Position = position;
-            Reader = reader;
+    WmoRootChunk(size_t position, utility::BinaryStream* reader)
+    {
+        Position = position;
+        Reader = reader;
 
-            Reader->rpos(position);
+        Reader->rpos(position);
 
-            WmoChunkHeader header;
-            reader->ReadBytes(&header, sizeof(header));
+        WmoChunkHeader header;
+        reader->ReadBytes(&header, sizeof(header));
 
-            Size = header.Size;
-            Type = header.Type;
-        }
+        Size = header.Size;
+        Type = header.Type;
+    }
 };
-}
-}
+} // namespace input
+} // namespace parser

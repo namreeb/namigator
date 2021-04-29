@@ -4,7 +4,8 @@ namespace parser
 {
 namespace input
 {
-MOPY::MOPY(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupChunk(position, groupFileStream), TriangleCount(Size/2)
+MOPY::MOPY(size_t position, utility::BinaryStream* groupFileStream)
+    : WmoGroupChunk(position, groupFileStream), TriangleCount(Size / 2)
 {
     groupFileStream->rpos(position + 8);
 
@@ -19,5 +20,5 @@ MOPY::MOPY(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupCh
         MaterialId.push_back(groupFileStream->Read<unsigned char>());
     }
 }
-}
-}
+} // namespace input
+} // namespace parser

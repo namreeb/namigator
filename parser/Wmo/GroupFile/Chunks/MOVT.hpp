@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Wmo/GroupFile/WmoGroupChunk.hpp"
-
-#include "utility/Vector.hpp"
 #include "utility/BinaryStream.hpp"
+#include "utility/Vector.hpp"
 
 #include <vector>
 
@@ -13,10 +12,10 @@ namespace input
 {
 class MOVT : WmoGroupChunk
 {
-    public:
-        std::vector<math::Vertex> Vertices;
+public:
+    std::vector<math::Vertex> Vertices;
 
-        MOVT(size_t position, utility::BinaryStream *groupFileStream);
+    MOVT(size_t position, utility::BinaryStream* groupFileStream);
 };
-}
-}
+} // namespace input
+} // namespace parser

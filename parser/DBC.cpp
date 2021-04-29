@@ -4,19 +4,21 @@
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
 
-#include <string>
+#include <cassert>
 #include <cstdint>
 #include <memory>
-#include <cassert>
+#include <string>
 
 #pragma pack(push, 1)
 // taken from https://wowdev.wiki/DBC
 struct dbc_header
 {
-    std::uint32_t magic;                // always 'WDBC'
-    std::uint32_t record_count;         // records per file
-    std::uint32_t field_count;          // fields per record
-    std::uint32_t record_size;          // sum (sizeof (field_type_i)) | 0 <= i < field_count. field_type_i is NOT defined in the files.
+    std::uint32_t magic;        // always 'WDBC'
+    std::uint32_t record_count; // records per file
+    std::uint32_t field_count;  // fields per record
+    std::uint32_t
+        record_size; // sum (sizeof (field_type_i)) | 0 <= i < field_count.
+                     // field_type_i is NOT defined in the files.
     std::uint32_t string_block_size;
 };
 #pragma pack(pop)
@@ -41,7 +43,7 @@ DBC::DBC(const std::string& filename)
     m_recordCount = header.record_count;
     m_fieldCount = header.field_count;
 
-    m_data.resize(header.record_count*header.field_count);
+    m_data.resize(header.record_count * header.field_count);
     in->ReadBytes(&m_data[0], m_data.size() * sizeof(std::uint32_t));
 
     // ensure that we have precisely enough space left for the string block
@@ -63,6 +65,6 @@ std::uint32_t DBC::GetField(int row, int column) const
 std::string DBC::GetStringField(int row, int column) const
 {
     auto const pos = GetField(row, column);
-    return std::string(reinterpret_cast<const char *>(&m_string[pos]));
+    return std::string(reinterpret_cast<const char*>(&m_string[pos]));
 }
-}
+} // namespace parser

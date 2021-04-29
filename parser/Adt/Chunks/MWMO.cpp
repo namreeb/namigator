@@ -1,8 +1,9 @@
 #include "Adt/Chunks/MWMO.hpp"
+
 #include "utility/Exception.hpp"
 
-#include <vector>
 #include <cstring>
+#include <vector>
 
 static_assert(sizeof(char) == 1, "char must be 8 bit");
 
@@ -10,7 +11,8 @@ namespace parser
 {
 namespace input
 {
-MWMO::MWMO(size_t position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+MWMO::MWMO(size_t position, utility::BinaryStream* reader)
+    : AdtChunk(position, reader)
 {
     Type = AdtChunkType::MWMO;
 
@@ -22,9 +24,10 @@ MWMO::MWMO(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
     std::vector<char> wmoNames(Size);
     reader->ReadBytes(&wmoNames[0], Size);
 
-    char *p;
+    char* p;
 
-    for (p = &wmoNames[0]; *p == '\0'; ++p);
+    for (p = &wmoNames[0]; *p == '\0'; ++p)
+        ;
 
     do
     {
@@ -34,7 +37,7 @@ MWMO::MWMO(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
             break;
 
         p++;
-    } while (p <= &wmoNames[Size-1]);
+    } while (p <= &wmoNames[Size - 1]);
 }
-}
-}
+} // namespace input
+} // namespace parser

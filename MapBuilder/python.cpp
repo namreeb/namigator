@@ -1,20 +1,19 @@
-#include "MeshBuilder.hpp"
 #include "GameObjectBVHBuilder.hpp"
+#include "MeshBuilder.hpp"
 #include "Worker.hpp"
-
 #include "parser/MpqManager.hpp"
 
 #include <boost/python.hpp>
-
-#include <string>
-#include <memory>
-#include <vector>
-#include <thread>
 #include <filesystem>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace fs = std::filesystem;
 
-int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t workers)
+int BuildBVH(const std::string& dataPath, const std::string& outputPath,
+             size_t workers)
 {
     parser::sMpqManager.Initialize(dataPath);
 
@@ -36,7 +35,9 @@ int BuildBVH(const std::string &dataPath, const std::string &outputPath, size_t 
     return static_cast<int>(goBuilder.Shutdown());
 }
 
-bool BuildMap(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, size_t threads, const std::string &goCSV)
+bool BuildMap(const std::string& dataPath, const std::string& outputPath,
+              const std::string& mapName, size_t threads,
+              const std::string& goCSV)
 {
     if (!threads)
         return false;
@@ -61,9 +62,10 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
             builder->LoadGameObjects(goCSV);
 
         for (auto i = 0u; i < threads; ++i)
-            workers.push_back(std::make_unique<Worker>(dataPath, builder.get()));
+            workers.push_back(
+                std::make_unique<Worker>(dataPath, builder.get()));
     }
-    catch (std::exception const &e)
+    catch (std::exception const& e)
     {
         std::cerr << "Builder initialization failed: " << e.what() << std::endl;
         return false;
@@ -72,7 +74,7 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
     for (;;)
     {
         bool done = true;
-        for (auto const &worker : workers)
+        for (auto const& worker : workers)
             if (!worker->IsFinished())
             {
                 done = false;
@@ -90,7 +92,9 @@ bool BuildMap(const std::string &dataPath, const std::string &outputPath, const 
     return true;
 }
 
-bool BuildADT(const std::string &dataPath, const std::string &outputPath, const std::string &mapName, int x, int y, const std::string &goCSV)
+bool BuildADT(const std::string& dataPath, const std::string& outputPath,
+              const std::string& mapName, int x, int y,
+              const std::string& goCSV)
 {
     if (x < 0 || y < 0)
         return false;
@@ -120,7 +124,7 @@ bool BuildADT(const std::string &dataPath, const std::string &outputPath, const 
     for (;;)
     {
         bool done = true;
-        for (auto const &worker : workers)
+        for (auto const& worker : workers)
             if (!worker->IsFinished())
             {
                 done = false;

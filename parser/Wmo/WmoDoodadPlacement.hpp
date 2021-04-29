@@ -1,8 +1,8 @@
 #pragma once
 
-#include "utility/Vector.hpp"
 #include "utility/Matrix.hpp"
 #include "utility/Quaternion.hpp"
+#include "utility/Vector.hpp"
 
 #include <cstdint>
 
@@ -19,11 +19,13 @@ struct WmoDoodadPlacement
     float Scale;
     std::uint32_t Color;
 
-    void GetTransformMatrix(math::Matrix &matrix) const
+    void GetTransformMatrix(math::Matrix& matrix) const
     {
-        matrix = math::Matrix::CreateTranslationMatrix(Position) * math::Matrix::CreateScalingMatrix(Scale) * math::Matrix::CreateFromQuaternion(Orientation);
+        matrix = math::Matrix::CreateTranslationMatrix(Position) *
+                 math::Matrix::CreateScalingMatrix(Scale) *
+                 math::Matrix::CreateFromQuaternion(Orientation);
     }
 };
 #pragma pack(pop)
-}
-}
+} // namespace input
+} // namespace parser

@@ -1,33 +1,38 @@
 #include "utility/Matrix.hpp"
-#include "utility/Exception.hpp"
+
 #include "utility/BinaryStream.hpp"
+#include "utility/Exception.hpp"
 #include "utility/Quaternion.hpp"
 
+#include <cassert>
 #include <cmath>
 #include <ostream>
-#include <cassert>
 
 namespace math
 {
-Matrix::Matrix(int rows, int columns) : m_rows(rows), m_columns(columns), m_matrix(rows*columns) {}
+Matrix::Matrix(int rows, int columns)
+    : m_rows(rows), m_columns(columns), m_matrix(rows * columns)
+{
+}
 
-float *Matrix::operator [](int row)
+float* Matrix::operator[](int row)
 {
     if (row >= m_rows)
         THROW("Bad row");
 
-    return &m_matrix[m_columns*row];
+    return &m_matrix[m_columns * row];
 }
 
-const float *Matrix::operator [](int row) const
+const float* Matrix::operator[](int row) const
 {
     if (row >= m_rows)
         THROW("Bad row");
 
-    return &m_matrix[m_columns*row];
+    return &m_matrix[m_columns * row];
 }
 
-// taken from: https://github.com/radekp/qt/blob/master/src/gui/math3d/qmatrix4x4.cpp#L1066
+// taken from:
+// https://github.com/radekp/qt/blob/master/src/gui/math3d/qmatrix4x4.cpp#L1066
 Matrix Matrix::CreateRotation(Vector3 direction, float radians)
 {
     Matrix ret(4, 4);
@@ -66,7 +71,7 @@ Matrix Matrix::CreateScalingMatrix(float scale)
 }
 
 // taken from: http://www.flipcode.com/documents/matrfaq.html#Q54
-Matrix Matrix::CreateFromQuaternion(const Quaternion &q)
+Matrix Matrix::CreateFromQuaternion(const Quaternion& q)
 {
     Matrix ret(4, 4);
 
@@ -101,7 +106,7 @@ Matrix Matrix::CreateFromQuaternion(const Quaternion &q)
 }
 
 // taken from MaiN's XNA Math lib
-Matrix Matrix::CreateTranslationMatrix(const math::Vector3 &position)
+Matrix Matrix::CreateTranslationMatrix(const math::Vector3& position)
 {
     Matrix ret(4, 4);
 
@@ -118,7 +123,8 @@ Matrix Matrix::CreateTranslationMatrix(const math::Vector3 &position)
 }
 
 // Possibly wrong, this is neither left nor right handed
-Matrix Matrix::CreateViewMatrix(const math::Vector3 &eye, const math::Vector3 &target, const Vector3 &up)
+Matrix Matrix::CreateViewMatrix(const math::Vector3& eye,
+                                const math::Vector3& target, const Vector3& up)
 {
     const Vector3 v_z = Vector3::Normalize(eye - target);
     const Vector3 v_x = Vector3::Normalize(Vector3::CrossProduct(up, v_z));
@@ -130,16 +136,29 @@ Matrix Matrix::CreateViewMatrix(const math::Vector3 &eye, const math::Vector3 &t
 
     Matrix ret(4, 4);
 
-    ret[0][0] = v_x.X;    ret[0][1] = v_y.X;    ret[0][2] = v_z.X;    ret[0][3] = 0.f;
-    ret[1][0] = v_x.Y;    ret[1][1] = v_y.Y;    ret[1][2] = v_z.Y;    ret[1][3] = 0.f;
-    ret[2][0] = v_x.Z;    ret[2][1] = v_y.Z;    ret[2][2] = v_z.Z;    ret[2][3] = 0.f;
-    ret[3][0] = -xDotEye; ret[3][1] = -yDotEye; ret[3][2] = -zDotEye; ret[3][3] = 1.f;
+    ret[0][0] = v_x.X;
+    ret[0][1] = v_y.X;
+    ret[0][2] = v_z.X;
+    ret[0][3] = 0.f;
+    ret[1][0] = v_x.Y;
+    ret[1][1] = v_y.Y;
+    ret[1][2] = v_z.Y;
+    ret[1][3] = 0.f;
+    ret[2][0] = v_x.Z;
+    ret[2][1] = v_y.Z;
+    ret[2][2] = v_z.Z;
+    ret[2][3] = 0.f;
+    ret[3][0] = -xDotEye;
+    ret[3][1] = -yDotEye;
+    ret[3][2] = -zDotEye;
+    ret[3][3] = 1.f;
 
     return ret;
 }
 
 // Right handed
-Matrix Matrix::CreateProjectionMatrix(float fovy, float aspect, float zNear, float zFar)
+Matrix Matrix::CreateProjectionMatrix(float fovy, float aspect, float zNear,
+                                      float zFar)
 {
     Matrix ret(4, 4);
 
@@ -154,24 +173,24 @@ Matrix Matrix::CreateProjectionMatrix(float fovy, float aspect, float zNear, flo
     ret[1][1] = yscale;
     ret[2][2] = zFar / (zNear - zFar);
     ret[2][3] = -1.f;
-    ret[3][2] = zNear*zFar / (zNear - zFar);
+    ret[3][2] = zNear * zFar / (zNear - zFar);
 
     return ret;
 }
 
-Matrix Matrix::CreateFromArray(const float *in, int count)
+Matrix Matrix::CreateFromArray(const float* in, int count)
 {
     const int len = static_cast<int>(sqrt(count));
-    assert(len*len == count);
+    assert(len * len == count);
 
     Matrix ret(len, len);
 
-    memcpy(&ret.m_matrix[0], in, sizeof(float)*count);
+    memcpy(&ret.m_matrix[0], in, sizeof(float) * count);
 
     return ret;
 }
 
-Matrix operator *(const Matrix &a, const Matrix &b)
+Matrix operator*(const Matrix& a, const Matrix& b)
 {
     if (a.m_columns != b.m_rows)
         THROW("Invalid matrix multiplication");
@@ -203,13 +222,17 @@ Matrix Matrix::Transposed() const
 
 namespace
 {
-    float Determinant3x3(const Matrix& m, int col0, int col1, int col2, int row0, int row1, int row2)
-    {
-        return m[row0][col0] * (m[row1][col1] * m[row2][col2] - m[row2][col1] * m[row1][col2])
-            - m[row0][col1] * (m[row1][col0] * m[row2][col2] - m[row2][col0] * m[row1][col2])
-            + m[row0][col2] * (m[row1][col0] * m[row2][col1] - m[row2][col0] * m[row1][col1]);
-    }
+float Determinant3x3(const Matrix& m, int col0, int col1, int col2, int row0,
+                     int row1, int row2)
+{
+    return m[row0][col0] *
+               (m[row1][col1] * m[row2][col2] - m[row2][col1] * m[row1][col2]) -
+           m[row0][col1] *
+               (m[row1][col0] * m[row2][col2] - m[row2][col0] * m[row1][col2]) +
+           m[row0][col2] *
+               (m[row1][col0] * m[row2][col1] - m[row2][col0] * m[row1][col1]);
 }
+} // namespace
 
 float Matrix::ComputeDeterminant() const
 {
@@ -219,7 +242,7 @@ float Matrix::ComputeDeterminant() const
     const Matrix& m = *this;
 
     float det;
-    det  = m[0][0] * Determinant3x3(m, 1, 2, 3, 1, 2, 3);
+    det = m[0][0] * Determinant3x3(m, 1, 2, 3, 1, 2, 3);
     det -= m[0][1] * Determinant3x3(m, 0, 2, 3, 1, 2, 3);
     det += m[0][2] * Determinant3x3(m, 0, 1, 3, 1, 2, 3);
     det -= m[0][3] * Determinant3x3(m, 0, 1, 2, 1, 2, 3);
@@ -232,7 +255,8 @@ Matrix Matrix::ComputeInverse() const
         THROW("Only 4x4 matrix is supported");
 
     float det = ComputeDeterminant();
-    if (fabs(det) < 1e-6f) {
+    if (fabs(det) < 1e-6f)
+    {
         THROW("Not invertible!");
     }
 
@@ -259,9 +283,9 @@ Matrix Matrix::ComputeInverse() const
     return inv;
 }
 
-utility::BinaryStream & operator << (utility::BinaryStream &o, const Matrix &m)
+utility::BinaryStream& operator<<(utility::BinaryStream& o, const Matrix& m)
 {
-    o.Write(&m.m_matrix[0], sizeof(float)*m.m_matrix.size());
+    o.Write(&m.m_matrix[0], sizeof(float) * m.m_matrix.size());
     return o;
 }
-}
+} // namespace math

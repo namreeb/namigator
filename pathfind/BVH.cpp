@@ -1,11 +1,11 @@
 #include "BVH.hpp"
 
-#include "utility/Exception.hpp"
 #include "utility/BinaryStream.hpp"
+#include "utility/Exception.hpp"
 
 namespace pathfind
 {
-BVH::BVH(const fs::path &path) : m_dataPath(path)
+BVH::BVH(const fs::path& path) : m_dataPath(path)
 {
     auto const index_file = m_dataPath / "BVH" / "bvh.idx";
 
@@ -43,7 +43,7 @@ BVH::BVH(const fs::path &path) : m_dataPath(path)
     }
 }
 
-std::string BVH::GetBVHPath(const std::string &mpq_path) const
+std::string BVH::GetBVHPath(const std::string& mpq_path) const
 {
     auto const result = m_files.find(mpq_path);
 
@@ -67,4 +67,4 @@ std::string BVH::GetMPQPath(std::uint32_t entry) const
 {
     return "";
 }
-}
+} // namespace pathfind

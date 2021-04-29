@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Wmo/RootFile/WmoRootChunk.hpp"
-
 #include "utility/BinaryStream.hpp"
 
 #include <map>
@@ -13,10 +12,11 @@ namespace input
 {
 class MODN : WmoRootChunk
 {
-    public:
-        std::map<unsigned int, std::string> Names;
+public:
+    std::map<unsigned int, std::string> Names;
 
-        MODN(unsigned int doodadNamesCount, size_t position, utility::BinaryStream *reader);
+    MODN(unsigned int doodadNamesCount, size_t position,
+         utility::BinaryStream* reader);
 };
-}
-}
+} // namespace input
+} // namespace parser

@@ -1,11 +1,13 @@
-#include "utility/Exception.hpp"
 #include "Adt/Chunks/Subchunks/MCLQ.hpp"
+
+#include "utility/Exception.hpp"
 
 namespace parser
 {
 namespace input
 {
-MCLQ::MCLQ(size_t position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+MCLQ::MCLQ(size_t position, utility::BinaryStream* reader)
+    : AdtChunk(position, reader)
 {
 #ifdef DEBUG
     if (Type != AdtChunkType::MCLQ)
@@ -24,5 +26,5 @@ MCLQ::MCLQ(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
 
     reader->ReadBytes(&RenderMap, sizeof(RenderMap));
 }
-}
-}
+} // namespace input
+} // namespace parser

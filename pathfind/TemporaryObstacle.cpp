@@ -1,68 +1,70 @@
 #include "Map.hpp"
-#include "Tile.hpp"
-
 #include "MapBuilder/MeshBuilder.hpp"
-
-#include "utility/MathHelper.hpp"
-#include "utility/Vector.hpp"
+#include "Tile.hpp"
+#include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
+#include "recastnavigation/Recast/Include/Recast.h"
 #include "utility/BoundingBox.hpp"
 #include "utility/Exception.hpp"
+#include "utility/MathHelper.hpp"
+#include "utility/Vector.hpp"
 
-#include "recastnavigation/Recast/Include/Recast.h"
-#include "recastnavigation/Detour/Include/DetourNavMeshBuilder.h"
-
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <algorithm>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 #include <thread>
 
 namespace
 {
 class RecastContext : public rcContext
 {
-    private:
-        const rcLogCategory m_logLevel;
+private:
+    const rcLogCategory m_logLevel;
 
-        virtual void doLog(const rcLogCategory category, const char *msg, const int) override
+    virtual void doLog(const rcLogCategory category, const char* msg,
+                       const int) override
+    {
+        if (!m_logLevel || category < m_logLevel)
+            return;
+
+        std::stringstream out;
+
+        out << "Thread #" << std::setfill(' ') << std::setw(6)
+            << std::this_thread::get_id() << " ";
+
+        switch (category)
         {
-            if (!m_logLevel || category < m_logLevel)
-                return;
-
-            std::stringstream out;
-
-            out << "Thread #" << std::setfill(' ') << std::setw(6) << std::this_thread::get_id() << " ";
-
-            switch (category)
-            {
-                case rcLogCategory::RC_LOG_ERROR:
-                    out << "ERROR: ";
-                    break;
-                case rcLogCategory::RC_LOG_PROGRESS:
-                    out << "PROGRESS: ";
-                    break;
-                case rcLogCategory::RC_LOG_WARNING:
-                    out << "WARNING: ";
-                    break;
-                default:
-                    out << "rcContext::doLog(" << category << "): ";
-                    break;
-            }
-
-            out << msg;
-
-            THROW("Recast Failure").Message(out.str());
+            case rcLogCategory::RC_LOG_ERROR:
+                out << "ERROR: ";
+                break;
+            case rcLogCategory::RC_LOG_PROGRESS:
+                out << "PROGRESS: ";
+                break;
+            case rcLogCategory::RC_LOG_WARNING:
+                out << "WARNING: ";
+                break;
+            default:
+                out << "rcContext::doLog(" << category << "): ";
+                break;
         }
 
-    public:
-        RecastContext(int logLevel) : m_logLevel(static_cast<rcLogCategory>(logLevel)) {}
+        out << msg;
+
+        THROW("Recast Failure").Message(out.str());
+    }
+
+public:
+    RecastContext(int logLevel)
+        : m_logLevel(static_cast<rcLogCategory>(logLevel))
+    {
+    }
 };
 
 #define ZERO(x) memset(&x, 0, sizeof(x))
 
 // NOTE: this does not set bmin/bmax
-void InitializeRecastConfig(rcConfig &config)
+void InitializeRecastConfig(rcConfig& config)
 {
     ZERO(config);
 
@@ -87,33 +89,47 @@ void InitializeRecastConfig(rcConfig &config)
 
 // TODO: Combine with MeshBuilder.cpp version?
 
-using SmartHeightFieldPtr = std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
-using SmartHeightFieldLayerSetPtr = std::unique_ptr<rcHeightfieldLayerSet, decltype(&rcFreeHeightfieldLayerSet)>;
-using SmartCompactHeightFieldPtr = std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)>;
-using SmartContourSetPtr = std::unique_ptr<rcContourSet, decltype(&rcFreeContourSet)>;
+using SmartHeightFieldPtr =
+    std::unique_ptr<rcHeightfield, decltype(&rcFreeHeightField)>;
+using SmartHeightFieldLayerSetPtr =
+    std::unique_ptr<rcHeightfieldLayerSet,
+                    decltype(&rcFreeHeightfieldLayerSet)>;
+using SmartCompactHeightFieldPtr =
+    std::unique_ptr<rcCompactHeightfield, decltype(&rcFreeCompactHeightfield)>;
+using SmartContourSetPtr =
+    std::unique_ptr<rcContourSet, decltype(&rcFreeContourSet)>;
 using SmartPolyMeshPtr = std::unique_ptr<rcPolyMesh, decltype(&rcFreePolyMesh)>;
-using SmartPolyMeshDetailPtr = std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)>;
+using SmartPolyMeshDetailPtr =
+    std::unique_ptr<rcPolyMeshDetail, decltype(&rcFreePolyMeshDetail)>;
 
-bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tileY, rcHeightfield &solid, std::vector<unsigned char> &out)
+bool RebuildMeshTile(rcContext& ctx, const rcConfig& config, int tileX,
+                     int tileY, rcHeightfield& solid,
+                     std::vector<unsigned char>& out)
 {
     // initialize compact height field
-    SmartCompactHeightFieldPtr chf(rcAllocCompactHeightfield(), rcFreeCompactHeightfield);
+    SmartCompactHeightFieldPtr chf(rcAllocCompactHeightfield(),
+                                   rcFreeCompactHeightfield);
 
-    if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight, (std::numeric_limits<int>::max)(), solid, *chf))
+    if (!rcBuildCompactHeightfield(&ctx, config.walkableHeight,
+                                   (std::numeric_limits<int>::max)(), solid,
+                                   *chf))
         return false;
 
     if (!rcBuildDistanceField(&ctx, *chf))
         return false;
 
-    if (!rcBuildRegions(&ctx, *chf, config.borderSize, config.minRegionArea, config.mergeRegionArea))
+    if (!rcBuildRegions(&ctx, *chf, config.borderSize, config.minRegionArea,
+                        config.mergeRegionArea))
         return false;
 
     SmartContourSetPtr cset(rcAllocContourSet(), rcFreeContourSet);
 
-    if (!rcBuildContours(&ctx, *chf, config.maxSimplificationError, config.maxEdgeLen, *cset))
+    if (!rcBuildContours(&ctx, *chf, config.maxSimplificationError,
+                         config.maxEdgeLen, *cset))
         return false;
 
-    // it is possible that this tile has no navigable geometry.  in this case, we 'succeed' by doing nothing further
+    // it is possible that this tile has no navigable geometry.  in this case,
+    // we 'succeed' by doing nothing further
     if (!cset->nconts)
         return true;
 
@@ -122,9 +138,11 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
     if (!rcBuildPolyMesh(&ctx, *cset, config.maxVertsPerPoly, *polyMesh))
         return false;
 
-    SmartPolyMeshDetailPtr polyMeshDetail(rcAllocPolyMeshDetail(), rcFreePolyMeshDetail);
+    SmartPolyMeshDetailPtr polyMeshDetail(rcAllocPolyMeshDetail(),
+                                          rcFreePolyMeshDetail);
 
-    if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist, config.detailSampleMaxError, *polyMeshDetail))
+    if (!rcBuildPolyMeshDetail(&ctx, *polyMesh, *chf, config.detailSampleDist,
+                               config.detailSampleMaxError, *polyMeshDetail))
         return false;
 
     chf.reset();
@@ -134,7 +152,8 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
     if (polyMesh->nverts >= 0xFFFF)
     {
         std::stringstream str;
-        str << "Too many mesh vertices produces for tile (" << tileX << ", " << tileY << ")" << std::endl;
+        str << "Too many mesh vertices produces for tile (" << tileX << ", "
+            << tileY << ")" << std::endl;
         std::cerr << str.str();
         return false;
     }
@@ -175,7 +194,7 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
     params.ch = config.ch;
     params.buildBvTree = true;
 
-    unsigned char *outData;
+    unsigned char* outData;
     int outDataSize;
     if (!dtCreateNavMeshData(&params, &outData, &outDataSize))
         return false;
@@ -188,33 +207,42 @@ bool RebuildMeshTile(rcContext &ctx, const rcConfig &config, int tileX, int tile
 
     return true;
 }
-}
+} // namespace
 
 namespace pathfind
 {
-void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, float orientation, int doodadSet)
+void Map::AddGameObject(std::uint64_t guid, unsigned int displayId,
+                        const math::Vector3& position, float orientation,
+                        int doodadSet)
 {
     auto const matrix = math::Matrix::CreateRotationZ(orientation);
     AddGameObject(guid, displayId, position, matrix, doodadSet);
 }
 
-void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, const math::Quaternion &rotation, int doodadSet)
+void Map::AddGameObject(std::uint64_t guid, unsigned int displayId,
+                        const math::Vector3& position,
+                        const math::Quaternion& rotation, int doodadSet)
 {
     auto const matrix = math::Matrix::CreateFromQuaternion(rotation);
     AddGameObject(guid, displayId, position, matrix, doodadSet);
 }
 
-void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::Vector3 &position, const math::Matrix &rotation, int /*doodadSet*/)
+void Map::AddGameObject(std::uint64_t guid, unsigned int displayId,
+                        const math::Vector3& position,
+                        const math::Matrix& rotation, int /*doodadSet*/)
 {
-    if (m_temporaryDoodads.find(guid) != m_temporaryDoodads.end() || m_temporaryWmos.find(guid) != m_temporaryWmos.end())
+    if (m_temporaryDoodads.find(guid) != m_temporaryDoodads.end() ||
+        m_temporaryWmos.find(guid) != m_temporaryWmos.end())
         THROW("Game object with specified GUID already exists");
 
-    auto const matrix = math::Matrix::CreateTranslationMatrix(position) * rotation;
+    auto const matrix =
+        math::Matrix::CreateTranslationMatrix(position) * rotation;
 
     auto const bvh_path = m_bvhLoader.GetBVHPath(displayId);
     // TODO: Add logic based on bvh_path
     auto const doodad = true;
-    //auto const doodad = m_temporaryObstaclePaths[displayId][0] == 'd' || m_temporaryObstaclePaths[displayId][0] == 'D';
+    // auto const doodad = m_temporaryObstaclePaths[displayId][0] == 'd' ||
+    // m_temporaryObstaclePaths[displayId][0] == 'D';
 
     if (doodad)
     {
@@ -226,13 +254,16 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
         auto model = EnsureDoodadModelLoaded(bvh_path);
         instance->m_model = model;
 
-        instance->m_translatedVertices.reserve(model->m_aabbTree.Vertices().size());
+        instance->m_translatedVertices.reserve(
+            model->m_aabbTree.Vertices().size());
 
-        for (auto const &v : model->m_aabbTree.Vertices())
-            instance->m_translatedVertices.emplace_back(math::Vector3::Transform(v, matrix));
+        for (auto const& v : model->m_aabbTree.Vertices())
+            instance->m_translatedVertices.emplace_back(
+                math::Vector3::Transform(v, matrix));
 
         // models are guarunteed to have more than zero vertices
-        math::BoundingBox bounds { instance->m_translatedVertices[0], instance->m_translatedVertices[0] };
+        math::BoundingBox bounds {instance->m_translatedVertices[0],
+                                  instance->m_translatedVertices[0]};
 
         for (auto i = 1u; i < instance->m_translatedVertices.size(); ++i)
             bounds.update(instance->m_translatedVertices[i]);
@@ -240,7 +271,7 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
         instance->m_bounds = bounds;
         m_temporaryDoodads[guid] = instance;
 
-        for (auto const &tile : m_tiles)
+        for (auto const& tile : m_tiles)
         {
             if (!tile.second->m_bounds.intersect2d(instance->m_bounds))
                 continue;
@@ -252,20 +283,23 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId, const math::
     {
         THROW("Temporary WMO obstacles are not supported");
 
-        //auto const model = LoadWmoModel(0); // TODO make this support loading a filename
+        // auto const model = LoadWmoModel(0); // TODO make this support loading
+        // a filename
 
         //// if there is only one, the specified set is irrelevant.  use it!
-        //if (doodadSet < 0 && model->m_doodadSets.size() > 1)
+        // if (doodadSet < 0 && model->m_doodadSets.size() > 1)
         //    THROW("No doodad set specified for WMO game object");
         //
-        //if (doodadSet < 0)
+        // if (doodadSet < 0)
         //    doodadSet = 0;
 
-        //WmoInstance instance { static_cast<unsigned short>(doodadSet), matrix, matrix.ComputeInverse(), math::BoundingBox(), model };
+        // WmoInstance instance { static_cast<unsigned short>(doodadSet),
+        // matrix, matrix.ComputeInverse(), math::BoundingBox(), model };
     }
 }
 
-void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance> doodad)
+void Tile::AddTemporaryDoodad(std::uint64_t guid,
+                              std::shared_ptr<DoodadInstance> doodad)
 {
     if (!m_heightField.spans)
         LoadHeightField();
@@ -273,17 +307,24 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
     auto const model = doodad->m_model.lock();
 
     std::vector<float> recastVertices;
-    math::Convert::VerticesToRecast(doodad->m_translatedVertices, recastVertices);
+    math::Convert::VerticesToRecast(doodad->m_translatedVertices,
+                                    recastVertices);
 
     std::vector<unsigned char> areas(model->m_aabbTree.Indices().size());
 
     m_temporaryDoodads[guid] = std::move(doodad);
 
     RecastContext ctx(rcLogCategory::RC_LOG_ERROR);
-    rcClearUnwalkableTriangles(&ctx, MeshSettings::WalkableSlope, &recastVertices[0], static_cast<int>(recastVertices.size() / 3),
-        &model->m_aabbTree.Indices()[0], static_cast<int>(model->m_aabbTree.Indices().size() / 3), &areas[0]);
-    rcRasterizeTriangles(&ctx, &recastVertices[0], static_cast<int>(recastVertices.size() / 3), &model->m_aabbTree.Indices()[0],
-        &areas[0], static_cast<int>(model->m_aabbTree.Indices().size() / 3), m_heightField);
+    rcClearUnwalkableTriangles(
+        &ctx, MeshSettings::WalkableSlope, &recastVertices[0],
+        static_cast<int>(recastVertices.size() / 3),
+        &model->m_aabbTree.Indices()[0],
+        static_cast<int>(model->m_aabbTree.Indices().size() / 3), &areas[0]);
+    rcRasterizeTriangles(
+        &ctx, &recastVertices[0], static_cast<int>(recastVertices.size() / 3),
+        &model->m_aabbTree.Indices()[0], &areas[0],
+        static_cast<int>(model->m_aabbTree.Indices().size() / 3),
+        m_heightField);
 
     // we don't want to filter ledge spans from ADT terrain.  this will restore
     // the area for these spans, which we are using for flags
@@ -295,36 +336,44 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid, std::shared_ptr<DoodadInstance
         for (auto i = 0; i < m_heightField.width * m_heightField.height; ++i)
             for (rcSpan* s = m_heightField.spans[i]; s; s = s->next)
                 if (!!(s->area & PolyFlags::Ground))
-                    groundSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(s, s->area));
+                    groundSpanAreas.push_back(
+                        std::pair<rcSpan*, unsigned int>(s, s->area));
 
-        rcFilterLedgeSpans(&ctx, MeshSettings::VoxelWalkableHeight, MeshSettings::VoxelWalkableClimb, m_heightField);
+        rcFilterLedgeSpans(&ctx, MeshSettings::VoxelWalkableHeight,
+                           MeshSettings::VoxelWalkableClimb, m_heightField);
 
         for (auto p : groundSpanAreas)
             p.first->area = p.second;
     }
 
-    rcFilterWalkableLowHeightSpans(&ctx, MeshSettings::VoxelWalkableHeight, m_heightField);
-    rcFilterLowHangingWalkableObstacles(&ctx, MeshSettings::VoxelWalkableClimb, m_heightField);
+    rcFilterWalkableLowHeightSpans(&ctx, MeshSettings::VoxelWalkableHeight,
+                                   m_heightField);
+    rcFilterLowHangingWalkableObstacles(&ctx, MeshSettings::VoxelWalkableClimb,
+                                        m_heightField);
 
     rcConfig config;
 
     InitializeRecastConfig(config);
 
-    // build the mesh into a secondary buffer, rather than overwriting the previous tile, so that we can delay the old tile's removal
+    // build the mesh into a secondary buffer, rather than overwriting the
+    // previous tile, so that we can delay the old tile's removal
     std::vector<std::uint8_t> newTileData;
-    auto const buildResult = RebuildMeshTile(ctx, config, m_x, m_y, m_heightField, newTileData);
+    auto const buildResult =
+        RebuildMeshTile(ctx, config, m_x, m_y, m_heightField, newTileData);
     assert(buildResult);
 
     if (m_ref)
     {
-        auto const removeResult = m_map->m_navMesh.removeTile(m_ref, nullptr, nullptr);
+        auto const removeResult =
+            m_map->m_navMesh.removeTile(m_ref, nullptr, nullptr);
         assert(removeResult == DT_SUCCESS);
     }
 
     m_tileData = std::move(newTileData);
 
-    auto const insertResult = m_map->m_navMesh.addTile(&m_tileData[0], static_cast<int>(m_tileData.size()), 0, m_ref, &m_ref);
+    auto const insertResult = m_map->m_navMesh.addTile(
+        &m_tileData[0], static_cast<int>(m_tileData.size()), 0, m_ref, &m_ref);
 
     assert(insertResult == DT_SUCCESS);
 }
-}
+} // namespace pathfind

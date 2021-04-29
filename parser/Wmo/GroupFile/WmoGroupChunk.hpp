@@ -25,13 +25,13 @@ enum class WmoGroupChunkType : unsigned int
 
 class WmoGroupChunk
 {
-    public:
-        const size_t Position;
+public:
+    const size_t Position;
 
-        unsigned int Size;
-        WmoGroupChunkType Type;
+    unsigned int Size;
+    WmoGroupChunkType Type;
 
-        WmoGroupChunk(size_t position, utility::BinaryStream *groupFileStream);
+    WmoGroupChunk(size_t position, utility::BinaryStream* groupFileStream);
 };
-}
-}
+} // namespace input
+} // namespace parser

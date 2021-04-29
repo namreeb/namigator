@@ -4,7 +4,8 @@ namespace parser
 {
 namespace input
 {
-MODD::MODD(size_t position, utility::BinaryStream *reader) : WmoRootChunk(position, reader), Count(Size/sizeof(WmoDoodadPlacement))
+MODD::MODD(size_t position, utility::BinaryStream* reader)
+    : WmoRootChunk(position, reader), Count(Size / sizeof(WmoDoodadPlacement))
 {
     if (!Count)
         return;
@@ -14,5 +15,5 @@ MODD::MODD(size_t position, utility::BinaryStream *reader) : WmoRootChunk(positi
     Doodads.resize(Count);
     reader->ReadBytes(&Doodads[0], Size);
 }
-}
-}
+} // namespace input
+} // namespace parser

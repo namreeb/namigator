@@ -1,28 +1,30 @@
-#include "utility/BinaryStream.hpp"
 #include "Adt/Chunks/MH2O.hpp"
 
-#include <memory>
+#include "utility/BinaryStream.hpp"
+
 #include <cassert>
-#include <vector>
-#include <iostream>
-#include <thread>
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <memory>
+#include <thread>
+#include <vector>
 
 namespace parser
 {
 namespace input
 {
-MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, reader)
+MH2O::MH2O(size_t position, utility::BinaryStream* reader)
+    : AdtChunk(position, reader)
 {
     const size_t offsetFrom = Position + 8;
 
     for (int y = 0; y < 16; ++y)
         for (int x = 0; x < 16; ++x)
         {
-            reader->rpos(offsetFrom + sizeof(MH2OHeader)*(y * 16 + x));
-                
+            reader->rpos(offsetFrom + sizeof(MH2OHeader) * (y * 16 + x));
+
             MH2OHeader header;
             reader->ReadBytes(&header, sizeof(header));
 
@@ -31,7 +33,8 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
 
             for (int layer = 0; layer < header.LayerCount; ++layer)
             {
-                reader->rpos(offsetFrom + header.InstancesOffset + layer*sizeof(LiquidInstance));
+                reader->rpos(offsetFrom + header.InstancesOffset +
+                             layer * sizeof(LiquidInstance));
 
                 LiquidInstance instance;
                 reader->ReadBytes(&instance, sizeof(instance));
@@ -46,8 +49,10 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
                 memset(newLayer->Render, 0, sizeof(newLayer->Render));
                 memset(newLayer->Heights, 0, sizeof(newLayer->Heights));
 
-                std::vector<std::uint8_t> exists(instance.OffsetVertexData - instance.OffsetExistsBitmap);
-                std::vector<float> heightMap((instance.Width + 1)*(instance.Height + 1));
+                std::vector<std::uint8_t> exists(instance.OffsetVertexData -
+                                                 instance.OffsetExistsBitmap);
+                std::vector<float> heightMap((instance.Width + 1) *
+                                             (instance.Height + 1));
 
                 if (!exists.size())
                 {
@@ -79,7 +84,8 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
                     else
                     {
                         reader->rpos(offsetFrom + instance.OffsetVertexData);
-                        reader->ReadBytes(&heightMap[0], sizeof(float)*heightMap.size());
+                        reader->ReadBytes(&heightMap[0],
+                                          sizeof(float) * heightMap.size());
                     }
                 }
 
@@ -97,17 +103,30 @@ MH2O::MH2O(size_t position, utility::BinaryStream *reader) : AdtChunk(position, 
                         if (!((exists[currentByte] >> currentBit++) & 0x01))
                             continue;
 
-                        newLayer->Render[squareY + instance.YOffset][squareX + instance.XOffset] = true;
+                        newLayer->Render[squareY + instance.YOffset]
+                                        [squareX + instance.XOffset] = true;
 
-                        newLayer->Heights[squareY + instance.YOffset + 0][squareX + instance.XOffset + 0] = heightMap[(squareY + 0)*(instance.Width + 1) + squareX + 0];
-                        newLayer->Heights[squareY + instance.YOffset + 0][squareX + instance.XOffset + 1] = heightMap[(squareY + 0)*(instance.Width + 1) + squareX + 1];
-                        newLayer->Heights[squareY + instance.YOffset + 1][squareX + instance.XOffset + 0] = heightMap[(squareY + 1)*(instance.Width + 1) + squareX + 0];
-                        newLayer->Heights[squareY + instance.YOffset + 1][squareX + instance.XOffset + 1] = heightMap[(squareY + 1)*(instance.Width + 1) + squareX + 1];
+                        newLayer->Heights[squareY + instance.YOffset + 0]
+                                         [squareX + instance.XOffset + 0] =
+                            heightMap[(squareY + 0) * (instance.Width + 1) +
+                                      squareX + 0];
+                        newLayer->Heights[squareY + instance.YOffset + 0]
+                                         [squareX + instance.XOffset + 1] =
+                            heightMap[(squareY + 0) * (instance.Width + 1) +
+                                      squareX + 1];
+                        newLayer->Heights[squareY + instance.YOffset + 1]
+                                         [squareX + instance.XOffset + 0] =
+                            heightMap[(squareY + 1) * (instance.Width + 1) +
+                                      squareX + 0];
+                        newLayer->Heights[squareY + instance.YOffset + 1]
+                                         [squareX + instance.XOffset + 1] =
+                            heightMap[(squareY + 1) * (instance.Width + 1) +
+                                      squareX + 1];
                     }
 
                 Layers.push_back(std::unique_ptr<LiquidLayer>(newLayer));
             }
         }
 }
-}
-}
+} // namespace input
+} // namespace parser

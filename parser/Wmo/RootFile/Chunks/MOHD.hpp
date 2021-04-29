@@ -28,5 +28,5 @@ struct MOHD
 
     std::uint32_t Unknown;
 };
-}
-}
+} // namespace input
+} // namespace parser

@@ -4,7 +4,8 @@ namespace parser
 {
 namespace input
 {
-MLIQ::MLIQ(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupChunk(position, groupFileStream)
+MLIQ::MLIQ(size_t position, utility::BinaryStream* groupFileStream)
+    : WmoGroupChunk(position, groupFileStream)
 {
     groupFileStream->rpos(position + 16);
 
@@ -23,5 +24,5 @@ MLIQ::MLIQ(size_t position, utility::BinaryStream *groupFileStream) : WmoGroupCh
             Heights->Set(y, x, groupFileStream->Read<float>());
         }
 }
-}
-}
+} // namespace input
+} // namespace parser

@@ -1,45 +1,48 @@
 #include "AABBTree.hpp"
+
 #include "BinaryStream.hpp"
 
 #include <algorithm>
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
 
 namespace math
 {
-namespace {
-class ModelFaceSorter {
-    public:
-        ModelFaceSorter(const Vertex* vertices, const int* indices, unsigned int axis)
-            : m_vertices(vertices)
-            , m_indices(indices)
-            , m_axis(axis)
-        {
-        }
+namespace
+{
+class ModelFaceSorter
+{
+public:
+    ModelFaceSorter(const Vertex* vertices, const int* indices,
+                    unsigned int axis)
+        : m_vertices(vertices), m_indices(indices), m_axis(axis)
+    {
+    }
 
-        bool operator () (unsigned int lhs, unsigned int rhs) const
-        {
-            float a = getCenteroid(lhs);
-            float b = getCenteroid(rhs);
-            return (a != b) ? (a < b) : (lhs < rhs);
-        }
+    bool operator()(unsigned int lhs, unsigned int rhs) const
+    {
+        float a = getCenteroid(lhs);
+        float b = getCenteroid(rhs);
+        return (a != b) ? (a < b) : (lhs < rhs);
+    }
 
-        float getCenteroid(unsigned int face) const
-        {
-            auto& a = m_vertices[m_indices[face*3 + 0]];
-            auto& b = m_vertices[m_indices[face*3 + 1]];
-            auto& c = m_vertices[m_indices[face*3 + 2]];
-            return (a[m_axis] + b[m_axis] + c[m_axis]) / 3.0f;
-        }
+    float getCenteroid(unsigned int face) const
+    {
+        auto& a = m_vertices[m_indices[face * 3 + 0]];
+        auto& b = m_vertices[m_indices[face * 3 + 1]];
+        auto& c = m_vertices[m_indices[face * 3 + 2]];
+        return (a[m_axis] + b[m_axis] + c[m_axis]) / 3.0f;
+    }
 
-        private:
-        const Vertex* m_vertices;
-        const int* m_indices;
-        unsigned int m_axis;
+private:
+    const Vertex* m_vertices;
+    const int* m_indices;
+    unsigned int m_axis;
 };
-}
+} // namespace
 
-AABBTree::AABBTree(const std::vector<Vertex>& vertices, const std::vector<int>& indices)
+AABBTree::AABBTree(const std::vector<Vertex>& vertices,
+                   const std::vector<int>& indices)
 {
     Build(vertices, indices);
 }
@@ -47,16 +50,20 @@ AABBTree::AABBTree(const std::vector<Vertex>& vertices, const std::vector<int>& 
 BoundingBox AABBTree::GetBoundingBox() const
 {
     if (m_nodes.empty())
-        return BoundingBox{};
+        return BoundingBox {};
     return m_nodes.front().bounds;
 }
 
 void AABBTree::Serialize(utility::BinaryStream& stream) const
 {
-    auto const size = sizeof(std::uint32_t) * 5 + // magic, Vector3 count, index count, node count, end magic
-        sizeof(Vertex) * m_vertices.size()      + // vertices
+    auto const size =
+        sizeof(std::uint32_t) *
+            5 + // magic, Vector3 count, index count, node count, end magic
+        sizeof(Vertex) * m_vertices.size() +      // vertices
         sizeof(std::int32_t) * m_indices.size() + // indices
-        (sizeof(std::uint8_t) + sizeof(std::uint32_t) + sizeof(BoundingBox)) * m_nodes.size();  // nodes (numFaces + startFace/childen + bounds) * count
+        (sizeof(std::uint8_t) + sizeof(std::uint32_t) + sizeof(BoundingBox)) *
+            m_nodes.size(); // nodes (numFaces + startFace/childen + bounds) *
+                            // count
 
     auto ourStream = utility::BinaryStream(size);
 
@@ -161,13 +168,14 @@ bool AABBTree::Deserialize(utility::BinaryStream& stream)
     return true;
 }
 
-BoundingBox AABBTree::CalculateFaceBounds(unsigned int* faces, unsigned int numFaces) const
+BoundingBox AABBTree::CalculateFaceBounds(unsigned int* faces,
+                                          unsigned int numFaces) const
 {
     float min = std::numeric_limits<float>::lowest();
     float max = std::numeric_limits<float>::max();
 
-    Vector3 minExtents = { max, max, max };
-    Vector3 maxExtents = { min, min, min };
+    Vector3 minExtents = {max, max, max};
+    Vector3 maxExtents = {min, min, min};
 
     for (unsigned int i = 0; i < numFaces; ++i)
     {
@@ -188,7 +196,8 @@ BoundingBox AABBTree::CalculateFaceBounds(unsigned int* faces, unsigned int numF
     return BoundingBox(minExtents, maxExtents);
 }
 
-void AABBTree::Build(const std::vector<Vertex>& verts, const std::vector<int>& indices)
+void AABBTree::Build(const std::vector<Vertex>& verts,
+                     const std::vector<int>& indices)
 {
     m_vertices = verts;
     m_indices = indices;
@@ -211,7 +220,8 @@ void AABBTree::Build(const std::vector<Vertex>& verts, const std::vector<int>& i
     m_nodes.clear();
     m_nodes.reserve(int(numFaces * 1.5f));
 
-    BuildRecursive(0, m_faceIndices.data(), static_cast<unsigned int>(numFaces));
+    BuildRecursive(0, m_faceIndices.data(),
+                   static_cast<unsigned int>(numFaces));
     m_faceBounds.clear();
 
     // Reorder the model indices according to the face indices
@@ -219,9 +229,9 @@ void AABBTree::Build(const std::vector<Vertex>& verts, const std::vector<int>& i
     for (size_t i = 0; i < numFaces; ++i)
     {
         unsigned int index = m_faceIndices[i] * 3;
-        sortedIndices[i*3 + 0] = m_indices[index + 0];
-        sortedIndices[i*3 + 1] = m_indices[index + 1];
-        sortedIndices[i*3 + 2] = m_indices[index + 2];
+        sortedIndices[i * 3 + 0] = m_indices[index + 0];
+        sortedIndices[i * 3 + 1] = m_indices[index + 1];
+        sortedIndices[i * 3 + 2] = m_indices[index + 2];
     }
 
     m_indices.swap(sortedIndices);
@@ -236,7 +246,8 @@ unsigned int AABBTree::GetLongestAxis(const Vector3& v)
     return (v.Y > v.Z) ? 1 : 2;
 }
 
-unsigned int AABBTree::PartitionMedian(Node& node, unsigned int* faces, unsigned int numFaces)
+unsigned int AABBTree::PartitionMedian(Node& node, unsigned int* faces,
+                                       unsigned int numFaces)
 {
     unsigned int axis = GetLongestAxis(node.bounds.getVector());
     ModelFaceSorter predicate(m_vertices.data(), m_indices.data(), axis);
@@ -245,7 +256,8 @@ unsigned int AABBTree::PartitionMedian(Node& node, unsigned int* faces, unsigned
     return numFaces / 2;
 }
 
-unsigned int AABBTree::PartitionSurfaceArea(Node& /*node*/, unsigned int* faces, unsigned int numFaces)
+unsigned int AABBTree::PartitionSurfaceArea(Node& /*node*/, unsigned int* faces,
+                                            unsigned int numFaces)
 {
     unsigned int bestAxis = 0;
     unsigned int bestIndex = 0;
@@ -297,7 +309,8 @@ unsigned int AABBTree::PartitionSurfaceArea(Node& /*node*/, unsigned int* faces,
     return bestIndex + 1;
 }
 
-void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsigned int numFaces)
+void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces,
+                              unsigned int numFaces)
 {
     const unsigned int maxFacesPerLeaf = 6;
 
@@ -313,8 +326,11 @@ void AABBTree::BuildRecursive(unsigned int nodeIndex, unsigned int* faces, unsig
 
     if (numFaces <= maxFacesPerLeaf)
     {
-        node.startFace = static_cast<std::uint32_t>(faces - m_faceIndices.data());
-        assert(node.startFace == static_cast<std::size_t>(faces - m_faceIndices.data()));   // verify no truncation
+        node.startFace =
+            static_cast<std::uint32_t>(faces - m_faceIndices.data());
+        assert(node.startFace ==
+               static_cast<std::size_t>(
+                   faces - m_faceIndices.data())); // verify no truncation
         node.numFaces = numFaces;
     }
     else
@@ -354,7 +370,8 @@ void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
     float max = std::numeric_limits<float>::max();
 
     unsigned int stackCount = 1;
-    while (!!stackCount) {
+    while (!!stackCount)
+    {
         // Pop node from back
         StackEntry& e = stack[--stackCount];
 
@@ -369,7 +386,7 @@ void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
             auto& leftChild = m_nodes.at(node.children + 0);
             auto& rightChild = m_nodes.at(node.children + 1);
 
-            float dist[2] = { max, max };
+            float dist[2] = {max, max};
             ray.IntersectBoundingBox(leftChild.bounds, &dist[0]);
             ray.IntersectBoundingBox(rightChild.bounds, &dist[1]);
 
@@ -395,7 +412,9 @@ void AABBTree::Trace(Ray& ray, unsigned int* faceIndex) const
     }
 }
 
-void AABBTree::TraceRecursive(unsigned int nodeIndex, Ray& ray, unsigned int* faceIndex) const {
+void AABBTree::TraceRecursive(unsigned int nodeIndex, Ray& ray,
+                              unsigned int* faceIndex) const
+{
     auto& node = m_nodes.at(nodeIndex);
     if (!!node.numFaces)
         TraceLeafNode(node, ray, faceIndex);
@@ -403,13 +422,14 @@ void AABBTree::TraceRecursive(unsigned int nodeIndex, Ray& ray, unsigned int* fa
         TraceInnerNode(node, ray, faceIndex);
 }
 
-void AABBTree::TraceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex) const
+void AABBTree::TraceLeafNode(const Node& node, Ray& ray,
+                             unsigned int* faceIndex) const
 {
     for (auto i = node.startFace; i < node.startFace + node.numFaces; ++i)
     {
-        auto& v0 = m_vertices[m_indices[i*3 + 0]];
-        auto& v1 = m_vertices[m_indices[i*3 + 1]];
-        auto& v2 = m_vertices[m_indices[i*3 + 2]];
+        auto& v0 = m_vertices[m_indices[i * 3 + 0]];
+        auto& v1 = m_vertices[m_indices[i * 3 + 1]];
+        auto& v2 = m_vertices[m_indices[i * 3 + 2]];
 
         float distance;
         if (!ray.IntersectTriangle(v0, v1, v2, &distance))
@@ -425,13 +445,14 @@ void AABBTree::TraceLeafNode(const Node& node, Ray& ray, unsigned int* faceIndex
     }
 }
 
-void AABBTree::TraceInnerNode(const Node& node, Ray& ray, unsigned int* faceIndex) const
+void AABBTree::TraceInnerNode(const Node& node, Ray& ray,
+                              unsigned int* faceIndex) const
 {
     auto& leftChild = m_nodes.at(node.children + 0);
     auto& rightChild = m_nodes.at(node.children + 1);
 
     float max = std::numeric_limits<float>::max();
-    float distance[2] = { max, max };
+    float distance[2] = {max, max};
 
     ray.IntersectBoundingBox(leftChild.bounds, &distance[0]);
     ray.IntersectBoundingBox(rightChild.bounds, &distance[1]);
@@ -448,4 +469,4 @@ void AABBTree::TraceInnerNode(const Node& node, Ray& ray, unsigned int* faceInde
     if (distance[furthest] < ray.GetDistance())
         TraceRecursive(node.children + furthest, ray, faceIndex);
 }
-}
+} // namespace math

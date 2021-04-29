@@ -1,22 +1,29 @@
 #include "utility/BinaryStream.hpp"
-#include "utility/Exception.hpp"
 
+#include "utility/Exception.hpp"
 #include "utility/miniz.c"
 
-#include <string>
-#include <vector>
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 namespace utility
 {
-BinaryStream::BinaryStream(std::vector<std::uint8_t> &buffer) : m_buffer(std::move(buffer)), m_rpos(0), m_wpos(m_buffer.size()) {}
+BinaryStream::BinaryStream(std::vector<std::uint8_t>& buffer)
+    : m_buffer(std::move(buffer)), m_rpos(0), m_wpos(m_buffer.size())
+{
+}
 
-BinaryStream::BinaryStream(size_t length) : m_buffer(length), m_rpos(0), m_wpos(0) {}
+BinaryStream::BinaryStream(size_t length)
+    : m_buffer(length), m_rpos(0), m_wpos(0)
+{
+}
 
-BinaryStream::BinaryStream(const std::filesystem::path &path) : m_rpos(0), m_wpos(0)
+BinaryStream::BinaryStream(const std::filesystem::path& path)
+    : m_rpos(0), m_wpos(0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 
@@ -30,15 +37,17 @@ BinaryStream::BinaryStream(const std::filesystem::path &path) : m_rpos(0), m_wpo
     m_buffer.resize(m_wpos);
 
     if (m_wpos > 0)
-        stream.read(reinterpret_cast<char *>(&m_buffer[0]), m_buffer.size());
+        stream.read(reinterpret_cast<char*>(&m_buffer[0]), m_buffer.size());
 }
 
-BinaryStream::BinaryStream(BinaryStream &&other) noexcept : m_buffer(std::move(other.m_buffer)), m_rpos(other.m_rpos), m_wpos(other.m_wpos)
+BinaryStream::BinaryStream(BinaryStream&& other) noexcept
+    : m_buffer(std::move(other.m_buffer)), m_rpos(other.m_rpos),
+      m_wpos(other.m_wpos)
 {
     other.m_rpos = other.m_wpos = 0;
 }
 
-BinaryStream& BinaryStream::operator = (BinaryStream&& other) noexcept
+BinaryStream& BinaryStream::operator=(BinaryStream&& other) noexcept
 {
     m_buffer = std::move(other.m_buffer);
     m_rpos = other.m_rpos;
@@ -67,41 +76,43 @@ std::string BinaryStream::ReadString(size_t length)
     return ret;
 }
 
-void BinaryStream::Write(const void *data, size_t length)
+void BinaryStream::Write(const void* data, size_t length)
 {
     Write(m_wpos, data, length);
     m_wpos += length;
 }
 
-void BinaryStream::Write(size_t position, const void *data, size_t length)
+void BinaryStream::Write(size_t position, const void* data, size_t length)
 {
-    // without this, if the buffer is full, the memcpy() call below will read past the end of m_buffer
+    // without this, if the buffer is full, the memcpy() call below will read
+    // past the end of m_buffer
     if (!length)
         return;
 
     if (position + length > m_buffer.size())
     {
-        auto const newSize = (std::max)(2 * m_buffer.size(), m_buffer.size() + length);
+        auto const newSize =
+            (std::max)(2 * m_buffer.size(), m_buffer.size() + length);
         m_buffer.resize(newSize);
     }
 
     memcpy(&m_buffer[position], data, length);
 }
 
-void BinaryStream::WriteString(const std::string &str, size_t length)
+void BinaryStream::WriteString(const std::string& str, size_t length)
 {
     std::vector<std::uint8_t> buffer(length);
-    memcpy(&buffer[0], str.c_str(), (std::min)(length-1, str.length()));
+    memcpy(&buffer[0], str.c_str(), (std::min)(length - 1, str.length()));
     Write(&buffer[0], buffer.size());
 }
 
-void BinaryStream::Append(const BinaryStream &other)
+void BinaryStream::Append(const BinaryStream& other)
 {
     if (other.m_buffer.size() > 0 && other.m_wpos > 0)
         Write(&other.m_buffer[0], other.m_wpos);
 }
 
-void BinaryStream::ReadBytes(void *dest, size_t length)
+void BinaryStream::ReadBytes(void* dest, size_t length)
 {
     if (length == 0)
         return;
@@ -113,14 +124,16 @@ void BinaryStream::ReadBytes(void *dest, size_t length)
     m_rpos += length;
 }
 
-bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t &result) const
+bool BinaryStream::GetChunkLocation(const std::string& chunkName,
+                                    size_t& result) const
 {
     return GetChunkLocation(chunkName, 0, result);
 }
 
 #define VALID_CHUNK_CHAR(x) ((x >= 'A' && x <= 'Z') || x == '2')
 
-bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLoc, size_t &result) const
+bool BinaryStream::GetChunkLocation(const std::string& chunkName,
+                                    size_t startLoc, size_t& result) const
 {
     size_t p = 0;
 
@@ -132,27 +145,29 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
 
         auto const currentChunk = &m_buffer[i];
 
-        if (VALID_CHUNK_CHAR(currentChunk[0]) && VALID_CHUNK_CHAR(currentChunk[1]) && VALID_CHUNK_CHAR(currentChunk[2]) && currentChunk[3] == 'M')
+        if (VALID_CHUNK_CHAR(currentChunk[0]) &&
+            VALID_CHUNK_CHAR(currentChunk[1]) &&
+            VALID_CHUNK_CHAR(currentChunk[2]) && currentChunk[3] == 'M')
         {
             p = i;
             break;
         }
     }
 
-    for (auto i = p; i < m_buffer.size(); )
+    for (auto i = p; i < m_buffer.size();)
     {
         auto const currentChunk = &m_buffer[i];
 
         if (chunkName[0] == currentChunk[3] &&
             chunkName[1] == currentChunk[2] &&
-            chunkName[2] == currentChunk[1] &&
-            chunkName[3] == currentChunk[0])
+            chunkName[2] == currentChunk[1] && chunkName[3] == currentChunk[0])
         {
             result = i;
             return true;
         }
 
-        auto const size = *reinterpret_cast<const std::uint32_t *>(&m_buffer[i + 4]);
+        auto const size =
+            *reinterpret_cast<const std::uint32_t*>(&m_buffer[i + 4]);
         i += size + 8;
     }
 
@@ -161,9 +176,13 @@ bool BinaryStream::GetChunkLocation(const std::string &chunkName, size_t startLo
 
 void BinaryStream::Compress()
 {
-    std::vector<std::uint8_t> buffer(compressBound(static_cast<mz_ulong>(m_wpos)));
+    std::vector<std::uint8_t> buffer(
+        compressBound(static_cast<mz_ulong>(m_wpos)));
     auto newSize = static_cast<mz_ulong>(buffer.size());
-    auto const result = compress(&buffer[0], &newSize, reinterpret_cast<const unsigned char *>(&m_buffer[0]), static_cast<mz_ulong>(m_wpos));
+    auto const result =
+        compress(&buffer[0], &newSize,
+                 reinterpret_cast<const unsigned char*>(&m_buffer[0]),
+                 static_cast<mz_ulong>(m_wpos));
 
     if (result != MZ_OK)
         THROW("BinaryStream::Compress failed");
@@ -202,9 +221,11 @@ void BinaryStream::Decompress()
         // more to decompress
         if (status == MZ_OK)
         {
-            buffer.resize(2 * (std::max)(buffer.size(), static_cast<size_t>(stream.total_out)));
+            buffer.resize(2 * (std::max)(buffer.size(), static_cast<size_t>(
+                                                            stream.total_out)));
             stream.next_out = &buffer[stream.total_out];
-            stream.avail_out = static_cast<unsigned int>(buffer.size() - stream.total_out);
+            stream.avail_out =
+                static_cast<unsigned int>(buffer.size() - stream.total_out);
         }
         // unknown failure
         else
@@ -219,21 +240,21 @@ void BinaryStream::Decompress()
     m_buffer.resize(m_wpos);
 }
 
-BinaryStream & operator << (BinaryStream &stream, const std::string &str)
+BinaryStream& operator<<(BinaryStream& stream, const std::string& str)
 {
     stream.Write(str.c_str(), str.length());
     return stream;
 }
 
-BinaryStream & operator << (BinaryStream &stream, const BinaryStream &other)
+BinaryStream& operator<<(BinaryStream& stream, const BinaryStream& other)
 {
     stream.Write(&other.m_buffer[0], other.wpos());
     return stream;
 }
 
-std::ostream & operator << (std::ostream &stream, const BinaryStream &data)
+std::ostream& operator<<(std::ostream& stream, const BinaryStream& data)
 {
-    stream.write(reinterpret_cast<const char *>(&data.m_buffer[0]), data.m_wpos);
+    stream.write(reinterpret_cast<const char*>(&data.m_buffer[0]), data.m_wpos);
     return stream;
 }
-}
+} // namespace utility

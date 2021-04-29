@@ -1,9 +1,9 @@
 #pragma once
 
-#include <filesystem>
-#include <unordered_map>
-#include <string>
 #include <cstdint>
+#include <filesystem>
+#include <string>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -21,11 +21,11 @@ private:
     std::unordered_map<int, std::string> m_temporaryObstacles;
 
 public:
-    BVH(const fs::path &path);
+    BVH(const fs::path& path);
 
-    std::string GetBVHPath(const std::string &mpq_path) const;
+    std::string GetBVHPath(const std::string& mpq_path) const;
     std::string GetBVHPath(std::uint32_t entry) const;
 
     std::string GetMPQPath(std::uint32_t entry) const;
 };
-}
+} // namespace pathfind

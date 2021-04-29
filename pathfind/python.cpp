@@ -2,39 +2,38 @@
 #include "utility/MathHelper.hpp"
 
 #include <boost/python.hpp>
-
-#include <string>
 #include <memory>
-#include <vector>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace py = boost::python;
 
 namespace
 {
-py::list python_find_path(const pathfind::Map &map,
-    float start_x, float start_y, float start_z,
-    float stop_x, float stop_y, float stop_z)
+py::list python_find_path(const pathfind::Map& map, float start_x,
+                          float start_y, float start_z, float stop_x,
+                          float stop_y, float stop_z)
 {
     py::list result;
 
-    const math::Vertex start { start_x, start_y, start_z };
-    const math::Vertex stop { stop_x, stop_y, stop_z };
+    const math::Vertex start {start_x, start_y, start_z};
+    const math::Vertex stop {stop_x, stop_y, stop_z};
 
     std::vector<math::Vertex> path;
 
     if (map.FindPath(start, stop, path))
-        for (auto const &point : path)
+        for (auto const& point : path)
             result.append(py::make_tuple(point.X, point.Y, point.Z));
 
     return result;
 }
 
-py::tuple load_adt_at(pathfind::Map &map, float x, float y)
+py::tuple load_adt_at(pathfind::Map& map, float x, float y)
 {
     int adt_x, adt_y;
 
-    math::Convert::WorldToAdt({ x,y,0.f }, adt_x, adt_y);
+    math::Convert::WorldToAdt({x, y, 0.f}, adt_x, adt_y);
 
     if (!map.HasADT(adt_x, adt_y))
         throw std::runtime_error("Requested ADT does not exist for map");
@@ -45,15 +44,14 @@ py::tuple load_adt_at(pathfind::Map &map, float x, float y)
     return py::make_tuple(adt_x, adt_y);
 }
 
-py::list python_query_heights(const pathfind::Map &map, float x,
-    float y)
+py::list python_query_heights(const pathfind::Map& map, float x, float y)
 {
     py::list result;
 
     std::vector<float> height_values;
 
     if (map.FindHeights(x, y, height_values))
-        for (auto const &z : height_values)
+        for (auto const& z : height_values)
             result.append(z);
 
     return result;
@@ -61,18 +59,18 @@ py::list python_query_heights(const pathfind::Map &map, float x,
 
 py::tuple get_zone_and_area(pathfind::Map& map, float x, float y, float z)
 {
-    math::Vertex p{ x,y,z };
+    math::Vertex p {x, y, z};
     unsigned int zone = -1, area = -1;
     // TODO: check return value and figure out how to return None
     map.ZoneAndArea(p, zone, area);
     return py::make_tuple(zone, area);
 }
-}
+} // namespace
 
 BOOST_PYTHON_MODULE(pathfind)
 {
-    py::class_<pathfind::Map, boost::noncopyable>
-        ("Map", py::init<const std::string&, const std::string&>())
+    py::class_<pathfind::Map, boost::noncopyable>(
+        "Map", py::init<const std::string&, const std::string&>())
         .def("load_all_adts", &pathfind::Map::LoadAllADTs)
         .def("load_adt_at", &load_adt_at)
         .def("find_path", &python_find_path)

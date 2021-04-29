@@ -1,28 +1,30 @@
 #include "GameObjectBVHBuilder.hpp"
+
 #include "BVHConstructor.hpp"
 #include "MeshBuilder.hpp"
-
-#include "parser/MpqManager.hpp"
-#include "parser/Doodad/Doodad.hpp"
-#include "parser/Wmo/Wmo.hpp"
 #include "parser/DBC.hpp"
-
+#include "parser/Doodad/Doodad.hpp"
+#include "parser/MpqManager.hpp"
+#include "parser/Wmo/Wmo.hpp"
 #include "utility/AABBTree.hpp"
-#include "utility/Exception.hpp"
 #include "utility/BinaryStream.hpp"
+#include "utility/Exception.hpp"
 
-#include <string>
-#include <unordered_map>
 #include <cstdint>
-#include <thread>
-#include <mutex>
 #include <iostream>
+#include <mutex>
 #include <sstream>
+#include <string>
+#include <thread>
+#include <unordered_map>
 
 namespace parser
 {
-GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& dataPath, const std::string& outputPath, size_t workers)
-    : m_dataPath(dataPath), m_bvhConstructor(outputPath), m_workers(workers), m_shutdownRequested(false)
+GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& dataPath,
+                                           const std::string& outputPath,
+                                           size_t workers)
+    : m_dataPath(dataPath), m_bvhConstructor(outputPath), m_workers(workers),
+      m_shutdownRequested(false)
 {
     sMpqManager.Initialize(m_dataPath);
 
@@ -68,7 +70,7 @@ void GameObjectBVHBuilder::Begin()
 size_t GameObjectBVHBuilder::Shutdown()
 {
     m_shutdownRequested = true;
-    for (auto &thread : m_threads)
+    for (auto& thread : m_threads)
         thread.join();
 
     m_threads.clear();
@@ -76,7 +78,7 @@ size_t GameObjectBVHBuilder::Shutdown()
     m_bvhConstructor.Shutdown();
 
     size_t result = 0;
-    for (auto const &entry : m_serialized)
+    for (auto const& entry : m_serialized)
         if (entry.second != "")
             ++result;
 
@@ -146,7 +148,8 @@ void GameObjectBVHBuilder::Work()
             {
                 const parser::Wmo wmo(filename);
 
-                // ignore wmos with no collision geometry.  this probably shouldn't ever really happen
+                // ignore wmos with no collision geometry.  this probably
+                // shouldn't ever really happen
                 if (wmo.Vertices.empty() || wmo.Indices.empty())
                 {
                     std::lock_guard<std::mutex> guard(m_mutex);
@@ -156,14 +159,15 @@ void GameObjectBVHBuilder::Work()
 
                 output = m_bvhConstructor.AddTemporaryObstacle(entry, filename);
 
-                // note that this will also serialize all doodads referenced in all doodad sets within this wmo
+                // note that this will also serialize all doodads referenced in
+                // all doodad sets within this wmo
                 meshfiles::SerializeWmo(wmo, m_bvhConstructor);
             }
 
             std::lock_guard<std::mutex> guard(m_mutex);
             m_serialized[entry] = output.filename().string();
         }
-        catch (utility::exception const &e)
+        catch (utility::exception const& e)
         {
             std::stringstream str;
             str << "ERROR: " << e.what() << "\n";
@@ -172,4 +176,4 @@ void GameObjectBVHBuilder::Work()
         }
     }
 }
-}
+} // namespace parser

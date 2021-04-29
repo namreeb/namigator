@@ -1,24 +1,25 @@
 #include "MpqManager.hpp"
+
 #include "DBC.hpp"
-
-#include "utility/Exception.hpp"
 #include "StormLib.h"
+#include "utility/Exception.hpp"
 
-#include <vector>
-#include <sstream>
-#include <cstdint>
-#include <cctype>
 #include <algorithm>
-#include <unordered_map>
+#include <cctype>
+#include <cstdint>
 #include <filesystem>
 #include <iostream>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
 
 namespace fs = std::filesystem;
 
-
 namespace
 {
-std::uint32_t GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t> &areas, std::uint32_t id)
+std::uint32_t
+GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t>& areas,
+              std::uint32_t id)
 {
     auto const i = areas.find(id);
 
@@ -32,16 +33,16 @@ std::uint32_t GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_
     // roots are the root of the parent
     return GetRootAreaId(areas, i->second);
 }
-}
+} // namespace
 
 namespace parser
 {
 thread_local MpqManager sMpqManager;
 
-void MpqManager::LoadMpq(const std::string &filePath)
+void MpqManager::LoadMpq(const std::string& filePath)
 {
     HANDLE archive;
-        
+
     if (!SFileOpenArchive(filePath.c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
         THROW("Could not open MPQ").ErrorCode();
 
@@ -60,7 +61,7 @@ void MpqManager::Initialize()
 //     DBFilesClient\AreaTable.dbc exists in enUS\locale-enUs.mpq,
 //         enUS\patch-enUS.mpq, and enUS\patch-enUS-2.mpq.  not sure which is
 //         correct but locale-enUS.mpq is definitely wrong.
-void MpqManager::Initialize(const std::string &wowDir)
+void MpqManager::Initialize(const std::string& wowDir)
 {
     auto const wowPath = fs::path(wowDir);
 
@@ -68,7 +69,8 @@ void MpqManager::Initialize(const std::string &wowDir)
     std::vector<fs::path> files;
     std::vector<fs::path> patches;
 
-    for (auto i = fs::directory_iterator(wowPath); i != fs::directory_iterator(); ++i)
+    for (auto i = fs::directory_iterator(wowPath);
+         i != fs::directory_iterator(); ++i)
     {
         if (fs::is_directory(i->status()))
         {
@@ -97,20 +99,23 @@ void MpqManager::Initialize(const std::string &wowDir)
     std::sort(files.begin(), files.end());
     std::sort(patches.begin(), patches.end());
 
-    // all locale directories should have files named lcLE\locale-lcLE.mpq and lcLE\patch-lcLE*.mpq
-    for (auto const &dir : directories)
+    // all locale directories should have files named lcLE\locale-lcLE.mpq and
+    // lcLE\patch-lcLE*.mpq
+    for (auto const& dir : directories)
     {
         auto const dirString = dir.path().filename().string();
 
         if (dirString.length() != 4)
             continue;
 
-        auto const localeMpq = wowPath / dirString / ("locale-" + dirString + ".MPQ");
+        auto const localeMpq =
+            wowPath / dirString / ("locale-" + dirString + ".MPQ");
         auto found = false;
 
         std::vector<fs::path> localePatches;
         fs::path firstPatch;
-        for (auto i = fs::directory_iterator(dir); i != fs::directory_iterator(); ++i)
+        for (auto i = fs::directory_iterator(dir);
+             i != fs::directory_iterator(); ++i)
         {
             if (fs::equivalent(*i, localeMpq))
                 found = true;
@@ -127,7 +132,8 @@ void MpqManager::Initialize(const std::string &wowDir)
         {
             std::sort(localePatches.begin(), localePatches.end());
             std::reverse(localePatches.begin(), localePatches.end());
-            std::copy(localePatches.cbegin(), localePatches.cend(), std::back_inserter(files));
+            std::copy(localePatches.cbegin(), localePatches.cend(),
+                      std::back_inserter(files));
 
             if (!fs::is_empty(firstPatch))
                 files.push_back(firstPatch);
@@ -136,12 +142,13 @@ void MpqManager::Initialize(const std::string &wowDir)
         }
     }
 
-    for (auto const &file : files)
+    for (auto const& file : files)
         LoadMpq(file.string());
 
-    for (auto const &file : patches)
-        for (auto const &handle : MpqHandles)
-            if (!SFileOpenPatchArchive(handle, file.string().c_str(), "base", 0))
+    for (auto const& file : patches)
+        for (auto const& handle : MpqHandles)
+            if (!SFileOpenPatchArchive(handle, file.string().c_str(), "base",
+                                       0))
                 THROW("Failed to apply patch").ErrorCode();
 
     const DBC maps("DBFilesClient\\Map.dbc");
@@ -150,7 +157,8 @@ void MpqManager::Initialize(const std::string &wowDir)
     {
         auto const map_name = maps.GetStringField(i, 1);
         std::string map_name_lower;
-        std::transform(map_name.begin(), map_name.end(), std::back_inserter(map_name_lower), ::tolower);
+        std::transform(map_name.begin(), map_name.end(),
+                       std::back_inserter(map_name_lower), ::tolower);
 
         Maps[map_name_lower] = maps.GetField(i, 0);
     }
@@ -177,18 +185,19 @@ bool MpqManager::FileExists(const std::string& file) const
     return false;
 }
 
-utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
+utility::BinaryStream* MpqManager::OpenFile(const std::string& file)
 {
     if (MpqHandles.empty())
         THROW("MpqManager not initialized");
 
-    for (auto const &handle : MpqHandles)
+    for (auto const& handle : MpqHandles)
     {
         if (!SFileHasFile(handle, file.c_str()))
             continue;
 
         HANDLE fileHandle;
-        if (!SFileOpenFileEx(handle, file.c_str(), SFILE_OPEN_FROM_MPQ, &fileHandle))
+        if (!SFileOpenFileEx(handle, file.c_str(), SFILE_OPEN_FROM_MPQ,
+                             &fileHandle))
             THROW("Error in SFileOpenFileEx").ErrorCode();
 
         auto const fileSize = SFileGetFileSize(fileHandle, nullptr);
@@ -198,7 +207,9 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
 
         std::vector<std::uint8_t> inFileData(fileSize);
 
-        if (!SFileReadFile(fileHandle, &inFileData[0], static_cast<DWORD>(inFileData.size()), nullptr, nullptr))
+        if (!SFileReadFile(fileHandle, &inFileData[0],
+                           static_cast<DWORD>(inFileData.size()), nullptr,
+                           nullptr))
         {
             SFileCloseFile(fileHandle);
             THROW("Error in SFileReadFile").ErrorCode();
@@ -212,10 +223,11 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
     return nullptr;
 }
 
-unsigned int MpqManager::GetMapId(const std::string &name) const
+unsigned int MpqManager::GetMapId(const std::string& name) const
 {
     std::string nameLower;
-    std::transform(name.begin(), name.end(), std::back_inserter(nameLower), ::tolower);
+    std::transform(name.begin(), name.end(), std::back_inserter(nameLower),
+                   ::tolower);
 
     auto const i = Maps.find(nameLower);
 
@@ -234,4 +246,4 @@ unsigned int MpqManager::GetZoneId(unsigned int areaId) const
 
     return i->second;
 }
-}
+} // namespace parser
