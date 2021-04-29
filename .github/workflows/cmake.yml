@@ -21,6 +21,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Checkout submodules
+      uses: textbook/git-checkout-submodule-action@2.1.1
+    
     - name: Download and install Boost
       uses: MarkusJx/install-boost@v1.0.1
       with:
