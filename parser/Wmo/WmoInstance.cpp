@@ -38,7 +38,8 @@ void UpdateBounds(math::BoundingBox& bounds, const math::Vertex& Vector3, std::s
 }
 }
 
-WmoInstance::WmoInstance(const Wmo *wmo, unsigned short doodadSet, const math::BoundingBox &bounds, const math::Matrix &transformMatrix) : Bounds(bounds), TransformMatrix(transformMatrix), DoodadSet(doodadSet), Model(wmo)
+WmoInstance::WmoInstance(const Wmo *wmo, unsigned int doodadSet, unsigned int nameSet, const math::BoundingBox &bounds, const math::Matrix &transformMatrix) :
+    Bounds(bounds), TransformMatrix(transformMatrix), DoodadSet(doodadSet), NameSet(nameSet), Model(wmo)
 {
     std::vector<math::Vector3> vertices;
     std::vector<int> indices;

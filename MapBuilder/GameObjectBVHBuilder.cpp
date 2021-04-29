@@ -36,6 +36,9 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& dataPath, const st
         if (!path.length())
             continue;
 
+        if (!sMpqManager.FileExists(path))
+            continue;
+
         auto const extension = fs::path(path).extension().string();
 
         if (extension[1] == 'm' || extension[1] == 'M')

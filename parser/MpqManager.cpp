@@ -15,6 +15,25 @@
 
 namespace fs = std::filesystem;
 
+
+namespace
+{
+std::uint32_t GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t> &areas, std::uint32_t id)
+{
+    auto const i = areas.find(id);
+
+    if (i == areas.end())
+        THROW("GetRootAreaId invalid id");
+
+    // roots have no parent
+    if (i->second == 0)
+        return i->first;
+
+    // roots are the root of the parent
+    return GetRootAreaId(areas, i->second);
+}
+}
+
 namespace parser
 {
 thread_local MpqManager sMpqManager;
@@ -125,7 +144,7 @@ void MpqManager::Initialize(const std::string &wowDir)
             if (!SFileOpenPatchArchive(handle, file.string().c_str(), "base", 0))
                 THROW("Failed to apply patch").ErrorCode();
 
-    DBC maps("DBFilesClient\\Map.dbc");
+    const DBC maps("DBFilesClient\\Map.dbc");
 
     for (auto i = 0u; i < maps.RecordCount(); ++i)
     {
@@ -135,6 +154,27 @@ void MpqManager::Initialize(const std::string &wowDir)
 
         Maps[map_name_lower] = maps.GetField(i, 0);
     }
+
+    const DBC area("DBFilesClient\\AreaTable.dbc");
+    std::unordered_map<std::uint32_t, std::uint32_t> areaToZone;
+    for (auto i = 0; i < area.RecordCount(); ++i)
+    {
+        auto const id = area.GetField(i, 0);
+        auto const parent = area.GetField(i, 2);
+
+        areaToZone[id] = parent;
+    }
+
+    for (auto const& i : areaToZone)
+        AreaToZone[i.first] = GetRootAreaId(areaToZone, i.first);
+}
+
+bool MpqManager::FileExists(const std::string& file) const
+{
+    for (auto const& handle : MpqHandles)
+        if (SFileHasFile(handle, file.c_str()))
+            return true;
+    return false;
 }
 
 utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
@@ -172,7 +212,7 @@ utility::BinaryStream *MpqManager::OpenFile(const std::string &file)
     return nullptr;
 }
 
-unsigned int MpqManager::GetMapId(const std::string &name)
+unsigned int MpqManager::GetMapId(const std::string &name) const
 {
     std::string nameLower;
     std::transform(name.begin(), name.end(), std::back_inserter(nameLower), ::tolower);
@@ -181,6 +221,16 @@ unsigned int MpqManager::GetMapId(const std::string &name)
 
     if (i == Maps.end())
         THROW("Map ID for " + name + " not found");
+
+    return i->second;
+}
+
+unsigned int MpqManager::GetZoneId(unsigned int areaId) const
+{
+    auto const i = AreaToZone.find(areaId);
+
+    if (i == AreaToZone.end())
+        return 0;
 
     return i->second;
 }

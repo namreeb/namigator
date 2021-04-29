@@ -5,6 +5,7 @@
 #include "utility/Vector.hpp"
 
 #include <string>
+#include <array>
 #include <vector>
 #include <memory>
 #include <cstdint>
@@ -22,6 +23,9 @@ class Wmo
 
         std::vector<math::Vertex> LiquidVertices;
         std::vector<std::int32_t> LiquidIndices;
+
+        unsigned int RootId;
+        std::vector<std::array<std::uint32_t, 3>> NameSetToAreaAndZone;
 
         std::vector<std::vector<std::unique_ptr<const WmoDoodad>>> DoodadSets;
 

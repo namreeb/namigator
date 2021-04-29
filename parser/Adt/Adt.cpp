@@ -137,7 +137,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
             chunk->m_minZ = mapChunk->MinZ;
             chunk->m_maxZ = mapChunk->MaxZ;
             chunk->m_areaId = mapChunk->AreaId;
-            chunk->m_zoneId = map->ZoneFromArea(chunk->m_areaId);
+            chunk->m_zoneId = sMpqManager.GetZoneId(chunk->m_areaId);
 
             Bounds.MaxCorner.Z = std::max(Bounds.MaxCorner.Z, mapChunk->MaxZ);
             Bounds.MinCorner.Z = std::min(Bounds.MinCorner.Z, mapChunk->MinZ);
@@ -317,7 +317,7 @@ Adt::Adt(Map *map, int adtX, int adtY)
                 math::Matrix transformMatrix;
                 wmoDefinition.GetTransformMatrix(transformMatrix);
 
-                wmoInstance = new WmoInstance(wmo, wmoDefinition.DoodadSet, bounds, transformMatrix);
+                wmoInstance = new WmoInstance(wmo, wmoDefinition.DoodadSet, wmoDefinition.NameSet, bounds, transformMatrix);
                 map->InsertWmoInstance(wmoDefinition.UniqueId, wmoInstance);
             }
 

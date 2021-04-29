@@ -34,6 +34,7 @@ struct WmoFileInstance
 {
     std::uint32_t m_id;
     std::uint16_t m_doodadSet;
+    std::uint16_t m_nameSet;
     float m_transformMatrix[16];
     math::BoundingBox m_bounds;
     char m_fileName[MeshSettings::MaxMPQPathLength];
@@ -88,7 +89,7 @@ Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(d
     std::uint32_t magic;
     in >> magic;
 
-    if (magic != 'MAP1')
+    if (magic != MeshSettings::FileMap)
         THROW("Invalid map file");
 
     ::memset(m_loadedADT, 0, sizeof(m_loadedADT));
@@ -141,7 +142,8 @@ Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(d
             {
                 WmoInstance ins;
 
-                ins.m_doodadSet = static_cast<unsigned short>(wmo.m_doodadSet);
+                ins.m_doodadSet = static_cast<unsigned int>(wmo.m_doodadSet);
+                ins.m_nameSet = static_cast<unsigned int>(wmo.m_nameSet);
                 ins.m_transformMatrix =
                     math::Matrix::CreateFromArray(wmo.m_transformMatrix, sizeof(wmo.m_transformMatrix) / sizeof(wmo.m_transformMatrix[0]));
                 ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
@@ -184,7 +186,8 @@ Map::Map(const std::string& dataPath, const std::string& mapName) : m_dataPath(d
 
         WmoInstance ins;
 
-        ins.m_doodadSet = static_cast<unsigned short>(globalWmo.m_doodadSet);
+        ins.m_doodadSet = globalWmo.m_doodadSet;
+        ins.m_nameSet = globalWmo.m_nameSet;
         ins.m_transformMatrix =
             math::Matrix::CreateFromArray(globalWmo.m_transformMatrix, sizeof(globalWmo.m_transformMatrix) / sizeof(globalWmo.m_transformMatrix[0]));
         ins.m_inverseTransformMatrix = ins.m_transformMatrix.ComputeInverse();
@@ -316,6 +319,17 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
 
     if (!model->m_aabbTree.Deserialize(in))
         THROW("Could not deserialize WMO").ErrorCode();
+
+    std::uint32_t rootId, nameSetCount;
+    in >> rootId >> nameSetCount;
+
+    for (auto i = 0u; i < nameSetCount; ++i)
+    {
+        std::uint32_t nameSet, areaId, zoneId;
+        in >> nameSet >> areaId >> zoneId;
+
+        model->m_nameSetToAreaZone[nameSet] = { areaId, zoneId };
+    }
 
     std::uint32_t doodadSetCount;
     in >> doodadSetCount;
@@ -505,6 +519,75 @@ bool Map::FindPath(const math::Vertex& start, const math::Vertex& end, std::vect
     return true;
 }
 
+bool Map::GetADTHeight(const Tile *tile, float x, float y, float &height,
+    unsigned int *zone, unsigned int *area) const
+{
+    // check optional ADT quad height data for this tile
+    if (tile->m_quadHeights.empty())
+        return false;
+
+    float northwestX, northwestY;
+    math::Convert::TileToWorldNorthwestCorner(tile->m_x, tile->m_y, northwestX, northwestY);
+
+    auto constexpr quadWidth = MeshSettings::AdtChunkSize / 8;
+
+    // quad coordinates
+    auto const quadX = static_cast<int>((northwestY - y) / quadWidth);
+    auto const quadY = static_cast<int>((northwestX - x) / quadWidth);
+
+    assert(quadX < 8 && quadY < 8);
+
+    // if there is an ADT hole here, do not consider ADT height
+    if (tile->m_quadHoles[quadX][quadY])
+        return false;
+
+    auto constexpr yMultiplier = 1 + 16 / MeshSettings::TilesPerChunk;
+    auto constexpr midOffset = 1 + 8 / MeshSettings::TilesPerChunk;
+
+    // compute the five quad vertices, with the following layout, in the recast coordinate system:
+    // a   b
+    //   c
+    // d   e
+
+    const float a[] = {
+        -(northwestY - quadWidth * quadX), tile->m_quadHeights[yMultiplier * quadY + quadX], -(northwestX - quadWidth * quadY) };
+
+    const float b[] = { -(northwestY - quadWidth * (quadX + 1)),
+                        tile->m_quadHeights[yMultiplier * quadY + quadX + 1],
+                        -(northwestX - quadWidth * quadY) };
+
+    const float c[] = { -(northwestY - quadWidth * (quadX + 0.5f)),
+                        tile->m_quadHeights[yMultiplier * quadY + quadX + midOffset],
+                        -(northwestX - quadWidth * (quadY + 0.5f)) };
+
+    const float d[] = { -(northwestY - quadWidth * quadX),
+                        tile->m_quadHeights[yMultiplier * (quadY + 1) + quadX],
+                        -(northwestX - quadWidth * (quadY + 1)) };
+
+    const float e[] = { -(northwestY - quadWidth * (quadX + 1)),
+                        tile->m_quadHeights[yMultiplier * (quadY + 1) + quadX + 1],
+                        -(northwestX - quadWidth * (quadY + 1)) };
+
+    // the point we want to intersect with each triangle
+    const float p[] = { -y, (std::numeric_limits<float>::min)(), -x };
+
+    float h;
+
+    // this if-statement will ensure that at most one of these calls will succeed, which is what we want
+    if (dtClosestHeightPointTriangle(p, a, b, c, h) || dtClosestHeightPointTriangle(p, b, e, c, h) ||
+        dtClosestHeightPointTriangle(p, c, e, d, h) || dtClosestHeightPointTriangle(p, a, c, d, h))
+    {
+        height = h;
+        if (area)
+            *area = tile->m_areaId;
+        if (zone)
+            *zone = tile->m_zoneId;
+        return true;
+    }
+
+    return false;
+}
+
 float Map::FindPreciseZ(float x, float y, float zHint) const
 {
     float result = zHint;
@@ -530,75 +613,15 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     if ((rayHit = RayCast(ray, {tile->second.get()})))
         result = ray.GetHitPoint().Z;
 
-    bool adtHit = false;
-
-    // check optional ADT quad height data for this tile
-    if (!tile->second->m_quadHeights.empty())
-    {
-        float northwestX, northwestY;
-        math::Convert::TileToWorldNorthwestCorner(tileX, tileY, northwestX, northwestY);
-
-        auto constexpr quadWidth = MeshSettings::AdtChunkSize / 8;
-
-        // quad coordinates
-        auto const quadX = static_cast<int>((northwestY - y) / quadWidth);
-        auto const quadY = static_cast<int>((northwestX - x) / quadWidth);
-
-        assert(quadX < 8 && quadY < 8);
-
-        // if there is an ADT hole here, do not consider ADT height
-        if (!tile->second->m_quadHoles[quadX][quadY])
-        {
-            auto constexpr yMultiplier = 1 + 16 / MeshSettings::TilesPerChunk;
-            auto constexpr midOffset = 1 + 8 / MeshSettings::TilesPerChunk;
-
-            // compute the five quad vertices, with the following layout, in the recast coordinate system:
-            // a   b
-            //   c
-            // d   e
-
-            const float a[] = {
-                -(northwestY - quadWidth * quadX), tile->second->m_quadHeights[yMultiplier * quadY + quadX], -(northwestX - quadWidth * quadY)};
-
-            const float b[] = {-(northwestY - quadWidth * (quadX + 1)),
-                               tile->second->m_quadHeights[yMultiplier * quadY + quadX + 1],
-                               -(northwestX - quadWidth * quadY)};
-
-            const float c[] = {-(northwestY - quadWidth * (quadX + 0.5f)),
-                               tile->second->m_quadHeights[yMultiplier * quadY + quadX + midOffset],
-                               -(northwestX - quadWidth * (quadY + 0.5f))};
-
-            const float d[] = {-(northwestY - quadWidth * quadX),
-                               tile->second->m_quadHeights[yMultiplier * (quadY + 1) + quadX],
-                               -(northwestX - quadWidth * (quadY + 1))};
-
-            const float e[] = {-(northwestY - quadWidth * (quadX + 1)),
-                               tile->second->m_quadHeights[yMultiplier * (quadY + 1) + quadX + 1],
-                               -(northwestX - quadWidth * (quadY + 1))};
-
-            // the point we want to intersect with each triangle
-            const float p[] = {-y, result, -x};
-
-            float height;
-
-            // this if-statement will ensure that at most one of these calls will succeed, which is what we want
-            if (dtClosestHeightPointTriangle(p, a, b, c, height) || dtClosestHeightPointTriangle(p, b, e, c, height) ||
-                dtClosestHeightPointTriangle(p, c, e, d, height) || dtClosestHeightPointTriangle(p, a, c, d, height))
-            {
-                adtHit = true;
-
-                // if both the ray trace and adt queries produced results, always go with the higher one
-                if (rayHit)
-                    result = (std::max)(result, height);
-                // otherwise, use this value
-                else
-                    result = height;
-            }
-        }
-    }
+    float adtHeight;
+    auto const adtHit = GetADTHeight(tile->second.get(), x, y, adtHeight);
 
     // one of these two should always hit, at least in places where this query is expected to be made
     assert(rayHit || adtHit);
+
+    // if no object was hit but the adt was, we don't care about the current value of 'result'
+    if (adtHit && (!rayHit || (adtHeight > result)))
+        result = adtHeight;
 
     return result;
 }
@@ -630,6 +653,48 @@ bool Map::FindHeights(float x, float y, std::vector<float>& output) const
     return !output.empty();
 }
 
+bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone, unsigned int& area) const
+{
+    // find the tile corresponding to this (x, y)
+    int tileX, tileY;
+    math::Convert::WorldToTile({ position.X, position.Y, 0.f }, tileX, tileY);
+
+    auto const tile = m_tiles.find({ tileX, tileY });
+
+    if (tile == m_tiles.end())
+        return false;
+
+    std::vector<const Tile*> tiles{ tile->second.get() };
+
+    math::Ray ray{
+        {position.X, position.Y, position.Z},
+        {position.X, position.Y, tile->second->m_bounds.getMinimum().Z}
+    };
+
+    unsigned int localZone, localArea;
+    auto const rayResult = RayCast(ray, tiles, &localZone, &localArea);
+    if (rayResult)
+    {
+        zone = localZone;
+        area = localArea;
+    }
+
+    float adtHeight;
+    unsigned int adtZone, adtArea;
+    auto const adtResult = GetADTHeight(tile->second.get(), position.X, position.Y, adtHeight,
+        &adtZone, &adtArea);
+
+    if (adtResult && adtHeight > ray.GetHitPoint().Z)
+    {
+        zone = adtZone;
+        area = adtArea;
+    }
+
+    assert(rayResult || adtResult);
+
+    return rayResult || adtResult;
+}
+
 bool Map::RayCast(math::Ray& ray) const
 {
     std::vector<const Tile*> tiles;
@@ -642,7 +707,8 @@ bool Map::RayCast(math::Ray& ray) const
     return RayCast(ray, tiles);
 }
 
-bool Map::RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles) const
+bool Map::RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles,
+    unsigned int* zone, unsigned int* area) const
 {
     auto const start = ray.GetStartPoint();
     auto const end = ray.GetEndPoint();
@@ -682,10 +748,18 @@ bool Map::RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles) const
                                  math::Vector3::Transform(end, instance.m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
-            if (instance.m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+            if (auto model = instance.m_model.lock())
             {
-                hit = true;
-                ray.SetHitPoint(rayInverse.GetDistance());
+                if (model->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+                {
+                    hit = true;
+                    ray.SetHitPoint(rayInverse.GetDistance());
+
+                    if (area)
+                        *area = model->m_nameSetToAreaZone[instance.m_nameSet].first;
+                    if (zone)
+                        *zone = model->m_nameSetToAreaZone[instance.m_nameSet].second;
+                }
             }
         }
 
@@ -734,10 +808,17 @@ bool Map::RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles) const
                                  math::Vector3::Transform(end, wmo.second->m_inverseTransformMatrix));
 
             // if this is a closer hit, update the original ray's distance
-            if (wmo.second->m_model.lock()->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+            if (auto model = wmo.second->m_model.lock())
             {
-                hit = true;
-                ray.SetHitPoint(rayInverse.GetDistance());
+                if (model->m_aabbTree.IntersectRay(rayInverse) && rayInverse.GetDistance() < ray.GetDistance())
+                {
+                    hit = true;
+                    ray.SetHitPoint(rayInverse.GetDistance());
+                    if (area)
+                        *area = model->m_nameSetToAreaZone[wmo.second->m_nameSet].first;
+                    if (zone)
+                        *zone = model->m_nameSetToAreaZone[wmo.second->m_nameSet].second;
+                }
             }
         }
 

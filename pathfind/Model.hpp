@@ -6,6 +6,8 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+#include <unordered_map>
 
 namespace pathfind
 {
@@ -35,12 +37,14 @@ struct WmoModel : Model
 {
     std::vector<std::vector<DoodadInstance>> m_doodadSets;
     std::vector<std::vector<std::shared_ptr<DoodadModel>>> m_loadedDoodadSets;
+    std::unordered_map<unsigned int, std::pair<unsigned int, unsigned int>> m_nameSetToAreaZone;
 };
 
 // always loaded
 struct WmoInstance
 {
-    unsigned short m_doodadSet;
+    unsigned int m_doodadSet;
+    unsigned int m_nameSet;
     math::Matrix m_transformMatrix;
     math::Matrix m_inverseTransformMatrix;
     math::BoundingBox m_bounds;

@@ -23,9 +23,10 @@ class WmoInstance
 
         std::set<AdtChunkLocation> AdtChunks;
 
-        const unsigned short DoodadSet;
+        const unsigned int DoodadSet;
+        const unsigned int NameSet;
 
-        WmoInstance(const Wmo *wmo, unsigned short doodadSet, const math::BoundingBox &bounds, const math::Matrix &transformMatrix);
+        WmoInstance(const Wmo *wmo, unsigned int doodadSet, unsigned int nameSet, const math::BoundingBox &bounds, const math::Matrix &transformMatrix);
 
         math::Vertex TransformVertex(const math::Vertex& vertex) const;
         void BuildTriangles(std::vector<math::Vertex>& vertices, std::vector<std::int32_t>& indices) const;

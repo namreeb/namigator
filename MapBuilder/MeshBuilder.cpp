@@ -94,7 +94,7 @@ void ComputeRequiredChunks(const parser::Map *map, int tileX, int tileY, std::ve
 }
 
 bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, float slope,
-               const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags = 0)
+               const std::vector<math::Vertex> &vertices, const std::vector<int> &indices, unsigned char areaFlags)
 {
     if (!vertices.size() || !indices.size())
         return true;
@@ -105,7 +105,7 @@ bool TransformAndRasterize(rcContext &ctx, rcHeightfield &heightField, float slo
     std::vector<unsigned char> areas(indices.size() / 3, areaFlags);
 
     // if these triangles are ADT, mark steep
-    if (areaFlags & PolyFlags::ADT)
+    if (areaFlags & PolyFlags::Ground)
     {
         rcMarkWalkableTriangles(&ctx, slope, &rastVert[0], static_cast<int>(vertices.size()), &indices[0], static_cast<int>(indices.size() / 3), &areas[0]);
 
@@ -137,7 +137,7 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
         for (rcSpan *s = solid.spans[i]; s; s = s->next)
         {
             // if we found a non-wmo liquid span, remove everything beneath it
-            if (!!(s->area & PolyFlags::Liquid) && !(s->area & PolyFlags::WMO))
+            if (!!(s->area & PolyFlags::Liquid) && !(s->area & PolyFlags::Object))
             {
                 for (auto ns : spans)
                     ns->area = RC_NULL_AREA;
@@ -145,10 +145,10 @@ void FilterGroundBeneathLiquid(rcHeightfield &solid)
                 spans.clear();
             }
             // if we found a wmo liquid span, remove every wmo span beneath it
-            else if (!!(s->area & (PolyFlags::Liquid | PolyFlags::WMO)))
+            else if (!!(s->area & (PolyFlags::Liquid | PolyFlags::Object)))
             {
                 for (auto ns : spans)
-                    if (!!(ns->area & PolyFlags::WMO))
+                    if (!!(ns->area & PolyFlags::Object))
                         ns->area = RC_NULL_AREA;
 
                 spans.clear();
@@ -749,15 +749,15 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
         return false;
 
     // wmo terrain
-    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, PolyFlags::WMO))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMOVertices, m_globalWMOIndices, PolyFlags::Object))
         return false;
 
     // wmo liquid
-    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, PolyFlags::WMO | PolyFlags::Liquid))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMOLiquidVertices, m_globalWMOLiquidIndices, PolyFlags::Object | PolyFlags::Liquid))
         return false;
 
     // wmo doodads
-    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, PolyFlags::WMO))
+    if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, m_globalWMODoodadVertices, m_globalWMODoodadIndices, PolyFlags::Object))
         return false;
 
     auto const solidEmpty = IsHeightFieldEmpty(*solid);
@@ -872,7 +872,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     for (auto const &chunk : chunks)
     {
         // adt terrain
-        if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, PolyFlags::ADT))
+        if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, chunk->m_terrainVertices, chunk->m_terrainIndices, PolyFlags::Ground))
             return false;
 
         // liquid
@@ -905,15 +905,15 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             std::vector<int> indices;
 
             wmoInstance->BuildTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::Object))
                 return false;
 
             wmoInstance->BuildLiquidTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO | PolyFlags::Liquid))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::Object | PolyFlags::Liquid))
                 return false;
 
             wmoInstance->BuildDoodadTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::WMO))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::Object))
                 return false;
 
             rasterizedWmos.insert(wmoId);
@@ -936,7 +936,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
             std::vector<int> indices;
 
             doodadInstance->BuildTriangles(vertices, indices);
-            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices))
+            if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle, vertices, indices, PolyFlags::Object))
                 return false;
 
             rasterizedDoodads.insert(doodadId);
@@ -948,18 +948,18 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     // we don't want to filter ledge spans from ADT terrain.  this will restore
     // the area for these spans, which we are using for flags
     {
-        std::vector<std::pair<rcSpan*, unsigned int>> adtSpanAreas;
+        std::vector<std::pair<rcSpan*, unsigned int>> groundSpanAreas;
 
-        adtSpanAreas.reserve(solid->width * solid->height);
+        groundSpanAreas.reserve(solid->width * solid->height);
 
         for (auto i = 0; i < solid->width * solid->height; ++i)
             for (rcSpan* s = solid->spans[i]; s; s = s->next)
-                if (s->area & PolyFlags::ADT)
-                    adtSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(s, s->area));
+                if (s->area & PolyFlags::Ground)
+                    groundSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(s, s->area));
 
         rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb, *solid);
 
-        for (auto p : adtSpanAreas)
+        for (auto p : groundSpanAreas)
             p.first->area = p.second;
     }
 
@@ -1209,6 +1209,12 @@ void SerializeWmo(const parser::Wmo &wmo, BVHConstructor &constructor)
     utility::BinaryStream o;
     aabbTree.Serialize(o);
 
+    o << static_cast<std::uint32_t>(wmo.RootId)
+        << static_cast<std::uint32_t>(wmo.NameSetToAreaAndZone.size());
+
+    for (auto const& i : wmo.NameSetToAreaAndZone)
+        o << i;
+
     o << static_cast<std::uint32_t>(wmo.DoodadSets.size());
 
     for (auto const &doodadSet : wmo.DoodadSets)
@@ -1223,6 +1229,7 @@ void SerializeWmo(const parser::Wmo &wmo, BVHConstructor &constructor)
             o << wmoDoodad->Bounds;
             o.WriteString(doodad->MpqPath, MeshSettings::MaxMPQPathLength);
 
+            // TODO: this probably causes the file to be written repeatedly
             // also serialize this doodad
             SerializeDoodad(*wmoDoodad->Parent.get(), constructor.AddFile(doodad->MpqPath));
         }

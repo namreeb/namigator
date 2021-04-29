@@ -20,24 +20,6 @@
 #include <cassert>
 #include <cstdint>
 
-namespace
-{
-std::uint32_t GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t> &areas, std::uint32_t id)
-{
-    auto const i = areas.find(id);
-
-    if (i == areas.end())
-        THROW("GetRootAreaId invalid id");
-
-    // roots have no parent
-    if (i->second == 0)
-        return i->first;
-
-    // roots are the root of the parent
-    return GetRootAreaId(areas, i->second);
-}
-}
-
 namespace parser
 {
 Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqManager.GetMapId(name))
@@ -74,26 +56,6 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
             m_hasAdt[x][y] = !!(flag & 1);
         }
 
-
-    const DBC area("DBFilesClient\\AreaTable.dbc");
-    std::unordered_map<std::uint32_t, std::uint32_t> areaToZone;
-    for (auto i = 0; i < area.RecordCount(); ++i)
-    {
-        auto const map = area.GetField(i, 1);
-
-        // we don't care about the areas not associated with this map
-        if (map != Id)
-            continue;
-
-        auto const id = area.GetField(i, 0);
-        auto const parent = area.GetField(i, 2);
-
-        areaToZone[id] = parent;
-    }
-
-    for (auto const &i : areaToZone)
-        m_areaToZone[i.first] = GetRootAreaId(areaToZone, i.first);
-
     // for worlds with terrain, parsing stops here.  else, load single wmo
     if (m_hasTerrain)
         return;
@@ -119,20 +81,7 @@ Map::Map(const std::string &name) : m_globalWmo(nullptr), Name(name), Id(sMpqMan
     math::Matrix transformMatrix;
     placement.GetTransformMatrix(transformMatrix);
 
-    m_globalWmo = std::make_unique<WmoInstance>(GetWmo(wmoName), placement.DoodadSet, bounds, transformMatrix);
-}
-
-std::uint32_t Map::ZoneFromArea(std::uint32_t areaId) const
-{
-    if (areaId == 0)
-        return 0;
-
-    auto const i = m_areaToZone.find(areaId);
-
-    if (i == m_areaToZone.end())
-        THROW("Area ID not found");
-
-    return i->second;
+    m_globalWmo = std::make_unique<WmoInstance>(GetWmo(wmoName), placement.DoodadSet, placement.NameSet, bounds, transformMatrix);
 }
 
 bool Map::HasAdt(int x, int y) const
@@ -250,6 +199,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
                 (
                     sizeof(std::uint32_t) +         // id
                     sizeof(std::uint16_t) +         // doodad set
+                    sizeof(std::uint16_t) +         // name set
                     22 * sizeof(float) +            // 16 floats for transform matrix, 6 floats for bounds
                     MeshSettings::MaxMPQPathLength  // model file name
                 ) * m_loadedWmoInstances.size() +   // for each wmo instance
@@ -264,12 +214,13 @@ void Map::Serialize(utility::BinaryStream& stream) const
             (
                 sizeof(std::uint32_t) +             // id
                 sizeof(std::uint16_t) +             // doodad set
+                sizeof(std::uint16_t) +             // name set
                 22 * sizeof(float) +                // 16 floats for transform matrix, 6 floats for bounds
                 MeshSettings::MaxMPQPathLength      // model file name
             ));
 
     utility::BinaryStream ourStream(ourSize);
-    ourStream << Magic;
+    ourStream << MeshSettings::FileMap;
 
     static_assert(sizeof(bool) == 1, "bool must be only 1 byte");
 
@@ -304,6 +255,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
             {
                 ourStream << static_cast<std::uint32_t>(wmo.first);
                 ourStream << static_cast<std::uint16_t>(wmo.second->DoodadSet);
+                ourStream << static_cast<std::uint16_t>(wmo.second->NameSet);
                 ourStream << wmo.second->TransformMatrix;
                 ourStream << wmo.second->Bounds;
                 ourStream.WriteString(wmo.second->Model->MpqPath, MeshSettings::MaxMPQPathLength);
@@ -334,6 +286,7 @@ void Map::Serialize(utility::BinaryStream& stream) const
 
         ourStream << id;
         ourStream << static_cast<std::uint16_t>(wmo->DoodadSet);
+        ourStream << static_cast<std::uint16_t>(wmo->NameSet);
         ourStream << wmo->TransformMatrix;
         ourStream << wmo->Bounds;
         ourStream.WriteString(wmo->Model->MpqPath, MeshSettings::MaxMPQPathLength);

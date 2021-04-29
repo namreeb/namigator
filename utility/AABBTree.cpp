@@ -107,13 +107,13 @@ bool AABBTree::Deserialize(utility::BinaryStream& stream)
     if (magic != StartMagic)
         return false;
 
-    std::uint32_t Vector3Count;
-    stream >> Vector3Count;
+    std::uint32_t vertexCount;
+    stream >> vertexCount;
 
-    assert(Vector3Count > 0);
+    assert(vertexCount > 0);
 
-    m_vertices.resize(Vector3Count);
-    stream.ReadBytes(&m_vertices[0], Vector3Count * sizeof(Vector3));
+    m_vertices.resize(vertexCount);
+    stream.ReadBytes(&m_vertices[0], vertexCount * sizeof(Vertex));
 
     std::uint32_t indexCount;
     stream >> indexCount;

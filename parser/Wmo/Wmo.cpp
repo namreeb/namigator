@@ -1,4 +1,5 @@
 #include "MpqManager.hpp"
+#include "DBC.hpp"
 #include "Wmo/Wmo.hpp"
 #include "Wmo/GroupFile/WmoGroupFile.hpp"
 #include "Wmo/RootFile/Chunks/MOHD.hpp"
@@ -66,6 +67,48 @@ Wmo::Wmo(const std::string &path) : MpqPath(path)
 
     // PROCESSING...
 
+    // TODO: this is PROBABLY wrong, but it seems like most (all?) WMOs use a
+    // single AreaTable ID for the entire WMO.  But which ID is used can vary
+    // depending on which "name set" is selected for a particular instance of
+    // the WMO.  Therefore let us save a list of tuples in the form:
+    // (name set, area id)
+    // This ASSUMES that there will only be one area ID per WMO.  This is
+    // probably true, but the data format allows for the violation of the
+    // assumption.
+    const DBC wmoAreaTable("DBFilesClient\\WMOAreaTable.dbc");
+    std::unordered_map<unsigned int, unsigned int> nameSetToAreaId;
+    for (auto i = 0; i < wmoAreaTable.RecordCount(); ++i)
+    {
+        auto const rootId = wmoAreaTable.GetField(i, 1);
+
+        // not for this wmo? skip
+        if (rootId != information.WMOId)
+            continue;
+
+        auto const areaId = wmoAreaTable.GetField(i, 10);
+
+        if (areaId == 0)
+            continue;
+
+        auto const nameSet = wmoAreaTable.GetField(i, 2);
+
+        auto const it = nameSetToAreaId.find(nameSet);
+        if (it != nameSetToAreaId.end() && it->second != areaId)
+        {
+            int asdf = 1234;
+        }
+
+        nameSetToAreaId[nameSet] = areaId;
+    }
+
+    std::vector<std::array<unsigned int, 3>> f;
+
+    NameSetToAreaAndZone.reserve(nameSetToAreaId.size());
+    for (auto const& it : nameSetToAreaId)
+        NameSetToAreaAndZone.push_back({ it.first, it.second, sMpqManager.GetZoneId(it.second) });
+
+    RootId = information.WMOId;
+
     // for each group file
     for (int g = 0; g < information.WMOGroupFilesCount; ++g)
     {
@@ -91,23 +134,23 @@ Wmo::Wmo(const std::string &path) : MpqPath(path)
             // note: we need to check if this Vector3 has already been added as part of another triangle
             for (int j = 0; j < 3; ++j)
             {
-                auto const Vector3Index = groupFiles[g]->IndicesChunk->Indices[i * 3 + j];
+                auto const vertexIndex = groupFiles[g]->IndicesChunk->Indices[i * 3 + j];
 
                 // this Vector3 has already been added.  add it's index to this triangle also
-                if (indexMap.find(Vector3Index) != indexMap.end())
+                if (indexMap.find(vertexIndex) != indexMap.end())
                 {
-                    Indices.push_back(indexMap[Vector3Index]);
+                    Indices.push_back(indexMap[vertexIndex]);
                     continue;
                 }
 
                 // add a mapping for the Vector3's old index to its position in the new Vector3 list (aka its new index)
-                indexMap[Vector3Index] = static_cast<int>(Vertices.size());
+                indexMap[vertexIndex] = static_cast<int>(Vertices.size());
 
                 // add the index
                 Indices.push_back(static_cast<std::int32_t>(Vertices.size()));
 
                 // add the Vector3
-                Vertices.push_back(groupFiles[g]->VerticesChunk->Vertices[Vector3Index]);
+                Vertices.push_back(groupFiles[g]->VerticesChunk->Vertices[vertexIndex]);
             }
         }
 
@@ -164,6 +207,10 @@ Wmo::Wmo(const std::string &path) : MpqPath(path)
         {
             auto const &placement = doodadChunk.Doodads[d];
             auto const &name = doodadNamesChunk.Names[placement.NameIndex];
+
+            // TODO: figure out why this happens
+            if (name.empty())
+                continue;
 
             math::Matrix transformMatrix;
             placement.GetTransformMatrix(transformMatrix);

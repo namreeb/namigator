@@ -220,11 +220,27 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
             if (!!(wParam & MK_SHIFT))
             {
-                if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::TerrainGeometryFlag, hit, param))
+                if (gRenderer->HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), Renderer::CollidableGeometryFlag, hit, param))
                 {
-                    std::stringstream ss;
-                    ss << "AreaID: " << param << std::endl;
-                    OutputDebugStringA(ss.str().c_str());
+                    unsigned int zone, area;
+                    if (gNavMesh->ZoneAndArea(hit, zone, area))
+                    {
+                        std::stringstream ss;
+                        ss << "From mesh.  Zone: " << zone << " Area: " << area << std::endl;
+                        OutputDebugStringA(ss.str().c_str());
+                    }
+
+                    std::vector<float> heights;
+                    if (gNavMesh->FindHeights(hit.X, hit.Y, heights))
+                    {
+                        std::stringstream ss;
+                        ss << "Found " << heights.size() << " height values:" << std::endl;
+                        for (auto const& h : heights)
+                            ss << "    " << h << std::endl;
+                        OutputDebugStringA(ss.str().c_str());
+                    }
+                    else
+                        OutputDebugStringA("Found no heights");
                 }
             }
             else
@@ -771,10 +787,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR lpCmd
     gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
     gControls->AddLabel("X:", 10, 35);
-    gControls->AddTextBox(Controls::PositionX, "1753.842285", 25, 35, 75, 20);
+    gControls->AddTextBox(Controls::PositionX, "1573", 25, 35, 75, 20);
 
     gControls->AddLabel("Y:", 10, 60);
-    gControls->AddTextBox(Controls::PositionY, "-662.430908", 25, 60, 75, 20);
+    gControls->AddTextBox(Controls::PositionY, "262", 25, 60, 75, 20);
 
     gControls->AddButton(Controls::Load, "Load", 115, 57, 75, 25, LoadPositionFromGUI);
     gControls->AddButton(Controls::ZSearch, "Z Search", 200, 57, 75, 25, SearchZValues);

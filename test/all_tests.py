@@ -68,7 +68,6 @@ def test_use_data(nav_data):
     # There is a hole at this location, and ensuring a single value is returned
     # is evidence that the hole is being identified correctly
     z_values = azeroth.query_z(1748.29, -661.98)
-
     assert len(z_values) == 1 and approximate(z_values[0], 45.058178)
 
     z_values = azeroth.query_z(1753.842285, -662.430908)
@@ -87,9 +86,34 @@ def test_use_data(nav_data):
 
     print('Deathknell doorway test succeeded')
 
+    azeroth.load_adt_at(-9068, 413)
+    zone, area = azeroth.get_zone_and_area(-9068.827148, 413.834045, 92.931786)
+    zone2, area2 = azeroth.get_zone_and_area(-9069.045898, 413.626892, 92.868759)
+    zone3, area3 = azeroth.get_zone_and_area(-9086.793945, 443.588013, 92.940720)
+
+    assert zone == 1519 and area == 1519
+
+    print('Stormwind area check succeeded')
+
+    assert zone2 == 12 and area2 == 12
+
+    print('Elwynn Forest area check succeeded')
+
+    assert zone3 == 1519 and area3 == 1617
+
+    print('Stormwind border area check succeeded')
+
+    azeroth.load_adt_at(1573, 262)
+
+    zone, area = azeroth.get_zone_and_area(1573.982666, 262.304504, -59.160473)
+
+    assert zone == 1497 and area == 1497
+
+    print('Undercity area check succeeded')
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-w', '--wowdata', help='Path to wow data', required=True)
+    parser.add_argument('-d', '--wowdata', help='Path to wow data', required=True)
     parser.add_argument('-n', '--navdata', help='Use existing navigation data')
     parser.add_argument('-j', '--jobs', help='How many jobs to run', type=int, default=4)
 

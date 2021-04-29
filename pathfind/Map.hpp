@@ -80,6 +80,9 @@ class Map
         // ensure that the given doodad model is loaded
         std::shared_ptr<DoodadModel> EnsureDoodadModelLoaded(const std::string &mpq_path);
 
+        bool GetADTHeight(const Tile* tile, float x, float y, float &height,
+            unsigned int *zone=nullptr, unsigned int *area=nullptr) const;
+
         // find a more precise z value at or below the given hint.  the purpose of this is to refine
         // the z value for the final hop on a path, and should not be exposed to clients, as it assumes
         // that the hint is within the Recast DetailSampleMaxError, and users cannot be trusted to
@@ -87,7 +90,8 @@ class Map
         float FindPreciseZ(float x, float y, float zHint) const;
 
         bool RayCast(math::Ray &ray) const;
-        bool RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles) const;
+        bool RayCast(math::Ray &ray, const std::vector<const Tile *> &tiles,
+            unsigned int *zone = nullptr, unsigned int *area = nullptr) const;
 
         // TODO: need mechanism to cleanup expired weak pointers saved in the containers of this class
 
@@ -119,6 +123,8 @@ class Map
         // NOTE: if your usage is outside of both of these scenarios, you are probably doing something wrong
         float FindHeight(const math::Vertex &source, const math::Vertex &target) const; // scenario one
         bool FindHeights(float x, float y, std::vector<float> &output) const;           // scenario two
+
+        bool ZoneAndArea(const math::Vertex &position, unsigned int& zone, unsigned int& area) const;
 
         const dtNavMesh &GetNavMesh() const { return m_navMesh; }
         const dtNavMeshQuery &GetNavMeshQuery() const { return m_navQuery; }
