@@ -24,7 +24,7 @@ jobs:
     - name: Download and install Boost
       uses: MarkusJx/install-boost@v1.0.1
       with:
-        boost_version: "1.76.0"
+        boost_version: "1.73.0"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
