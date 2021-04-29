@@ -336,8 +336,8 @@ void Tile::AddTemporaryDoodad(std::uint64_t guid,
         for (auto i = 0; i < m_heightField.width * m_heightField.height; ++i)
             for (rcSpan* s = m_heightField.spans[i]; s; s = s->next)
                 if (!!(s->area & PolyFlags::Ground))
-                    groundSpanAreas.push_back(
-                        std::pair<rcSpan*, unsigned int>(s, s->area));
+                    groundSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(
+                        s, static_cast<unsigned int>(s->area)));
 
         rcFilterLedgeSpans(&ctx, MeshSettings::VoxelWalkableHeight,
                            MeshSettings::VoxelWalkableClimb, m_heightField);
