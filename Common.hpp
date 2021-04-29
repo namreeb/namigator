@@ -8,6 +8,8 @@ enum PolyFlags : unsigned char
     Liquid  = 1 << 3,
 };
 
+#include <cstdint>
+
 // WARNING!!!  If these values are changed, existing data must be regenerated.  It is assumed that the client and generator values match EXACTLY!
 
 struct MeshSettings
