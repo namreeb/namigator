@@ -1074,8 +1074,8 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
         for (auto i = 0; i < solid->width * solid->height; ++i)
             for (rcSpan* s = solid->spans[i]; s; s = s->next)
                 if (s->area & PolyFlags::Ground)
-                    groundSpanAreas.push_back(
-                        std::pair<rcSpan*, unsigned int>(s, s->area));
+                    groundSpanAreas.push_back(std::pair<rcSpan*, unsigned int>(
+                        s, static_cast<unsigned int>(s->area)));
 
         rcFilterLedgeSpans(&ctx, config.walkableHeight, config.walkableClimb,
                            *solid);
