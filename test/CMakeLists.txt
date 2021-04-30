@@ -3,3 +3,5 @@ file(GLOB PY_SCRIPTS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOU
 foreach(script ${PY_SCRIPTS})
     install(PROGRAMS ${script} DESTINATION test)
 endforeach(script)
+
+install(PROGRAMS "test-map.mpq" DESTINATION test)
