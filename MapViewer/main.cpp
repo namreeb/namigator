@@ -691,9 +691,33 @@ void LoadPositionFromGUI()
     {
         if (!gMap->HasAdt(x, y))
         {
-            MessageBox(nullptr, "Map does not have the specified ADT tile",
-                       "Error", MB_OK | MB_ICONEXCLAMATION);
-            return;
+            // this ADT does not exist.  search for one that does, and offer it
+            // instead
+            int closestX = 0, closestY = 0, closestDist = 64 * 64 + 1;
+            for (auto newY = 0; newY < MeshSettings::Adts; ++newY)
+                for (auto newX = 0; newX < MeshSettings::Adts; ++newX)
+                {
+                    auto const dist = (newX - closestX) * (newX - closestX) +
+                                      (newY - closestY) * (newY - closestY);
+                    if (closestX < 0 || closestY < 0 || dist < closestDist)
+                    {
+                        closestX = newX;
+                        closestY = newY;
+                        closestDist = dist;
+                    }
+                }
+
+            std::stringstream str;
+            str << "Map does not have ADT (" << x << ", " << y
+                << ").  Nearest available is (" << closestX << ", " << closestY
+                << ").  Load instead?";
+            auto const result = MessageBox(nullptr, str.str().c_str(), "Error",
+                                           MB_YESNO | MB_ICONEXCLAMATION);
+            if (result != IDYES)
+                return;
+
+            x = closestX;
+            y = closestY;
         }
 
         try
@@ -819,11 +843,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
     maps.push_back("030 PVPZone01 (Alterac Valley)");
     maps.push_back("033 Shadowfang");
     maps.push_back("034 StormwindJail (Stockades)");
-    // Maps.push_back("035 StormwindPrison");
     maps.push_back("036 DeadminesInstance");
     maps.push_back("037 PVPZone02 (Azshara Crater)");
     maps.push_back("043 WailingCaverns");
     maps.push_back("429 DireMaul");
+    maps.push_back("451 Development");
     maps.push_back("489 PVPzone03 (Warsong Gulch)");
     maps.push_back("529 PVPzone04 (Arathi Basin)");
     maps.push_back("530 Expansion01 (Outland)");
