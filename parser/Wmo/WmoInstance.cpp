@@ -1,6 +1,7 @@
 #include "Wmo/WmoInstance.hpp"
 
 #include "Adt/AdtChunkLocation.hpp"
+#include "Common.hpp"
 #include "Wmo/Wmo.hpp"
 #include "utility/BoundingBox.hpp"
 #include "utility/MathHelper.hpp"
@@ -23,18 +24,23 @@ namespace parser
 {
 namespace
 {
-void UpdateBounds(math::BoundingBox& bounds, const math::Vertex& Vector3,
+void UpdateBounds(math::BoundingBox& bounds, const math::Vertex& vertex,
                   std::set<AdtChunkLocation>& adtChunks)
 {
-    bounds.MinCorner.X = std::min(bounds.MinCorner.X, Vector3.X);
-    bounds.MaxCorner.X = std::max(bounds.MaxCorner.X, Vector3.X);
-    bounds.MinCorner.Y = std::min(bounds.MinCorner.Y, Vector3.Y);
-    bounds.MaxCorner.Y = std::max(bounds.MaxCorner.Y, Vector3.Y);
-    bounds.MinCorner.Z = std::min(bounds.MinCorner.Z, Vector3.Z);
-    bounds.MaxCorner.Z = std::max(bounds.MaxCorner.Z, Vector3.Z);
+    bounds.MinCorner.X = std::min(bounds.MinCorner.X, vertex.X);
+    bounds.MaxCorner.X = std::max(bounds.MaxCorner.X, vertex.X);
+    bounds.MinCorner.Y = std::min(bounds.MinCorner.Y, vertex.Y);
+    bounds.MaxCorner.Y = std::max(bounds.MaxCorner.Y, vertex.Y);
+    bounds.MinCorner.Z = std::min(bounds.MinCorner.Z, vertex.Z);
+    bounds.MaxCorner.Z = std::max(bounds.MaxCorner.Z, vertex.Z);
+
+    // some models can protrude beyond the map edge
+    if (fabsf(vertex.X) > MeshSettings::MaxCoordinate ||
+        fabsf(vertex.Y) > MeshSettings::MaxCoordinate)
+        return;
 
     int adtX, adtY, chunkX, chunkY;
-    math::Convert::WorldToAdt(Vector3, adtX, adtY, chunkX, chunkY);
+    math::Convert::WorldToAdt(vertex, adtX, adtY, chunkX, chunkY);
     adtChunks.insert(
         {static_cast<std::uint8_t>(adtX), static_cast<std::uint8_t>(adtY),
          static_cast<std::uint8_t>(chunkX), static_cast<std::uint8_t>(chunkY)});
