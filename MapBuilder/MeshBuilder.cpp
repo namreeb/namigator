@@ -70,8 +70,10 @@ void ComputeRequiredChunks(const parser::Map* map, int tileX, int tileY,
         MeshSettings::TileSize / MeshSettings::AdtChunkSize;
 
     // NOTE: these are global chunk coordinates, not ADT or tile
-    auto const startX = static_cast<int>((tileX - 1) * ChunksPerTile);
-    auto const startY = static_cast<int>((tileY - 1) * ChunksPerTile);
+    auto const startX =
+        (std::max)(0, static_cast<int>((tileX - 1) * ChunksPerTile));
+    auto const startY =
+        (std::max)(0, static_cast<int>((tileY - 1) * ChunksPerTile));
     auto const stopX = static_cast<int>((tileX + 1) * ChunksPerTile);
     auto const stopY = static_cast<int>((tileY + 1) * ChunksPerTile);
 
@@ -508,8 +510,8 @@ MeshBuilder::MeshBuilder(const std::string& outputPath,
     {
         // this build order should ensure that the tiles for one ADT finish
         // before the next ADT begins (more or less)
-        for (auto y = MeshSettings::Adts - 1; !!y; --y)
-            for (auto x = MeshSettings::Adts - 1; !!x; --x)
+        for (auto y = MeshSettings::Adts - 1; y >= 0; --y)
+            for (auto x = MeshSettings::Adts - 1; x >= 0; --x)
             {
                 if (!m_map->HasAdt(x, y))
                     continue;
@@ -527,7 +529,7 @@ MeshBuilder::MeshBuilder(const std::string& outputPath,
                         ComputeRequiredChunks(m_map.get(), globalTileX,
                                               globalTileY, chunks);
 
-                        for (auto chunk : chunks)
+                        for (auto const& chunk : chunks)
                             AddChunkReference(chunk.first, chunk.second);
 
                         m_pendingTiles.push_back({globalTileX, globalTileY});
