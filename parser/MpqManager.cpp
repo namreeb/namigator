@@ -185,7 +185,8 @@ bool MpqManager::FileExists(const std::string& file) const
     return false;
 }
 
-utility::BinaryStream* MpqManager::OpenFile(const std::string& file)
+std::unique_ptr<utility::BinaryStream>
+MpqManager::OpenFile(const std::string& file)
 {
     if (MpqHandles.empty())
         THROW("MpqManager not initialized");
@@ -217,7 +218,7 @@ utility::BinaryStream* MpqManager::OpenFile(const std::string& file)
 
         SFileCloseFile(fileHandle);
 
-        return new utility::BinaryStream(inFileData);
+        return std::make_unique<utility::BinaryStream>(inFileData);
     }
 
     return nullptr;

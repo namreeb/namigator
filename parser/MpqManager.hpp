@@ -2,6 +2,7 @@
 
 #include "utility/BinaryStream.hpp"
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -24,7 +25,7 @@ public:
     void Initialize(const std::string& wowDir);
 
     bool FileExists(const std::string& file) const;
-    utility::BinaryStream* OpenFile(const std::string& file);
+    std::unique_ptr<utility::BinaryStream> OpenFile(const std::string& file);
 
     unsigned int GetMapId(const std::string& name) const;
     unsigned int GetZoneId(unsigned int areaId) const;

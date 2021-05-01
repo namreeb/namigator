@@ -26,7 +26,7 @@ Map::Map(const std::string& name)
 {
     auto const file = "World\\Maps\\" + Name + "\\" + Name + ".wdt";
 
-    std::unique_ptr<utility::BinaryStream> reader(sMpqManager.OpenFile(file));
+    auto reader = sMpqManager.OpenFile(file);
 
     if (!reader)
         THROW("WDT open failed");

@@ -25,8 +25,7 @@ namespace parser
 {
 Doodad::Doodad(const std::string& path) : MpqPath(path)
 {
-    std::unique_ptr<utility::BinaryStream> reader(
-        sMpqManager.OpenFile(GetRealModelPath(path)));
+    auto reader = sMpqManager.OpenFile(GetRealModelPath(path));
 
     if (!reader)
         THROW("Doodad " + path + " not found");
