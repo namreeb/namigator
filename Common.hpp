@@ -58,6 +58,8 @@ struct MeshSettings
     static constexpr int TilesPerADT = TilesPerChunk * ChunksPerAdt;
     static constexpr int TileCount = Adts * TilesPerADT;
     static constexpr int ChunkCount = Adts * ChunksPerAdt;
+    static constexpr int QuadValuesPerTile =
+        128 / (TilesPerChunk * TilesPerChunk) + 16 / (TilesPerChunk) + 1;
 
     static constexpr float AdtSize = 533.f + (1.f / 3.f);
     static constexpr float AdtChunkSize = AdtSize / ChunksPerAdt;
