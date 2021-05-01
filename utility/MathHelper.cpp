@@ -92,20 +92,21 @@ void Convert::WorldToAdt(const Vector3& Vector3, int& adtX, int& adtY)
 }
 
 // chunk (0, 0) is at the top left (northwest) corner.  east = x+, south = y+
-void Convert::WorldToAdt(const Vector3& Vector3, int& adtX, int& adtY,
+void Convert::WorldToAdt(const Vector3& vertex, int& adtX, int& adtY,
                          int& chunkX, int& chunkY)
 {
-    WorldToAdt(Vector3, adtX, adtY);
+    WorldToAdt(vertex, adtX, adtY);
 
     float nwCornerX, nwCornerY;
     ADTToWorldNorthwestCorner(adtX, adtY, nwCornerX, nwCornerY);
 
     chunkX =
-        static_cast<int>((nwCornerY - Vector3.Y) / MeshSettings::AdtChunkSize);
+        static_cast<int>((nwCornerY - vertex.Y) / MeshSettings::AdtChunkSize);
     chunkY =
-        static_cast<int>((nwCornerX - Vector3.X) / MeshSettings::AdtChunkSize);
+        static_cast<int>((nwCornerX - vertex.X) / MeshSettings::AdtChunkSize);
 
-    assert(chunkX >= 0 && chunkY >= 0 && chunkX < 16 && chunkY < 16);
+    assert(chunkX >= 0 && chunkY >= 0 && chunkX < MeshSettings::ChunksPerAdt &&
+           chunkY < MeshSettings::ChunksPerAdt);
 }
 
 void Convert::WorldToTile(const Vector3& Vector3, int& tileX, int& tileY)
