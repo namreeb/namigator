@@ -25,7 +25,7 @@ jobs:
       uses: textbook/git-checkout-submodule-action@2.1.1
     
     - name: Install python and boost
-      run: sudo apt-get install python3.9 python3.9-dev libboost-python-dev
+      run: sudo apt-get install python3.8 python3.8-dev libboost-python-dev
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
