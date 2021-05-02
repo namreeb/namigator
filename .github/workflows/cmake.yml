@@ -54,7 +54,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@2.1.1
+      run: git submodule update --init --recursive
     
     - name: Install python
       uses: actions/setup-python@v2
