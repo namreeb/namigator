@@ -37,7 +37,7 @@ jobs:
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Install
-      run: cmake --install ${{github.workspace}}/install --config ${{env.BUILD_TYPE}}
+      run: cmake --install ${{github.workspace}}/build --prefix ${{github.workspace}}/install
       
     - name: Test
       working-directory: ${{github.workspace}}/install
