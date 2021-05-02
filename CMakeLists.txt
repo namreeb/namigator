@@ -41,8 +41,8 @@ else()
 endif()
 
 # Enable debug output from FindBoost
-#set(Boost_DEBUG ON)
-#set(Boost_DETAILED_FAILURE_MSG ON)
+set(Boost_DEBUG ON)
+set(Boost_DETAILED_FAILURE_MSG ON)
 
 if (PYTHON_COMPONENT)
     # There currently seems to be a bug with the Linux distro of boost binaries
