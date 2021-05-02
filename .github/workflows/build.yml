@@ -68,6 +68,7 @@ jobs:
         cd boost_1_73_0
         .\bootstrap
         .\b2 --with-python link=static threading=multi runtime-link=shared architecture=x86 address-model=64 stage
+        dir stage\lib\*python*
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBOOST_ROOT=${{github.workspace}}/boost_1_73_0 -DBOOST_LIBRARYDIR=${{github.workspace}}/boost_1_73_0/stage/lib
