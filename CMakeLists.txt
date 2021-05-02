@@ -41,8 +41,8 @@ else()
 endif()
 
 # Enable debug output from FindBoost
-set(Boost_DEBUG ON)
-set(Boost_DETAILED_FAILURE_MSG ON)
+#set(Boost_DEBUG ON)
+#set(Boost_DETAILED_FAILURE_MSG ON)
 
 if (PYTHON_COMPONENT)
     # There currently seems to be a bug with the Linux distro of boost binaries
@@ -57,7 +57,7 @@ if (PYTHON_COMPONENT)
 
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_RUNTIME OFF)
-    #set(Boost_FIND_QUIETLY ON)
+    set(Boost_FIND_QUIETLY ON)
 
     find_package(Boost COMPONENTS "${PYTHON_COMPONENT}")
 
