@@ -1,4 +1,4 @@
-name: TestAndDeploy
+name: BuildTestDeploy
 
 on:
   push:
@@ -7,11 +7,10 @@ on:
     branches: [ master ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
-  build_linux:
+  linux:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,7 +46,7 @@ jobs:
         path: namigator.tar.gz
         retention-days: 5
 
-  build_windows:
+  windows:
     runs-on: windows-latest
 
     steps:
