@@ -22,7 +22,7 @@ def test_build(temp_dir):
 	mapbuild.build_map(data_dir, temp_dir, "development", 8, "")
 	stop = time.time()
 
-	print("Map built in {} seconds".format(stop-start))
+	print("Map built in {} seconds".format(int(stop-start)))
 
 def test_pathfind(temp_dir):
 	map_data = pathfind.Map(temp_dir, "development")

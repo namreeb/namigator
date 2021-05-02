@@ -4,4 +4,4 @@ foreach(script ${PY_SCRIPTS})
     install(PROGRAMS ${script} DESTINATION test)
 endforeach(script)
 
-install(PROGRAMS "test-map.mpq" DESTINATION test)
+install(PROGRAMS "test_map.mpq" DESTINATION test)
