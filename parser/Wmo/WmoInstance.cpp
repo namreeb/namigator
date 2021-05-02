@@ -9,6 +9,7 @@
 #include "utility/Vector.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <set>
 #include <sstream>
