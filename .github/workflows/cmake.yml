@@ -51,4 +51,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: namigator.tar.gz
+        path: namigator.tar.gz
         retention-days: 5
