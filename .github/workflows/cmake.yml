@@ -44,9 +44,11 @@ jobs:
       run: test/smoke_tests.py
       
     - name: Package
+      working-directory: ${{github.workspace}}/install
+      run: tar -zcvf ${{github.workspace}}/namigator.tar.gz .
+
+    - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: namigator.tar.gz
         retention-days: 5
-      working-directory: ${{github.workspace}}/install
-      run: tar -zcvf ../namigator.tar.gz .
