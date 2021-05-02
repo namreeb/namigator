@@ -42,6 +42,8 @@ bool BuildMap(const std::string& dataPath, const std::string& outputPath,
     if (!threads)
         return false;
 
+    parser::sMpqManager.Initialize(dataPath);
+
     if (!fs::is_directory(outputPath))
         fs::create_directory(outputPath);
 
