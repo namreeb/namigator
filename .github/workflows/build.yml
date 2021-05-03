@@ -83,7 +83,7 @@ jobs:
       run: python test/smoke_tests.py
       
     - name: Package
-      run: Compress-Archive -Path install\* -DestinationPath ../namigator.zip
+      run: Compress-Archive -Path install\* -DestinationPath namigator.zip
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
