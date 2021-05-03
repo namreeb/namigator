@@ -63,7 +63,6 @@ if (PYTHON_COMPONENT)
 
     # If we found python 3 and boost rejected it, try again with python 2
     if (NOT Boost_FOUND AND Python3_FOUND)
-        message(WARNING "Boost rejected Python 3.  Trying again with Python 2...")
         find_package(Python2 COMPONENTS Development)
 
         if (Python2_FOUND)
@@ -71,15 +70,10 @@ if (PYTHON_COMPONENT)
             set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
             set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
             find_package(Boost COMPONENTS "${PYTHON_COMPONENT}")
-        else()
-            message(WARNING "Python 2 not found")
         endif()
 
         # Failed?  Give up
         if (NOT Boost_FOUND)
-            if (Python2_FOUND)
-                message(WARNING "Boost rejected Python 2.  Giving up.")
-            endif()
             unset(PYTHON_COMPONENT)
             unset(PYTHON_LIBRARIES)
             unset(PYTHON_INCLUDE_DIRS)
