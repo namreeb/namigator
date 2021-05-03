@@ -80,10 +80,9 @@ jobs:
       
     - name: Test
       working-directory: ${{github.workspace}}/install
-      run: test/smoke_tests.py
+      run: python test/smoke_tests.py
       
     - name: Package
-      working-directory: ${{github.workspace}}/install
       run: Compress-Archive -Path install\* -DestinationPath ../namigator.zip
 
     - name: Upload artifact
