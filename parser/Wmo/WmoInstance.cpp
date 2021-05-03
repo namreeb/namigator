@@ -120,17 +120,17 @@ void WmoInstance::BuildDoodadTriangles(std::vector<math::Vertex>& vertices,
     auto const& doodadSet = Model->DoodadSets[DoodadSet];
 
     {
-        size_t Vector3Count = 0, indexCount = 0;
+        size_t vertexCount = 0, indexCount = 0;
 
         // first, count how many vertices we will have.  this lets us do just
         // one allocation.
         for (auto const& doodad : doodadSet)
         {
-            Vector3Count += doodad->Parent->Vertices.size();
+            vertexCount += doodad->Parent->Vertices.size();
             indexCount += doodad->Parent->Indices.size();
         }
 
-        vertices.reserve(Vector3Count);
+        vertices.reserve(vertexCount);
         indices.reserve(indexCount);
     }
 
