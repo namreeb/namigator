@@ -61,6 +61,9 @@ void MpqManager::Initialize()
 //     DBFilesClient\AreaTable.dbc exists in enUS\locale-enUs.mpq,
 //         enUS\patch-enUS.mpq, and enUS\patch-enUS-2.mpq.  not sure which is
 //         correct but locale-enUS.mpq is definitely wrong.
+//     world\wmo\outland\floatingrocks\nagrand_rockfloating_waterfalls.wmo
+//         exists in expansion.mpq and expansion1.MPQ, and expansion1.MPQ
+//         contains the correct version
 void MpqManager::Initialize(const std::string& wowDir)
 {
     auto const wowPath = fs::path(wowDir);
