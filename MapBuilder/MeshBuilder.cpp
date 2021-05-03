@@ -130,8 +130,8 @@ bool TransformAndRasterize(rcContext& ctx, rcHeightfield& heightField,
                 a = areaFlags | PolyFlags::Steep;
         }
     }
-    // otherwise, if they are also not liquid, clear steep
-    else if (!(areaFlags & PolyFlags::Liquid))
+    // otherwise, if they are from doodads, clear steep
+    else if (areaFlags & PolyFlags::Doodad)
         rcClearUnwalkableTriangles(
             &ctx, slope, &rastVert[0], static_cast<int>(vertices.size()),
             &indices[0], static_cast<int>(indices.size() / 3), &areas[0]);
@@ -152,8 +152,7 @@ void FilterGroundBeneathLiquid(rcHeightfield& solid)
         for (rcSpan* s = solid.spans[i]; s; s = s->next)
         {
             // if we found a non-wmo liquid span, remove everything beneath it
-            if (!!(s->area & PolyFlags::Liquid) &&
-                !(s->area & PolyFlags::Object))
+            if (!!(s->area & PolyFlags::Liquid) && !(s->area & PolyFlags::Wmo))
             {
                 for (auto ns : spans)
                     ns->area = RC_NULL_AREA;
@@ -161,10 +160,10 @@ void FilterGroundBeneathLiquid(rcHeightfield& solid)
                 spans.clear();
             }
             // if we found a wmo liquid span, remove every wmo span beneath it
-            else if (!!(s->area & (PolyFlags::Liquid | PolyFlags::Object)))
+            else if (!!(s->area & (PolyFlags::Liquid | PolyFlags::Wmo)))
             {
                 for (auto ns : spans)
-                    if (!!(ns->area & PolyFlags::Object))
+                    if (!!(ns->area & PolyFlags::Wmo))
                         ns->area = RC_NULL_AREA;
 
                 spans.clear();
@@ -838,19 +837,19 @@ bool MeshBuilder::BuildAndSerializeWMOTile(int tileX, int tileY)
     // wmo terrain
     if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle,
                                m_globalWMOVertices, m_globalWMOIndices,
-                               PolyFlags::Object))
+                               PolyFlags::Wmo))
         return false;
 
     // wmo liquid
     if (!TransformAndRasterize(
             ctx, *solid, config.walkableSlopeAngle, m_globalWMOLiquidVertices,
-            m_globalWMOLiquidIndices, PolyFlags::Object | PolyFlags::Liquid))
+            m_globalWMOLiquidIndices, PolyFlags::Wmo | PolyFlags::Liquid))
         return false;
 
     // wmo doodads
     if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle,
                                m_globalWMODoodadVertices,
-                               m_globalWMODoodadIndices, PolyFlags::Object))
+                               m_globalWMODoodadIndices, PolyFlags::Doodad))
         return false;
 
     auto const solidEmpty = IsHeightFieldEmpty(*solid);
@@ -1022,18 +1021,18 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
             wmoInstance->BuildTriangles(vertices, indices);
             if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle,
-                                       vertices, indices, PolyFlags::Object))
+                                       vertices, indices, PolyFlags::Wmo))
                 return false;
 
             wmoInstance->BuildLiquidTriangles(vertices, indices);
             if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle,
                                        vertices, indices,
-                                       PolyFlags::Object | PolyFlags::Liquid))
+                                       PolyFlags::Wmo | PolyFlags::Liquid))
                 return false;
 
             wmoInstance->BuildDoodadTriangles(vertices, indices);
             if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle,
-                                       vertices, indices, PolyFlags::Object))
+                                       vertices, indices, PolyFlags::Doodad))
                 return false;
 
             rasterizedWmos.insert(wmoId);
@@ -1057,7 +1056,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
 
             doodadInstance->BuildTriangles(vertices, indices);
             if (!TransformAndRasterize(ctx, *solid, config.walkableSlopeAngle,
-                                       vertices, indices, PolyFlags::Object))
+                                       vertices, indices, PolyFlags::Doodad))
                 return false;
 
             rasterizedDoodads.insert(doodadId);

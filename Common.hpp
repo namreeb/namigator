@@ -4,8 +4,9 @@ enum PolyFlags : unsigned char
 {
     Ground = 1 << 0,
     Steep = 1 << 1,
-    Object = 1 << 2,
-    Liquid = 1 << 3,
+    Liquid = 1 << 2,
+    Wmo = 1 << 3,
+    Doodad = 1 << 4,
 };
 
 #include <cstdint>
