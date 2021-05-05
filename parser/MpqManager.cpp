@@ -55,15 +55,6 @@ void MpqManager::Initialize()
 }
 
 // TODO examine how the retail clients determine MPQ loading order
-// NOTES:
-//     World\maps\Azeroth\Azeroth_33_28.adt exists in world.mpq and common.mpq,
-//         and common.mpq contains the correct version
-//     DBFilesClient\AreaTable.dbc exists in enUS\locale-enUs.mpq,
-//         enUS\patch-enUS.mpq, and enUS\patch-enUS-2.mpq.  not sure which is
-//         correct but locale-enUS.mpq is definitely wrong.
-//     world\wmo\outland\floatingrocks\nagrand_rockfloating_waterfalls.wmo
-//         exists in expansion.mpq and expansion1.MPQ, and expansion1.MPQ
-//         contains the correct version
 void MpqManager::Initialize(const std::string& wowDir)
 {
     auto const wowPath = fs::path(wowDir);
