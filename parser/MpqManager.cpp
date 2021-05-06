@@ -90,7 +90,7 @@ void MpqManager::Initialize(const std::string& wowDir)
     // if we are running on test data we do not expect to find a locale
     if (locale.empty())
     {
-        AddIfExists(files, wowPath / "test_map.MPQ");
+        AddIfExists(files, wowPath / "test_map.mpq");
     }
     else
     {
