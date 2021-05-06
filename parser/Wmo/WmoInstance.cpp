@@ -117,6 +117,10 @@ void WmoInstance::BuildDoodadTriangles(std::vector<math::Vertex>& vertices,
 
     size_t indexOffset = 0;
 
+    // TODO: this happens in outlands (ADT 18, 37)
+    if (DoodadSet >= Model->DoodadSets.size())
+        return;
+
     auto const& doodadSet = Model->DoodadSets[DoodadSet];
 
     {
