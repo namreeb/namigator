@@ -22,7 +22,13 @@ def test_build(temp_dir):
 	mapbuild.build_map(data_dir, temp_dir, "development", 8, "")
 	stop = time.time()
 
-	print("Map built in {} seconds".format(int(stop-start)))
+	print("Map development built in {} seconds".format(int(stop-start)))
+
+	start = time.time()
+	mapbuild.build_map(data_dir, temp_dir, "bladesedgearena", 8, "");
+	stop = time.time()
+
+	print("Map bladesedgearena built in {} seconds".format(int(stop-start)))
 
 def test_pathfind(temp_dir):
 	map_data = pathfind.Map(temp_dir, "development")
@@ -79,6 +85,14 @@ def test_pathfind(temp_dir):
 		raise Exception("Zone check failed.  Zone: {} Area: {}".format(zone, area))
 
 	print("Zone check succeeded")
+
+	map_data = pathfind.Map(temp_dir, "bladesedgearena")
+	map_data.load_adt_at(6225, 250)
+	path = map_data.find_path(6225.82764, 250.215775, 11.2738495, 6216.33350, 234.604645, 4.16993713)
+	path_length = compute_path_length(path)
+
+	if len(path) < 10 or path_length > 60:
+		raise Exception("Path invalid.  Length: {} Distance: {}".format(len(path), path_length))
 
 def main():
 	temp_dir = tempfile.mkdtemp()

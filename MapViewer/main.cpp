@@ -697,6 +697,9 @@ void LoadPositionFromGUI()
             for (auto newY = 0; newY < MeshSettings::Adts; ++newY)
                 for (auto newX = 0; newX < MeshSettings::Adts; ++newX)
                 {
+                    if (!gMap->HasAdt(newX, newY))
+                        continue;
+
                     auto const dist = (newX - closestX) * (newX - closestX) +
                                       (newY - closestY) * (newY - closestY);
                     if (closestX < 0 || closestY < 0 || dist < closestDist)
@@ -851,6 +854,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
     maps.push_back("489 PVPzone03 (Warsong Gulch)");
     maps.push_back("529 PVPzone04 (Arathi Basin)");
     maps.push_back("530 Expansion01 (Outland)");
+    maps.push_back("562 bladesedgearena");
     maps.push_back("571 Northrend");
     maps.push_back("603 UlduarRaid");
 
