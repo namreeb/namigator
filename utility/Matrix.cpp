@@ -246,6 +246,7 @@ float Matrix::ComputeDeterminant() const
     det -= m[0][1] * Determinant3x3(m, 0, 2, 3, 1, 2, 3);
     det += m[0][2] * Determinant3x3(m, 0, 1, 3, 1, 2, 3);
     det -= m[0][3] * Determinant3x3(m, 0, 1, 2, 1, 2, 3);
+
     return det;
 }
 
@@ -255,7 +256,7 @@ Matrix Matrix::ComputeInverse() const
         THROW("Only 4x4 matrix is supported");
 
     float det = ComputeDeterminant();
-    if (fabs(det) < 1e-6f)
+    if (fabs(det) < 9e-7f)
     {
         THROW("Not invertible!");
     }
