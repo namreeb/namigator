@@ -136,10 +136,6 @@ Wmo::Wmo(const std::string& path) : MpqPath(path)
                 groupFiles[g]->MaterialsChunk->MaterialId[i] != 0xFF)
                 continue;
 
-            // 0x40 is unwalkable
-            if (groupFiles[g]->MaterialsChunk->Flags[i] & 0x40)
-                continue;
-
             // add the vertices/indices for this triangle
             // note: we need to check if this Vector3 has already been added as
             // part of another triangle
