@@ -33,6 +33,12 @@ GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t>& areas,
     // roots are the root of the parent
     return GetRootAreaId(areas, i->second);
 }
+
+void AddIfExists(std::vector<fs::path>& files, const fs::path& file)
+{
+    if (fs::exists(file))
+        files.push_back(file);
+}
 } // namespace
 
 namespace parser
@@ -54,96 +60,72 @@ void MpqManager::Initialize()
     Initialize(".");
 }
 
-// TODO examine how the retail clients determine MPQ loading order
 void MpqManager::Initialize(const std::string& wowDir)
 {
     auto const wowPath = fs::path(wowDir);
-
-    std::vector<fs::directory_entry> directories;
-    std::vector<fs::path> files;
-    std::vector<fs::path> patches;
+    std::string locale = "";
 
     for (auto i = fs::directory_iterator(wowPath);
          i != fs::directory_iterator(); ++i)
     {
-        if (fs::is_directory(i->status()))
-        {
-            directories.push_back(*i);
-            continue;
-        }
-
-        if (!fs::is_regular_file(i->status()))
+        if (!fs::is_directory(i->status()))
             continue;
 
-        auto path = i->path().string();
-        std::transform(path.begin(), path.end(), path.begin(), ::tolower);
-
-        if (path.find(".mpq") == std::string::npos)
-            continue;
-
-        if (path.find("wow-update") == std::string::npos)
-            files.push_back(i->path());
-        else
-            patches.push_back(i->path());
-    }
-
-    if (files.empty() && patches.empty())
-        THROW("Found no MPQs");
-
-    std::sort(files.begin(), files.end());
-    std::sort(patches.begin(), patches.end());
-
-    // all locale directories should have files named lcLE\locale-lcLE.mpq and
-    // lcLE\patch-lcLE*.mpq
-    for (auto const& dir : directories)
-    {
-        auto const dirString = dir.path().filename().string();
+        auto const dirString = i->path().filename().string();
 
         if (dirString.length() != 4)
             continue;
 
-        auto const localeMpq =
-            wowPath / dirString / ("locale-" + dirString + ".MPQ");
-        auto found = false;
-
-        std::vector<fs::path> localePatches;
-        fs::path firstPatch;
-        for (auto i = fs::directory_iterator(dir);
-             i != fs::directory_iterator(); ++i)
+        // all locale directories should have files named lcLE\locale-lcLE.mpq
+        // and lcLE\patch-lcLE*.mpq
+        if (fs::exists(wowPath / dirString / ("locale-" + dirString + ".MPQ")))
         {
-            if (fs::equivalent(*i, localeMpq))
-                found = true;
-
-            auto const filename = i->path().filename().string();
-
-            if (filename.find("patch-" + dirString + "-") != std::string::npos)
-                localePatches.push_back(i->path());
-            else if (filename.find("patch-" + dirString) != std::string::npos)
-                firstPatch = i->path();
-        }
-
-        if (found)
-        {
-            std::sort(localePatches.begin(), localePatches.end());
-            std::reverse(localePatches.begin(), localePatches.end());
-            std::copy(localePatches.cbegin(), localePatches.cend(),
-                      std::back_inserter(files));
-
-            if (!fs::is_empty(firstPatch))
-                files.push_back(firstPatch);
-
-            files.push_back(localeMpq);
+            locale = dirString;
+            break;
         }
     }
 
+    std::vector<fs::path> files;
+
+    // if we are running on test data we do not expect to find a locale
+    if (locale.empty())
+    {
+        AddIfExists(files, wowPath / "test_map.MPQ");
+    }
+    else
+    {
+        AddIfExists(files, wowPath / "base.MPQ");
+        AddIfExists(files, wowPath / "alternate.MPQ");
+        AddIfExists(files, wowPath / ".." / "alternate.MPQ");
+
+        for (auto i = 9; i > 0; --i)
+        {
+            std::stringstream s1;
+            s1 << "patch-" << i << ".MPQ";
+            AddIfExists(files, wowPath / s1.str());
+
+            std::stringstream s2;
+            s2 << "patch-" << locale << "-" << i << ".MPQ";
+            AddIfExists(files, wowPath / s2.str());
+        }
+
+        AddIfExists(files, wowPath / locale / ("patch-" + locale + ".MPQ"));
+        AddIfExists(files, wowPath / "patch.MPQ");
+        AddIfExists(files, wowPath / "expansion.MPQ");
+        AddIfExists(files, wowPath / "common.MPQ");
+        AddIfExists(files, wowPath / locale / ("locale-" + locale + ".MPQ"));
+        AddIfExists(files, wowPath / locale / ("speech-" + locale + ".MPQ"));
+        AddIfExists(files,
+                    wowPath / locale / ("expansion-locale-" + locale + ".MPQ"));
+        AddIfExists(files,
+                    wowPath / locale / ("expansion-speech-" + locale + ".MPQ"));
+    }
+
+    if (files.empty())
+        THROW("No data files found");
+
     for (auto const& file : files)
         LoadMpq(file.string());
-
-    for (auto const& file : patches)
-        for (auto const& handle : MpqHandles)
-            if (!SFileOpenPatchArchive(handle, file.string().c_str(), "base",
-                                       0))
-                THROW("Failed to apply patch").ErrorCode();
 
     const DBC maps("DBFilesClient\\Map.dbc");
 

@@ -82,7 +82,7 @@ def test_use_data(nav_data):
     path = azeroth.find_path(1942.09863, 1541.59216, 90.514, 1940.185, 1522.914, 88.229)
     path_length = compute_path_length(path)
 
-    assert len(path) > 3 and path_length < 25
+    assert len(path) > 3 and path_length < 30
 
     print('Deathknell doorway test succeeded')
 
