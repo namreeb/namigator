@@ -60,6 +60,7 @@ void MpqManager::Initialize()
     Initialize(".");
 }
 
+// Priority logic is explained at https://github.com/namreeb/namigator/issues/22
 void MpqManager::Initialize(const std::string& wowDir)
 {
     auto const wowPath = fs::path(wowDir);
@@ -97,28 +98,39 @@ void MpqManager::Initialize(const std::string& wowDir)
         AddIfExists(files, wowPath / "base.MPQ");
         AddIfExists(files, wowPath / "alternate.MPQ");
         AddIfExists(files, wowPath / ".." / "alternate.MPQ");
+        AddIfExists(files, wowPath / "speech2.MPQ");
+        AddIfExists(files, wowPath / ".." / "speech2.MPQ");
 
         for (auto i = 9; i > 0; --i)
         {
             std::stringstream s1;
             s1 << "patch-" << i << ".MPQ";
             AddIfExists(files, wowPath / s1.str());
-
-            std::stringstream s2;
-            s2 << "patch-" << locale << "-" << i << ".MPQ";
-            AddIfExists(files, wowPath / s2.str());
         }
 
-        AddIfExists(files, wowPath / locale / ("patch-" + locale + ".MPQ"));
+        for (auto i = 9; i > 0; --i)
+        {
+            std::stringstream s1;
+            s1 << "patch-" << locale << "-" << i << ".MPQ";
+            AddIfExists(files, wowPath / locale / s1.str());
+        }
+
         AddIfExists(files, wowPath / "patch.MPQ");
+        AddIfExists(files, wowPath / locale / ("patch-" + locale + ".MPQ"));
         AddIfExists(files, wowPath / "expansion.MPQ");
+        AddIfExists(files, wowPath / "lichking.MPQ");
         AddIfExists(files, wowPath / "common.MPQ");
+        AddIfExists(files, wowPath / "common-2.MPQ");
         AddIfExists(files, wowPath / locale / ("locale-" + locale + ".MPQ"));
         AddIfExists(files, wowPath / locale / ("speech-" + locale + ".MPQ"));
         AddIfExists(files,
                     wowPath / locale / ("expansion-locale-" + locale + ".MPQ"));
         AddIfExists(files,
+                    wowPath / locale / ("lichking-locale-" + locale + ".MPQ"));
+        AddIfExists(files,
                     wowPath / locale / ("expansion-speech-" + locale + ".MPQ"));
+        AddIfExists(files,
+                    wowPath / locale / ("lichking-speech-" + locale + ".MPQ"));
     }
 
     if (files.empty())
