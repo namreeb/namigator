@@ -32,11 +32,14 @@ if (Python3_FOUND)
     set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
     set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
 else()
+    message(STATUS "Could not find python3.  Attemping to find python2.")
     find_package(Python2 COMPONENTS Development)
     if (Python2_FOUND)
         set(PYTHON_COMPONENT "python${Python2_VERSION_MAJOR}${Python2_VERSION_MINOR}")
         set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
         set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
+    else()
+        message(STATUS "Could not find python2 either.")
     endif()
 endif()
 
@@ -63,17 +66,22 @@ if (PYTHON_COMPONENT)
 
     # If we found python 3 and boost rejected it, try again with python 2
     if (NOT Boost_FOUND AND Python3_FOUND)
+        message(STATUS "Boost rejected ${PYTHON_COMPONENT}.  Trying with python2.")
         find_package(Python2 COMPONENTS Development)
 
         if (Python2_FOUND)
+            message(STATUS "Python2 found.  Checking for support from boost.")
             set(PYTHON_COMPONENT "python${Python2_VERSION_MAJOR}${Python2_VERSION_MINOR}")
             set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
             set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
             find_package(Boost COMPONENTS "${PYTHON_COMPONENT}")
+        else()
+            message(STATUS "Could not find python2 either.")
         endif()
 
         # Failed?  Give up
         if (NOT Boost_FOUND)
+            message(STATUS "Giving up on finding boost and python match")
             unset(PYTHON_COMPONENT)
             unset(PYTHON_LIBRARIES)
             unset(PYTHON_INCLUDE_DIRS)
@@ -82,7 +90,7 @@ if (PYTHON_COMPONENT)
 endif()
 
 if (NOT PYTHON_COMPONENT)
-    message(STATUS "Python not found.  Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
+    message(WARNING "No boost-compatible python was found.  Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
 endif()
 
 # GCC 7 requires an extra lib for this, but MSVC does not
