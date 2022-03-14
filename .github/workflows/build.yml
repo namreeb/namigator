@@ -67,7 +67,7 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/install
       run: |
-        where python
+        get-command python
         python --version
         python test/smoke_tests.py
         dir C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64
