@@ -19,8 +19,8 @@ jobs:
     - name: Checkout submodules
       run: git submodule update --init --recursive
     
-    - name: Install python and boost
-      run: sudo apt-get install python3.8 python3.8-dev libboost-python-dev
+    - name: Install python
+      run: sudo apt-get install python3.8 python3.8-dev
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -61,16 +61,8 @@ jobs:
         python-version: '3.9'
         architecture: 'x64'
 
-    - name: Build Boost
-      run: |
-        Invoke-WebRequest https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.zip -OutFile boost.zip
-        Expand-Archive -Path boost.zip -DestinationPath .
-        cd boost_1_78_0
-        .\bootstrap
-        .\b2 --with-python link=static threading=multi runtime-link=shared architecture=x86 address-model=64 stage
-
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBOOST_ROOT=${{github.workspace}}/boost_1_78_0 -DBOOST_LIBRARYDIR=${{github.workspace}}/boost_1_78_0/stage/lib
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}

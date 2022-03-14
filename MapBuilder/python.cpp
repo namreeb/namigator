@@ -3,27 +3,46 @@
 #include "Worker.hpp"
 #include "parser/MpqManager.hpp"
 
-#include <boost/python.hpp>
 #include <filesystem>
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 
+#define PY_SSIZE_T_CLEAN
+#ifdef _DEBUG
+#    undef _DEBUG
+#    include <python.h>
+#    define _DEBUG
+#else
+#    include <python.h>
+#endif
 namespace fs = std::filesystem;
 
-int BuildBVH(const std::string& dataPath, const std::string& outputPath,
-             size_t workers)
+namespace
 {
-    parser::sMpqManager.Initialize(dataPath);
+PyObject* BuildBVH(PyObject *self, PyObject *args)
+{
+    char *data_path_str, *output_path_str;
+    unsigned long long workers;
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
+    if (!PyArg_ParseTuple(args, "ssK", &data_path_str, &output_path_str,
+                          &workers))
+        return nullptr;
 
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
+    const fs::path data_path {data_path_str};
+    const fs::path output_path {output_path_str};
 
-    parser::GameObjectBVHBuilder goBuilder(dataPath, outputPath, workers);
+    parser::sMpqManager.Initialize(data_path.string());
+
+    if (!fs::is_directory(output_path))
+        fs::create_directory(output_path);
+
+    if (!fs::is_directory(output_path / "BVH"))
+        fs::create_directory(output_path / "BVH");
+
+    parser::GameObjectBVHBuilder goBuilder(output_path.string(),
+                                           output_path.string(), workers);
 
     goBuilder.Begin();
 
@@ -32,45 +51,55 @@ int BuildBVH(const std::string& dataPath, const std::string& outputPath,
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } while (goBuilder.Remaining() > 0);
 
-    return static_cast<int>(goBuilder.Shutdown());
+    return PyLong_FromSize_t(goBuilder.Shutdown());
 }
 
-bool BuildMap(const std::string& dataPath, const std::string& outputPath,
-              const std::string& mapName, size_t threads,
-              const std::string& goCSV)
+PyObject* BuildMap(PyObject* self, PyObject* args)
 {
-    if (!threads)
-        return false;
+    char *data_path_str, *output_path_str, *map_name, *go_csv_path_str;
+    unsigned long long num_workers;
 
-    parser::sMpqManager.Initialize(dataPath);
+    if (!PyArg_ParseTuple(args, "sssKs", &data_path_str, &output_path_str, &map_name,
+                          &num_workers, &go_csv_path_str))
+        return Py_False;
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
+    const fs::path data_path {data_path_str};
+    const fs::path output_path {output_path_str};
+    const fs::path go_csv_path {go_csv_path_str};
 
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
+    if (!num_workers)
+        return Py_False;
 
-    if (!fs::is_directory(outputPath + "/Nav"))
-        fs::create_directory(outputPath + "/Nav");
+    parser::sMpqManager.Initialize(data_path.string());
+
+    if (!fs::is_directory(output_path))
+        fs::create_directory(output_path);
+
+    if (!fs::is_directory(output_path / "BVH"))
+        fs::create_directory(output_path / "BVH");
+
+    if (!fs::is_directory(output_path / "Nav"))
+        fs::create_directory(output_path / "Nav");
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
 
     try
     {
-        builder = std::make_unique<MeshBuilder>(outputPath, mapName, 0);
+        builder =
+            std::make_unique<MeshBuilder>(output_path.string(), map_name, 0);
 
-        if (!goCSV.empty())
-            builder->LoadGameObjects(goCSV);
+        if (!go_csv_path.empty())
+            builder->LoadGameObjects(go_csv_path.string());
 
-        for (auto i = 0u; i < threads; ++i)
+        for (auto i = 0u; i < num_workers; ++i)
             workers.push_back(
-                std::make_unique<Worker>(dataPath, builder.get()));
+                std::make_unique<Worker>(data_path.string(), builder.get()));
     }
     catch (std::exception const& e)
     {
         std::cerr << "Builder initialization failed: " << e.what() << std::endl;
-        return false;
+        return Py_False;
     }
 
     for (;;)
@@ -91,37 +120,48 @@ bool BuildMap(const std::string& dataPath, const std::string& outputPath,
 
     builder->SaveMap();
 
-    return true;
+    return Py_True;
 }
 
-bool BuildADT(const std::string& dataPath, const std::string& outputPath,
-              const std::string& mapName, int x, int y,
-              const std::string& goCSV)
+PyObject* BuildADT(PyObject* self, PyObject* args)
 {
+    char *data_path_str, *output_path_str, *map_name, *go_csv_path_str;
+    int x, y;
+
+    if (!PyArg_ParseTuple(args, "sssiis", &data_path_str, &output_path_str,
+                          &map_name, &x, &y, &go_csv_path_str))
+        return Py_False;
+
+    const fs::path data_path {data_path_str};
+    const fs::path output_path {output_path_str};
+    const fs::path go_csv_path {go_csv_path_str};
+
     if (x < 0 || y < 0)
-        return false;
+        return Py_False;
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
+    if (!fs::is_directory(output_path))
+        fs::create_directory(output_path);
 
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
+    if (!fs::is_directory(output_path / "BVH"))
+        fs::create_directory(output_path / "BVH");
 
-    if (!fs::is_directory(outputPath + "/Nav"))
-        fs::create_directory(outputPath + "/Nav");
+    if (!fs::is_directory(output_path / "Nav"))
+        fs::create_directory(output_path / "Nav");
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
 
-    builder = std::make_unique<MeshBuilder>(outputPath, mapName, 0, x, y);
+    builder =
+        std::make_unique<MeshBuilder>(output_path.string(), map_name, 0, x, y);
 
-    if (!goCSV.empty())
-        builder->LoadGameObjects(goCSV);
+    if (!go_csv_path.empty())
+        builder->LoadGameObjects(go_csv_path.string());
 
     if (builder->IsGlobalWMO())
-        return false;
+        return Py_False;
 
-    workers.push_back(std::make_unique<Worker>(dataPath, builder.get()));
+    workers.push_back(
+        std::make_unique<Worker>(data_path.string(), builder.get()));
 
     for (;;)
     {
@@ -139,12 +179,26 @@ bool BuildADT(const std::string& dataPath, const std::string& outputPath,
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
-    return true;
+    return Py_True;
 }
 
-BOOST_PYTHON_MODULE(mapbuild)
+static PyMethodDef mapbuild_methods[] = {
+    {"build_bvh", BuildBVH, METH_VARARGS, "Builds BVH data"},
+    {"build_map", BuildMap, METH_VARARGS, "Builds map"},
+    {"build_adt", BuildADT, METH_VARARGS, "Builds ADT"},
+    {nullptr}
+};
+
+struct PyModuleDef mapbuild_module = {
+    PyModuleDef_HEAD_INIT,
+    "mapbuild",
+    "namigator map building library",
+    -1,
+    mapbuild_methods
+};
+} // namespace
+
+PyMODINIT_FUNC PyInit_mapbuild(void)
 {
-    boost::python::def("build_bvh", BuildBVH);
-    boost::python::def("build_map", BuildMap);
-    boost::python::def("build_adt", BuildADT);
+    return PyModule_Create(&mapbuild_module);
 }

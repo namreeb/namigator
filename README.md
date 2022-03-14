@@ -34,8 +34,7 @@ server.
 * **stormlib** -- Used for extracting source data from its containers.
 * **recastnavigation** -- Underlying computational geometry library.  Used for
 mesh generation, pathfinding, and more.
-* **boost** -- Optional.  Used in creating python modules.
-* **python** -- Optional.  Used in creating python modules.
+* **python3** -- Optional.  Used in creating python modules.
 
 ## Future Plans
 
