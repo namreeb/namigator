@@ -70,9 +70,12 @@ jobs:
         where python
         python --version
         python test/smoke_tests.py
-        dir C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\libs\\python310.lib
+        dir C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64
+        dir C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\libs\\
         copy C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\python310.dll test\\
+        dir test
         python test/smoke_tests.py
+        C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\python test/smoke_tests.py
       continue-on-error: true
       
     - name: Package
