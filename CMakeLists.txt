@@ -24,7 +24,7 @@ endif()
 unset(Python3_FOUND CACHE)
 
 # First try finding python 3 development files
-find_package(Python3 COMPONENTS Development)
+find_package(Python3 COMPONENTS Development.Module)
 
 if (Python3_FOUND)
     set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
