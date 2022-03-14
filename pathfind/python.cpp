@@ -10,10 +10,10 @@
 #define PY_SSIZE_T_CLEAN
 #ifdef _DEBUG
 #    undef _DEBUG
-#    include <python.h>
+#    include <Python.h>
 #    define _DEBUG
 #else
-#    include <python.h>
+#    include <Python.h>
 #endif
 
 namespace
@@ -162,57 +162,6 @@ PyMethodDef map_methods[] = {
      METH_VARARGS, "Get zone and area at given x,y,z"},
     {nullptr}};
 
-PyTypeObject map_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "pathfind.Map",             // tp_name
-    sizeof(MapObject),          // tp_basicsize
-    0,                          // tp_itemsize
-    (destructor)PyObject_Del,   // tp_dealloc
-    nullptr,                    // tp_print
-    nullptr,                    // tp_getattr
-    nullptr,                    // tp_setattr
-    nullptr,                    // tp_reserved
-    nullptr,                    // tp_repr
-    nullptr,                    // tp_as_number
-    nullptr,                    // tp_as_sequence
-    nullptr,                    // tp_as_mapping
-    nullptr,                    // tp_hash
-    nullptr,                    // tp_call
-    nullptr,                    // tp_str
-    PyObject_GenericGetAttr,    // tp_getattro
-    nullptr,                    // tp_setattro
-    nullptr,                    // tp_as_buffer
-    Py_TPFLAGS_DEFAULT,         // tp_flags
-    "Pathfind Map",             // tp_doc
-    nullptr,                    // tp_traverse
-    nullptr,                    // tp_clear
-    nullptr,                    // tp_richcompare
-    0,                          // tp_weaklistoffset
-    nullptr,                    // tp_iter
-    nullptr,                    // tp_iternext
-    map_methods,                // tp_methods
-    nullptr,                    // tp_members
-    nullptr,                    // tp_getset
-    nullptr,                    // tp_base
-    nullptr,                    // tp_dict
-    nullptr,                    // tp_descr_get
-    nullptr,                    // tp_descr_set
-    0,                          // tp_dictoffset
-    (initproc)map_object_init,  // tp_init
-    nullptr,                    // tp_alloc
-    PyType_GenericNew,          // tp_new
-    PyObject_Del,               // tp_free
-    nullptr,                    // tp_is_gc
-    nullptr,                    // tp_bases
-    nullptr,                    // tp_mro (method resolution order)
-    nullptr,                    // tp_cache
-    nullptr,                    // tp_subclasses
-    nullptr,                    // tp_weaklist
-    nullptr,                    // tp_del (destructor)
-    0,                          // tp_version_tag
-    nullptr,                    // tp_finalize
-};
-
 PyModuleDef pathfind_module = {
     PyModuleDef_HEAD_INIT,
     "pathfind",
@@ -223,6 +172,18 @@ PyModuleDef pathfind_module = {
 
 PyMODINIT_FUNC PyInit_pathfind(void)
 {
+    static PyTypeObject map_type = {PyVarObject_HEAD_INIT(NULL, 0)};
+    map_type.tp_name = "pathfind.Map";
+    map_type.tp_basicsize = sizeof(MapObject);
+    map_type.tp_dealloc = (destructor)PyObject_Del;
+    map_type.tp_getattro = PyObject_GenericGetAttr;
+    map_type.tp_flags = Py_TPFLAGS_DEFAULT;
+    map_type.tp_doc = "Pathfind Map";
+    map_type.tp_methods = map_methods;
+    map_type.tp_init = (initproc)map_object_init;
+    map_type.tp_new = PyType_GenericNew;
+    map_type.tp_free = PyObject_Del;
+
     if (PyType_Ready(&map_type) < 0)
         return nullptr;
 
