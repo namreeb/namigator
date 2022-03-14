@@ -66,7 +66,13 @@ jobs:
       
     - name: Test
       working-directory: ${{github.workspace}}/install
-      run: python test/smoke_tests.py
+      run: |
+        where python
+        python --version
+        python test/smoke_tests.py
+        dir C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\libs\\python310.lib
+        copy C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\python310.dll test\\
+        python test/smoke_tests.py
       continue-on-error: true
       
     - name: Package
