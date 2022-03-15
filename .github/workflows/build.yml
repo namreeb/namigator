@@ -52,6 +52,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.10' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+
     - name: Checkout submodules
       run: git submodule update --init --recursive
     
@@ -66,7 +70,9 @@ jobs:
       
     - name: Test
       working-directory: ${{github.workspace}}/install
-      run: C:\\hostedtoolcache\\windows\\Python\\3.10.2\\x64\\python test/smoke_tests.py
+      run: |
+        python --version
+        python test/smoke_tests.py
       
     - name: Package
       run: Compress-Archive -Path install\* -DestinationPath namigator.zip
