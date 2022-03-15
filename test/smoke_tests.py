@@ -94,6 +94,8 @@ def test_pathfind(temp_dir):
 	if len(path) < 10 or path_length > 60:
 		raise Exception("Path invalid.  Length: {} Distance: {}".format(len(path), path_length))
 
+	print("Blades Edge pathfind check succeeded")
+
 def main():
 	temp_dir = tempfile.mkdtemp()
 	print("Temporary directory: {}".format(temp_dir))
