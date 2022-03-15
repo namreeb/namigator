@@ -108,5 +108,10 @@ def main():
 		shutil.rmtree(temp_dir)
 
 if __name__ == "__main__":
-	main()
+	try:
+		main()
+	except Exception as e:
+		print("Test exception: {}".format(e))
+		sys.exit(1)
+	print("exiting with success...")
 	sys.exit(0)
