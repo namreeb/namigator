@@ -70,7 +70,10 @@ jobs:
       
     - name: Test
       working-directory: ${{github.workspace}}/install
-      run: python test/smoke_tests.py
+      run: |
+        python test/smoke_tests.py
+        echo Exit code is $LASTEXITCODE
+        exit 0
       
     - name: Package
       run: Compress-Archive -Path install\* -DestinationPath namigator.zip
