@@ -21,15 +21,10 @@ if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
 endif()
 
-unset(Python3_FOUND CACHE)
-
 # First try finding python 3 development files
 find_package(Python3 COMPONENTS Development.Module)
 
-if (Python3_FOUND)
-    set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
-    set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
-else()
+if (NOT Python3_FOUND)
     message(WARNING "No python3 was found.  Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
 endif()
 

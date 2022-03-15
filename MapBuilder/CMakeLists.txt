@@ -10,10 +10,10 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE parser utility RecastNavigation
 install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
 
 if (Python3_FOUND)
-    Python3_add_library(${PYTHON_NAME} ${SRC} python.cpp)
+    Python3_add_library(${PYTHON_NAME} MODULE ${SRC} python.cpp)
     target_compile_definitions(${PYTHON_NAME} PUBLIC PYTHON)
-    target_include_directories(${PYTHON_NAME} PUBLIC ${PYTHON_INCLUDE_DIRS})
-    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm ${PYTHON_LIBRARIES})
+    target_include_directories(${PYTHON_NAME} PUBLIC ${Python3_INCLUDE_DIRS})
+    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm)
 
     install(TARGETS ${PYTHON_NAME} DESTINATION lib)
 endif()

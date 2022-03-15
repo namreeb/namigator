@@ -21,7 +21,8 @@ namespace
 
 struct MapObject
 {
-    PyObject_HEAD pathfind::Map *map;
+    PyObject_HEAD
+    pathfind::Map *map;
 };
 
 int map_object_init(MapObject* map_obj, PyObject* args, PyObject* kwds)
@@ -42,6 +43,13 @@ int map_object_init(MapObject* map_obj, PyObject* args, PyObject* kwds)
     }
 
     return 0;
+}
+
+void map_object_dealloc(MapObject* self)
+{
+    if (self->map)
+        delete self->map;
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 PyObject* find_path(MapObject* map_obj, PyObject *args)
@@ -148,7 +156,6 @@ PyObject* get_zone_and_area(MapObject* map_obj, PyObject* args)
     return result;
 }
 
-
 PyMethodDef map_methods[] = {
     {"load_all_adts", reinterpret_cast<PyCFunction>(load_all_adts), METH_NOARGS,
      "Load all ADTs"},
@@ -175,14 +182,13 @@ PyMODINIT_FUNC PyInit_pathfind(void)
     static PyTypeObject map_type = {PyVarObject_HEAD_INIT(NULL, 0)};
     map_type.tp_name = "pathfind.Map";
     map_type.tp_basicsize = sizeof(MapObject);
-    map_type.tp_dealloc = (destructor)PyObject_Del;
     map_type.tp_getattro = PyObject_GenericGetAttr;
     map_type.tp_flags = Py_TPFLAGS_DEFAULT;
     map_type.tp_doc = "Pathfind Map";
     map_type.tp_methods = map_methods;
     map_type.tp_init = (initproc)map_object_init;
+    map_type.tp_dealloc = (destructor)map_object_dealloc;
     map_type.tp_new = PyType_GenericNew;
-    map_type.tp_free = PyObject_Del;
 
     if (PyType_Ready(&map_type) < 0)
         return nullptr;
