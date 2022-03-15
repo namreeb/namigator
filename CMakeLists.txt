@@ -28,6 +28,7 @@ unset(PYTHON_COMPONENT CACHE)
 if(DEFINED ENV{pythonLocation})
     message(STATUS "github action? python location: $ENV{pythonLocation}")
     set(Python3_ROOT_DIR $ENV{pythonLocation})
+    set(Python3_FIND_REGISTRY NEVER)
 endif()
 
 # First try finding python 3 development files
