@@ -24,6 +24,12 @@ endif()
 unset(Python3_FOUND CACHE)
 unset(PYTHON_COMPONENT CACHE)
 
+# github python setup action will set this environment variable
+if(DEFINED ENV{pythonLocation})
+    message(STATUS "github action? python location: $ENV{pythonLocation}")
+    set(Python3_ROOT_DIR $ENV{pythonLocation})
+endif()
+
 # First try finding python 3 development files
 find_package(Python3 COMPONENTS Development)
 
