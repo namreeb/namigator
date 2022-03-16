@@ -91,7 +91,7 @@ jobs:
       with:
         name: snapshot-devbuild
         path: namigator.zip
-        retention-days: 5
+        retention-days: 2
 
     - name: Download artifact snapshot
       uses: actions/download-artifact@v1
