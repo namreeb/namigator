@@ -89,6 +89,25 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: namigator.zip
+        name: snapshot-devbuild
         path: namigator.zip
         retention-days: 5
+
+    - name: Download artifact snapshot
+      uses: actions/download-artifact@v1
+      with:
+        name: snapshot-devbuild
+        path: all_snapshots
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+    - name: Upload snapshot
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Development Build(${{ steps.date.outputs.date }})"
+        files: all_snapshots
