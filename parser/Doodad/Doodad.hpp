@@ -11,6 +11,7 @@ class Doodad
 {
 private:
     static constexpr unsigned int Magic = '02DM';
+    static constexpr unsigned int AlphaMagic = 'XLDM';
 
 public:
     const std::string MpqPath;

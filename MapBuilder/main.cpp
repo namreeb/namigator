@@ -4,6 +4,7 @@
 #include "parser/Adt/Adt.hpp"
 #include "parser/MpqManager.hpp"
 #include "parser/Wmo/WmoInstance.hpp"
+#include "utility/String.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -54,9 +55,7 @@ int main(int argc, char* argv[])
     {
         for (auto i = 1; i < argc; ++i)
         {
-            std::string arg(argv[i]);
-            std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
-
+            const std::string arg = utility::lower(argv[i]);
             const bool lastArgument = i == argc - 1;
 
             if (arg == "-b" || arg == "--bvh")

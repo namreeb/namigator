@@ -9,8 +9,6 @@ namespace input
 MOVI::MOVI(size_t position, utility::BinaryStream* fileStream)
     : WmoGroupChunk(position, fileStream)
 {
-    Type = WmoGroupChunkType::MOVI;
-
     Indices.resize(Size / sizeof(std::uint16_t));
 
     fileStream->rpos(position + 8);

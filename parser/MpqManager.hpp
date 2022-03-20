@@ -6,6 +6,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace parser
 {
@@ -14,7 +17,11 @@ class MpqManager
 private:
     using HANDLE = void*;
 
-    std::vector<HANDLE> MpqHandles;
+    bool Alpha;
+
+    fs::path BasePath;
+
+    std::unordered_map<std::string, HANDLE> MpqHandles;
     std::unordered_map<std::string, unsigned int> Maps;
     std::unordered_map<std::uint32_t, std::uint32_t> AreaToZone;
 

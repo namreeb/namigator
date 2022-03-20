@@ -43,16 +43,44 @@ Adt::Adt(Map* map, int adtX, int adtY)
               (32.f - static_cast<float>(adtX)) * MeshSettings::AdtSize,
               std::numeric_limits<float>::lowest()})
 {
-    std::stringstream ss;
+    std::unique_ptr<utility::BinaryStream> reader;
 
-    ss << "World\\maps\\" << map->Name << "\\" << map->Name << "_" << adtX
-       << "_" << adtY << ".adt";
+    size_t mhdrLocation;
 
-    auto reader = sMpqManager.OpenFile(ss.str());
+    // if we are working with files from the alpha, the data we need is already
+    // in memory.  lets create a unique pointer to the shared memory so other
+    // threads don't have to make copies of the same data.  it will never
+    // change once loaded so this should be fine.
+    if (map->m_isAlphaData)
+    {
+        reader = std::make_unique<utility::BinaryStream>(map->m_alphaData);
+
+        auto const offset = map->m_adtOffsets[adtX][adtY];
+
+        if (!reader->GetChunkLocation("MHDR", map->m_adtOffsets[adtX][adtY],
+            mhdrLocation))
+            THROW("MHDR not found");
+
+        reader->rpos(mhdrLocation);
+    }
+    else
+    {
+        std::stringstream ss;
+
+        ss << "World\\maps\\" << map->Name << "\\" << map->Name << "_" << adtX
+           << "_" << adtY << ".adt";
+
+        reader = sMpqManager.OpenFile(ss.str());
+
+        if (!reader->GetChunkLocation("MHDR", mhdrLocation))
+                THROW("MHDR not found");
+    }
 
     if (!reader)
         THROW("Failed to open ADT");
 
+    auto const old = reader->rpos();
+    reader->rpos(0);
     if (reader->Read<std::uint32_t>() != input::AdtChunkType::MVER)
         THROW("MVER does not begin ADT file");
 
@@ -61,19 +89,17 @@ Adt::Adt(Map* map, int adtX, int adtY)
     if (reader->Read<std::uint32_t>() != ADT_VERSION)
         THROW("ADT version is incorrect");
 
-    size_t mhdrLocation;
-    if (!reader->GetChunkLocation("MHDR", mhdrLocation))
-        THROW("MHDR not found");
+    reader->rpos(old);
 
-    const input::MHDR header(mhdrLocation, reader.get());
+    const input::MHDR header(mhdrLocation, reader.get(), map->m_isAlphaData);
 
     std::unique_ptr<input::MH2O> liquidChunk(
-        header.Offsets.Mh2oOffset ?
-            new input::MH2O(header.Offsets.Mh2oOffset + 0x14, reader.get()) :
+        header.Mh2oOffset ?
+            new input::MH2O(header.Mh2oOffset + 0x14, reader.get()) :
             nullptr);
 
     size_t currMcnk;
-    if (!reader->GetChunkLocation("MCNK", currMcnk))
+    if (!reader->GetChunkLocation("MCNK", mhdrLocation, currMcnk))
         THROW("MCNK not found");
 
     std::unique_ptr<input::MCNK> chunks[16][16];
@@ -82,44 +108,42 @@ Adt::Adt(Map* map, int adtX, int adtY)
     for (int y = 0; y < 16; ++y)
         for (int x = 0; x < 16; ++x)
         {
-            chunks[y][x] =
-                std::make_unique<input::MCNK>(currMcnk, reader.get());
+            chunks[y][x] = std::make_unique<input::MCNK>(
+                currMcnk, reader.get(), map->m_isAlphaData, adtX, adtY);
             currMcnk += 8 + chunks[y][x]->Size;
 
             if (chunks[y][x]->HasWater)
                 hasMclq = true;
         }
 
-    // MMDX
     std::vector<std::string> doodadNames;
-    size_t mmdxLocation;
-    if (reader->GetChunkLocation("MMDX", header.Offsets.MmdxOffset + 0x14,
-                                 mmdxLocation))
-    {
-        input::MMDX doodadNamesChunk(mmdxLocation, reader.get());
-        doodadNames = std::move(doodadNamesChunk.DoodadNames);
-    }
-
-    // MMID: XXX - other people read in the MMID chunk here.  do we actually
-    // need it?
-
-    // MWMO
     std::vector<std::string> wmoNames;
-    size_t mwmoLocation;
-    if (reader->GetChunkLocation("MWMO", header.Offsets.MwmoOffset + 0x14,
-                                 mwmoLocation))
-    {
-        input::MWMO wmoNamesChunk(mwmoLocation, reader.get());
-        wmoNames = std::move(wmoNamesChunk.WmoNames);
-    }
 
-    // MWID: XXX - other people read in the MWID chunk here.  do we actually
-    // need it?
+    if (!map->m_isAlphaData)
+    {
+        // MMDX
+        size_t mmdxLocation;
+        if (reader->GetChunkLocation("MMDX", header.DoodadNamesOffset,
+                                     mmdxLocation))
+        {
+            input::MMDX doodadNamesChunk(mmdxLocation, reader.get());
+            doodadNames = std::move(doodadNamesChunk.DoodadNames);
+        }
+
+        // MWMO
+        size_t mwmoLocation;
+        if (reader->GetChunkLocation("MWMO", header.WmoNamesOffset,
+                                     mwmoLocation))
+        {
+            input::MWMO wmoNamesChunk(mwmoLocation, reader.get());
+            wmoNames = std::move(wmoNamesChunk.WmoNames);
+        }
+    }
 
     // MDDF
     size_t mddfLocation;
     std::unique_ptr<input::MDDF> doodadChunk(
-        reader->GetChunkLocation("MDDF", header.Offsets.MddfOffset + 0x14,
+        reader->GetChunkLocation("MDDF", header.DoodadPlacementOffset,
                                  mddfLocation) ?
             new input::MDDF(mddfLocation, reader.get()) :
             nullptr);
@@ -127,7 +151,7 @@ Adt::Adt(Map* map, int adtX, int adtY)
     // MODF
     size_t modfLocation;
     std::unique_ptr<input::MODF> wmoChunk(
-        reader->GetChunkLocation("MODF", header.Offsets.ModfOffset + 0x14,
+        reader->GetChunkLocation("MODF", header.WmoPlacementOffset,
                                  modfLocation) ?
             new input::MODF(modfLocation, reader.get()) :
             nullptr);
@@ -407,7 +431,19 @@ Adt::Adt(Map* map, int adtX, int adtY)
     if (wmoChunk)
         for (auto const& wmoDefinition : wmoChunk->Wmos)
         {
-            auto const wmo = map->GetWmo(wmoNames[wmoDefinition.NameId]);
+            std::string wmoName;
+            if (map->m_isAlphaData)
+            {
+                assert(wmoDefinition.NameId < map->m_wmoNames.size());
+                wmoName = map->m_wmoNames[wmoDefinition.NameId];
+            }
+            else
+            {
+                assert(wmoDefinition.NameId < wmoNames.size());
+                wmoName = wmoNames[wmoDefinition.NameId];
+            }
+
+            auto const wmo = map->GetWmo(wmoName);
             const WmoInstance* wmoInstance;
 
             // ensure that the instance has been loaded
@@ -454,8 +490,19 @@ Adt::Adt(Map* map, int adtX, int adtY)
     if (doodadChunk)
         for (auto const& doodadDefinition : doodadChunk->Doodads)
         {
-            auto const doodad =
-                map->GetDoodad(doodadNames[doodadDefinition.NameId]);
+            std::string doodadName;
+            if (map->m_isAlphaData)
+            {
+                assert(doodadDefinition.NameId < m_map->m_doodadNames.size());
+                doodadName = m_map->m_doodadNames[doodadDefinition.NameId];
+            }
+            else
+            {
+                assert(doodadDefinition.NameId < doodadNames.size());
+                doodadName = doodadNames[doodadDefinition.NameId];
+            }
+
+            auto const doodad = map->GetDoodad(doodadName);
 
             // skip those doodads which have no collision geometry
             if (!doodad->Vertices.size() || !doodad->Indices.size())

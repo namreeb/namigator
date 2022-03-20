@@ -26,6 +26,16 @@ private:
     bool m_hasAdt[MeshSettings::Adts][MeshSettings::Adts];
     bool m_hasTerrain;
 
+
+    // ALPHA-EXCLUSIVE DATA
+    bool m_isAlphaData;
+    std::shared_ptr<std::vector<std::uint8_t>> m_alphaData;
+
+    std::uint32_t m_adtOffsets[MeshSettings::Adts][MeshSettings::Adts];
+    std::vector<std::string> m_doodadNames;
+    std::vector<std::string> m_wmoNames;
+    // END ALPHA-EXCLUSIVE DATA
+
     mutable std::mutex m_adtMutex;
     std::unique_ptr<Adt> m_adts[MeshSettings::Adts][MeshSettings::Adts];
     std::unique_ptr<WmoInstance> m_globalWmo;
@@ -44,6 +54,8 @@ private:
         m_loadedDoodadInstances;
     std::map<std::uint64_t, std::unique_ptr<const WmoInstance>>
         m_loadedDoodadGameObjects;
+
+    friend Adt::Adt(Map*, int, int);
 
 public:
     const std::string Name;

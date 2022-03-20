@@ -7,6 +7,7 @@ add_library(utility STATIC
     Quaternion.cpp
     MathHelper.cpp
     Ray.cpp
+    String.cpp
 )
 
 target_include_directories(utility PUBLIC ..)

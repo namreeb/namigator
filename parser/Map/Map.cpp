@@ -8,6 +8,7 @@
 #include "Wmo/WmoPlacement.hpp"
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
+#include "utility/String.hpp"
 #include "utility/Vector.hpp"
 
 #include <cassert>
@@ -37,43 +38,165 @@ Map::Map(const std::string& name)
 
     reader->rpos(mphdLocation + 8);
 
-    m_hasTerrain = !(reader->Read<unsigned int>() & 0x1);
+    auto const firstArg = reader->Read<std::uint32_t>();
 
     size_t mainLocation;
     if (!reader->GetChunkLocation("MAIN", mainLocation))
         THROW("MAIN not found");
 
-    reader->rpos(mainLocation + 8);
+    reader->rpos(mainLocation + 4);
+    auto const mainSize = reader->Read<std::uint32_t>();
 
-    for (int y = 0; y < 64; ++y)
-        for (int x = 0; x < 64; ++x)
+    constexpr size_t alphaMainSize = 64 * 64 * 4 * sizeof(std::uint32_t);
+
+    // at this point, the reader is pointing to the start of the MAIN data
+
+    // alpha data will have a predictable size for this struct, and it will
+    // differ from other versions.  so we use that value to check if we are
+    // reading alpha data or not.
+    m_isAlphaData = mainSize == alphaMainSize;
+
+    std::string globalWmoName;
+
+    if (m_isAlphaData)
+    {
+        // save this data in memory for use by worker threads
+        // TODO: transfer ownership from reader to m_alphaData, replacing
+        // reader with a weak pointer?
+        reader->rpos(0);
+        m_alphaData =
+            std::make_shared<std::vector<std::uint8_t>>(reader->wpos());
+        reader->ReadBytes(&m_alphaData->at(0), m_alphaData->size());
+
+        // go back and read doodad and wmo names
+        reader->rpos(mphdLocation + 8);
+        auto const doodadNameCount = reader->Read<std::uint32_t>();
+        auto const doodadNameOffset = reader->Read<std::uint32_t>();
+        auto const wmoNameCount = reader->Read<std::uint32_t>();
+        auto const wmoNameOffset = reader->Read<std::uint32_t>();
+
+        m_doodadNames.reserve(doodadNameCount);
+        m_wmoNames.reserve(wmoNameCount);
+
+        // restore pointer to MAIN
+        reader->rpos(mainLocation + 8);
+
+        for (int y = 0; y < MeshSettings::Adts; ++y)
+            for (int x = 0; x < MeshSettings::Adts; ++x)
+            {
+                m_adtOffsets[x][y] = reader->Read<std::uint32_t>();
+                auto const size = reader->Read<std::uint32_t>();
+
+                m_hasAdt[x][y] = size != 0;
+
+                reader->rpos(reader->rpos() + 8);
+            }
+
+        size_t mdnmLocation;
+        if (!reader->GetChunkLocation("MDNM", doodadNameOffset, mdnmLocation))
+            THROW("MDNM not found");
+
+        reader->rpos(mdnmLocation + 4);
+        auto const mdnmSize = reader->Read<std::uint32_t>();
+        std::vector<char> doodadNameBuffer(mdnmSize);
+        reader->ReadBytes(&doodadNameBuffer[0], doodadNameBuffer.size());
+
+        char* p;
+
+        for (p = &doodadNameBuffer[0]; *p == '\0'; ++p)
+            ;
+
+        do
         {
-            auto const flag = reader->Read<int>();
+            m_doodadNames.emplace_back(p);
+            p = strchr(p, '\0');
+            if (!p)
+                break;
+            ++p;
+        } while (p <= &doodadNameBuffer[doodadNameBuffer.size() - 1]);
 
-            // skip async object
-            reader->rpos(reader->rpos() + 4);
+        size_t monmLocation;
+        if (!reader->GetChunkLocation("MONM", wmoNameOffset, monmLocation))
+            THROW("MONM not found");
 
-            m_hasAdt[x][y] = !!(flag & 1);
-        }
+        reader->rpos(monmLocation + 4);
+        auto const monmSize = reader->Read<std::uint32_t>();
+        std::vector<char> wmoNameBuffer(monmSize);
+        reader->ReadBytes(&wmoNameBuffer[0], wmoNameBuffer.size());
 
-    // for worlds with terrain, parsing stops here.  else, load single wmo
-    if (m_hasTerrain)
-        return;
+        for (p = &wmoNameBuffer[0]; *p == '\0'; ++p)
+            ;
 
-    size_t mwmoLocation;
-    if (!reader->GetChunkLocation("MWMO", mwmoLocation))
-        THROW("MWMO not found");
-    reader->rpos(mwmoLocation + 8);
+        do
+        {
+            m_wmoNames.emplace_back(p);
+            p = strchr(p, '\0');
+            if (!p)
+                break;
+            ++p;
+        } while (p <= &wmoNameBuffer[wmoNameBuffer.size() - 1]);
+    }
+    else
+    {
+        m_alphaData.reset();
+        m_hasTerrain = !(firstArg & 0x1);
 
-    auto const wmoName = reader->ReadString();
+        for (int y = 0; y < MeshSettings::Adts; ++y)
+            for (int x = 0; x < MeshSettings::Adts; ++x)
+            {
+                auto const flag = reader->Read<std::uint32_t>();
+
+                // skip async object
+                reader->rpos(reader->rpos() + 4);
+
+                m_hasAdt[x][y] = !!(flag & 1);
+            }
+
+        // for worlds with terrain, parsing stops here.  else, load single wmo
+        if (m_hasTerrain)
+            return;
+
+        size_t mwmoLocation;
+        if (!reader->GetChunkLocation("MWMO", mwmoLocation))
+            THROW("MWMO not found");
+        reader->rpos(mwmoLocation + 8);
+
+        globalWmoName = reader->ReadString();
+    }
 
     size_t modfLocation;
-    if (!reader->GetChunkLocation("MODF", modfLocation))
+    // the alpha client stores the global WMO data in a specific location.
+    // we cannot use our fault tolerant chunk searching code here because in
+    // the same file there are MODF chunks within the ADT data.  so we manually
+    // check the next chunk after MONM, which should be the last thing we read.
+    if (m_isAlphaData)
+    {
+        auto const old = reader->rpos();
+        auto const chunk = reader->Read<std::uint32_t>();
+        reader->rpos(old);
+
+        if (chunk == 'MODF')
+        {
+            modfLocation = old;
+            m_hasTerrain = false;
+        }
+        else
+        {
+            m_hasTerrain = true;
+            return;
+        }
+    }
+    else if (!reader->GetChunkLocation("MODF", modfLocation))
         THROW("MODF not found");
-    reader->rpos(modfLocation + 8);
+
+    reader->rpos(modfLocation + 4);
+    auto const modfSize = reader->Read<std::uint32_t>();
 
     input::WmoPlacement placement;
     reader->ReadBytes(&placement, sizeof(placement));
+
+    if (m_isAlphaData)
+        globalWmoName = m_wmoNames[placement.NameId];
 
     math::BoundingBox bounds;
     placement.GetBoundingBox(bounds);
@@ -82,7 +205,7 @@ Map::Map(const std::string& name)
     placement.GetTransformMatrix(transformMatrix);
 
     m_globalWmo = std::make_unique<WmoInstance>(
-        GetWmo(wmoName), placement.DoodadSet, placement.NameSet, bounds,
+        GetWmo(globalWmoName), placement.DoodadSet, placement.NameSet, bounds,
         transformMatrix);
 }
 
@@ -118,8 +241,7 @@ void Map::UnloadAdt(int x, int y)
 
 const Wmo* Map::GetWmo(const std::string& name)
 {
-    auto filename = name.substr(name.rfind('\\') + 1);
-    filename = filename.substr(0, filename.rfind('.'));
+    auto filename = utility::lower(name);
 
     std::lock_guard<std::mutex> guard(m_wmoMutex);
 
@@ -127,7 +249,7 @@ const Wmo* Map::GetWmo(const std::string& name)
         if (wmo->MpqPath == filename)
             return wmo.get();
 
-    auto ret = new Wmo(name);
+    auto ret = new Wmo(filename);
 
     m_loadedWmos.push_back(std::unique_ptr<const Wmo>(ret));
 
@@ -162,8 +284,7 @@ const WmoInstance* Map::GetGlobalWmoInstance() const
 
 const Doodad* Map::GetDoodad(const std::string& name)
 {
-    auto filename = name.substr(name.rfind('\\') + 1);
-    filename = filename.substr(0, filename.rfind('.'));
+    auto filename = utility::lower(name);
 
     std::lock_guard<std::mutex> guard(m_doodadMutex);
 

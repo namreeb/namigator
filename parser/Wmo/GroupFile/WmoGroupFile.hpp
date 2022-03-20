@@ -16,14 +16,14 @@ class WmoGroupFile
 {
 public:
     unsigned int Flags;
-    unsigned int GroupId;
 
     std::unique_ptr<MOPY> MaterialsChunk;
     std::unique_ptr<MOVI> IndicesChunk;
     std::unique_ptr<MOVT> VerticesChunk;
     std::unique_ptr<MLIQ> LiquidChunk;
 
-    WmoGroupFile(const std::string& path);
+    WmoGroupFile(unsigned int version, const std::string& path);
+    WmoGroupFile(unsigned int version, utility::BinaryStream *reader);
 };
 } // namespace input
 } // namespace parser

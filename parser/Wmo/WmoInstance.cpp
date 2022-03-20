@@ -16,11 +16,6 @@
 #include <string>
 #include <vector>
 
-#ifdef _DEBUG
-#    include <iomanip>
-#    include <iostream>
-#endif
-
 namespace parser
 {
 namespace
@@ -54,7 +49,7 @@ WmoInstance::WmoInstance(const Wmo* wmo, unsigned int doodadSet,
     : Bounds(bounds), TransformMatrix(transformMatrix), DoodadSet(doodadSet),
       NameSet(nameSet), Model(wmo)
 {
-    std::vector<math::Vector3> vertices;
+    std::vector<math::Vertex> vertices;
     std::vector<int> indices;
 
     BuildTriangles(vertices, indices);
@@ -89,8 +84,8 @@ void WmoInstance::BuildTriangles(std::vector<math::Vertex>& vertices,
 
     std::copy(Model->Indices.cbegin(), Model->Indices.cend(), indices.begin());
 
-    for (auto& Vector3 : Model->Vertices)
-        vertices.push_back(TransformVertex(Vector3));
+    for (auto& vertex : Model->Vertices)
+        vertices.push_back(TransformVertex(vertex));
 }
 
 void WmoInstance::BuildLiquidTriangles(std::vector<math::Vertex>& vertices,
@@ -105,8 +100,8 @@ void WmoInstance::BuildLiquidTriangles(std::vector<math::Vertex>& vertices,
     std::copy(Model->LiquidIndices.cbegin(), Model->LiquidIndices.cend(),
               indices.begin());
 
-    for (auto& Vector3 : Model->LiquidVertices)
-        vertices.push_back(TransformVertex(Vector3));
+    for (auto& vertex : Model->LiquidVertices)
+        vertices.push_back(TransformVertex(vertex));
 }
 
 void WmoInstance::BuildDoodadTriangles(std::vector<math::Vertex>& vertices,
@@ -140,7 +135,7 @@ void WmoInstance::BuildDoodadTriangles(std::vector<math::Vertex>& vertices,
 
     for (auto const& doodad : doodadSet)
     {
-        std::vector<math::Vector3> doodadVertices;
+        std::vector<math::Vertex> doodadVertices;
         std::vector<int> doodadIndices;
 
         doodad->BuildTriangles(doodadVertices, doodadIndices);

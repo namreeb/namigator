@@ -3,6 +3,7 @@
 #include "DBC.hpp"
 #include "StormLib.h"
 #include "utility/Exception.hpp"
+#include "utility/String.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -12,8 +13,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
-
-namespace fs = std::filesystem;
+#include <system_error>
 
 namespace
 {
@@ -39,6 +39,50 @@ void AddIfExists(std::vector<fs::path>& files, const fs::path& file)
     if (fs::exists(file))
         files.push_back(file);
 }
+
+void AddIfMpq(std::vector<fs::path>& files, const fs::path& file)
+{
+    if (!fs::is_regular_file(file))
+        return;
+
+    auto const extension = file.extension().string();
+
+    if (extension[0] != '.' || extension.length() != 4)
+        return;
+
+    if ((extension[1] != 'M' && extension[1] != 'm') ||
+        (extension[2] != 'P' && extension[2] != 'p') ||
+        (extension[3] != 'Q' && extension[3] != 'q'))
+        return;
+
+    files.push_back(file);
+}
+
+std::string GetRealModelPath(const std::string& path, bool alpha)
+{
+    auto const length = path.length();
+
+    // alpha uses .mdl when .mdx is what are in data files
+    if (alpha)
+    {
+        if (length < 4)
+            return path;
+        if (path[length - 4] != '.')
+            return path;
+        if ((path[length - 3] != 'm' && path[length - 3] != 'M') ||
+            (path[length - 2] != 'd' && path[length - 2] != 'D') ||
+            (path[length - 1] != 'l' && path[length - 1] != 'L'))
+            return path;
+
+        return path.substr(0, length - 4) + ".mdx";
+    }
+    // TODO: rewrite this to be more like above
+    else if (path[length - 1] == '2' &&
+             (path[length - 2] == 'm' || path[length - 2] == 'M'))
+        return path;
+
+    return path.substr(0, path.rfind('.')) + ".m2";
+}
 } // namespace
 
 namespace parser
@@ -52,7 +96,12 @@ void MpqManager::LoadMpq(const std::string& filePath)
     if (!SFileOpenArchive(filePath.c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
         THROW("Could not open MPQ").ErrorCode();
 
-    MpqHandles.push_back(archive);
+    std::error_code ec;
+    auto const rel = fs::relative(filePath, BasePath, ec);
+    if (ec)
+        MpqHandles[filePath] = archive;
+    else
+        MpqHandles[utility::lower(rel.string())] = archive;
 }
 
 void MpqManager::Initialize()
@@ -63,23 +112,23 @@ void MpqManager::Initialize()
 // Priority logic is explained at https://github.com/namreeb/namigator/issues/22
 void MpqManager::Initialize(const std::string& wowDir)
 {
-    auto const wowPath = fs::path(wowDir);
+    Alpha = false;
+    BasePath = fs::path(wowDir);
     std::string locale = "";
 
-    for (auto i = fs::directory_iterator(wowPath);
-         i != fs::directory_iterator(); ++i)
+    for (auto const& d : fs::directory_iterator(BasePath))
     {
-        if (!fs::is_directory(i->status()))
+        if (!fs::is_directory(d.status()))
             continue;
 
-        auto const dirString = i->path().filename().string();
+        auto const dirString = d.path().filename().string();
 
         if (dirString.length() != 4)
             continue;
 
         // all locale directories should have files named lcLE\locale-lcLE.mpq
         // and lcLE\patch-lcLE*.mpq
-        if (fs::exists(wowPath / dirString / ("locale-" + dirString + ".MPQ")))
+        if (fs::exists(BasePath / dirString / ("locale-" + dirString + ".MPQ")))
         {
             locale = dirString;
             break;
@@ -88,49 +137,63 @@ void MpqManager::Initialize(const std::string& wowDir)
 
     std::vector<fs::path> files;
 
-    // if we are running on test data we do not expect to find a locale
     if (locale.empty())
     {
-        AddIfExists(files, wowPath / "test_map.mpq");
+        // if we are running on test data we do not expect to find a locale
+        AddIfExists(files, BasePath / "test_map.mpq");
+
+        // the alpha client stores data in lots of small MPQs inside the
+        // Data/World directory
+        if (fs::is_directory(BasePath / "World"))
+        {
+            Alpha = true;
+
+            for (auto const& f :
+                 fs::recursive_directory_iterator(BasePath / "World"))
+                AddIfMpq(files, f);
+
+            AddIfExists(files, BasePath / "dbc.MPQ");
+            AddIfExists(files, BasePath / "model.MPQ");
+        }
     }
     else
     {
-        AddIfExists(files, wowPath / "base.MPQ");
-        AddIfExists(files, wowPath / "alternate.MPQ");
-        AddIfExists(files, wowPath / ".." / "alternate.MPQ");
-        AddIfExists(files, wowPath / "speech2.MPQ");
-        AddIfExists(files, wowPath / ".." / "speech2.MPQ");
+        AddIfExists(files, BasePath / "base.MPQ");
+        AddIfExists(files, BasePath / "alternate.MPQ");
+        AddIfExists(files, BasePath / ".." / "alternate.MPQ");
+        AddIfExists(files, BasePath / "speech2.MPQ");
+        AddIfExists(files, BasePath / ".." / "speech2.MPQ");
 
         for (auto i = 9; i > 0; --i)
         {
             std::stringstream s1;
             s1 << "patch-" << i << ".MPQ";
-            AddIfExists(files, wowPath / s1.str());
+            AddIfExists(files, BasePath / s1.str());
         }
 
         for (auto i = 9; i > 0; --i)
         {
             std::stringstream s1;
             s1 << "patch-" << locale << "-" << i << ".MPQ";
-            AddIfExists(files, wowPath / locale / s1.str());
+            AddIfExists(files, BasePath / locale / s1.str());
         }
 
-        AddIfExists(files, wowPath / "patch.MPQ");
-        AddIfExists(files, wowPath / locale / ("patch-" + locale + ".MPQ"));
-        AddIfExists(files, wowPath / "expansion.MPQ");
-        AddIfExists(files, wowPath / "lichking.MPQ");
-        AddIfExists(files, wowPath / "common.MPQ");
-        AddIfExists(files, wowPath / "common-2.MPQ");
-        AddIfExists(files, wowPath / locale / ("locale-" + locale + ".MPQ"));
-        AddIfExists(files, wowPath / locale / ("speech-" + locale + ".MPQ"));
+        AddIfExists(files, BasePath / "patch.MPQ");
+        AddIfExists(files, BasePath / locale / ("patch-" + locale + ".MPQ"));
+        AddIfExists(files, BasePath / "expansion.MPQ");
+        AddIfExists(files, BasePath / "lichking.MPQ");
+        AddIfExists(files, BasePath / "common.MPQ");
+        AddIfExists(files, BasePath / "common-2.MPQ");
+        AddIfExists(files, BasePath / locale / ("locale-" + locale + ".MPQ"));
+        AddIfExists(files, BasePath / locale / ("speech-" + locale + ".MPQ"));
+        AddIfExists(files, BasePath / locale /
+                               ("expansion-locale-" + locale + ".MPQ"));
         AddIfExists(files,
-                    wowPath / locale / ("expansion-locale-" + locale + ".MPQ"));
+                    BasePath / locale / ("lichking-locale-" + locale + ".MPQ"));
+        AddIfExists(files, BasePath / locale /
+                               ("expansion-speech-" + locale + ".MPQ"));
         AddIfExists(files,
-                    wowPath / locale / ("lichking-locale-" + locale + ".MPQ"));
-        AddIfExists(files,
-                    wowPath / locale / ("expansion-speech-" + locale + ".MPQ"));
-        AddIfExists(files,
-                    wowPath / locale / ("lichking-speech-" + locale + ".MPQ"));
+                    BasePath / locale / ("lichking-speech-" + locale + ".MPQ"));
     }
 
     if (files.empty())
@@ -143,12 +206,8 @@ void MpqManager::Initialize(const std::string& wowDir)
 
     for (auto i = 0u; i < maps.RecordCount(); ++i)
     {
-        auto const map_name = maps.GetStringField(i, 1);
-        std::string map_name_lower;
-        std::transform(map_name.begin(), map_name.end(),
-                       std::back_inserter(map_name_lower), ::tolower);
-
-        Maps[map_name_lower] = maps.GetField(i, 0);
+        auto const map_name = utility::lower(maps.GetStringField(i, 1));
+        Maps[map_name] = maps.GetField(i, 0);
     }
 
     const DBC area("DBFilesClient\\AreaTable.dbc");
@@ -167,8 +226,8 @@ void MpqManager::Initialize(const std::string& wowDir)
 
 bool MpqManager::FileExists(const std::string& file) const
 {
-    for (auto const& handle : MpqHandles)
-        if (SFileHasFile(handle, file.c_str()))
+    for (auto const& i : MpqHandles)
+        if (SFileHasFile(i.second, file.c_str()))
             return true;
     return false;
 }
@@ -179,13 +238,15 @@ MpqManager::OpenFile(const std::string& file)
     if (MpqHandles.empty())
         THROW("MpqManager not initialized");
 
-    for (auto const& handle : MpqHandles)
+    auto file_lower = utility::lower(GetRealModelPath(file, true));
+
+    for (auto const& i : MpqHandles)
     {
-        if (!SFileHasFile(handle, file.c_str()))
+        if (!SFileHasFile(i.second, file_lower.c_str()))
             continue;
 
         HANDLE fileHandle;
-        if (!SFileOpenFileEx(handle, file.c_str(), SFILE_OPEN_FROM_MPQ,
+        if (!SFileOpenFileEx(i.second, file_lower.c_str(), SFILE_OPEN_FROM_MPQ,
                              &fileHandle))
             THROW("Error in SFileOpenFileEx").ErrorCode();
 
@@ -209,14 +270,80 @@ MpqManager::OpenFile(const std::string& file)
         return std::make_unique<utility::BinaryStream>(inFileData);
     }
 
+    // it is possible that we reach here when operating on alpha data, when
+    // many (all?) files were in their own MPQ.  lets check for that next...
+    file_lower += ".mpq";
+
+    for (auto const &i: MpqHandles)
+    {
+        if (i.first != file_lower)
+            continue;
+
+        // if we have found a match, there should be exactly two files in this
+        // mpq: the data file, and a checksum file.
+
+        SFILE_FIND_DATA data;
+        auto const search = SFileFindFirstFile(i.second, "*", &data, nullptr);
+        if (!search)
+            continue;
+
+        // TODO: what follows is probably over kill, but left here to test the
+        // assumptions the code relies on.
+        std::vector<std::string> files;
+        std::string candidate("");
+        do
+        {
+            const std::string fn(data.cFileName);
+            files.push_back(fn);
+
+            if (fn != "(attributes)" && data.dwFileSize != 16 &&
+                data.dwFileSize != 0)
+            {
+                if (!candidate.empty())
+                    THROW("Multiple candidates in alpha MPQ");
+                candidate = fn;
+            }
+
+            if (!SFileFindNextFile(search, &data))
+            {
+                SFileFindClose(search);
+                break;
+            }
+        } while (true);
+
+        if (files.size() != 3)
+            THROW("Too many files in alpha MPQ");
+        if (candidate.empty())
+            THROW("No candidate.  Target file size 16?");
+
+        HANDLE fileHandle;
+        if (!SFileOpenFileEx(i.second, candidate.c_str(), SFILE_OPEN_FROM_MPQ,
+                             &fileHandle))
+            THROW("Error in SFileOpenFileEx").ErrorCode();
+
+        auto const fileSize = SFileGetFileSize(fileHandle, nullptr);
+
+        std::vector<std::uint8_t> inFileData(fileSize);
+
+        if (!SFileReadFile(fileHandle, &inFileData[0],
+                           static_cast<DWORD>(inFileData.size()), nullptr,
+                           nullptr))
+        {
+            SFileCloseFile(fileHandle);
+            THROW("Error in SFileReadFile").ErrorCode();
+        }
+
+        SFileCloseFile(fileHandle);
+
+        return std::make_unique<utility::BinaryStream>(inFileData);
+    }
+
     return nullptr;
 }
 
 unsigned int MpqManager::GetMapId(const std::string& name) const
 {
-    std::string nameLower;
-    std::transform(name.begin(), name.end(), std::back_inserter(nameLower),
-                   ::tolower);
+    std::string nameLower = utility::lower(name);
 
     auto const i = Maps.find(nameLower);
 
