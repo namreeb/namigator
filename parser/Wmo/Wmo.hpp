@@ -16,6 +16,9 @@ namespace parser
 // WmoInstance
 class Wmo
 {
+private:
+    std::shared_ptr<const Doodad> LoadDoodad(const std::string& name) const;
+
 public:
     const std::string MpqPath;
 

@@ -4,7 +4,9 @@
 
 #include "Adt/Chunks/Subchunks/MCLQ.hpp"
 #include "Common.hpp"
+#include "utility/MathHelper.hpp"
 
+#include <cassert>
 #include <cstring>
 #include <limits>
 
@@ -12,37 +14,66 @@ namespace parser
 {
 namespace input
 {
-MCNK::MCNK(size_t position, utility::BinaryStream* reader)
-    : AdtChunk(position, reader), Height(0.f), HasHoles(false), HasWater(false),
+MCNK::MCNK(size_t position, utility::BinaryStream* reader, bool alpha,
+    int adtX, int adtY)
+    : AdtChunk(position, reader), HasHoles(false), HasWater(false),
       MaxZ(std::numeric_limits<float>::lowest()),
       MinZ(std::numeric_limits<float>::max())
 {
-#ifdef DEBUG
-    if (Type != AdtChunkType::MCNK)
-        THROW("Expected (but did not find) MCNK type");
-#endif
+    assert(Type == AdtChunkType::MCNK);
 
     // it is possible for a chunk to be empty
     if (Size == 0)
         return;
 
-    MCNKInfo information;
-    reader->ReadBytes(&information, sizeof(information));
+    reader->rpos(position + 8);
+    auto const flags = reader->Read<std::uint32_t>();
 
-    Height = information.Position[2];
+    size_t areaOffset = 0x34;
+    size_t holesOffset = 0x3C;
+    size_t heightOffset = 0x14;
+    size_t liquidOffset = 0x60;
+    math::Vector3 offset;
+    if (alpha)
+    {
+        areaOffset += 4;
+        holesOffset += 4;
+        heightOffset += 4;
+        liquidOffset += 4;
 
-    AreaId = information.AreaId;
+        auto const chunkX = reader->Read<std::uint32_t>();
+        auto const chunkY = reader->Read<std::uint32_t>();
+
+        float worldX, worldY;
+        math::Convert::ADTToWorldNorthwestCorner(adtX, adtY, worldX, worldY);
+        offset.X = worldX - chunkY * MeshSettings::AdtChunkSize;
+        offset.Y = worldY - chunkX * MeshSettings::AdtChunkSize;
+        offset.Z = 0.f;
+    }
+    else
+    {
+        // TODO: check this!
+        reader->rpos(position + 8 + 0x68);
+        reader->ReadBytes(&offset, sizeof(offset));
+    }
+
+    reader->rpos(position + 8 + areaOffset);
+    AreaId =
+        alpha ? reader->Read<std::uint16_t>() : reader->Read<std::uint32_t>();
 
     memset(HoleMap, 0, sizeof(bool) * 8 * 8);
 
+    reader->rpos(position + 8 + holesOffset);
+    auto const holes = reader->Read<std::uint32_t>();   // should this be std::uint16_t?
+
     // holes
-    HasHoles = !!information.Holes;
+    HasHoles = holes != 0;
     if (HasHoles)
     {
         for (int y = 0; y < 4; ++y)
             for (int x = 0; x < 4; ++x)
             {
-                if (!(information.Holes & HoleFlags[y][x]))
+                if (!(holes & HoleFlags[y][x]))
                     continue;
 
                 const int curRow = 1 + (y * 2);
@@ -63,17 +94,24 @@ MCNK::MCNK(size_t position, utility::BinaryStream* reader)
      *  When you go down, your ingame X goes down, but the ADT file Y goes up.
      *  When you go right, your ingame Y goes down, but the ADT file X goes up.
      */
-    constexpr float quadSize = MeshSettings::AdtSize / 128.f;
 
     // Information.IndexX and Information.IndexY specify the colum and row
     // (respectively) of the chunk in the tile Information.Position specifies
     // the top left corner of the current chunk (using in-game coords) these x
     // and y correspond to rows and columns (respectively) of the current chunk
+    reader->rpos(position + 8 + heightOffset);
+    heightOffset = reader->Read<std::uint32_t>();
 
-    MCVT heightChunk(Position + information.HeightOffset, reader);
+    // alpha data has offset from end of header
+    // TODO: do this elsewhere too
+    if (alpha)
+        heightOffset += 8 + 0x80;
+
+    const MCVT heightChunk(Position + heightOffset, reader);
+
+    constexpr float quadSize = MeshSettings::AdtSize / 128.f;
 
     Positions.reserve(VertexCount);
-
     for (int i = 0; i < VertexCount; ++i)
     {
         // if i % 17 > 8, this is the inner part of a quad
@@ -81,7 +119,7 @@ MCNK::MCNK(size_t position, utility::BinaryStream* reader)
         const int y = i / 17;
         const float innerOffset = (i % 17 > 8 ? quadSize / 2.f : 0.f);
 
-        const float z = information.Position[2] + heightChunk.Heights[i];
+        const float z = offset.Z + heightChunk.Heights[i];
 
         Heights[i] = z;
 
@@ -90,15 +128,26 @@ MCNK::MCNK(size_t position, utility::BinaryStream* reader)
         if (z < MinZ)
             MinZ = z;
 
-        Positions.push_back(
-            {information.Position[0] - (y * quadSize) - innerOffset,
-             information.Position[1] - (x * quadSize) - innerOffset, z});
+        Positions.push_back({offset.X - (y * quadSize) - innerOffset,
+                             offset.Y - (x * quadSize) - innerOffset, z});
     }
 
-    HasWater = information.LiquidSize > 8;
+    reader->rpos(position + 8 + liquidOffset);
+    liquidOffset = reader->Read<std::uint32_t>();
+    if (alpha)
+        liquidOffset += 8 + 0x80;
+
+    if (alpha)
+        HasWater = (flags & LiquidFlags::Any) != 0;
+    else
+    {
+        auto const liquidSize = reader->Read<std::uint32_t>();
+        HasWater = liquidSize > 8;
+    }
+
     if (HasWater)
-        LiquidChunk =
-            std::make_unique<MCLQ>(Position + information.LiquidOffset, reader);
+        LiquidChunk = std::make_unique<MCLQ>(Position + liquidOffset, reader,
+                                             alpha, flags);
 }
 } // namespace input
 } // namespace parser

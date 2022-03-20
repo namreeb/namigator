@@ -20,10 +20,22 @@ private:
     friend BinaryStream& operator<<(BinaryStream&, const BinaryStream&);
     friend BinaryStream& operator<<(BinaryStream&, const std::string&);
 
+    std::shared_ptr<std::vector<std::uint8_t>> m_sharedBuffer;
     std::vector<std::uint8_t> m_buffer;
     size_t m_rpos, m_wpos;
 
+    inline std::vector<std::uint8_t>* buffer()
+    {
+        return m_sharedBuffer ? m_sharedBuffer.get() : &m_buffer;
+    }
+
+    inline const std::vector<std::uint8_t>* buffer() const
+    {
+        return m_sharedBuffer ? m_sharedBuffer.get() : &m_buffer;
+    }
+
 public:
+    BinaryStream(std::shared_ptr<std::vector<std::uint8_t>> sharedBuffer);
     BinaryStream(std::vector<std::uint8_t>& buffer);
     BinaryStream(size_t length = DEFAULT_BUFFER_LENGTH);
     BinaryStream(const std::filesystem::path& path);

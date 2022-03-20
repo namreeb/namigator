@@ -11,6 +11,7 @@
 #include "Wmo/WmoDoodadPlacement.hpp"
 #include "utility/BinaryStream.hpp"
 #include "utility/Exception.hpp"
+#include "utility/String.hpp"
 
 #include <cstdint>
 #include <iomanip>
@@ -21,18 +22,33 @@
 
 namespace parser
 {
-Wmo::Wmo(const std::string& path) : MpqPath(path)
+Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
 {
-    auto fileName = path.substr(path.rfind('\\') + 1);
-    fileName = fileName.substr(0, fileName.rfind('.'));
-
     auto reader = sMpqManager.OpenFile(path);
 
     if (!reader)
         THROW("WMO " + path + " not found");
 
+    size_t mverLocation;
+    if (!reader->GetChunkLocation("MVER", mverLocation))
+        THROW("MVER not found");
+
+    reader->rpos(mverLocation + 8);
+    auto const version = reader->Read<std::uint32_t>();
+
     size_t mohdLocation;
-    if (!reader->GetChunkLocation("MOHD", mohdLocation))
+
+    // alpha data
+    if (version == 14)
+    {
+        size_t momoLocation;
+        if (!reader->GetChunkLocation("MOMO", momoLocation))
+            THROW("MOMO not found");
+
+        if (!reader->GetChunkLocation("MOHD", reader->rpos() + 8, mohdLocation))
+            THROW("MOHD not found");
+    }
+    else if (!reader->GetChunkLocation("MOHD", mohdLocation))
         THROW("MOHD not found");
 
     reader->rpos(mohdLocation + 8);
@@ -43,14 +59,28 @@ Wmo::Wmo(const std::string& path) : MpqPath(path)
     std::vector<std::unique_ptr<input::WmoGroupFile>> groupFiles;
     groupFiles.reserve(information.WMOGroupFilesCount);
 
-    std::string dirName = path.substr(0, path.rfind('\\'));
-    for (int i = 0; i < information.WMOGroupFilesCount; ++i)
+    // alpha data
+    if (version == 14)
     {
-        std::stringstream ss;
+        for (int i = 0; i < information.WMOGroupFilesCount; ++i)
+            groupFiles.push_back(
+                std::make_unique<input::WmoGroupFile>(version, reader.get()));
+    }
+    else
+    {
+        auto fileName = path.substr(path.rfind('\\') + 1);
+        fileName = fileName.substr(0, fileName.rfind('.'));
+        auto const dirName = path.substr(0, path.rfind('\\'));
 
-        ss << dirName << "\\" << fileName << "_" << std::setfill('0')
-           << std::setw(3) << i << ".wmo";
-        groupFiles.push_back(std::make_unique<input::WmoGroupFile>(ss.str()));
+        for (int i = 0; i < information.WMOGroupFilesCount; ++i)
+        {
+            std::stringstream ss;
+
+            ss << dirName << "\\" << fileName << "_" << std::setfill('0')
+               << std::setw(3) << i << ".wmo";
+            groupFiles.push_back(
+                std::make_unique<input::WmoGroupFile>(version, ss.str()));
+        }
     }
 
     size_t modsLocation;
@@ -141,23 +171,40 @@ Wmo::Wmo(const std::string& path) : MpqPath(path)
             // part of another triangle
             for (int j = 0; j < 3; ++j)
             {
-                auto const vertexIndex =
-                    groupFiles[g]->IndicesChunk->Indices[i * 3 + j];
+                int vertexIndex;
 
-                // this Vector3 has already been added.  add it's index to this
-                // triangle also
-                if (indexMap.find(vertexIndex) != indexMap.end())
+                // according to https://wowdev.wiki/WMO#MOIN: "It's most of the
+                // time only a list incrementing from 0 to nFaces * 3 or less,
+                // not always up to nPolygons (calculated with MOPY)."
+                // this makes no sense to me at all, but the same article
+                // implies that we can use the logic that follows:
+                if (version == 14)
+                    vertexIndex = i * 3 + j;
+                else
                 {
-                    Indices.push_back(indexMap[vertexIndex]);
-                    continue;
-                }
+                    assert(i * 3 + j <
+                           groupFiles[g]->IndicesChunk->Indices.size());
+                    vertexIndex =
+                        groupFiles[g]->IndicesChunk->Indices[i * 3 + j];
 
-                // add a mapping for the Vector3's old index to its position in
-                // the new Vector3 list (aka its new index)
-                indexMap[vertexIndex] = static_cast<int>(Vertices.size());
+                    // this Vector3 has already been added.  add it's index to
+                    // this triangle also
+                    if (indexMap.find(vertexIndex) != indexMap.end())
+                    {
+                        Indices.push_back(indexMap[vertexIndex]);
+                        continue;
+                    }
+
+                    // add a mapping for the Vector3's old index to its position
+                    // in the new Vector3 list (aka its new index)
+                    indexMap[vertexIndex] = static_cast<int>(Vertices.size());
+                }
 
                 // add the index
                 Indices.push_back(static_cast<std::int32_t>(Vertices.size()));
+
+                assert(vertexIndex <
+                       groupFiles[g]->VerticesChunk->Vertices.size());
 
                 // add the Vector3
                 Vertices.push_back(
@@ -245,12 +292,25 @@ Wmo::Wmo(const std::string& path) : MpqPath(path)
             math::Matrix transformMatrix;
             placement.GetTransformMatrix(transformMatrix);
 
-            auto doodad = std::make_shared<const Doodad>(name);
+            auto doodad = LoadDoodad(name);
 
             if (!!doodad->Vertices.size() && !!doodad->Indices.size())
                 DoodadSets[i].push_back(
                     std::make_unique<WmoDoodad const>(doodad, transformMatrix));
         }
     }
+}
+
+std::shared_ptr<const Doodad> Wmo::LoadDoodad(const std::string &name) const
+{
+    for (size_t i = 0; i < DoodadSets.size(); ++i)
+    {
+        auto & doodadSet = DoodadSets[i];
+        for (size_t j = 0; j < doodadSet.size(); ++j)
+            if (doodadSet[j]->Parent->MpqPath == name)
+                return doodadSet[j]->Parent;
+    }
+
+    return std::make_shared<const Doodad>(name);
 }
 } // namespace parser

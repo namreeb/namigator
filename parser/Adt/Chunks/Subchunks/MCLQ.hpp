@@ -9,6 +9,15 @@ namespace parser
 {
 namespace input
 {
+enum LiquidFlags
+{
+    Water = 0x4,
+    Ocean = 0x8,
+    Magma = 0x10,
+    Slime = 0x20,
+    Any = (Water | Ocean | Magma | Slime)
+};
+
 class MCLQ : AdtChunk
 {
 public:
@@ -18,7 +27,8 @@ public:
     float Altitude;
     float BaseHeight;
 
-    MCLQ(size_t position, ::utility::BinaryStream* reader);
+    MCLQ(size_t position, ::utility::BinaryStream* reader, bool alpha,
+         unsigned int flags);
 };
 } // namespace input
 } // namespace parser

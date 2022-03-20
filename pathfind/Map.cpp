@@ -418,6 +418,9 @@ bool Map::LoadADT(int x, int y)
 
     auto const nav_path = m_dataPath / "Nav" / m_mapName / str.str();
 
+    if (!fs::exists(nav_path))
+        return false;
+
     utility::BinaryStream stream(nav_path);
 
     stream.Decompress();

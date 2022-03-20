@@ -229,27 +229,32 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam,
                         GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam),
                         Renderer::CollidableGeometryFlag, hit, param))
                 {
+                    std::stringstream ss;
+                    ss << "Hit terrain at (" << hit.X << ", " << hit.Y << ", "
+                       << hit.Z << ")\n";
+
+                    int adtX, adtY, chunkX, chunkY;
+                    math::Convert::WorldToAdt(hit, adtX, adtY, chunkX, chunkY);
+
+                    ss << "ADT: (" << adtX << ", " << adtY << ") Chunk: ("
+                       << chunkX << ", " << chunkY << ")\n";
+
                     unsigned int zone, area;
                     if (gNavMesh->ZoneAndArea(hit, zone, area))
-                    {
-                        std::stringstream ss;
                         ss << "From mesh.  Zone: " << zone << " Area: " << area
-                           << std::endl;
-                        OutputDebugStringA(ss.str().c_str());
-                    }
+                           << "\n";
 
                     std::vector<float> heights;
                     if (gNavMesh->FindHeights(hit.X, hit.Y, heights))
                     {
-                        std::stringstream ss;
-                        ss << "Found " << heights.size()
-                           << " height values:" << std::endl;
+                        ss << "Found " << heights.size() << " height values:\n";
                         for (auto const& h : heights)
-                            ss << "    " << h << std::endl;
-                        OutputDebugStringA(ss.str().c_str());
+                            ss << "    " << h << "\n";
                     }
                     else
-                        OutputDebugStringA("Found no heights");
+                        ss << "Found no heights\n";
+
+                    OutputDebugStringA(ss.str().c_str());
                 }
             }
             else
@@ -861,10 +866,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
     gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
     gControls->AddLabel("X:", 10, 35);
-    gControls->AddTextBox(Controls::PositionX, "1573", 25, 35, 75, 20);
+    gControls->AddTextBox(Controls::PositionX, "-8925", 25, 35, 75, 20);
 
     gControls->AddLabel("Y:", 10, 60);
-    gControls->AddTextBox(Controls::PositionY, "262", 25, 60, 75, 20);
+    gControls->AddTextBox(Controls::PositionY, "-120", 25, 60, 75, 20);
 
     gControls->AddButton(Controls::Load, "Load", 115, 57, 75, 25,
                          LoadPositionFromGUI);

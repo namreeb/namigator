@@ -1301,7 +1301,8 @@ void GlobalWMO::Serialize(const fs::path& filename) const
 
     // first compute total size, just to reduce reallocations
     for (auto const& tile : m_tiles)
-        bufferSize += 4 * sizeof(std::uint32_t) + tile.second.wpos();
+        bufferSize += 4 * sizeof(std::uint32_t) + tile.second.wpos() +
+                      sizeof(std::uint8_t);
 
     utility::BinaryStream outBuffer(bufferSize);
 

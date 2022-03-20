@@ -1,18 +1,19 @@
 #include "Adt/Chunks/Subchunks/MCLQ.hpp"
 
-#include "utility/Exception.hpp"
+#include <cassert>
 
 namespace parser
 {
 namespace input
 {
-MCLQ::MCLQ(size_t position, utility::BinaryStream* reader)
+MCLQ::MCLQ(size_t position, utility::BinaryStream* reader, bool alpha,
+    unsigned int flags)
     : AdtChunk(position, reader)
 {
-#ifdef DEBUG
-    if (Type != AdtChunkType::MCLQ)
-        THROW("Expected (but did not find) MCVT type");
-#endif
+    if (alpha)
+        reader->rpos(position);
+    else
+        assert(Type == AdtChunkType::MCLQ);
 
     Altitude = reader->Read<float>();
     BaseHeight = reader->Read<float>();
@@ -21,7 +22,10 @@ MCLQ::MCLQ(size_t position, utility::BinaryStream* reader)
         for (int x = 0; x < 9; ++x)
         {
             reader->rpos(reader->rpos() + 4);
-            Heights[y][x] = reader->Read<float>();
+            if (flags & (LiquidFlags::Water | LiquidFlags::Magma))
+                Heights[y][x] = reader->Read<float>();
+            else if (flags & LiquidFlags::Ocean)
+                Heights[y][x] = Altitude;
         }
 
     reader->ReadBytes(&RenderMap, sizeof(RenderMap));

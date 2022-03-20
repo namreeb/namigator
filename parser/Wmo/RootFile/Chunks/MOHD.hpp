@@ -22,11 +22,6 @@ struct MOHD
     std::uint8_t ColX;
 
     std::uint32_t WMOId;
-
-    float BoundingBox1[3];
-    float BoundingBox2[3];
-
-    std::uint32_t Unknown;
 };
 } // namespace input
 } // namespace parser

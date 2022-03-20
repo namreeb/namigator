@@ -13,10 +13,11 @@ class MOPY : public WmoGroupChunk
 public:
     const int TriangleCount;
 
-    std::vector<unsigned char> Flags;
-    std::vector<unsigned char> MaterialId;
+    std::vector<std::uint8_t> Flags;
+    std::vector<std::uint8_t> MaterialId;
 
-    MOPY(size_t position, utility::BinaryStream* groupFileStream);
+    MOPY(unsigned int version, size_t position,
+         utility::BinaryStream* groupFileStream);
 };
 } // namespace input
 } // namespace parser
