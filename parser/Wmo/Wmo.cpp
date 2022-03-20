@@ -292,12 +292,25 @@ Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
             math::Matrix transformMatrix;
             placement.GetTransformMatrix(transformMatrix);
 
-            auto doodad = std::make_shared<const Doodad>(name);
+            auto doodad = LoadDoodad(name);
 
             if (!!doodad->Vertices.size() && !!doodad->Indices.size())
                 DoodadSets[i].push_back(
                     std::make_unique<WmoDoodad const>(doodad, transformMatrix));
         }
     }
+}
+
+std::shared_ptr<const Doodad> Wmo::LoadDoodad(const std::string &name) const
+{
+    for (size_t i = 0; i < DoodadSets.size(); ++i)
+    {
+        auto & doodadSet = DoodadSets[i];
+        for (size_t j = 0; j < doodadSet.size(); ++j)
+            if (doodadSet[j]->Parent->MpqPath == name)
+                return doodadSet[j]->Parent;
+    }
+
+    return std::make_shared<const Doodad>(name);
 }
 } // namespace parser

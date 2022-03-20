@@ -62,26 +62,27 @@ std::string GetRealModelPath(const std::string& path, bool alpha)
 {
     auto const length = path.length();
 
-    // alpha uses .mdl when .mdx is what are in data files
-    if (alpha)
-    {
-        if (length < 4)
-            return path;
-        if (path[length - 4] != '.')
-            return path;
-        if ((path[length - 3] != 'm' && path[length - 3] != 'M') ||
-            (path[length - 2] != 'd' && path[length - 2] != 'D') ||
-            (path[length - 1] != 'l' && path[length - 1] != 'L'))
-            return path;
-
-        return path.substr(0, length - 4) + ".mdx";
-    }
-    // TODO: rewrite this to be more like above
-    else if (path[length - 1] == '2' &&
-             (path[length - 2] == 'm' || path[length - 2] == 'M'))
+    if (length < 4)
+        return path;
+    if (path[length - 4] != '.')
+        return path;
+    if ((path[length - 3] != 'm' && path[length - 3] != 'M') ||
+        (path[length - 2] != 'd' && path[length - 2] != 'D'))
         return path;
 
-    return path.substr(0, path.rfind('.')) + ".m2";
+    if (alpha)
+    {
+        if (path[length - 1] != 'l' && path[length - 1] != 'L')
+            return path;
+        return path.substr(0, length - 4) + ".mdx";
+    }
+    else
+    {
+        if (path[length - 1] != 'x' && path[length - 1] != 'X' &&
+            path[length - 1] != 'l' && path[length - 1] != 'L')
+            return path;
+        return path.substr(0, length - 4) + ".m2";
+    }
 }
 } // namespace
 
@@ -238,7 +239,7 @@ MpqManager::OpenFile(const std::string& file)
     if (MpqHandles.empty())
         THROW("MpqManager not initialized");
 
-    auto file_lower = utility::lower(GetRealModelPath(file, true));
+    auto file_lower = utility::lower(GetRealModelPath(file, Alpha));
 
     for (auto const& i : MpqHandles)
     {

@@ -24,14 +24,13 @@ MHDR::MHDR(size_t position, utility::BinaryStream* reader, bool alpha)
         WmoNamesOffset = 0;
 
         reader->rpos(position + 8 + 0x0C);
-        DoodadPlacementOffset = reader->Read<std::uint32_t>() + position + 8;
+        DoodadPlacementOffset = reader->Read<std::uint32_t>();
 
         reader->rpos(position + 8 + 0x14);
-        WmoPlacementOffset = reader->Read<std::uint32_t>() + position + 8;
+        WmoPlacementOffset = reader->Read<std::uint32_t>();
     }
     else
     {
-        // TODO: Test this!
         reader->rpos(position + 8 + 0x0C);
         DoodadNamesOffset = reader->Read<std::uint32_t>();
 
@@ -47,6 +46,20 @@ MHDR::MHDR(size_t position, utility::BinaryStream* reader, bool alpha)
         reader->rpos(position + 8 + 0x28);
         Mh2oOffset = reader->Read<std::uint32_t>();
     }
+
+    auto const offset = 8 + static_cast<std::uint32_t>(position);
+
+    // if these offsets have values, adjust them to correct absolute position
+    if (DoodadNamesOffset > 0)
+        DoodadNamesOffset += offset;
+    if (WmoNamesOffset > 0)
+        WmoNamesOffset += offset;
+    if (DoodadPlacementOffset > 0)
+        DoodadPlacementOffset += offset;
+    if (WmoPlacementOffset > 0)
+        WmoPlacementOffset += offset;
+    if (Mh2oOffset > 0)
+        Mh2oOffset += offset;
 }
 } // namespace input
 } // namespace parser

@@ -70,7 +70,7 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
     }
     else
     {
-        if (reader->Read<std::uint32_t>() != Magic)
+        if (magic != Magic)
             THROW("Invalid doodad file");
 
         auto const version = reader->Read<std::uint32_t>();

@@ -255,10 +255,21 @@ const Wmo* Map::GetWmo(const std::string& name)
 
     // loading this WMO also loaded all referenced doodads in all doodad sets
     // for the wmo. for now, let us share ownership between the WMO and this map
+    std::lock_guard<std::mutex> doodadGuard(m_doodadMutex);
     for (auto const& doodadSet : ret->DoodadSets)
         for (auto const& wmoDoodad : doodadSet)
-            m_loadedDoodads.push_back(wmoDoodad->Parent);
+        {
+            bool present = false;
+            for (auto const &d : m_loadedDoodads)
+                if (d->MpqPath == wmoDoodad->Parent->MpqPath)
+                {
+                    present = true;
+                    break;
+                }
 
+            if (!present)
+                m_loadedDoodads.push_back(wmoDoodad->Parent);
+        }
     return ret;
 }
 
