@@ -3,6 +3,7 @@
 #include "utility/Exception.hpp"
 
 #include <cassert>
+#include <cstring>
 
 namespace parser
 {
