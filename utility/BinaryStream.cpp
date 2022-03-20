@@ -12,7 +12,8 @@
 
 namespace utility
 {
-BinaryStream::BinaryStream(std::shared_ptr<std::vector<std::uint8_t>> shared_buffer)
+BinaryStream::BinaryStream(
+    std::shared_ptr<std::vector<std::uint8_t>> shared_buffer)
     : m_sharedBuffer(shared_buffer), m_rpos(0), m_wpos(m_sharedBuffer->size())
 {
 }
@@ -46,8 +47,9 @@ BinaryStream::BinaryStream(const std::filesystem::path& path)
 }
 
 BinaryStream::BinaryStream(BinaryStream&& other) noexcept
-    : m_buffer(std::move(other.m_buffer)), m_sharedBuffer(std::move(other.m_sharedBuffer)),
-      m_rpos(other.m_rpos), m_wpos(other.m_wpos)
+    : m_buffer(std::move(other.m_buffer)),
+      m_sharedBuffer(std::move(other.m_sharedBuffer)), m_rpos(other.m_rpos),
+      m_wpos(other.m_wpos)
 {
     other.m_rpos = other.m_wpos = 0;
 }

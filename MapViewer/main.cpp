@@ -880,24 +880,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
     gControls->Enable(Controls::PositionY, false);
     gControls->Enable(Controls::Load, false);
 
-    gControls->AddCheckBox(
-        Controls::Wireframe, "Wireframe", 10, 85, false,
-        [](bool checked) { gRenderer->SetWireframe(checked); });
-    gControls->AddCheckBox(
-        Controls::RenderADT, "Render ADT", 10, 110, true,
-        [](bool checked) { gRenderer->SetRenderADT(checked); });
+    gControls->AddCheckBox(Controls::Wireframe, "Wireframe", 10, 85, false,
+                           [](bool checked)
+                           { gRenderer->SetWireframe(checked); });
+    gControls->AddCheckBox(Controls::RenderADT, "Render ADT", 10, 110, true,
+                           [](bool checked)
+                           { gRenderer->SetRenderADT(checked); });
     gControls->AddCheckBox(
         Controls::RenderLiquid, "Render Liquid", 10, 135, true,
         [](bool checked) { gRenderer->SetRenderLiquid(checked); });
-    gControls->AddCheckBox(
-        Controls::RenderWMO, "Render WMO", 10, 160, true,
-        [](bool checked) { gRenderer->SetRenderWMO(checked); });
+    gControls->AddCheckBox(Controls::RenderWMO, "Render WMO", 10, 160, true,
+                           [](bool checked)
+                           { gRenderer->SetRenderWMO(checked); });
     gControls->AddCheckBox(
         Controls::RenderDoodad, "Render Doodad", 10, 185, true,
         [](bool checked) { gRenderer->SetRenderDoodad(checked); });
-    gControls->AddCheckBox(
-        Controls::RenderMesh, "Render Mesh", 10, 210, true,
-        [](bool checked) { gRenderer->SetRenderMesh(checked); });
+    gControls->AddCheckBox(Controls::RenderMesh, "Render Mesh", 10, 210, true,
+                           [](bool checked)
+                           { gRenderer->SetRenderMesh(checked); });
 
     gControls->AddTextBox(Controls::SpawnDoodadEdit, "Display ID", 10, 245, 90,
                           20);

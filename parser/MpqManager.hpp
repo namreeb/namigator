@@ -2,11 +2,11 @@
 
 #include "utility/BinaryStream.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 

@@ -19,8 +19,9 @@ CommonControl::CommonControl(HWND window)
                                CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
                                VARIABLE_PITCH, "Microsoft Sans Serif"))
 {
-    auto const handler = [](HWND hwnd, UINT message, WPARAM wParam,
-                            LPARAM lParam) {
+    auto const handler =
+        [](HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+    {
         auto const ctrl = reinterpret_cast<CommonControl*>(
             GetWindowLongPtr(hwnd, GWLP_USERDATA));
 

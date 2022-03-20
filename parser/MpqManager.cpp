@@ -11,9 +11,9 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <system_error>
 #include <unordered_map>
 #include <vector>
-#include <system_error>
 
 namespace
 {
@@ -275,7 +275,7 @@ MpqManager::OpenFile(const std::string& file)
     // many (all?) files were in their own MPQ.  lets check for that next...
     file_lower += ".mpq";
 
-    for (auto const &i: MpqHandles)
+    for (auto const& i : MpqHandles)
     {
         if (i.first != file_lower)
             continue;

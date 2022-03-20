@@ -260,7 +260,7 @@ const Wmo* Map::GetWmo(const std::string& name)
         for (auto const& wmoDoodad : doodadSet)
         {
             bool present = false;
-            for (auto const &d : m_loadedDoodads)
+            for (auto const& d : m_loadedDoodads)
                 if (d->MpqPath == wmoDoodad->Parent->MpqPath)
                 {
                     present = true;
