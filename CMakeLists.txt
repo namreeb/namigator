@@ -26,7 +26,6 @@ unset(PYTHON_COMPONENT CACHE)
 
 # github python setup action will set this environment variable
 if(DEFINED ENV{pythonLocation})
-    message(STATUS "github action? python location: $ENV{pythonLocation}")
     set(Python3_ROOT_DIR $ENV{pythonLocation})
     set(Python3_FIND_REGISTRY NEVER)
 endif()
