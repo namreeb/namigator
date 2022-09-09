@@ -95,7 +95,7 @@ Adt::Adt(Map* map, int adtX, int adtY)
 
     std::unique_ptr<input::MH2O> liquidChunk(
         header.Mh2oOffset ?
-            new input::MH2O(header.Mh2oOffset + 0x14, reader.get()) :
+            new input::MH2O(header.Mh2oOffset, reader.get()) :
             nullptr);
 
     size_t currMcnk;
