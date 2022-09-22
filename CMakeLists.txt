@@ -114,9 +114,11 @@ set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "Build demo")
 set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "Build tests")
 set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "Build examples")
 add_subdirectory(recastnavigation EXCLUDE_FROM_ALL)
+install(TARGETS Detour Recast ARCHIVE DESTINATION lib)
 
 add_definitions(-DSTORMLIB_NO_AUTO_LINK)
 add_subdirectory(stormlib EXCLUDE_FROM_ALL)
+install(TARGETS storm ARCHIVE DESTINATION lib)
 
 # namigator libraries
 add_subdirectory(utility)
