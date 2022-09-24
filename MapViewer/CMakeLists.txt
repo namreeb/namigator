@@ -29,6 +29,6 @@ set_source_files_properties(VertexShader.hlsl PROPERTIES
 
 add_executable(${EXECUTABLE_NAME} WIN32 ${SHADERS} ${SRC})
 
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE utility parser libpathfind storm RecastNavigation::Detour RecastNavigation::DebugUtils)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE utility parser pathfind storm RecastNavigation::Detour RecastNavigation::DebugUtils)
 
 install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
