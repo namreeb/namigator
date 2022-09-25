@@ -31,6 +31,7 @@ if(DEFINED ENV{pythonLocation})
 endif()
 
 option(NAMIGATOR_BUILD_PYTHON "Build Python bindings if Python2/3 is present." TRUE)
+option(NAMIGATOR_INSTALL_TESTS "Install tests." TRUE)
 
 if(NAMIGATOR_BUILD_PYTHON)
     # First try finding python 3 development files
@@ -133,8 +134,9 @@ add_subdirectory(pathfind)
 # namigator executables
 add_subdirectory(MapBuilder)
 
-# tests
-add_subdirectory(test)
+if(NAMIGATOR_INSTALL_TESTS)
+    add_subdirectory(test)
+endif()
 
 if (WIN32)
     add_subdirectory(MapViewer)
