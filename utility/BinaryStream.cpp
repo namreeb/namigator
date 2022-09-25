@@ -34,7 +34,7 @@ BinaryStream::BinaryStream(const std::filesystem::path& path)
     std::ifstream stream(path, std::ifstream::binary);
 
     if (stream.fail())
-        THROW("Failed to open file for BinaryStream");
+        THROW(Result::FAILED_TO_OPEN_FILE_FOR_BINARY_STREAM);
 
     stream.seekg(0, std::ios::end);
     m_wpos = static_cast<size_t>(stream.tellg());
@@ -204,7 +204,7 @@ void BinaryStream::Compress()
                  static_cast<mz_ulong>(m_wpos));
 
     if (result != MZ_OK)
-        THROW("BinaryStream::Compress failed");
+        THROW(Result::BINARYSTREAM_COMPRESS_FAILED);
 
     m_wpos = static_cast<size_t>(newSize);
     buff.resize(m_wpos);
@@ -227,7 +227,7 @@ void BinaryStream::Decompress()
     auto status = mz_inflateInit(&stream);
 
     if (status != MZ_OK)
-        THROW("mz_inflateInit failed");
+        THROW(Result::MZ_INFLATEINIT_FAILED);
 
     do
     {
@@ -248,7 +248,7 @@ void BinaryStream::Decompress()
         }
         // unknown failure
         else
-            THROW("mz_inflate failed");
+            THROW(Result::MZ_INFLATE_FAILED);
     } while (true);
 
     m_rpos = 0;

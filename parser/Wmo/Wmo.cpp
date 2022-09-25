@@ -27,11 +27,11 @@ Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
     auto reader = sMpqManager.OpenFile(path);
 
     if (!reader)
-        THROW("WMO " + path + " not found");
+        THROW_MSG("WMO " + path + " not found", Result::WMO_NOT_FOUND);
 
     size_t mverLocation;
     if (!reader->GetChunkLocation("MVER", mverLocation))
-        THROW("MVER not found");
+        THROW(Result::MVER_NOT_FOUND);
 
     reader->rpos(mverLocation + 8);
     auto const version = reader->Read<std::uint32_t>();
@@ -43,13 +43,13 @@ Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
     {
         size_t momoLocation;
         if (!reader->GetChunkLocation("MOMO", momoLocation))
-            THROW("MOMO not found");
+            THROW(Result::MOMO_NOT_FOUND);
 
         if (!reader->GetChunkLocation("MOHD", reader->rpos() + 8, mohdLocation))
-            THROW("MOHD not found");
+            THROW(Result::MOHD_NOT_FOUND);
     }
     else if (!reader->GetChunkLocation("MOHD", mohdLocation))
-        THROW("MOHD not found");
+        THROW(Result::MOHD_NOT_FOUND);
 
     reader->rpos(mohdLocation + 8);
 
@@ -85,15 +85,15 @@ Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
 
     size_t modsLocation;
     if (!reader->GetChunkLocation("MODS", mohdLocation, modsLocation))
-        THROW("MODS not found");
+        THROW(Result::MODS_NOT_FOUND);
 
     size_t modnLocation;
     if (!reader->GetChunkLocation("MODN", mohdLocation, modnLocation))
-        THROW("MODN not found");
+        THROW(Result::MODN_NOT_FOUND);
 
     size_t moddLocation;
     if (!reader->GetChunkLocation("MODD", mohdLocation, moddLocation))
-        THROW("MODD not found");
+        THROW(Result::MODD_NOT_FOUND);
 
     // PROCESSING...
 

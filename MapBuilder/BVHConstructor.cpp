@@ -69,7 +69,7 @@ fs::path BVHConstructor::InternalAddFile(const fs::path& mpq_path)
     else if (extension[1] == 'w' || extension[1] == 'W')
         kind = "WMO";
     else
-        THROW("Unrecognized extension");
+        THROW(Result::UNRECOGNIZED_EXTENSION);
 
     // compute sha256 checksum of path in mpq to give a unique name without
     // symbols

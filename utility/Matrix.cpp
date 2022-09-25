@@ -18,7 +18,7 @@ Matrix::Matrix(int rows, int columns)
 float* Matrix::operator[](int row)
 {
     if (row >= m_rows)
-        THROW("Bad row");
+        THROW(Result::BAD_MATRIX_ROW);
 
     return &m_matrix[m_columns * row];
 }
@@ -26,7 +26,7 @@ float* Matrix::operator[](int row)
 const float* Matrix::operator[](int row) const
 {
     if (row >= m_rows)
-        THROW("Bad row");
+        THROW(Result::BAD_MATRIX_ROW);
 
     return &m_matrix[m_columns * row];
 }
@@ -193,7 +193,7 @@ Matrix Matrix::CreateFromArray(const float* in, int count)
 Matrix operator*(const Matrix& a, const Matrix& b)
 {
     if (a.m_columns != b.m_rows)
-        THROW("Invalid matrix multiplication");
+        THROW(Result::INVALID_MATRIX_MULTIPLICATION);
 
     Matrix ret(a.m_rows, b.m_columns);
 
@@ -237,7 +237,7 @@ float Determinant3x3(const Matrix& m, int col0, int col1, int col2, int row0,
 float Matrix::ComputeDeterminant() const
 {
     if (m_columns != 4 || m_rows != 4)
-        THROW("Only 4x4 matrix is supported");
+        THROW(Result::ONLY_4X4_MATRIX_IS_SUPPORTED);
 
     const Matrix& m = *this;
 
@@ -253,12 +253,12 @@ float Matrix::ComputeDeterminant() const
 Matrix Matrix::ComputeInverse() const
 {
     if (m_columns != 4 || m_rows != 4)
-        THROW("Only 4x4 matrix is supported");
+        THROW(Result::ONLY_4X4_MATRIX_IS_SUPPORTED);
 
     float det = ComputeDeterminant();
     if (fabs(det) < 9e-7f)
     {
-        THROW("Not invertible!");
+        THROW(Result::MATRIX_NOT_INVERTIBLE);
     }
 
     det = 1.0f / det;

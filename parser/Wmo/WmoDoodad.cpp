@@ -20,7 +20,7 @@ WmoDoodad::WmoDoodad(std::shared_ptr<const Doodad>& doodad,
     BuildTriangles(vertices, indices);
 
     if (!vertices.size() || !indices.size())
-        THROW("Empty WMO doodad instantiated");
+        THROW(Result::EMPTY_WMO_DOODAD_INSTANTIATED);
 
     Bounds.MinCorner = Bounds.MaxCorner = vertices[0];
 

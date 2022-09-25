@@ -14,7 +14,7 @@ void ReadWmoGroupFile(parser::input::WmoGroupFile *groupFile,
     // MOGP
     size_t mogpLocation;
     if (!reader->GetChunkLocation("MOGP", reader->rpos(), mogpLocation))
-        THROW("No MOGP chunk");
+        THROW(Result::NO_MOGP_CHUNK);
 
     reader->rpos(mogpLocation + 4);
     auto const mogpSize = reader->Read<std::uint32_t>();
@@ -25,7 +25,7 @@ void ReadWmoGroupFile(parser::input::WmoGroupFile *groupFile,
     // MOPY
     size_t mopyLocation;
     if (!reader->GetChunkLocation("MOPY", mogpLocation+0x4C, mopyLocation))
-        THROW("No MOPY chunk");
+        THROW(Result::NO_MOPY_CHUNK);
 
     groupFile->MaterialsChunk =
         std::make_unique<parser::input::MOPY>(version, mopyLocation, reader);
@@ -37,7 +37,7 @@ void ReadWmoGroupFile(parser::input::WmoGroupFile *groupFile,
     size_t moviLocation;
     if (!reader->GetChunkLocation(version == 14 ? "MOIN" : "MOVI", mopyLocation,
                                   moviLocation))
-        THROW("No MOVI chunk");
+        THROW(Result::NO_MOVI_CHUNK);
 
     groupFile->IndicesChunk =
         std::make_unique<parser::input::MOVI>(moviLocation, reader);
@@ -46,7 +46,7 @@ void ReadWmoGroupFile(parser::input::WmoGroupFile *groupFile,
     // this chunk comes sooner
     size_t movtLocation;
     if (!reader->GetChunkLocation("MOVT", mopyLocation, movtLocation))
-        THROW("No MOVT chunk");
+        THROW(Result::NO_MOVT_CHUNK);
 
     groupFile->VerticesChunk =
         std::make_unique<parser::input::MOVT>(movtLocation, reader);
