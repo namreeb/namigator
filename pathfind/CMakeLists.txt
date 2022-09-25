@@ -11,6 +11,8 @@ add_library(lib${LIBRARY_NAME} STATIC ${SRC})
 target_include_directories(lib${LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(lib${LIBRARY_NAME} PRIVATE ${FILESYSTEM_LIBRARY} utility RecastNavigation::Recast RecastNavigation::Detour)
 
+install(TARGETS lib${LIBRARY_NAME} ARCHIVE DESTINATION lib)
+
 if (PYTHON_COMPONENT)
     if (Python3_FOUND)
         Python3_add_library(${LIBRARY_NAME} ${SRC} python.cpp)

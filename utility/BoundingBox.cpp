@@ -1,6 +1,7 @@
 #include "utility/BoundingBox.hpp"
 
 #include <algorithm>
+#include <limits>
 
 namespace math
 {

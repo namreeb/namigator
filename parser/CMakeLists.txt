@@ -31,3 +31,5 @@ add_library(parser STATIC ${SRC_MAP} ${SRC_ADT} ${SRC_WMO} ${SRC_DOODAD}
 
 target_link_libraries(parser utility storm ${FILESYSTEM_LIBRARY})
 target_include_directories(parser PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+install(TARGETS parser ARCHIVE DESTINATION lib)

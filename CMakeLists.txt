@@ -30,24 +30,28 @@ if(DEFINED ENV{pythonLocation})
     set(Python3_FIND_REGISTRY NEVER)
 endif()
 
-# First try finding python 3 development files
-find_package(Python3 COMPONENTS Development)
+option(NAMIGATOR_BUILD_PYTHON "Build Python bindings if Python2/3 is present." TRUE)
 
-if (Python3_FOUND)
-    set(PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
-    set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
-    set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
-else()
-    message(STATUS "Could not find python3.  Attemping to find python2.")
-    find_package(Python2 COMPONENTS Development)
-    if (Python2_FOUND)
-        set(PYTHON_COMPONENT "python${Python2_VERSION_MAJOR}${Python2_VERSION_MINOR}")
-        set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
-        set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
+if(NAMIGATOR_BUILD_PYTHON)
+    # First try finding python 3 development files
+    find_package(Python3 COMPONENTS Development)
+
+    if (Python3_FOUND)
+        set(PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+        set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
+        set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
     else()
-        message(STATUS "Could not find python2 either.")
+        message(STATUS "Could not find python3.  Attemping to find python2.")
+        find_package(Python2 COMPONENTS Development)
+        if (Python2_FOUND)
+            set(PYTHON_COMPONENT "python${Python2_VERSION_MAJOR}${Python2_VERSION_MINOR}")
+            set(PYTHON_LIBRARIES "${Python2_LIBRARIES}")
+            set(PYTHON_INCLUDE_DIRS "${Python2_INCLUDE_DIRS}")
+        else()
+            message(STATUS "Could not find python2 either.")
+        endif()
     endif()
-endif()
+endif() # NAMIGATOR_BUILD_PYTHON
 
 # Enable debug output from FindBoost
 #set(Boost_DEBUG ON)
@@ -95,7 +99,7 @@ if (PYTHON_COMPONENT)
     endif()
 endif()
 
-if (NOT PYTHON_COMPONENT)
+if (NAMIGATOR_BUILD_PYTHON AND NOT PYTHON_COMPONENT)
     message(WARNING "No boost-compatible python was found.  Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
 endif()
 
@@ -114,9 +118,11 @@ set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "Build demo")
 set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "Build tests")
 set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "Build examples")
 add_subdirectory(recastnavigation EXCLUDE_FROM_ALL)
+install(TARGETS Detour Recast ARCHIVE DESTINATION lib)
 
 add_definitions(-DSTORMLIB_NO_AUTO_LINK)
 add_subdirectory(stormlib EXCLUDE_FROM_ALL)
+install(TARGETS storm ARCHIVE DESTINATION lib)
 
 # namigator libraries
 add_subdirectory(utility)
