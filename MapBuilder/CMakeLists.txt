@@ -1,6 +1,6 @@
 set(EXECUTABLE_NAME MapBuilder)
-set(LIBRARY_NAME libmapbuild)
-set(PYTHON_NAME mapbuild)
+set(LIBRARY_NAME mapbuild)
+set(PYTHON_NAME mapbuild_python)
 
 set(SRC BVHConstructor.cpp GameObjectBVHBuilder.cpp MeshBuilder.cpp RecastContext.cpp Worker.cpp MapBuilder_c_bindings.cpp)
 

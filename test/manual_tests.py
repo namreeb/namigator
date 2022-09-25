@@ -10,8 +10,8 @@ import math
 
 sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
-import mapbuild
-import pathfind
+import mapbuild_python as mapbuild
+import pathfind_python as pathfind
 
 def approximate(a, b, epsilon=0.002):
     return abs(a-b) <= epsilon
