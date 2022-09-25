@@ -5,6 +5,7 @@ set(SRC
     Map.cpp
     TemporaryObstacle.cpp
     Tile.cpp
+    pathfind_c_bindings.cpp
 )
 
 add_library(lib${LIBRARY_NAME} STATIC ${SRC})

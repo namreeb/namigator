@@ -194,5 +194,13 @@ enum class Result {
 
     RECAST_FAILURE = 81,
 
+    // C API
+    BUFFER_TOO_SMALL = 82,
+    UNKNOWN_PATH = 83,
+    UNKNOWN_HEIGHT = 84,
+    UNKNOWN_ZONE_AND_AREA = 85,
+    FAILED_TO_LOAD_ADT = 86,
+    MAP_DOES_NOT_HAVE_ADT = 87,
+
     UNKNOWN, // Deliberately not stable since it should never occur
 };
