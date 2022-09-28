@@ -201,6 +201,7 @@ enum class Result {
     UNKNOWN_ZONE_AND_AREA = 85,
     FAILED_TO_LOAD_ADT = 86,
     MAP_DOES_NOT_HAVE_ADT = 87,
+    UNKNOWN_EXCEPTION = 88,
 
     UNKNOWN, // Deliberately not stable since it should never occur
 };

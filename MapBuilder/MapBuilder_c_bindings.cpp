@@ -39,6 +39,9 @@ MapBuildResultType mapbuild_build_bvh(const char* const data_path,
     catch (utility::exception& e) {
         return static_cast<MapBuildResultType>(e.ResultCode());
     }
+    catch (...) {
+        return static_cast<MapBuildResultType>(Result::UNKNOWN_EXCEPTION);
+    }
 }
 
 MapBuildResultType mapbuild_build_map(const char* const data_path,
@@ -72,6 +75,9 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
     catch (utility::exception& e) {
         return static_cast<MapBuildResultType >(e.ResultCode());
     }
+    catch (...) {
+        return static_cast<MapBuildResultType>(Result::UNKNOWN_EXCEPTION);
+    }
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
@@ -92,6 +98,9 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
     catch (utility::exception& e)
     {
         return static_cast<MapBuildResultType >(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<MapBuildResultType>(Result::UNKNOWN_EXCEPTION);
     }
 
     try
@@ -115,6 +124,9 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
     }
     catch (utility::exception& e) {
         return static_cast<MapBuildResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<MapBuildResultType>(Result::UNKNOWN_EXCEPTION);
     }
 
     builder->SaveMap();

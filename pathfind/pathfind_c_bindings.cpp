@@ -17,6 +17,10 @@ pathfind::Map* pathfind_new_map(const char* const data_path, const char* const m
         *result = static_cast<PathfindResultType>(e.ResultCode());
         return nullptr;
     }
+    catch (...) {
+        *result = static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+        return nullptr;
+    }
 }
 
 void pathfind_free_map(pathfind::Map* map) {
@@ -30,6 +34,9 @@ PathfindResultType pathfind_load_all_adts(pathfind::Map* map, int32_t* amount_of
     }
     catch (utility::exception& e) {
         return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
 
@@ -55,6 +62,9 @@ PathfindResultType pathfind_load_adt_at(pathfind::Map* map, float x, float y, fl
     }
     catch (utility::exception& e) {
         return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
 
@@ -83,6 +93,9 @@ PathfindResultType pathfind_get_zone_and_area(pathfind::Map* map,
     }
     catch (utility::exception& e) {
         return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
 
@@ -127,6 +140,9 @@ PathfindResultType pathfind_find_path(pathfind::Map* map,
     catch (utility::exception& e) {
         return static_cast<PathfindResultType>(e.ResultCode());
     }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
 }
 
 PathfindResultType pathfind_find_heights(pathfind::Map* map,
@@ -157,6 +173,9 @@ PathfindResultType pathfind_find_heights(pathfind::Map* map,
     }
     catch (utility::exception& e) {
         return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
 
