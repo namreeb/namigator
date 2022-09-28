@@ -1,5 +1,5 @@
-set(LIBRARY_NAME pathfind)
-set(PYTHON_NAME pathfind_python)
+set(LIBRARY_NAME libpathfind)
+set(PYTHON_NAME pathfind)
 
 set(SRC
     BVH.cpp
