@@ -35,8 +35,8 @@ PathfindResultType pathfind_load_all_adts(pathfind::Map* map, int32_t* amount_of
 
 PathfindResultType pathfind_load_adt_at(pathfind::Map* map, float x, float y, float* out_adt_x, float* out_adt_y) {
     try {
-        int adt_y = 0.0f;
-        int adt_x = 0.0f;
+        int adt_y = 0;
+        int adt_x = 0;
 
         math::Convert::WorldToAdt({x, y, 0.f}, adt_x, adt_y);
 
@@ -105,7 +105,7 @@ PathfindResultType pathfind_find_path(pathfind::Map* map,
     try {
         if (map->FindPath(start, stop, path)) {
             if (path.size() > buffer_length) {
-                *amount_of_vertices = path.size();
+                *amount_of_vertices = static_cast<unsigned int>(path.size());
                 return static_cast<PathfindResultType>(Result::BUFFER_TOO_SMALL);
             }
 
@@ -113,11 +113,11 @@ PathfindResultType pathfind_find_path(pathfind::Map* map,
 
             for (int i = 0; i < path.size(); ++i) {
                 const auto point = path[i];
-                const auto v = Vertex { .x = point.X, .y = point.Y, .z = point.Z};
+                const auto v = Vertex { point.X, point.Y, point.Z};
                 vbuf[i] = v;
             }
 
-            *amount_of_vertices = path.size();
+            *amount_of_vertices = static_cast<unsigned int>(path.size());
 
             return static_cast<PathfindResultType>(Result::SUCCESS);
         } else {
@@ -148,7 +148,7 @@ PathfindResultType pathfind_find_heights(pathfind::Map* map,
                 buffer[i] = height_values[i];
             }
 
-            *amount_of_heights = height_values.size();
+            *amount_of_heights = static_cast<unsigned int>(height_values.size());
 
             return static_cast<PathfindResultType>(Result::SUCCESS);
         }

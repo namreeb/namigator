@@ -94,6 +94,8 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
         return static_cast<MapBuildResultType >(e.ResultCode());
     }
 
+    try
+    {
     for (;;)
     {
         bool done = true;
@@ -109,6 +111,10 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    }
+    catch (utility::exception& e) {
+        return static_cast<MapBuildResultType>(e.ResultCode());
     }
 
     builder->SaveMap();
