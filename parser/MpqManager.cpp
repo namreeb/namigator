@@ -113,6 +113,9 @@ void MpqManager::Initialize()
 // Priority logic is explained at https://github.com/namreeb/namigator/issues/22
 void MpqManager::Initialize(const std::string& wowDir)
 {
+    if (!fs::is_directory(wowDir))
+        THROW("Data directory does not exist");
+
     Alpha = false;
     BasePath = fs::path(wowDir);
     std::string locale = "";
