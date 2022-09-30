@@ -24,7 +24,7 @@ GetRootAreaId(const std::unordered_map<std::uint32_t, std::uint32_t>& areas,
     auto const i = areas.find(id);
 
     if (i == areas.end())
-        THROW("GetRootAreaId invalid id");
+        THROW(Result::GETROOTAREAID_INVALID_ID);
 
     // roots have no parent
     if (i->second == 0)
@@ -95,7 +95,7 @@ void MpqManager::LoadMpq(const std::string& filePath)
     HANDLE archive;
 
     if (!SFileOpenArchive(filePath.c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
-        THROW("Could not open MPQ").ErrorCode();
+        THROW(Result::COULD_NOT_OPEN_MPQ).ErrorCode();
 
     std::error_code ec;
     auto const rel = fs::relative(filePath, BasePath, ec);
@@ -201,7 +201,7 @@ void MpqManager::Initialize(const std::string& wowDir)
     }
 
     if (files.empty())
-        THROW("No data files found");
+        THROW(Result::NO_DATA_FILES_FOUND);
 
     for (auto const& file : files)
         LoadMpq(file.string());
@@ -240,7 +240,7 @@ std::unique_ptr<utility::BinaryStream>
 MpqManager::OpenFile(const std::string& file)
 {
     if (MpqHandles.empty())
-        THROW("MpqManager not initialized");
+        THROW(Result::MPQ_MANAGER_NOT_INIATIALIZED);
 
     auto file_lower = utility::lower(GetRealModelPath(file, Alpha));
 
@@ -252,7 +252,7 @@ MpqManager::OpenFile(const std::string& file)
         HANDLE fileHandle;
         if (!SFileOpenFileEx(i.second, file_lower.c_str(), SFILE_OPEN_FROM_MPQ,
                              &fileHandle))
-            THROW("Error in SFileOpenFileEx").ErrorCode();
+            THROW(Result::ERROR_IN_SFILEOPENFILEX).ErrorCode();
 
         auto const fileSize = SFileGetFileSize(fileHandle, nullptr);
 
@@ -266,7 +266,7 @@ MpqManager::OpenFile(const std::string& file)
                            nullptr))
         {
             SFileCloseFile(fileHandle);
-            THROW("Error in SFileReadFile").ErrorCode();
+            THROW(Result::ERROR_IN_SFILEREADFILE).ErrorCode();
         }
 
         SFileCloseFile(fileHandle);
@@ -304,7 +304,7 @@ MpqManager::OpenFile(const std::string& file)
                 data.dwFileSize != 0)
             {
                 if (!candidate.empty())
-                    THROW("Multiple candidates in alpha MPQ");
+                    THROW(Result::MULTIPLE_CANDIDATES_IN_ALPHA_MPQ);
                 candidate = fn;
             }
 
@@ -316,14 +316,14 @@ MpqManager::OpenFile(const std::string& file)
         } while (true);
 
         if (files.size() != 3)
-            THROW("Too many files in alpha MPQ");
+            THROW(Result::TOO_MANY_FILES_IN_ALPHA_MPQ);
         if (candidate.empty())
-            THROW("No candidate.  Target file size 16?");
+            THROW(Result::NO_MPQ_CANDIDATE);
 
         HANDLE fileHandle;
         if (!SFileOpenFileEx(i.second, candidate.c_str(), SFILE_OPEN_FROM_MPQ,
                              &fileHandle))
-            THROW("Error in SFileOpenFileEx").ErrorCode();
+            THROW(Result::ERROR_IN_SFILEOPENFILEX).ErrorCode();
 
         auto const fileSize = SFileGetFileSize(fileHandle, nullptr);
 
@@ -334,7 +334,7 @@ MpqManager::OpenFile(const std::string& file)
                            nullptr))
         {
             SFileCloseFile(fileHandle);
-            THROW("Error in SFileReadFile").ErrorCode();
+            THROW(Result::ERROR_IN_SFILEREADFILE).ErrorCode();
         }
 
         SFileCloseFile(fileHandle);
@@ -352,7 +352,7 @@ unsigned int MpqManager::GetMapId(const std::string& name) const
     auto const i = Maps.find(nameLower);
 
     if (i == Maps.end())
-        THROW("Map ID for " + name + " not found");
+        THROW_MSG("Map ID for " + name + " not found", Result::MAP_ID_NOT_FOUND);
 
     return i->second;
 }

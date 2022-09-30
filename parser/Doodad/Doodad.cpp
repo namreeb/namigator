@@ -18,7 +18,7 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
 
     if (!reader)
     {
-        // THROW("Doodad " + path + " not found");
+        // THROW_MSG("Doodad " + path + " not found", ResultCode::DOODAD_PATH_NOT_FOUND);
         std::cerr << "Doodad " << path << " not found" << std::endl;
         return;
     }
@@ -35,11 +35,11 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
         auto const version = reader->Read<std::uint32_t>();
 
         if (versionMagic != 'SREV')
-            THROW("Unexpected version magic in alpha model");
+            THROW(Result::UNEXPECTED_VERSION_MAGIC_IN_ALPHA_MODEL);
         if (versionSize != 4)
-            THROW("Unexpected version size in alpha model");
+            THROW(Result::UNEXPECTED_VERSION_SIZE_IN_ALPHA_MODEL);
         if (version != 1300)
-            THROW("Unsupported alpha model version");
+            THROW(Result::UNSUPPORTED_ALPHA_MODEL_VERSION);
 
         // offset to collision data pointer
         reader->rpos(0x5C);
@@ -54,7 +54,7 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
 
         auto const vertexMagic = reader->Read<std::uint32_t>();
         if (vertexMagic != 'XTRV')
-            THROW("Unexpected vertex magic in alpha model");
+            THROW(Result::UNEXPECTED_VERTEX_MAGIC_IN_ALPHA_MODEL);
 
         vertexCount = reader->Read<std::uint32_t>();
         verticesPosition = reader->rpos();
@@ -63,7 +63,7 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
 
         auto const indexMagic = reader->Read<std::uint32_t>();
         if (indexMagic != ' IRT')
-            THROW("Unexpected triangle magic in alpha model");
+            THROW(Result::UNEXPECTED_TRIANGLE_MAGIC_IN_ALPHA_MODEL);
 
         indexCount = reader->Read<std::uint32_t>();
         indicesPosition = reader->rpos();
@@ -71,7 +71,7 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
     else
     {
         if (magic != Magic)
-            THROW("Invalid doodad file");
+            THROW(Result::INVALID_DOODAD_FILE);
 
         auto const version = reader->Read<std::uint32_t>();
 
@@ -92,7 +92,7 @@ Doodad::Doodad(const std::string& path) : MpqPath(utility::lower(path))
                 break;
 
             default:
-                THROW("Unsupported doodad format: " + version);
+                THROW_MSG("Unsupported doodad format: " + version, Result::UNSUPPORTED_DOOAD_FORMAT);
         }
 
         indexCount = reader->Read<std::uint32_t>();

@@ -48,7 +48,7 @@ GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& dataPath,
         else if (extension[1] == 'w' || extension[1] == 'W')
             m_wmos[row] = path;
         else
-            THROW("Unrecognized extension");
+            THROW(Result::UNRECOGNIZED_EXTENSION);
     }
 }
 

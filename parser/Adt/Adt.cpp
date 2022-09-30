@@ -59,7 +59,7 @@ Adt::Adt(Map* map, int adtX, int adtY)
 
         if (!reader->GetChunkLocation("MHDR", map->m_adtOffsets[adtX][adtY],
             mhdrLocation))
-            THROW("MHDR not found");
+            THROW(Result::MHDR_NOT_FOUND);
 
         reader->rpos(mhdrLocation);
     }
@@ -73,21 +73,21 @@ Adt::Adt(Map* map, int adtX, int adtY)
         reader = sMpqManager.OpenFile(ss.str());
 
         if (!reader->GetChunkLocation("MHDR", mhdrLocation))
-                THROW("MHDR not found");
+            THROW(Result::MHDR_NOT_FOUND);
     }
 
     if (!reader)
-        THROW("Failed to open ADT");
+        THROW(Result::FAILED_TO_OPEN_ADT);
 
     auto const old = reader->rpos();
     reader->rpos(0);
     if (reader->Read<std::uint32_t>() != input::AdtChunkType::MVER)
-        THROW("MVER does not begin ADT file");
+        THROW(Result::MVER_DOES_NOT_BEGIN_ADT_FILE);
 
     reader->rpos(reader->rpos() + 4);
 
     if (reader->Read<std::uint32_t>() != ADT_VERSION)
-        THROW("ADT version is incorrect");
+        THROW(Result::ADT_VERSION_IS_INCORRECT);
 
     reader->rpos(old);
 
@@ -100,7 +100,7 @@ Adt::Adt(Map* map, int adtX, int adtY)
 
     size_t currMcnk;
     if (!reader->GetChunkLocation("MCNK", mhdrLocation, currMcnk))
-        THROW("MCNK not found");
+        THROW(Result::NO_MCNK_CHUNK);
 
     std::unique_ptr<input::MCNK> chunks[16][16];
 

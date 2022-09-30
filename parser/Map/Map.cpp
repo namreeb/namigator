@@ -30,11 +30,11 @@ Map::Map(const std::string& name)
     auto reader = sMpqManager.OpenFile(file);
 
     if (!reader)
-        THROW("WDT open failed");
+        THROW(Result::WDT_OPEN_FAILED);
 
     size_t mphdLocation;
     if (!reader->GetChunkLocation("MPHD", mphdLocation))
-        THROW("MPHD not found");
+        THROW(Result::MPHD_NOT_FOUND);
 
     reader->rpos(mphdLocation + 8);
 
@@ -42,7 +42,7 @@ Map::Map(const std::string& name)
 
     size_t mainLocation;
     if (!reader->GetChunkLocation("MAIN", mainLocation))
-        THROW("MAIN not found");
+        THROW(Result::MAIN_NOT_FOUND);
 
     reader->rpos(mainLocation + 4);
     auto const mainSize = reader->Read<std::uint32_t>();
@@ -94,7 +94,7 @@ Map::Map(const std::string& name)
 
         size_t mdnmLocation;
         if (!reader->GetChunkLocation("MDNM", doodadNameOffset, mdnmLocation))
-            THROW("MDNM not found");
+            THROW(Result::MDNM_NOT_FOUND);
 
         reader->rpos(mdnmLocation + 4);
         auto const mdnmSize = reader->Read<std::uint32_t>();
@@ -117,7 +117,7 @@ Map::Map(const std::string& name)
 
         size_t monmLocation;
         if (!reader->GetChunkLocation("MONM", wmoNameOffset, monmLocation))
-            THROW("MONM not found");
+            THROW(Result::MONM_NOT_FOUND);
 
         reader->rpos(monmLocation + 4);
         auto const monmSize = reader->Read<std::uint32_t>();
@@ -158,7 +158,7 @@ Map::Map(const std::string& name)
 
         size_t mwmoLocation;
         if (!reader->GetChunkLocation("MWMO", mwmoLocation))
-            THROW("MWMO not found");
+            THROW(Result::MWMO_NOT_FOUND);
         reader->rpos(mwmoLocation + 8);
 
         globalWmoName = reader->ReadString();
@@ -187,7 +187,7 @@ Map::Map(const std::string& name)
         }
     }
     else if (!reader->GetChunkLocation("MODF", modfLocation))
-        THROW("MODF not found");
+        THROW(Result::MODF_NOT_FOUND);
 
     reader->rpos(modfLocation + 4);
     auto const modfSize = reader->Read<std::uint32_t>();

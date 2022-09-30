@@ -10,7 +10,7 @@ BVH::BVH(const fs::path& path) : m_dataPath(path)
     auto const index_file = m_dataPath / "BVH" / "bvh.idx";
 
     if (!fs::is_regular_file(index_file))
-        THROW("BVH index file not found");
+        THROW(Result::BVH_INDEX_FILE_NOT_FOUND);
 
     utility::BinaryStream index(index_file);
 
@@ -48,7 +48,7 @@ std::string BVH::GetBVHPath(const std::string& mpq_path) const
     auto const result = m_files.find(mpq_path);
 
     if (result == m_files.end())
-        THROW("Requested BVH not found");
+        THROW(Result::REQUESTED_BVH_NOT_FOUND);
 
     return (m_dataPath / "BVH" / result->second).string();
 }
@@ -58,7 +58,7 @@ std::string BVH::GetBVHPath(std::uint32_t entry) const
     auto const result = m_temporaryObstacles.find(entry);
 
     if (result == m_temporaryObstacles.end())
-        THROW("Requested BVH not found");
+        THROW(Result::REQUESTED_BVH_NOT_FOUND);
 
     return (m_dataPath / "BVH" / result->second).string();
 }

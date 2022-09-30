@@ -58,23 +58,23 @@ struct NavFileHeader
     void Verify(bool globalWmo) const
     {
         if (sig != MeshSettings::FileSignature)
-            THROW("Incorrect file signature");
+            THROW(Result::INCORRECT_FILE_SIGNATURE);
 
         if (ver != MeshSettings::FileVersion)
-            THROW("Incorrect file version");
+            THROW(Result::INCORRECT_FILE_VERSION);
 
         if (globalWmo)
         {
             if (kind != MeshSettings::FileWMO)
-                THROW("Not WMO nav file");
+                THROW(Result::NOT_WMO_NAV_FILE);
 
             if (x != MeshSettings::WMOcoordinate ||
                 y != MeshSettings::WMOcoordinate)
-                THROW("Not WMO tile coordinates");
+                THROW(Result::NOT_WMO_TILE_COORDINATES);
         }
 
         if (!globalWmo && kind != MeshSettings::FileADT)
-            THROW("Not ADT nav file");
+            THROW(Result::NOT_ADT_NAV_FILE);
     }
 };
 #pragma pack(pop)
@@ -90,7 +90,7 @@ Map::Map(const std::string& dataPath, const std::string& mapName)
     in >> magic;
 
     if (magic != MeshSettings::FileMap)
-        THROW("Invalid map file");
+        THROW(Result::INVALID_MAP_FILE);
 
     ::memset(m_loadedADT, 0, sizeof(m_loadedADT));
 
@@ -245,7 +245,7 @@ Map::Map(const std::string& dataPath, const std::string& mapName)
 
         if (header.x != MeshSettings::WMOcoordinate ||
             header.y != MeshSettings::WMOcoordinate)
-            THROW("Incorrect WMO coordinates");
+            THROW(Result::INCORRECT_WMO_COORDINATES);
 
         for (auto i = 0u; i < header.tileCount; ++i)
         {
@@ -260,7 +260,7 @@ Map::Map(const std::string& dataPath, const std::string& mapName)
     }
 
     if (m_navQuery.init(&m_navMesh, 65535) != DT_SUCCESS)
-        THROW("dtNavMeshQuery::init failed");
+        THROW(Result::DTNAVMESHQUERY_INIT_FAILED);
 }
 
 std::shared_ptr<WmoModel> Map::LoadModelForWmoInstance(unsigned int instanceId)
@@ -269,7 +269,7 @@ std::shared_ptr<WmoModel> Map::LoadModelForWmoInstance(unsigned int instanceId)
 
     // ensure it exists.  this should never fail
     if (instance == m_staticWmos.end())
-        THROW("Unknown WMO instance requested");
+        THROW(Result::UNKNOWN_WMO_INSTANCE_REQUESTED);
 
     // if the model is loaded, return it
     if (!instance->second.m_model.expired())
@@ -289,7 +289,7 @@ Map::LoadModelForDoodadInstance(unsigned int instanceId)
 
     // ensure it exists.  this should never fail
     if (instance == m_staticDoodads.end())
-        THROW("Unknown doodad instance requested");
+        THROW(Result::UNKNOWN_DOODAD_INSTANCE_REQUESTED);
 
     // if the model is loaded, return it
     if (!instance->second.m_model.expired())
@@ -318,7 +318,7 @@ Map::EnsureDoodadModelLoaded(const std::string& mpq_path)
     auto model = std::make_shared<pathfind::DoodadModel>();
 
     if (!model->m_aabbTree.Deserialize(in))
-        THROW("Could not deserialize doodad").ErrorCode();
+        THROW(Result::COULD_NOT_DESERIALIZE_DOODAD).ErrorCode();
 
     m_loadedDoodadModels[bvhFilename] = model;
     return std::move(model);
@@ -339,7 +339,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
     auto model = std::make_shared<pathfind::WmoModel>();
 
     if (!model->m_aabbTree.Deserialize(in))
-        THROW("Could not deserialize WMO").ErrorCode();
+        THROW(Result::COULD_NOT_DESERIALIZE_WMO).ErrorCode();
 
     std::uint32_t rootId, nameSetCount;
     in >> rootId >> nameSetCount;
@@ -432,7 +432,7 @@ bool Map::LoadADT(int x, int y)
 
     if (header.x != static_cast<std::uint32_t>(x) ||
         header.y != static_cast<std::uint32_t>(y))
-        THROW("Incorrect ADT coordinates");
+        THROW(Result::INCORRECT_ADT_COORDINATES);
 
     for (auto i = 0u; i < header.tileCount; ++i)
     {
@@ -653,7 +653,7 @@ float Map::FindPreciseZ(float x, float y, float zHint) const
     auto const tile = m_tiles.find({tileX, tileY});
 
     if (tile == m_tiles.end())
-        THROW("Tile not found for requested (x, y)");
+        THROW(Result::TILE_NOT_FOUND_FOR_REQUESTED);
 
     // check BVH data for this tile
     // note that we assume the ground, if there is any, is within 2x

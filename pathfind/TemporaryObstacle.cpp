@@ -51,7 +51,7 @@ private:
 
         out << msg;
 
-        THROW("Recast Failure").Message(out.str());
+        THROW_MSG("Recast Failure", Result::RECAST_FAILURE).Message(out.str(), Result::RECAST_FAILURE);
     }
 
 public:
@@ -233,7 +233,7 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId,
 {
     if (m_temporaryDoodads.find(guid) != m_temporaryDoodads.end() ||
         m_temporaryWmos.find(guid) != m_temporaryWmos.end())
-        THROW("Game object with specified GUID already exists");
+        THROW(Result::GAMEOBJECT_WITH_SPECIFIED_GUID_ALREADY_EXISTS);
 
     auto const matrix =
         math::Matrix::CreateTranslationMatrix(position) * rotation;
@@ -281,14 +281,14 @@ void Map::AddGameObject(std::uint64_t guid, unsigned int displayId,
     }
     else
     {
-        THROW("Temporary WMO obstacles are not supported");
+        THROW(Result::TEMPORARY_WMO_OBSTACLES_ARE_NOT_SUPPORTED);
 
         // auto const model = LoadWmoModel(0); // TODO make this support loading
         // a filename
 
         //// if there is only one, the specified set is irrelevant.  use it!
         // if (doodadSet < 0 && model->m_doodadSets.size() > 1)
-        //    THROW("No doodad set specified for WMO game object");
+        //    THROW(NO_DOODAD_SET_SPECIFIED_FOR_WMO_GAME_OBJECT);
         //
         // if (doodadSet < 0)
         //    doodadSet = 0;

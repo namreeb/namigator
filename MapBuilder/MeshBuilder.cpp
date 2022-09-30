@@ -53,7 +53,7 @@ fs::path BuildAbsoluteFilename(const fs::path& outputPath,
     else if (extension[1] == 'w' || extension[1] == 'W')
         kind = "WMO";
     else
-        THROW("Unrecognized extension");
+        THROW(Result::UNRECOGNIZED_EXTENSION);
 
     return outputPath / "BVH" / (kind + "_" + filename);
 }
@@ -580,7 +580,7 @@ void MeshBuilder::LoadGameObjects(const std::string& path)
     std::ifstream in(path);
 
     if (in.fail())
-        THROW("Failed to open gameobject file").ErrorCode();
+        THROW(Result::FAILED_TO_OPEN_GAMEOBJECT_FILE).ErrorCode();
 
     m_gameObjectInstances.clear();
 
@@ -598,7 +598,7 @@ void MeshBuilder::LoadGameObjects(const std::string& path)
     in.close();
 
     if (!!(cells.size() % 10))
-        THROW("Bad format of gameobject file");
+        THROW(Result::BAD_FORMAT_OF_GAMEOBJECT_FILE);
 
     m_gameObjectInstances.reserve(cells.size() / 10);
 
@@ -658,7 +658,7 @@ void MeshBuilder::LoadGameObjects(const std::string& path)
             int asdf = 1234;
         }
         else
-            THROW("Unrecognized model extension");
+            THROW(Result::UNRECOGNIZED_MODEL_EXTENSION);
 
         auto const modelFullPath =
             BuildAbsoluteFilename(m_outputPath, modelPath);
@@ -688,7 +688,7 @@ void MeshBuilder::LoadGameObjects(const std::string& path)
     for (auto const& go : m_gameObjectInstances)
     {
         if (models.find(go.displayId) == models.end())
-            THROW("Game object references non-existent model id");
+            THROW(Result::GAME_OBJECT_REFERENCES_NON_EXISTENT_MODEL_ID);
     }
 }
 
@@ -1005,7 +1005,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
                 str << "Could not find required WMO ID = " << wmoId
                     << " needed by tile (" << tileX << ", " << tileY << ")";
 
-                THROW(str.str());
+                THROW_MSG(str.str(), Result::COULD_NOT_FIND_WMO);
             }
 
             assert(!!wmoInstance);
@@ -1283,7 +1283,7 @@ void ADT::Serialize(const fs::path& filename) const
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
 
     if (out.fail())
-        THROW("ADT serialization failed to open output file");
+        THROW(Result::ADT_SERIALIZATION_FAILED_TO_OPEN_OUTPUT_FILE);
 
     out << outBuffer;
 }
@@ -1341,7 +1341,7 @@ void GlobalWMO::Serialize(const fs::path& filename) const
     std::ofstream out(filename, std::ofstream::binary | std::ofstream::trunc);
 
     if (out.fail())
-        THROW("WMO serialization failed to open output file").ErrorCode();
+        THROW(Result::WMO_SERIALIZATION_FAILED_TO_OPEN_OUTPUT_FILE).ErrorCode();
 
     out << outBuffer;
 }

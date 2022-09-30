@@ -30,13 +30,13 @@ DBC::DBC(const std::string& filename)
     auto in = sMpqManager.OpenFile(filename);
 
     if (!in)
-        THROW("Failed to open DBC " + filename);
+        THROW_MSG("Failed to open DBC " + filename, Result::FAILED_TO_OPEN_DBC);
 
     dbc_header header;
     *in >> header;
 
     if (header.magic != Magic)
-        THROW("Unrecognized DBC file");
+        THROW(Result::UNRECOGNIZED_DBC_FILE);
 
     assert(header.field_count * sizeof(std::uint32_t) == header.record_size);
 
@@ -57,7 +57,7 @@ std::uint32_t DBC::GetField(int row, int column) const
     auto const offset = row * m_fieldCount + column;
 
     if (offset > m_data.size() || column >= m_fieldCount)
-        THROW("Invalid row, column requested from DBC");
+        THROW(Result::INVALID_ROW_COLUMN_FROM_DBC);
 
     return m_data[offset];
 }
