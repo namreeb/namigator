@@ -114,7 +114,7 @@ void MpqManager::Initialize()
 void MpqManager::Initialize(const std::string& wowDir)
 {
     if (!fs::is_directory(wowDir))
-        THROW("Data directory does not exist");
+        THROW(Result::NO_DATA_FILES_FOUND);
 
     Alpha = false;
     BasePath = fs::path(wowDir);
