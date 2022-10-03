@@ -202,6 +202,4 @@ enum class Result {
     FAILED_TO_LOAD_ADT = 86,
     MAP_DOES_NOT_HAVE_ADT = 87,
     UNKNOWN_EXCEPTION = 88,
-
-    UNKNOWN, // Deliberately not stable since it should never occur
 };
