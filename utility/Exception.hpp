@@ -8,15 +8,15 @@
 
 #ifdef WIN32
 #    include <Windows.h>
-#    define THROW_BASE()                                                  \
+#    define THROW_BASE(r)                                                 \
         throw utility::exception(::GetLastError(), __FILE__, __FUNCSIG__, \
-                                 __LINE__)
+                                 __LINE__, r)
 #else
-#    define THROW_BASE() throw utility::exception(__FILE__, __func__, __LINE__)
+#    define THROW_BASE(r) throw utility::exception(__FILE__, __func__, __LINE__, r)
 #endif
 
-#define THROW_MSG(x, y) THROW_BASE().Message(x, y)
-#define THROW(x) THROW_BASE().Code(x)
+#define THROW_MSG(x, r) THROW_BASE(r).Message(x)
+#define THROW(r) THROW_BASE(r)
 
 namespace {
     std::string result_to_error_message(Result result)
@@ -174,8 +174,6 @@ namespace {
                 return "No doodad set specified for WMO game object";
 
             default:
-                /* Fallthrough */
-            case Result::UNKNOWN:
                 return "Unknown error";
         }
     }
@@ -187,7 +185,7 @@ class exception : public virtual std::exception
 {
 private:
     std::string _str;
-    Result _result;
+    const Result _result;
 
 
 #ifdef WIN32
@@ -197,18 +195,19 @@ private:
 public:
 #ifdef WIN32
     exception(unsigned int err, const char* file, const char* function,
-              int line)
+              int line, Result result)
         : _err(err)
+        , _result(result)
 #else
-    exception(const char* file, const char* function, int line)
+    exception(const char* file, const char* function, int line, Result result)
+        : _result(result)
 #endif
     {
         std::stringstream s;
 
-        s << file << ":" << line << " (" << function << "):";
+        s << file << ":" << line << " (" << function << "): " << result_to_error_message(result);
 
         _str = s.str();
-        _result = Result::UNKNOWN;
     }
 
 #ifdef WIN32
@@ -233,24 +232,11 @@ public:
     exception& ErrorCode() { return *this; }
 #endif
 
-    exception& Message(const std::string& msg, Result result)
+    exception& Message(const std::string& msg)
     {
-        _result = result;
-
         std::stringstream s;
 
         s << _str << " " << msg;
-
-        _str = s.str();
-
-        return *this;
-    }
-
-    exception& Code(Result result)
-    {
-        std::stringstream s;
-
-        s << _str << " " << result_to_error_message(result);
 
         _str = s.str();
 

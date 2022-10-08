@@ -51,7 +51,7 @@ private:
 
         out << msg;
 
-        THROW_MSG("Recast Failure", Result::RECAST_FAILURE).Message(out.str(), Result::RECAST_FAILURE);
+        THROW_MSG("Recast Failure", Result::RECAST_FAILURE).Message(out.str());
     }
 
 public:
