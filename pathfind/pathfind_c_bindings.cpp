@@ -228,4 +228,28 @@ PathfindResultType pathfind_find_height(pathfind::Map* const map, float start_x,
         return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
+
+PathfindResultType pathfind_line_of_sight(pathfind::Map* map,
+                                          float start_x, float start_y, float start_z,
+                                          float stop_x, float stop_y, float stop_z,
+                                          uint8_t* const line_of_sight) {
+    try
+    {
+        if (map->LineOfSight({start_x, start_y, start_z}, {stop_x, stop_y, stop_z})) {
+            *line_of_sight = 1;
+        } else {
+            *line_of_sight = 0;
+        }
+
+        return static_cast<PathfindResultType>(Result::SUCCESS);
+    }
+    catch (utility::exception& e)
+    {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...)
+    {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
 } // extern "C"
