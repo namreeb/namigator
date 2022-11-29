@@ -97,8 +97,8 @@ private:
     // it for them
     float FindPreciseZ(float x, float y, float zHint) const;
 
-    bool RayCast(math::Ray& ray) const;
-    bool RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles,
+    bool RayCast(math::Ray& ray, bool doodads) const;
+    bool RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles, bool doodads,
                  unsigned int* zone = nullptr,
                  unsigned int* area = nullptr) const;
 
@@ -149,6 +149,12 @@ public:
 
     bool ZoneAndArea(const math::Vertex& position, unsigned int& zone,
                      unsigned int& area) const;
+
+    // Returns true when there is line of sight from the start position to
+    // the stop position.  The intended use of this is for spells and NPC
+    // aggro, so doodads and temporary obstacles will be ignored.
+    bool LineOfSight(const math::Vertex& start, const math::Vertex& stop)
+        const;
 
     const dtNavMesh& GetNavMesh() const { return m_navMesh; }
     const dtNavMeshQuery& GetNavMeshQuery() const { return m_navQuery; }

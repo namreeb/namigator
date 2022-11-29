@@ -86,6 +86,28 @@ def test_pathfind(temp_dir):
 
 	print("Zone check succeeded")
 
+	should_fail = map_data.line_of_sight(16268.3809, 16812.7148, 36.1483,
+		16266.5781, 16782.623, 38.5035019)
+
+	if should_fail:
+		raise Exception("Should-fail LoS check passed")
+
+	print("Should-fail LoS check failed correctly")
+
+	should_pass = map_data.line_of_sight(16873.2168, 16926.9551, 15.9072571,
+		16987.4277, 16950.0742, 69.4590912)
+	if should_pass is False:
+		raise Exception("Should-pass LoS check failed")
+
+	print("Should-pass LoS check succeeded")
+
+	should_pass_doodad = map_data.line_of_sight(16275.6895, 16853.9023, 37.8341751,
+		16251.0332, 16858.2988, 34.9305573)
+	if should_pass is False:
+		raise Exception("Should-pass doodad LoS check failed")
+
+	print("Should-pass doodad LoS check succeeded")
+
 	map_data = pathfind.Map(temp_dir, "bladesedgearena")
 	map_data.load_adt_at(6225, 250)
 	path = map_data.find_path(6225.82764, 250.215775, 11.2738495, 6216.33350, 234.604645, 4.16993713)

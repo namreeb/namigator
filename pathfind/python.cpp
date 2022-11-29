@@ -57,6 +57,13 @@ py::list python_query_heights(const pathfind::Map& map, float x, float y)
     return result;
 }
 
+py::object los(const pathfind::Map& map, float start_x, float start_y, float start_z,
+         float stop_x, float stop_y, float stop_z)
+{
+    return py::object(
+        map.LineOfSight({start_x, start_y, start_z}, {stop_x, stop_y, stop_z}));
+}
+
 py::tuple get_zone_and_area(pathfind::Map& map, float x, float y, float z)
 {
     math::Vertex p {x, y, z};
@@ -75,5 +82,6 @@ BOOST_PYTHON_MODULE(pathfind)
         .def("load_adt_at", &load_adt_at)
         .def("find_path", &python_find_path)
         .def("query_z", &python_query_heights)
-        .def("get_zone_and_area", &get_zone_and_area);
+        .def("get_zone_and_area", &get_zone_and_area)
+        .def("line_of_sight", &los);
 }
