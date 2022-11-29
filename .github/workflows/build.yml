@@ -22,7 +22,7 @@ jobs:
     - name: Install python and boost
       run: |
         sudo apt-get -y update
-        sudo apt-get install python3.8 python3.8-dev libboost-python-dev
+        sudo apt-get install python3 python3-dev libboost-python-dev
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
