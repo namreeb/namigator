@@ -36,16 +36,12 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/install
       run: test/smoke_tests.py
-      
-    - name: Package
-      working-directory: ${{github.workspace}}/install
-      run: tar -zcvf ${{github.workspace}}/namigator.tar.gz .
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
-        name: namigator.tar.gz
-        path: namigator.tar.gz
+        name: namigator_linux
+        path: ${{github.workspace}}/install/
         retention-days: 5
 
   windows:
@@ -58,7 +54,7 @@ jobs:
       run: git submodule update --init --recursive
     
     - name: Install python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         architecture: 'x64'
@@ -83,14 +79,10 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/install
       run: python test/smoke_tests.py
-      continue-on-error: true
       
-    - name: Package
-      run: Compress-Archive -Path install\* -DestinationPath namigator.zip
-
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
-        name: namigator.zip
-        path: namigator.zip
+        name: namigator_windows
+        path: ${{github.workspace}}/install/
         retention-days: 5
