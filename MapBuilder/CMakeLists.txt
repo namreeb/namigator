@@ -26,7 +26,7 @@ if (PYTHON_COMPONENT)
 
     target_compile_definitions(${PYTHON_NAME} PUBLIC PYTHON BOOST_PYTHON_STATIC_LIB)
     target_include_directories(${PYTHON_NAME} PUBLIC ${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
-    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm ${Boost_LIBRARIES})
 
     install(TARGETS ${PYTHON_NAME} DESTINATION lib)
 endif()
