@@ -40,6 +40,29 @@ PathfindResultType pathfind_load_all_adts(pathfind::Map* map, int32_t* amount_of
     }
 }
 
+PathfindResultType pathfind_load_adt(pathfind::Map* map, int adt_x, int adt_y, float* out_adt_x, float* out_adt_y) {
+    try {
+        if (!map->HasADT(adt_x, adt_y)) {
+            return static_cast<PathfindResultType>(Result::MAP_DOES_NOT_HAVE_ADT);
+        }
+
+        if (!map->LoadADT(adt_x, adt_y)) {
+            return static_cast<PathfindResultType>(Result::FAILED_TO_LOAD_ADT);
+        }
+
+        *out_adt_x = static_cast<float>(adt_x);
+        *out_adt_y = static_cast<float>(adt_y);
+
+        return static_cast<PathfindResultType>(Result::SUCCESS);
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
+
 PathfindResultType pathfind_load_adt_at(pathfind::Map* map, float x, float y, float* out_adt_x, float* out_adt_y) {
     try {
         int adt_y = 0;

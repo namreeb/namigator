@@ -22,6 +22,12 @@ void pathfind_free_map(pathfind::Map* map);
 PathfindResultType pathfind_load_all_adts(pathfind::Map* map,
                                           int32_t * amount_of_adts_loaded);
 
+PathfindResultType pathfind_load_adt(pathfind::Map* map,
+                                        int adt_x,
+                                        int adt_y,
+                                        float* out_adt_x,
+                                        float* out_adt_y);
+
 PathfindResultType pathfind_load_adt_at(pathfind::Map* map,
                                         float x,
                                         float y,

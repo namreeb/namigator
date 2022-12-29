@@ -29,6 +29,17 @@ py::list python_find_path(const pathfind::Map& map, float start_x,
     return result;
 }
 
+py::tuple load_adt(pathfind::Map& map, int adt_x, int adt_y)
+{
+    if (!map.HasADT(adt_x, adt_y))
+        throw std::runtime_error("Requested ADT does not exist for map");
+
+    if (!map.LoadADT(adt_x, adt_y))
+        throw std::runtime_error("Failed to load requested ADT");
+
+    return py::make_tuple(adt_x, adt_y);
+}
+
 py::tuple load_adt_at(pathfind::Map& map, float x, float y)
 {
     int adt_x, adt_y;
@@ -80,6 +91,7 @@ BOOST_PYTHON_MODULE(pathfind)
         "Map", py::init<const std::string&, const std::string&>())
         .def("load_all_adts", &pathfind::Map::LoadAllADTs)
         .def("load_adt_at", &load_adt_at)
+        .def("load_adt", &load_adt)
         .def("find_path", &python_find_path)
         .def("query_z", &python_query_heights)
         .def("get_zone_and_area", &get_zone_and_area)
