@@ -695,7 +695,7 @@ bool Map::FindPreciseZ(const Tile* tile, float x, float y, float zHint,
     // closer to the original hint.
 
     if (fabs(result - adtHeight) < MeshSettings::DetailSampleMaxError)
-        return max(result, adtHeight);
+        return (std::max)(result, adtHeight);
 
     auto const rayError = fabs(result - zHint);
     auto const adtError = fabs(adtHeight - zHint);
