@@ -661,7 +661,7 @@ bool Map::FindPreciseZ(const Tile* tile, float x, float y, float zHint,
     // 0 <= error <= 2*MeshSettings::DetailSampleMaxError
 
     math::Ray ray {{x, y, zHint + MeshSettings::DetailSampleMaxError},
-                   {x, y, zHint - 2.f * MeshSettings::DetailSampleMaxError}};
+                   {x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError}};
     if ((rayHit = RayCast(ray, {tile}, true)))
         result = ray.GetHitPoint().Z;
 
