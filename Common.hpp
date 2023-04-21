@@ -83,8 +83,8 @@ struct MeshSettings
                   "Tiles cannot be larger than an ADT chunk");
     static_assert(VoxelWalkableRadius > 0,
                   "VoxelWalkableRadius must be a positive integer");
-    static_assert(VoxelWalkableHeight > 0,
-                  "VoxelWalkableHeight must be a positive integer");
+    static_assert(VoxelWalkableHeight >= 0,
+                  "VoxelWalkableHeight must be a non-negativeinteger");
     static_assert(VoxelWalkableClimb >= 0,
                   "VoxelWalkableClimb must be non-negative integer");
     static_assert(CellSize > 0.f, "CellSize must be positive");

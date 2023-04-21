@@ -92,13 +92,8 @@ private:
                       unsigned int* zone = nullptr,
                       unsigned int* area = nullptr) const;
 
-    // find a more precise z value at or below the given hint.  the purpose of
-    // this is to refine the z value for the final hop on a path, and should not
-    // be exposed to clients, as it assumes that the hint is within the Recast
-    // DetailSampleMaxError, and users cannot be trusted to honor this
-    // restriction.  also, they shouldn't have to, since we want to take care of
-    // it for them
-    bool FindPreciseZ(const Tile* tile, float x, float y, float zHint,
+    // find the next floor z below the given hint
+    bool FindNextZ(const Tile* tile, float x, float y, float zHint,
                       bool includeAdt, float& result) const;
 
     bool RayCast(math::Ray& ray, bool doodads) const;
@@ -146,8 +141,8 @@ public:
     //
     // NOTE: if your usage is outside of both of these scenarios, you are
     // probably doing something wrong
-    float FindHeight(const math::Vertex& source,
-                     const math::Vertex& target) const; // scenario one
+    bool FindHeight(const math::Vertex& source, const math::Vertex& target,
+                    float& result) const; // scenario one
     bool FindHeights(float x, float y,
                      std::vector<float>& output) const; // scenario two
 

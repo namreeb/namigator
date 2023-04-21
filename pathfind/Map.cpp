@@ -646,8 +646,8 @@ bool Map::GetADTHeight(const Tile* tile, float x, float y, float& height,
     return false;
 }
 
-bool Map::FindPreciseZ(const Tile* tile, float x, float y, float zHint,
-                       bool includeAdt, float& result) const
+bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
+                    bool includeAdt, float& result) const
 {
     result = zHint;
 
@@ -660,8 +660,8 @@ bool Map::FindPreciseZ(const Tile* tile, float x, float y, float zHint,
     // range for the ray so that the error is instead:
     // 0 <= error <= 2*MeshSettings::DetailSampleMaxError
 
-    math::Ray ray {{x, y, zHint + MeshSettings::DetailSampleMaxError},
-                   {x, y, zHint - 3.f * MeshSettings::DetailSampleMaxError}};
+    math::Ray ray {{x, y, zHint}, {x, y, tile->m_bounds.getMinimum().Z}};
+
     if ((rayHit = RayCast(ray, {tile}, true)))
         result = ray.GetHitPoint().Z;
 
@@ -703,6 +703,46 @@ bool Map::FindPreciseZ(const Tile* tile, float x, float y, float zHint,
     return rayError < adtError ? result : adtHeight;
 }
 
+bool Map::FindHeight(const math::Vertex& source, const math::Vertex& target,
+                     float& result) const
+{
+    // ray cast along navmesh from source to target
+    float recastSource[3];
+    math::Convert::VertexToRecast(source, recastSource);
+
+    constexpr float extents[] = {1.f, 1.f, 1.f};
+
+    dtPolyRef startRef;
+    if (m_navQuery.findNearestPoly(recastSource, extents, &m_queryFilter,
+                                   &startRef, nullptr) != DT_SUCCESS)
+        return false;
+
+    float recastTarget[3];
+    // use the source Z as an initial guess
+    math::Convert::VertexToRecast({target.X, target.Y, source.Z}, recastTarget);
+
+    float recastResult[3];
+    dtPolyRef visited[160];
+    int visitedCount;
+    if (m_navQuery.moveAlongSurface(
+            startRef, recastSource, recastTarget, &m_queryFilter, recastResult,
+            visited, &visitedCount,
+            sizeof(visited) / sizeof(visited[0])) != DT_SUCCESS)
+        return false;
+
+    math::Vertex wowResult;
+    math::Convert::VertexToWow(recastResult, wowResult);
+
+    auto const tile = GetTile(wowResult.X, wowResult.Y);
+
+    if (!tile)
+        return false;
+
+    return FindNextZ(tile, wowResult.X, wowResult.Y,
+                     wowResult.Z + MeshSettings::DetailSampleMaxError, true,
+                     result);
+}
+
 bool Map::FindHeights(float x, float y, std::vector<float>& output) const
 {
     auto const tile = GetTile(x, y);
@@ -710,36 +750,17 @@ bool Map::FindHeights(float x, float y, std::vector<float>& output) const
     if (!tile)
         return false;
 
-    constexpr float extents[] = {0.f, (std::numeric_limits<float>::max)(), 0.f};
-    float recastCenter[3];
-
-    math::Convert::VertexToRecast({x, y, 0.f}, recastCenter);
-
-    dtPolyRef polys[MaxStackedPolys];
-    int polyCount;
-
-    auto const queryResult =
-        m_navQuery.queryPolygons(recastCenter, extents, &m_queryFilter, polys,
-                                 &polyCount, MaxStackedPolys);
-    assert(queryResult == DT_SUCCESS);
-
-    output.reserve(polyCount);
 
     // FIXME: not sure what the use case for this search is.  should it be
     // always precise, never, or user-defined?
-    for (auto i = 0; i < polyCount; ++i)
+
+    float current = tile->m_bounds.getMaximum().Z;
+    do
     {
-        float zHint;
-
-        if (m_navQuery.getPolyHeight(polys[i], recastCenter, &zHint) ==
-            DT_SUCCESS)
-        {
-            float result;
-
-            if (FindPreciseZ(tile, x, y, zHint, false, result))
-                output.push_back(result);
-        }
-    }
+        if (!FindNextZ(tile, x, y, current, false, current))
+            break;
+        output.push_back(current);
+    } while (true);
 
     float adtHeight;
     if (GetADTHeight(tile, x, y, adtHeight))
@@ -813,8 +834,8 @@ bool Map::RayCast(math::Ray& ray, bool doodads) const
 bool Map::RayCast(math::Ray& ray, const std::vector<const Tile*>& tiles,
                   bool doodads, unsigned int* zone, unsigned int* area) const
 {
-    auto const start = ray.GetStartPoint();
-    auto const end = ray.GetEndPoint();
+    auto const& start = ray.GetStartPoint();
+    auto const& end = ray.GetEndPoint();
 
     auto hit = false;
 

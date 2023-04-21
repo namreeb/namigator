@@ -294,6 +294,24 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam,
                         else
                             MessageBox(nullptr, "FindPath failed", "Path Find",
                                        0);
+
+                        float height;
+                        if (gNavMesh->FindHeight(gStart, hit, height))
+                        {
+                            std::stringstream ss;
+                            ss << "Destination: " << hit.X << ", " << hit.Y
+                               << ", " << hit.Z
+                               << " FindHeight returns: " << height << "\n";
+
+                            std::vector<float> heights;
+                            if (gNavMesh->FindHeights(hit.X, hit.Y, heights))
+                                for (auto const& h : heights)
+                                    ss << "Height: " << h << "\n";
+
+                            OutputDebugStringA(ss.str().c_str());
+                        }
+                        else
+                            OutputDebugStringA("No height found");
                     }
                     else
                     {
@@ -758,13 +776,22 @@ void SearchZValues()
     auto const posY = std::stof(gControls->GetText(Controls::PositionY));
 
     std::vector<float> output;
-    auto const adt = gNavMesh->FindHeights(posX, posY, output);
+    if (!gNavMesh->FindHeights(posX, posY, output))
+    {
+        MessageBoxA(nullptr, "FindHeights failed", "Z Search Results", 0);
+        return;
+    }
+
+    gRenderer->ClearSprites();
 
     std::stringstream result;
 
     result << "Heights at (" << posX << ", " << posY << "):\n";
     for (auto const h : output)
+    {
         result << h << "\n";
+        gRenderer->AddSphere({posX, posY, h}, 0.25f);
+    }
 
     MessageBoxA(nullptr, result.str().c_str(), "Z Search Results", 0);
 }
