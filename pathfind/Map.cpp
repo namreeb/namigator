@@ -597,7 +597,8 @@ bool Map::GetADTHeight(const Tile* tile, float x, float y, float& height,
     auto constexpr midOffset = 1 + 8 / MeshSettings::TilesPerChunk;
 
     // compute the five quad vertices, with the following layout, in the recast
-    // coordinate system: a   b
+    // coordinate system:
+    // a   b
     //   c
     // d   e
 
@@ -682,7 +683,10 @@ bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
     // if the ray did not hit, success depends only on whether the adt has
     // height here
     else if (!rayHit)
+    {
+        result = adtHeight;
         return adtHit;
+    }
 
     // if both hit, there are a number of possibilities:
     // * there is a cave, with adt terrain up above
@@ -695,16 +699,21 @@ bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
     // closer to the original hint.
 
     if (fabs(result - adtHeight) < MeshSettings::DetailSampleMaxError)
-        return (std::max)(result, adtHeight);
+    {
+        result = (std::max)(result, adtHeight);
+        return true;
+    }
 
     auto const rayError = fabs(result - zHint);
     auto const adtError = fabs(adtHeight - zHint);
 
-    return rayError < adtError ? result : adtHeight;
+    if (adtError < rayError)
+        result = adtHeight;
+
+    return true;
 }
 
-bool Map::FindHeight(const math::Vertex& source, const math::Vertex& target,
-                     float& result) const
+bool Map::FindHeight(const math::Vertex& source, float x, float y, float& z) const
 {
     // ray cast along navmesh from source to target
     float recastSource[3];
@@ -719,28 +728,37 @@ bool Map::FindHeight(const math::Vertex& source, const math::Vertex& target,
 
     float recastTarget[3];
     // use the source Z as an initial guess
-    math::Convert::VertexToRecast({target.X, target.Y, source.Z}, recastTarget);
+    math::Convert::VertexToRecast({x, y, source.Z}, recastTarget);
 
-    float recastResult[3];
-    dtPolyRef visited[160];
-    int visitedCount;
-    if (m_navQuery.moveAlongSurface(
-            startRef, recastSource, recastTarget, &m_queryFilter, recastResult,
-            visited, &visitedCount,
-            sizeof(visited) / sizeof(visited[0])) != DT_SUCCESS)
+    dtPolyRef hit_path[100];
+    dtRaycastHit hit;
+    hit.path = hit_path;
+    hit.maxPath = sizeof(hit_path) / sizeof(hit_path[0]);
+
+    if (m_navQuery.raycast(startRef, recastSource, recastTarget, &m_queryFilter,
+                           0, &hit) != DT_SUCCESS)
         return false;
 
-    math::Vertex wowResult;
-    math::Convert::VertexToWow(recastResult, wowResult);
+    if (!hit.pathCount)
+        return false;
 
-    auto const tile = GetTile(wowResult.X, wowResult.Y);
+    // if we reach here, it means we have a path and know the poly ref for
+    // the poly where the ray hit.  so let's use that reference and query
+    // the height at the requested x,y.
+    if (m_navQuery.getPolyHeight(hit.path[hit.pathCount - 1], recastTarget,
+                                 &z) != DT_SUCCESS)
+        return false;
+
+    auto const tile = GetTile(x, y);
 
     if (!tile)
         return false;
 
-    return FindNextZ(tile, wowResult.X, wowResult.Y,
-                     wowResult.Z + MeshSettings::DetailSampleMaxError, true,
-                     result);
+    // take the imprecise z value from the mesh, and return the precise value
+    if (!FindNextZ(tile, x, y, z, true, z))
+        return false;
+
+    return true;
 }
 
 bool Map::FindHeights(float x, float y, std::vector<float>& output) const

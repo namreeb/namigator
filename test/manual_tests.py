@@ -67,10 +67,10 @@ def test_use_data(nav_data):
 
     # There is a hole at this location, and ensuring a single value is returned
     # is evidence that the hole is being identified correctly
-    z_values = azeroth.query_z(1748.29, -661.98)
+    z_values = azeroth.query_heights(1748.29, -661.98)
     assert len(z_values) == 1 and approximate(z_values[0], 45.058178)
 
-    z_values = azeroth.query_z(1753.842285, -662.430908)
+    z_values = azeroth.query_heights(1753.842285, -662.430908)
 
     # No hole here, should return value from ADTs
     assert len(z_values) == 1 and approximate(z_values[0], 44.429478)

@@ -295,8 +295,9 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam,
                             MessageBox(nullptr, "FindPath failed", "Path Find",
                                        0);
 
+                        auto const& prev_hop = path[path.size() - 2];
                         float height;
-                        if (gNavMesh->FindHeight(gStart, hit, height))
+                        if (gNavMesh->FindHeight(prev_hop, hit.X, hit.Y, height))
                         {
                             std::stringstream ss;
                             ss << "Destination: " << hit.X << ", " << hit.Y
@@ -306,7 +307,7 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam,
                             std::vector<float> heights;
                             if (gNavMesh->FindHeights(hit.X, hit.Y, heights))
                                 for (auto const& h : heights)
-                                    ss << "Height: " << h << "\n";
+                                    ss << "Possible correct values: " << h << "\n";
 
                             OutputDebugStringA(ss.str().c_str());
                         }

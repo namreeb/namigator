@@ -202,4 +202,30 @@ PathfindResultType pathfind_find_heights(pathfind::Map* map,
     }
 }
 
+PathfindResultType pathfind_find_height(pathfind::Map* map, float start_x,
+    float start_y, float start_z,
+    float stop_x, float stop_y,
+    float* stop_z)
+{
+    try
+    {
+        math::Vertex start {start_x, start_y, start_z};
+        float result;
+        if (map->FindHeight(start, stop_x, stop_y, result))
+        {
+            *stop_z = result;
+            return static_cast<PathfindResultType>(Result::SUCCESS);
+        }
+
+        return static_cast<PathfindResultType>(Result::UNKNOWN_HEIGHT);
+    }
+    catch (utility::exception& e)
+    {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...)
+    {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
 } // extern "C"

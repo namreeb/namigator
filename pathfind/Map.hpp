@@ -141,8 +141,8 @@ public:
     //
     // NOTE: if your usage is outside of both of these scenarios, you are
     // probably doing something wrong
-    bool FindHeight(const math::Vertex& source, const math::Vertex& target,
-                    float& result) const; // scenario one
+    bool FindHeight(const math::Vertex& source, float x, float y,
+                    float& z) const; // scenario one
     bool FindHeights(float x, float y,
                      std::vector<float>& output) const; // scenario two
 
