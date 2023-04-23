@@ -38,7 +38,7 @@ def test_pathfind(temp_dir):
 
 	adt_x, adt_y = map_data.load_adt_at(x, y)
 
-	z_values = map_data.query_z(x, y)
+	z_values = map_data.query_heights(x, y)
 
 	expected_z_values = [35.610786, 46.300201]
 
@@ -103,10 +103,20 @@ def test_pathfind(temp_dir):
 
 	should_pass_doodad = map_data.line_of_sight(16275.6895, 16853.9023, 37.8341751,
 		16251.0332, 16858.2988, 34.9305573)
-	if should_pass is False:
+	if should_pass_doodad is False:
 		raise Exception("Should-pass doodad LoS check failed")
 
 	print("Should-pass doodad LoS check succeeded")
+
+	query_z = map_data.query_z(16232.7373, 16828.2734, 37.1330833, 16208.6, 16830.7)
+
+	if query_z is None:
+		raise Exception("Query Z failed with None")
+
+	if not approximate(query_z, 36.86227):
+		raise Exception("Query Z failed with {}".format(query_z))
+
+	print("Query Z succeeded")
 
 	map_data = pathfind.Map(temp_dir, "bladesedgearena")
 	map_data.load_adt_at(6225, 250)

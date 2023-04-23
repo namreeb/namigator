@@ -68,6 +68,15 @@ py::list python_query_heights(const pathfind::Map& map, float x, float y)
     return result;
 }
 
+py::object python_query_z(const pathfind::Map& map, float start_x, float start_y, float start_z,
+    float stop_x, float stop_y)
+{
+    float result;
+    if (!map.FindHeight({start_x, start_y, start_z}, stop_x, stop_y, result))
+        return py::object(py::handle<>(Py_None));
+    return py::object(result);
+}
+
 py::object los(const pathfind::Map& map, float start_x, float start_y, float start_z,
          float stop_x, float stop_y, float stop_z)
 {
@@ -75,12 +84,12 @@ py::object los(const pathfind::Map& map, float start_x, float start_y, float sta
         map.LineOfSight({start_x, start_y, start_z}, {stop_x, stop_y, stop_z}));
 }
 
-py::tuple get_zone_and_area(pathfind::Map& map, float x, float y, float z)
+py::object get_zone_and_area(pathfind::Map& map, float x, float y, float z)
 {
     math::Vertex p {x, y, z};
     unsigned int zone = -1, area = -1;
-    // TODO: check return value and figure out how to return None
-    map.ZoneAndArea(p, zone, area);
+    if (!map.ZoneAndArea(p, zone, area))
+        return py::object(py::handle<>(Py_None));
     return py::make_tuple(zone, area);
 }
 } // namespace
@@ -93,7 +102,8 @@ BOOST_PYTHON_MODULE(pathfind)
         .def("load_adt_at", &load_adt_at)
         .def("load_adt", &load_adt)
         .def("find_path", &python_find_path)
-        .def("query_z", &python_query_heights)
+        .def("query_heights", &python_query_heights)
+        .def("query_z", &python_query_z)
         .def("get_zone_and_area", &get_zone_and_area)
         .def("line_of_sight", &los);
 }
