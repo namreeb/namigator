@@ -655,12 +655,6 @@ bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
     // check BVH data for this tile
     bool rayHit;
 
-    // zHint is assumed to be a value from the Detour detailed tri mesh, which
-    // has an error of +/- MeshSettings::DetailSampleMaxError. because we want
-    // to ensure that zHint is above the 'true' value, we shift up this error
-    // range for the ray so that the error is instead:
-    // 0 <= error <= 2*MeshSettings::DetailSampleMaxError
-
     math::Ray ray {{x, y, zHint}, {x, y, tile->m_bounds.getMinimum().Z}};
 
     if ((rayHit = RayCast(ray, {tile}, true)))
@@ -775,9 +769,18 @@ bool Map::FindHeights(float x, float y, std::vector<float>& output) const
     float current = tile->m_bounds.getMaximum().Z;
     do
     {
-        if (!FindNextZ(tile, x, y, current, false, current))
+        float next;
+        if (!FindNextZ(tile, x, y, current, false, next))
             break;
-        output.push_back(current);
+
+        // if we just found the same z, nudge down slightly
+        if (next == current)
+            current = std::nextafter(next, next - 1.f);
+        else
+        {
+            output.push_back(next);
+            current = next;
+        }
     } while (true);
 
     float adtHeight;
