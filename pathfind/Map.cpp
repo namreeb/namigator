@@ -775,7 +775,14 @@ bool Map::FindHeights(float x, float y, std::vector<float>& output) const
 
         // if we just found the same z, nudge down slightly
         if (next == current)
+        {
             current = std::nextafter(next, next - 1.f);
+
+            // if this nudge put us below the tile boundary, don't try another ray cast
+            // as this will cause the ray to go upward instead of downward.
+            if (current < tile->m_bounds.getMaximum().Z)
+                break;
+        }
         else
         {
             output.push_back(next);
