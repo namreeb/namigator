@@ -152,7 +152,8 @@ public:
     // Returns true when there is line of sight from the start position to
     // the stop position.  The intended use of this is for spells and NPC
     // aggro, so doodads and temporary obstacles will be ignored.
-    bool LineOfSight(const math::Vertex& start, const math::Vertex& stop) const;
+    bool LineOfSight(const math::Vertex& start, const math::Vertex& stop,
+                     bool doodads) const;
 
     const dtNavMesh& GetNavMesh() const { return m_navMesh; }
     const dtNavMeshQuery& GetNavMeshQuery() const { return m_navQuery; }

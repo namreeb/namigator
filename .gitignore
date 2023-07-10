@@ -55,3 +55,7 @@
 /MapViewer/Include/vertexShader.hpp
 /CMakeSettings.json
 /out
+/build
+/*.idea
+/cmake-build-debug
+/cmake-build-release

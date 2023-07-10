@@ -840,11 +840,11 @@ bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone,
     return rayResult || adtResult;
 }
 
-bool Map::LineOfSight(const math::Vertex& start, const math::Vertex& stop) const
+bool Map::LineOfSight(const math::Vertex& start, const math::Vertex& stop, bool doodads) const
 {
     math::Ray ray {start, stop};
     // RayCast() returns true when an obstacle is hit
-    return !RayCast(ray, false);
+    return !RayCast(ray, doodads);
 }
 
 bool Map::RayCast(math::Ray& ray, bool doodads) const
