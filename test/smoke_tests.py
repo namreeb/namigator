@@ -87,7 +87,7 @@ def test_pathfind(temp_dir):
 	print("Zone check succeeded")
 
 	should_fail = map_data.line_of_sight(16268.3809, 16812.7148, 36.1483,
-		16266.5781, 16782.623, 38.5035019)
+		16266.5781, 16782.623, 38.5035019, False)
 
 	if should_fail:
 		raise Exception("Should-fail LoS check passed")
@@ -95,14 +95,14 @@ def test_pathfind(temp_dir):
 	print("Should-fail LoS check failed correctly")
 
 	should_pass = map_data.line_of_sight(16873.2168, 16926.9551, 15.9072571,
-		16987.4277, 16950.0742, 69.4590912)
+		16987.4277, 16950.0742, 69.4590912, False)
 	if should_pass is False:
 		raise Exception("Should-pass LoS check failed")
 
 	print("Should-pass LoS check succeeded")
 
 	should_pass_doodad = map_data.line_of_sight(16275.6895, 16853.9023, 37.8341751,
-		16251.0332, 16858.2988, 34.9305573)
+		16251.0332, 16858.2988, 34.9305573, False)
 	if should_pass_doodad is False:
 		raise Exception("Should-pass doodad LoS check failed")
 
