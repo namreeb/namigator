@@ -78,10 +78,13 @@ py::object python_query_z(const pathfind::Map& map, float start_x, float start_y
 }
 
 py::object los(const pathfind::Map& map, float start_x, float start_y, float start_z,
-         float stop_x, float stop_y, float stop_z)
+         float stop_x, float stop_y, float stop_z, bool doodads)
 {
     return py::object(
-        map.LineOfSight({start_x, start_y, start_z}, {stop_x, stop_y, stop_z}));
+        map.LineOfSight(
+            {start_x, start_y, start_z},
+            {stop_x, stop_y, stop_z},
+            doodads));
 }
 
 py::object get_zone_and_area(pathfind::Map& map, float x, float y, float z)
