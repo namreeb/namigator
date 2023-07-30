@@ -141,64 +141,58 @@ void MpqManager::Initialize(const std::string& wowDir)
 
     std::vector<fs::path> files;
 
-    if (locale.empty())
+    // if we are running on test data we do not expect to find a locale
+    AddIfExists(files, BasePath / "test_map.mpq");
+
+    AddIfExists(files, BasePath / "base.MPQ");
+    AddIfExists(files, BasePath / "dbc.MPQ");
+    AddIfExists(files, BasePath / "model.MPQ");
+    AddIfExists(files, BasePath / "alternate.MPQ");
+    AddIfExists(files, BasePath / ".." / "alternate.MPQ");
+    AddIfExists(files, BasePath / "speech2.MPQ");
+    AddIfExists(files, BasePath / ".." / "speech2.MPQ");
+
+    for (auto i = 9; i > 0; --i)
     {
-        // if we are running on test data we do not expect to find a locale
-        AddIfExists(files, BasePath / "test_map.mpq");
-
-        // the alpha client stores data in lots of small MPQs inside the
-        // Data/World directory
-        if (fs::is_directory(BasePath / "World"))
-        {
-            Alpha = true;
-
-            for (auto const& f :
-                 fs::recursive_directory_iterator(BasePath / "World"))
-                AddIfMpq(files, f);
-
-            AddIfExists(files, BasePath / "dbc.MPQ");
-            AddIfExists(files, BasePath / "model.MPQ");
-        }
+        std::stringstream s1;
+        s1 << "patch-" << i << ".MPQ";
+        AddIfExists(files, BasePath / s1.str());
     }
-    else
+
+    for (auto i = 9; i > 0; --i)
     {
-        AddIfExists(files, BasePath / "base.MPQ");
-        AddIfExists(files, BasePath / "alternate.MPQ");
-        AddIfExists(files, BasePath / ".." / "alternate.MPQ");
-        AddIfExists(files, BasePath / "speech2.MPQ");
-        AddIfExists(files, BasePath / ".." / "speech2.MPQ");
-
-        for (auto i = 9; i > 0; --i)
-        {
-            std::stringstream s1;
-            s1 << "patch-" << i << ".MPQ";
-            AddIfExists(files, BasePath / s1.str());
-        }
-
-        for (auto i = 9; i > 0; --i)
-        {
-            std::stringstream s1;
-            s1 << "patch-" << locale << "-" << i << ".MPQ";
-            AddIfExists(files, BasePath / locale / s1.str());
-        }
-
-        AddIfExists(files, BasePath / "patch.MPQ");
-        AddIfExists(files, BasePath / locale / ("patch-" + locale + ".MPQ"));
-        AddIfExists(files, BasePath / "expansion.MPQ");
-        AddIfExists(files, BasePath / "lichking.MPQ");
-        AddIfExists(files, BasePath / "common.MPQ");
-        AddIfExists(files, BasePath / "common-2.MPQ");
-        AddIfExists(files, BasePath / locale / ("locale-" + locale + ".MPQ"));
-        AddIfExists(files, BasePath / locale / ("speech-" + locale + ".MPQ"));
-        AddIfExists(files, BasePath / locale /
-                               ("expansion-locale-" + locale + ".MPQ"));
-        AddIfExists(files,
-                    BasePath / locale / ("lichking-locale-" + locale + ".MPQ"));
-        AddIfExists(files, BasePath / locale /
-                               ("expansion-speech-" + locale + ".MPQ"));
-        AddIfExists(files,
-                    BasePath / locale / ("lichking-speech-" + locale + ".MPQ"));
+        std::stringstream s1;
+        s1 << "patch-" << locale << "-" << i << ".MPQ";
+        AddIfExists(files, BasePath / locale / s1.str());
     }
+
+    // the alpha client stores data in lots of small MPQs inside the
+    // Data/World directory
+    if (fs::is_directory(BasePath / "World"))
+    {
+        Alpha = true;
+
+        for (auto const& f :
+                fs::recursive_directory_iterator(BasePath / "World"))
+            AddIfMpq(files, f);
+    }
+
+    AddIfExists(files, BasePath / "patch.MPQ");
+    AddIfExists(files, BasePath / locale / ("patch-" + locale + ".MPQ"));
+    AddIfExists(files, BasePath / "expansion.MPQ");
+    AddIfExists(files, BasePath / "lichking.MPQ");
+    AddIfExists(files, BasePath / "common.MPQ");
+    AddIfExists(files, BasePath / "common-2.MPQ");
+    AddIfExists(files, BasePath / locale / ("locale-" + locale + ".MPQ"));
+    AddIfExists(files, BasePath / locale / ("speech-" + locale + ".MPQ"));
+    AddIfExists(files, BasePath / locale /
+                            ("expansion-locale-" + locale + ".MPQ"));
+    AddIfExists(files,
+                BasePath / locale / ("lichking-locale-" + locale + ".MPQ"));
+    AddIfExists(files, BasePath / locale /
+                            ("expansion-speech-" + locale + ".MPQ"));
+    AddIfExists(files,
+                BasePath / locale / ("lichking-speech-" + locale + ".MPQ"));
 
     if (files.empty())
         THROW(Result::NO_DATA_FILES_FOUND);
