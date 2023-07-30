@@ -53,6 +53,6 @@ PathfindResultType pathfind_find_height(pathfind::Map* const map, float start_x,
 PathfindResultType pathfind_line_of_sight(pathfind::Map* const map,
                                           float start_x, float start_y, float start_z,
                                           float stop_x, float stop_y, float stop_z,
-                                          uint8_t* const line_of_sight);
+                                          uint8_t* const line_of_sight, uint8_t doodads);
 } // extern "C"
 
