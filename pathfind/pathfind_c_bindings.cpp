@@ -23,11 +23,11 @@ pathfind::Map* pathfind_new_map(const char* const data_path, const char* const m
     }
 }
 
-void pathfind_free_map(pathfind::Map* map) {
+void pathfind_free_map(pathfind::Map* const map) {
     delete map;
 }
 
-PathfindResultType pathfind_load_all_adts(pathfind::Map* map, int32_t* amount_of_adts_loaded) {
+PathfindResultType pathfind_load_all_adts(pathfind::Map* const map, int32_t* const amount_of_adts_loaded) {
     try {
         *amount_of_adts_loaded = map->LoadAllADTs();
         return static_cast<PathfindResultType>(Result::SUCCESS);
@@ -40,7 +40,7 @@ PathfindResultType pathfind_load_all_adts(pathfind::Map* map, int32_t* amount_of
     }
 }
 
-PathfindResultType pathfind_load_adt(pathfind::Map* map, int adt_x, int adt_y, float* out_adt_x, float* out_adt_y) {
+PathfindResultType pathfind_load_adt(pathfind::Map* const map, int adt_x, int adt_y, float* const out_adt_x, float* const out_adt_y) {
     try {
         if (!map->HasADT(adt_x, adt_y)) {
             return static_cast<PathfindResultType>(Result::MAP_DOES_NOT_HAVE_ADT);
@@ -63,7 +63,7 @@ PathfindResultType pathfind_load_adt(pathfind::Map* map, int adt_x, int adt_y, f
     }
 }
 
-PathfindResultType pathfind_load_adt_at(pathfind::Map* map, float x, float y, float* out_adt_x, float* out_adt_y) {
+PathfindResultType pathfind_load_adt_at(pathfind::Map* const map, float x, float y, float* const out_adt_x, float* const out_adt_y) {
     try {
         int adt_y = 0;
         int adt_x = 0;
@@ -91,12 +91,12 @@ PathfindResultType pathfind_load_adt_at(pathfind::Map* map, float x, float y, fl
     }
 }
 
-PathfindResultType pathfind_get_zone_and_area(pathfind::Map* map,
+PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map,
                        float x,
                        float y,
                        float z,
-                       unsigned int* out_zone,
-                       unsigned int* out_area)
+                       unsigned int* const out_zone,
+                       unsigned int* const out_area)
 {
     unsigned int zone = -1;
     unsigned int area = -1;
@@ -122,16 +122,16 @@ PathfindResultType pathfind_get_zone_and_area(pathfind::Map* map,
     }
 }
 
-PathfindResultType pathfind_find_path(pathfind::Map* map,
+PathfindResultType pathfind_find_path(pathfind::Map* const map,
                float start_x,
                float start_y,
                float start_z,
                float stop_x,
                float stop_y,
                float stop_z,
-               Vertex* buffer,
+               Vertex* const buffer,
                unsigned int buffer_length,
-               unsigned int* amount_of_vertices)
+               unsigned int* const amount_of_vertices)
 {
     const math::Vertex start {start_x, start_y, start_z};
     const math::Vertex stop {stop_x, stop_y, stop_z};
@@ -168,12 +168,12 @@ PathfindResultType pathfind_find_path(pathfind::Map* map,
     }
 }
 
-PathfindResultType pathfind_find_heights(pathfind::Map* map,
+PathfindResultType pathfind_find_heights(pathfind::Map* const map,
                   float x,
                   float y,
-                  float* buffer,
+                  float* const buffer,
                   unsigned int buffer_length,
-                  unsigned int* amount_of_heights)
+                  unsigned int* const amount_of_heights)
 {
     std::vector<float> height_values;
 
@@ -202,10 +202,10 @@ PathfindResultType pathfind_find_heights(pathfind::Map* map,
     }
 }
 
-PathfindResultType pathfind_find_height(pathfind::Map* map, float start_x,
+PathfindResultType pathfind_find_height(pathfind::Map* const map, float start_x,
     float start_y, float start_z,
     float stop_x, float stop_y,
-    float* stop_z)
+    float* const stop_z)
 {
     try
     {
@@ -218,6 +218,30 @@ PathfindResultType pathfind_find_height(pathfind::Map* map, float start_x,
         }
 
         return static_cast<PathfindResultType>(Result::UNKNOWN_HEIGHT);
+    }
+    catch (utility::exception& e)
+    {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...)
+    {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
+
+PathfindResultType pathfind_line_of_sight(pathfind::Map* map,
+                                          float start_x, float start_y, float start_z,
+                                          float stop_x, float stop_y, float stop_z,
+                                          uint8_t* const line_of_sight) {
+    try
+    {
+        if (map->LineOfSight({start_x, start_y, start_z}, {stop_x, stop_y, stop_z})) {
+            *line_of_sight = 1;
+        } else {
+            *line_of_sight = 0;
+        }
+
+        return static_cast<PathfindResultType>(Result::SUCCESS);
     }
     catch (utility::exception& e)
     {

@@ -11,7 +11,7 @@ extern "C" {
 MapBuildResultType mapbuild_build_bvh(const char* const data_path,
                              const char* const output_path,
                              uint32_t threads,
-                             uint32_t* amount_of_bvhs_built)
+                             uint32_t* const amount_of_bvhs_built)
 {
     std::string outputPath = output_path;
 
