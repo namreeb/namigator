@@ -179,6 +179,7 @@ void MpqManager::Initialize(const std::string& wowDir)
 
     AddIfExists(files, BasePath / "patch.MPQ");
     AddIfExists(files, BasePath / locale / ("patch-" + locale + ".MPQ"));
+    AddIfExists(files, BasePath / "wmo.MPQ");
     AddIfExists(files, BasePath / "expansion.MPQ");
     AddIfExists(files, BasePath / "lichking.MPQ");
     AddIfExists(files, BasePath / "common.MPQ");
