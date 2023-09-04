@@ -1,13 +1,16 @@
 #include "Map.hpp"
 #include "utility/MathHelper.hpp"
 
-#include <boost/python.hpp>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
+#include <optional>
 
-namespace py = boost::python;
+namespace py = pybind11;
 
 namespace
 {
@@ -68,23 +71,22 @@ py::list python_query_heights(const pathfind::Map& map, float x, float y)
     return result;
 }
 
-py::object python_query_z(const pathfind::Map& map, float start_x, float start_y, float start_z,
+std::optional<float> python_query_z(const pathfind::Map& map, float start_x, float start_y, float start_z,
     float stop_x, float stop_y)
 {
     float result;
     if (!map.FindHeight({start_x, start_y, start_z}, stop_x, stop_y, result))
-        return py::object(py::handle<>(Py_None));
-    return py::object(result);
+        return {};
+    return result;
 }
 
-py::object los(const pathfind::Map& map, float start_x, float start_y, float start_z,
+bool los(const pathfind::Map& map, float start_x, float start_y, float start_z,
          float stop_x, float stop_y, float stop_z, bool doodads)
 {
-    return py::object(
-        map.LineOfSight(
+    return map.LineOfSight(
             {start_x, start_y, start_z},
             {stop_x, stop_y, stop_z},
-            doodads));
+            doodads);
 }
 
 py::object get_zone_and_area(pathfind::Map& map, float x, float y, float z)
@@ -92,15 +94,15 @@ py::object get_zone_and_area(pathfind::Map& map, float x, float y, float z)
     math::Vertex p {x, y, z};
     unsigned int zone = -1, area = -1;
     if (!map.ZoneAndArea(p, zone, area))
-        return py::object(py::handle<>(Py_None));
+        return py::none();
     return py::make_tuple(zone, area);
 }
 } // namespace
 
-BOOST_PYTHON_MODULE(pathfind)
+PYBIND11_MODULE(pathfind, m)
 {
-    py::class_<pathfind::Map, boost::noncopyable>(
-        "Map", py::init<const std::string&, const std::string&>())
+    py::class_<pathfind::Map>(m, "Map")
+        .def(py::init<const std::string&, const std::string&>())
         .def("load_all_adts", &pathfind::Map::LoadAllADTs)
         .def("load_adt_at", &load_adt_at)
         .def("load_adt", &load_adt)

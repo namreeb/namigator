@@ -4,7 +4,7 @@
 #include "parser/MpqManager.hpp"
 #include "FileExist.hpp"
 
-#include <boost/python.hpp>
+#include <pybind11/pybind11.h>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -151,11 +151,11 @@ bool MapFilesExist(const std::string& outputPath, const std::string& mapName) {
     return file_exist::map_files_exist(outputPath, mapName);
 }
 
-BOOST_PYTHON_MODULE(mapbuild)
+PYBIND11_MODULE(mapbuild, m)
 {
-    boost::python::def("build_bvh", BuildBVH);
-    boost::python::def("build_map", BuildMap);
-    boost::python::def("build_adt", BuildADT);
-    boost::python::def("map_files_exist", MapFilesExist);
-    boost::python::def("bvh_files_exist", BVHFilesExist);
+    m.def("build_bvh", &BuildBVH);
+    m.def("build_map", &BuildMap);
+    m.def("build_adt", &BuildADT);
+    m.def("map_files_exist", &MapFilesExist);
+    m.def("bvh_files_exist", &BVHFilesExist);
 }
