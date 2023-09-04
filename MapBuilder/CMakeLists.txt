@@ -2,7 +2,7 @@ set(EXECUTABLE_NAME MapBuilder)
 set(LIBRARY_NAME libmapbuild)
 set(PYTHON_NAME mapbuild)
 
-set(SRC BVHConstructor.cpp GameObjectBVHBuilder.cpp MeshBuilder.cpp RecastContext.cpp Worker.cpp MapBuilder_c_bindings.cpp)
+set(SRC BVHConstructor.cpp GameObjectBVHBuilder.cpp MeshBuilder.cpp RecastContext.cpp Worker.cpp MapBuilder_c_bindings.cpp FileExist.cpp)
 
 add_library(${LIBRARY_NAME} ${SRC})
 target_include_directories(${LIBRARY_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../")

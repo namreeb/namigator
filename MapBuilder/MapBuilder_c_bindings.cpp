@@ -1,5 +1,6 @@
 #include "mapbuilder_c_bindings.h"
 
+#include "FileExist.hpp"
 #include "GameObjectBVHBuilder.hpp"
 #include "MeshBuilder.hpp"
 #include "Worker.hpp"
@@ -134,5 +135,43 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
     return static_cast<MapBuildResultType>(Result::SUCCESS);
 }
 
+MapBuildResultType mapbuild_bvh_files_exist(const char* const output_path,
+                                            uint8_t* const exists) {
+    std::string outputPath = output_path;
+
+    try {
+        if (file_exist::bvh_files_exist(outputPath)) {
+            *exists = 1;
+        } else {
+            *exists = 0;
+        }
+    }
+    catch (...) {
+        return static_cast<MapBuildResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+
+    return static_cast<MapBuildResultType>(Result::SUCCESS);
+}
+
+MapBuildResultType mapbuild_map_files_exist(const char* const output_path,
+                                            const char* const map_name,
+                                            uint8_t* const exists) {
+
+    std::string outputPath = output_path;
+    std::string mapName = map_name;
+
+    try {
+        if (file_exist::map_files_exist(outputPath, mapName)) {
+            *exists = 1;
+        } else {
+            *exists = 0;
+        }
+    }
+    catch (...) {
+        return static_cast<MapBuildResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+
+    return static_cast<MapBuildResultType>(Result::SUCCESS);
+}
 
 }
