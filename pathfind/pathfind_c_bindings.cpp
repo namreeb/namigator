@@ -252,4 +252,39 @@ PathfindResultType pathfind_line_of_sight(pathfind::Map* map,
         return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
+
+PathfindResultType pathfind_find_random_point_around_circle(pathfind::Map* const map,
+                                                            float x,
+                                                            float y,
+                                                            float z,
+                                                            float radius,
+                                                            float* const random_x,
+                                                            float* const random_y,
+                                                            float* const random_z) {
+
+    try
+    {
+        const math::Vertex start {x, y, z};
+        math::Vertex random_point {};
+
+        if (!map->FindRandomPointAroundCircle(start, radius, random_point)) {
+            return static_cast<PathfindResultType>(Result::UNABLE_TO_FIND_RANDOM_POINT_IN_CIRCLE);
+        }
+
+        *random_x = random_point.X;
+        *random_y = random_point.Y;
+        *random_z = random_point.Z;
+
+        return static_cast<PathfindResultType>(Result::SUCCESS);
+    }
+    catch (utility::exception& e)
+    {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...)
+    {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
+
 } // extern "C"

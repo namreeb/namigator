@@ -22,6 +22,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <random>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -78,6 +79,18 @@ struct NavFileHeader
     }
 };
 #pragma pack(pop)
+
+namespace {
+
+float random_between_0_and_1() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    return static_cast<float>(dis(gen));
+}
+
+} // anonymous namespace
 
 namespace pathfind
 {
@@ -706,6 +719,40 @@ bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
 
     return true;
 }
+
+bool Map::FindRandomPointAroundCircle(const math::Vertex& centerPosition,
+                                      const float radius,
+                                      math::Vertex& randomPoint) const
+{
+    float recastCenter[3];
+    math::Convert::VertexToRecast(centerPosition, recastCenter);
+
+    constexpr float extents[] = {1.f, 1.f, 1.f};
+
+    dtPolyRef startRef;
+    if (m_navQuery.findNearestPoly(recastCenter, extents, &m_queryFilter,
+                                   &startRef, nullptr) != DT_SUCCESS) {
+        return false;
+    }
+
+    float outputPoint[3];
+
+    dtPolyRef randomRef;
+    if (m_navQuery.findRandomPointAroundCircle(startRef,
+                                               recastCenter,
+                                               radius,
+                                               &m_queryFilter,
+                                               &random_between_0_and_1,
+                                               &randomRef,
+                                               outputPoint) != DT_SUCCESS) {
+        return false;
+    }
+
+    math::Convert::VertexToWow(outputPoint, randomPoint);
+
+    return true;
+}
+
 
 bool Map::FindHeight(const math::Vertex& source, float x, float y, float& z) const
 {
