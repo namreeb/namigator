@@ -2,8 +2,9 @@
 #include "MeshBuilder.hpp"
 #include "Worker.hpp"
 #include "parser/MpqManager.hpp"
+#include "FileExist.hpp"
 
-#include <boost/python.hpp>
+#include <pybind11/pybind11.h>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -142,9 +143,19 @@ bool BuildADT(const std::string& dataPath, const std::string& outputPath,
     return true;
 }
 
-BOOST_PYTHON_MODULE(mapbuild)
+bool BVHFilesExist(const std::string& outputPath) {
+    return file_exist::bvh_files_exist(outputPath);
+}
+
+bool MapFilesExist(const std::string& outputPath, const std::string& mapName) {
+    return file_exist::map_files_exist(outputPath, mapName);
+}
+
+PYBIND11_MODULE(mapbuild, m)
 {
-    boost::python::def("build_bvh", BuildBVH);
-    boost::python::def("build_map", BuildMap);
-    boost::python::def("build_adt", BuildADT);
+    m.def("build_bvh", &BuildBVH);
+    m.def("build_map", &BuildMap);
+    m.def("build_adt", &BuildADT);
+    m.def("map_files_exist", &MapFilesExist);
+    m.def("bvh_files_exist", &BVHFilesExist);
 }

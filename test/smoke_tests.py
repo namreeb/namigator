@@ -18,6 +18,11 @@ def approximate(a, b, epsilon=0.002):
 def test_build(temp_dir):
 	data_dir = os.path.dirname(__file__)
 
+	if mapbuild.map_files_exist(temp_dir, "development"):
+		raise Exception("map_files_exist returned True when it should be False")
+	if mapbuild.bvh_files_exist(temp_dir):
+		raise Exception("map_files_exist returned True when it should be False")
+
 	start = time.time()
 	mapbuild.build_map(data_dir, temp_dir, "development", 8, "")
 	stop = time.time()
@@ -29,6 +34,11 @@ def test_build(temp_dir):
 	stop = time.time()
 
 	print("Map bladesedgearena built in {} seconds".format(int(stop-start)))
+
+	if not mapbuild.map_files_exist(temp_dir, "development"):
+		raise Exception("map_files_exist returned False when it should be True")
+	if not mapbuild.bvh_files_exist(temp_dir):
+		raise Exception("map_files_exist returned False when it should be True")
 
 def test_pathfind(temp_dir):
 	map_data = pathfind.Map(temp_dir, "development")
