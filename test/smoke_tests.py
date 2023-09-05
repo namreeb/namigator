@@ -46,6 +46,15 @@ def test_pathfind(temp_dir):
 	x = 16271.025391
 	y = 16845.421875
 
+	if map_data.adt_loaded(0, 1):
+		raise Exception("adt_loaded returned True when should be False before loading")
+	map_data.load_adt(0, 1)
+	if not map_data.adt_loaded(0, 1):
+		raise Exception("adt_loaded returned False after loading ADT")
+	map_data.unload_adt(0, 1)
+	if map_data.adt_loaded(0, 1):
+		raise Exception("adt_loaded returned True when should be False after unloading")
+
 	adt_x, adt_y = map_data.load_adt_at(x, y)
 
 	z_values = map_data.query_heights(x, y)

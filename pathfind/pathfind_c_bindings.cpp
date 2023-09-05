@@ -91,6 +91,38 @@ PathfindResultType pathfind_load_adt_at(pathfind::Map* const map, float x, float
     }
 }
 
+PathfindResultType pathfind_unload_adt(pathfind::Map* const map, int x, int y) {
+    try {
+        map->UnloadADT(x, y);
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+
+    return static_cast<PathfindResultType>(Result::SUCCESS);
+}
+
+PathfindResultType pathfind_is_adt_loaded(pathfind::Map* const map, int x, int y, uint8_t* const loaded) {
+    try {
+        if (map->IsADTLoaded(x, y)) {
+            *loaded = 1;
+        } else{
+            *loaded = 0;
+        }
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+
+    return static_cast<PathfindResultType>(Result::SUCCESS);
+}
+
 PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map,
                        float x,
                        float y,
