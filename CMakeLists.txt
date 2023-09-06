@@ -31,10 +31,9 @@ else()
     message(WARNING "Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
 endif()
 
+set(FILESYSTEM_LIBRARY "")
 # GCC 7 requires an extra lib for this, but MSVC does not
-if (MSVC)
-    set(FILESYSTEM_LIBRARY "")
-else()
+if (UNIX AND NOT APPLE)
     set(FILESYSTEM_LIBRARY "stdc++fs")
 endif()
 
