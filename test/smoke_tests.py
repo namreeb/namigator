@@ -7,7 +7,7 @@ import shutil
 import time
 import math
 
-sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
+sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'namigator')))
 
 import mapbuild
 import pathfind

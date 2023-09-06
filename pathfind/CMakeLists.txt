@@ -22,5 +22,5 @@ if (NAMIGATOR_BUILD_PYTHON)
 
     target_link_libraries(${PYTHON_NAME} PRIVATE ${LIBRARY_NAME} ${FILESYSTEM_LIBRARY} utility RecastNavigation::Recast RecastNavigation::Detour storm)
 
-    install(TARGETS ${PYTHON_NAME} DESTINATION lib)
+    install(TARGETS ${PYTHON_NAME} DESTINATION namigator)
 endif()
