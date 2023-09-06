@@ -6,14 +6,16 @@ set(SRC
     Map.cpp
     TemporaryObstacle.cpp
     Tile.cpp
-    pathfind_c_bindings.cpp
 )
+if (NAMIGATOR_BUILD_C_API)
+    set(SRC ${SRC} pathfind_c_bindings.cpp)
+endif()
 
 add_library(${LIBRARY_NAME} STATIC ${SRC})
 target_include_directories(${LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(${LIBRARY_NAME} PRIVATE ${FILESYSTEM_LIBRARY} utility RecastNavigation::Recast RecastNavigation::Detour)
 
-if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
+if (NAMIGATOR_BUILD_C_API)
     install(TARGETS ${LIBRARY_NAME} ARCHIVE DESTINATION lib)
 endif()
 
