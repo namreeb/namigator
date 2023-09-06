@@ -863,7 +863,7 @@ bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone,
         {position.X, position.Y, tile->second->m_bounds.getMinimum().Z}};
 
     unsigned int localZone, localArea;
-    auto const rayResult = RayCast(ray, tiles, &localZone, &localArea);
+    auto const rayResult = RayCast(ray, tiles, false, &localZone, &localArea);
     if (rayResult)
     {
         zone = localZone;
