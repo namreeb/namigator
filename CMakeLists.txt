@@ -1,6 +1,6 @@
-project(namigator)
-
 cmake_minimum_required(VERSION 3.12)
+
+project(namigator)
 
 # namigator depends on a compiler which supports C++17
 set(CMAKE_CXX_STANDARD 17)
