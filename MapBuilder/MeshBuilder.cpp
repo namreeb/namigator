@@ -452,7 +452,7 @@ bool IsHeightFieldEmpty(rcHeightfield const& solid)
 }
 } // namespace
 
-MeshBuilder::MeshBuilder(const std::string& outputPath,
+MeshBuilder::MeshBuilder(const std::filesystem::path& outputPath,
                          const std::string& mapName, int logLevel)
     : m_outputPath(outputPath), m_bvhConstructor(outputPath),
       m_chunkReferences(MeshSettings::ChunkCount * MeshSettings::ChunkCount),
@@ -542,7 +542,7 @@ MeshBuilder::MeshBuilder(const std::string& outputPath,
         fs::create_directory(m_outputPath / "Nav" / mapName);
 }
 
-MeshBuilder::MeshBuilder(const std::string& outputPath,
+MeshBuilder::MeshBuilder(const std::filesystem::path& outputPath,
                          const std::string& mapName, int logLevel, int adtX,
                          int adtY)
     : m_outputPath(outputPath), m_bvhConstructor(outputPath),

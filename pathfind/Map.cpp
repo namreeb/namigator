@@ -94,7 +94,7 @@ float random_between_0_and_1() {
 
 namespace pathfind
 {
-Map::Map(const std::string& dataPath, const std::string& mapName)
+Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
     : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName)
 {
     utility::BinaryStream in(m_dataPath / (mapName + ".map"));
