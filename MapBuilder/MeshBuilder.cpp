@@ -913,7 +913,7 @@ bool MeshBuilder::BuildAndSerializeMapTile(int tileX, int tileY)
     ComputeRequiredChunks(m_map.get(), tileX, tileY, chunkPositions);
 
     chunks.reserve(chunkPositions.size());
-    for (auto const chunkPosition : chunkPositions)
+    for (auto const& chunkPosition : chunkPositions)
     {
         auto const adtX = chunkPosition.first / MeshSettings::ChunksPerAdt;
         auto const adtY = chunkPosition.second / MeshSettings::ChunksPerAdt;
