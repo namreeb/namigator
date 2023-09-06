@@ -334,7 +334,7 @@ Map::EnsureDoodadModelLoaded(const std::string& mpq_path)
         THROW(Result::COULD_NOT_DESERIALIZE_DOODAD).ErrorCode();
 
     m_loadedDoodadModels[bvhFilename] = model;
-    return std::move(model);
+    return model;
 }
 
 std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
@@ -404,7 +404,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
 
     m_loadedWmoModels[bvhFilename] = model;
 
-    return std::move(model);
+    return model;
 }
 
 bool Map::HasADT(int x, int y) const
