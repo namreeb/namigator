@@ -13,7 +13,9 @@ add_library(${LIBRARY_NAME} STATIC ${SRC})
 target_include_directories(${LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(${LIBRARY_NAME} PRIVATE ${FILESYSTEM_LIBRARY} utility RecastNavigation::Recast RecastNavigation::Detour)
 
-install(TARGETS ${LIBRARY_NAME} ARCHIVE DESTINATION lib)
+if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
+    install(TARGETS ${LIBRARY_NAME} ARCHIVE DESTINATION lib)
+endif()
 
 if (NAMIGATOR_BUILD_PYTHON)
     pybind11_add_module(${PYTHON_NAME} ${SRC} python.cpp)

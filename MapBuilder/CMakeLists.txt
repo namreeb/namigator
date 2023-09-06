@@ -8,12 +8,16 @@ add_library(${LIBRARY_NAME} ${SRC})
 target_include_directories(${LIBRARY_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../")
 target_link_libraries(${LIBRARY_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm ${CMAKE_THREAD_LIBS_INIT})
 
-install(TARGETS ${LIBRARY_NAME} ARCHIVE DESTINATION lib)
+if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
+    install(TARGETS ${LIBRARY_NAME} ARCHIVE DESTINATION lib)
+endif()
 
 add_executable(${EXECUTABLE_NAME} main.cpp)
 target_link_libraries(${EXECUTABLE_NAME} ${LIBRARY_NAME})
 
-install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
+if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
+    install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
+endif()
 
 if (NAMIGATOR_BUILD_PYTHON)
     pybind11_add_module(${PYTHON_NAME} ${SRC} python.cpp)

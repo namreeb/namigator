@@ -23,6 +23,7 @@ endif()
 
 option(NAMIGATOR_BUILD_PYTHON "Build Python bindings if Python2/3 is present." TRUE)
 option(NAMIGATOR_INSTALL_TESTS "Install tests." TRUE)
+option(NAMIGATOR_INSTALL_NON_PYTHON_FILES "Install files that are not the Python shared libraries." TRUE)
 
 if(NAMIGATOR_BUILD_PYTHON)
     add_subdirectory(pybind11)
@@ -45,14 +46,19 @@ set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "Build demo")
 set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "Build tests")
 set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "Build examples")
 add_subdirectory(recastnavigation EXCLUDE_FROM_ALL)
-install(TARGETS Detour Recast ARCHIVE DESTINATION lib)
+
+if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
+    install(TARGETS Detour Recast ARCHIVE DESTINATION lib)
+endif()
 
 # This is just easier than copying over the DLLs
 if (MSVC)
     set(STORM_USE_BUNDLED_LIBRARIES ON CACHE BOOL "")
 endif()
 add_subdirectory(stormlib EXCLUDE_FROM_ALL)
-install(TARGETS storm ARCHIVE DESTINATION lib)
+if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
+    install(TARGETS storm ARCHIVE DESTINATION lib)
+endif()
 
 # namigator libraries
 add_subdirectory(utility)
