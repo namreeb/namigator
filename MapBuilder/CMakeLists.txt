@@ -20,9 +20,9 @@ if (NAMIGATOR_INSTALL_NON_PYTHON_FILES)
 endif()
 
 if (NAMIGATOR_BUILD_PYTHON)
-    pybind11_add_module(${PYTHON_NAME} ${SRC} python.cpp)
+    pybind11_add_module(${PYTHON_NAME} python.cpp)
 
-    target_link_libraries(${PYTHON_NAME} PRIVATE parser utility RecastNavigation::Recast RecastNavigation::Detour storm)
+    target_link_libraries(${PYTHON_NAME} PRIVATE ${LIBRARY_NAME} parser utility RecastNavigation::Recast RecastNavigation::Detour storm)
 
     install(TARGETS ${PYTHON_NAME} DESTINATION lib)
 endif()
