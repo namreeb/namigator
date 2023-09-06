@@ -12,6 +12,7 @@ readme = "README.md"
 requires-python = ">=3.7"
 
 [tool.scikit-build]
+cmake.targets = ["mapbuild", "pathfind"]
 cmake.args = ["-DNAMIGATOR_INSTALL_TESTS=false",
               "-DNAMIGATOR_BUILD_C_API=false",
               "-DNAMIGATOR_BUILD_EXECUTABLES=false"]
