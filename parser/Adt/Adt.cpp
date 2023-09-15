@@ -333,11 +333,6 @@ Adt::Adt(Map* map, int adtX, int adtY)
                         if (mclqBlock->RenderMap[y][x] == 0xF)
                             continue;
 
-                        // XXX FIXME - this is here because it may be that this
-                        // bit is what actually controls rendering.  trap with
-                        // assert to debug
-                        assert(mclqBlock->RenderMap[y][x] != 8);
-
                         int terrainVert = y * 17 + x;
                         chunk->m_liquidVertices.push_back(
                             {chunk->m_terrainVertices[terrainVert].X,
