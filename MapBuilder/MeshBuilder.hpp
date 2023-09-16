@@ -144,9 +144,9 @@ private:
     void RemoveADT(const meshfiles::ADT* adt);
 
 public:
-    MeshBuilder(const std::string& outputPath, const std::string& mapName,
+    MeshBuilder(const std::filesystem::path& outputPath, const std::string& mapName,
                 int logLevel);
-    MeshBuilder(const std::string& outputPath, const std::string& mapName,
+    MeshBuilder(const std::filesystem::path& outputPath, const std::string& mapName,
                 int logLevel, int adtX, int adtY);
 
     void LoadGameObjects(const std::string& path);

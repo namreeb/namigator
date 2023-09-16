@@ -22,6 +22,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <random>
 
 static_assert(sizeof(char) == 1, "char must be one byte");
 
@@ -79,9 +80,21 @@ struct NavFileHeader
 };
 #pragma pack(pop)
 
+namespace {
+
+float random_between_0_and_1() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    return static_cast<float>(dis(gen));
+}
+
+} // anonymous namespace
+
 namespace pathfind
 {
-Map::Map(const std::string& dataPath, const std::string& mapName)
+Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
     : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName)
 {
     utility::BinaryStream in(m_dataPath / (mapName + ".map"));
@@ -321,7 +334,7 @@ Map::EnsureDoodadModelLoaded(const std::string& mpq_path)
         THROW(Result::COULD_NOT_DESERIALIZE_DOODAD).ErrorCode();
 
     m_loadedDoodadModels[bvhFilename] = model;
-    return std::move(model);
+    return model;
 }
 
 std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
@@ -391,7 +404,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
 
     m_loadedWmoModels[bvhFilename] = model;
 
-    return std::move(model);
+    return model;
 }
 
 bool Map::HasADT(int x, int y) const
@@ -707,6 +720,40 @@ bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
     return true;
 }
 
+bool Map::FindRandomPointAroundCircle(const math::Vertex& centerPosition,
+                                      const float radius,
+                                      math::Vertex& randomPoint) const
+{
+    float recastCenter[3];
+    math::Convert::VertexToRecast(centerPosition, recastCenter);
+
+    constexpr float extents[] = {1.f, 1.f, 1.f};
+
+    dtPolyRef startRef;
+    if (m_navQuery.findNearestPoly(recastCenter, extents, &m_queryFilter,
+                                   &startRef, nullptr) != DT_SUCCESS) {
+        return false;
+    }
+
+    float outputPoint[3];
+
+    dtPolyRef randomRef;
+    if (m_navQuery.findRandomPointAroundCircle(startRef,
+                                               recastCenter,
+                                               radius,
+                                               &m_queryFilter,
+                                               &random_between_0_and_1,
+                                               &randomRef,
+                                               outputPoint) != DT_SUCCESS) {
+        return false;
+    }
+
+    math::Convert::VertexToWow(outputPoint, randomPoint);
+
+    return true;
+}
+
+
 bool Map::FindHeight(const math::Vertex& source, float x, float y, float& z) const
 {
     // ray cast along navmesh from source to target
@@ -816,7 +863,7 @@ bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone,
         {position.X, position.Y, tile->second->m_bounds.getMinimum().Z}};
 
     unsigned int localZone, localArea;
-    auto const rayResult = RayCast(ray, tiles, &localZone, &localArea);
+    auto const rayResult = RayCast(ray, tiles, false, &localZone, &localArea);
     if (rayResult)
     {
         zone = localZone;

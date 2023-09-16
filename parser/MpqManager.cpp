@@ -90,17 +90,17 @@ namespace parser
 {
 thread_local MpqManager sMpqManager;
 
-void MpqManager::LoadMpq(const std::string& filePath)
+void MpqManager::LoadMpq(const fs::path& filePath)
 {
     HANDLE archive;
 
-    if (!SFileOpenArchive(filePath.c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
+    if (!SFileOpenArchive(filePath.string().c_str(), 0, MPQ_OPEN_READ_ONLY, &archive))
         THROW(Result::COULD_NOT_OPEN_MPQ).ErrorCode();
 
     std::error_code ec;
     auto const rel = fs::relative(filePath, BasePath, ec);
     if (ec)
-        MpqHandles[filePath] = archive;
+        MpqHandles[filePath.string()] = archive;
     else
         MpqHandles[utility::lower(rel.string())] = archive;
 }
@@ -111,7 +111,7 @@ void MpqManager::Initialize()
 }
 
 // Priority logic is explained at https://github.com/namreeb/namigator/issues/22
-void MpqManager::Initialize(const std::string& wowDir)
+void MpqManager::Initialize(const fs::path& wowDir)
 {
     if (!fs::is_directory(wowDir))
         THROW(Result::NO_DATA_FILES_FOUND);
@@ -199,7 +199,7 @@ void MpqManager::Initialize(const std::string& wowDir)
         THROW(Result::NO_DATA_FILES_FOUND);
 
     for (auto const& file : files)
-        LoadMpq(file.string());
+        LoadMpq(file);
 
     const DBC maps("DBFilesClient\\Map.dbc");
 

@@ -58,6 +58,14 @@ py::tuple load_adt_at(pathfind::Map& map, float x, float y)
     return py::make_tuple(adt_x, adt_y);
 }
 
+void unload_adt(pathfind::Map& map, int adt_x, int adt_y) {
+    map.UnloadADT(adt_x, adt_y);
+}
+
+bool adt_loaded(pathfind::Map& map, int adt_x, int adt_y) {
+    return map.IsADTLoaded(adt_x, adt_y);
+}
+
 py::list python_query_heights(const pathfind::Map& map, float x, float y)
 {
     py::list result;
@@ -97,6 +105,18 @@ py::object get_zone_and_area(pathfind::Map& map, float x, float y, float z)
         return py::none();
     return py::make_tuple(zone, area);
 }
+
+py::object find_random_point_around_circle(pathfind::Map& map, float x, float y, float z, float radius) {
+    const math::Vertex start {x, y, z};
+
+    math::Vertex random_point {};
+    if (!map.FindRandomPointAroundCircle(start, radius, random_point)) {
+        return py::none();
+    }
+
+    return py::make_tuple(random_point.X, random_point.Y, random_point.Z);
+}
+
 } // namespace
 
 PYBIND11_MODULE(pathfind, m)
@@ -110,5 +130,8 @@ PYBIND11_MODULE(pathfind, m)
         .def("query_heights", &python_query_heights)
         .def("query_z", &python_query_z)
         .def("get_zone_and_area", &get_zone_and_area)
+        .def("find_random_point_around_circle", &find_random_point_around_circle)
+        .def("adt_loaded", &adt_loaded)
+        .def("unload_adt", &unload_adt)
         .def("line_of_sight", &los);
 }

@@ -12,4 +12,6 @@ add_library(utility STATIC
 
 target_include_directories(utility PUBLIC ..)
 
-install(TARGETS utility ARCHIVE DESTINATION lib)
+if (NAMIGATOR_BUILD_C_API)
+    install(TARGETS utility ARCHIVE DESTINATION lib)
+endif()

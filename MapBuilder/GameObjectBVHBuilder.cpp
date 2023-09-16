@@ -20,8 +20,8 @@
 
 namespace parser
 {
-GameObjectBVHBuilder::GameObjectBVHBuilder(const std::string& dataPath,
-                                           const std::string& outputPath,
+GameObjectBVHBuilder::GameObjectBVHBuilder(const std::filesystem::path& dataPath,
+                                           const std::filesystem::path& outputPath,
                                            size_t workers)
     : m_dataPath(dataPath), m_bvhConstructor(outputPath), m_workers(workers),
       m_shutdownRequested(false)

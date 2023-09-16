@@ -51,7 +51,7 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
                              const char* const gameobject_csv,
                              uint32_t threads)
 {
-    std::string outputPath = output_path;
+    std::filesystem::path outputPath = output_path;
 
     if (!threads) {
         // Same behavior as internally in GameObjectBVHBuilder
@@ -65,12 +65,12 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
             fs::create_directory(outputPath);
         }
 
-        if (!fs::is_directory(outputPath + "/BVH")) {
-            fs::create_directory(outputPath + "/BVH");
+        if (!fs::is_directory(outputPath / "BVH")) {
+            fs::create_directory(outputPath / "BVH");
         }
 
-        if (!fs::is_directory(outputPath + "/Nav")) {
-            fs::create_directory(outputPath + "/Nav");
+        if (!fs::is_directory(outputPath / "Nav")) {
+            fs::create_directory(outputPath / "Nav");
         }
     }
     catch (utility::exception& e) {

@@ -7,7 +7,7 @@ import shutil
 import time
 import math
 
-sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
+sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'namigator')))
 
 import mapbuild
 import pathfind
@@ -45,6 +45,15 @@ def test_pathfind(temp_dir):
 
 	x = 16271.025391
 	y = 16845.421875
+
+	if map_data.adt_loaded(0, 1):
+		raise Exception("adt_loaded returned True when should be False before loading")
+	map_data.load_adt(0, 1)
+	if not map_data.adt_loaded(0, 1):
+		raise Exception("adt_loaded returned False after loading ADT")
+	map_data.unload_adt(0, 1)
+	if map_data.adt_loaded(0, 1):
+		raise Exception("adt_loaded returned True when should be False after unloading")
 
 	adt_x, adt_y = map_data.load_adt_at(x, y)
 
@@ -110,6 +119,27 @@ def test_pathfind(temp_dir):
 		raise Exception("Should-pass LoS check failed")
 
 	print("Should-pass LoS check succeeded")
+
+	radius = 10.0
+	origin = [16303.294922, 16789.242188, 45.219631]
+	should_pass = map_data.find_random_point_around_circle(origin[0], origin[1], origin[2], radius)
+
+	if should_pass is None:
+		raise Exception("Should-pass find random point around circle not none failed")
+
+	(x, y, z) = should_pass
+	distance = math.dist(origin, [x, y, z])
+	# According to docs "The location is not exactly constrained by the circle"
+	# so we add some leeway
+	distance_leeway = 5.0
+	if distance > radius + distance_leeway:
+		raise Exception(f"find random point around circle distance greater than radius, \
+origin: {{x: {origin[0]}, y: {origin[1]}, z: {origin[2]} }} \
+random_point: {{ x: {x}, y: {y}, z: {z} }} \
+dist: {distance}"
+)
+
+	print("Should-pass find random point around circle succeeded")
 
 	should_pass_doodad = map_data.line_of_sight(16275.6895, 16853.9023, 37.8341751,
 		16251.0332, 16858.2988, 34.9305573, False)

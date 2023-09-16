@@ -1,0 +1,18 @@
+[build-system]
+requires = ["scikit-build-core[pyproject]>=0.3.3"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "namigator"
+authors = [
+    { name = "Namreeb", email = "github@namreeb.org" }
+]
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.7"
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+cmake.args = ["-DNAMIGATOR_INSTALL_TESTS=false",
+              "-DNAMIGATOR_BUILD_C_API=false",
+              "-DNAMIGATOR_BUILD_EXECUTABLES=false"]

@@ -91,6 +91,38 @@ PathfindResultType pathfind_load_adt_at(pathfind::Map* const map, float x, float
     }
 }
 
+PathfindResultType pathfind_unload_adt(pathfind::Map* const map, int x, int y) {
+    try {
+        map->UnloadADT(x, y);
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+
+    return static_cast<PathfindResultType>(Result::SUCCESS);
+}
+
+PathfindResultType pathfind_is_adt_loaded(pathfind::Map* const map, int x, int y, uint8_t* const loaded) {
+    try {
+        if (map->IsADTLoaded(x, y)) {
+            *loaded = 1;
+        } else{
+            *loaded = 0;
+        }
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+
+    return static_cast<PathfindResultType>(Result::SUCCESS);
+}
+
 PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map,
                        float x,
                        float y,
@@ -252,4 +284,39 @@ PathfindResultType pathfind_line_of_sight(pathfind::Map* map,
         return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
     }
 }
+
+PathfindResultType pathfind_find_random_point_around_circle(pathfind::Map* const map,
+                                                            float x,
+                                                            float y,
+                                                            float z,
+                                                            float radius,
+                                                            float* const random_x,
+                                                            float* const random_y,
+                                                            float* const random_z) {
+
+    try
+    {
+        const math::Vertex start {x, y, z};
+        math::Vertex random_point {};
+
+        if (!map->FindRandomPointAroundCircle(start, radius, random_point)) {
+            return static_cast<PathfindResultType>(Result::UNABLE_TO_FIND_RANDOM_POINT_IN_CIRCLE);
+        }
+
+        *random_x = random_point.X;
+        *random_y = random_point.Y;
+        *random_z = random_point.Z;
+
+        return static_cast<PathfindResultType>(Result::SUCCESS);
+    }
+    catch (utility::exception& e)
+    {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...)
+    {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
+
 } // extern "C"

@@ -48,6 +48,18 @@ PathfindResultType pathfind_load_adt_at(pathfind::Map* const map, float x, float
                                         float* const out_adt_x, float* const out_adt_y);
 
 /*
+    Unloads specific ADT.
+*/
+PathfindResultType pathfind_unload_adt(pathfind::Map* const map, int x, int y);
+
+/*
+    Checks if a specific ADT is loaded.
+
+    `loaded` is set to `1` if the ADT is loaded, and `0` otherwise.
+*/
+PathfindResultType pathfind_is_adt_loaded(pathfind::Map* const map, int x, int y, uint8_t* const loaded);
+
+/*
     Returns the zone and area of a particular x, y, z.
 */
 PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map, float x,
@@ -94,5 +106,18 @@ PathfindResultType pathfind_line_of_sight(pathfind::Map* const map,
                                           float start_x, float start_y, float start_z,
                                           float stop_x, float stop_y, float stop_z,
                                           uint8_t* const line_of_sight, uint8_t doodads);
+
+/*
+    Returns a random point within `radius` of `x`, `y`, and `z`.
+*/
+PathfindResultType pathfind_find_random_point_around_circle(pathfind::Map* const map,
+                                                            float x,
+                                                            float y,
+                                                            float z,
+                                                            float radius,
+                                                            float* const random_x,
+                                                            float* const random_y,
+                                                            float* const random_z);
+
 } // extern "C"
 

@@ -107,7 +107,7 @@ private:
 public:
     Map() = delete;
     Map(const Map&) = delete;
-    Map(const std::string& dataPath, const std::string& mapName);
+    Map(const std::filesystem::path& dataPath, const std::string& mapName);
 
     bool HasADT(int x, int y) const;
     bool IsADTLoaded(int x, int y) const;
@@ -154,6 +154,10 @@ public:
     // aggro, so doodads and temporary obstacles will be ignored.
     bool LineOfSight(const math::Vertex& start, const math::Vertex& stop,
                      bool doodads) const;
+
+    bool FindRandomPointAroundCircle(const math::Vertex& centerPosition,
+                                     float radius,
+                                     math::Vertex& randomPoint) const;
 
     const dtNavMesh& GetNavMesh() const { return m_navMesh; }
     const dtNavMeshQuery& GetNavMeshQuery() const { return m_navQuery; }

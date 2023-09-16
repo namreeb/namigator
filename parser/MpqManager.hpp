@@ -25,11 +25,11 @@ private:
     std::unordered_map<std::string, unsigned int> Maps;
     std::unordered_map<std::uint32_t, std::uint32_t> AreaToZone;
 
-    void LoadMpq(const std::string& filePath);
+    void LoadMpq(const std::filesystem::path& filePath);
 
 public:
     void Initialize();
-    void Initialize(const std::string& wowDir);
+    void Initialize(const fs::path& wowDir);
 
     bool FileExists(const std::string& file) const;
     std::unique_ptr<utility::BinaryStream> OpenFile(const std::string& file);

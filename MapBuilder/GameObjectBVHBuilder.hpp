@@ -15,7 +15,7 @@ namespace parser
 class GameObjectBVHBuilder
 {
 private:
-    const std::string m_dataPath;
+    const std::filesystem::path m_dataPath;
 
     BVHConstructor m_bvhConstructor;
     const size_t m_workers;
@@ -32,8 +32,8 @@ private:
     void Work();
 
 public:
-    GameObjectBVHBuilder(const std::string& dataPath,
-                         const std::string& outputPath, size_t workers);
+    GameObjectBVHBuilder(const std::filesystem::path& dataPath,
+                         const std::filesystem::path& outputPath, size_t workers);
     ~GameObjectBVHBuilder();
 
     void Begin();
