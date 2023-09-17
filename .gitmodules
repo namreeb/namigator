@@ -6,4 +6,5 @@
 	url = https://github.com/ladislav-zezula/StormLib.git
 [submodule "pybind11"]
 	path = pybind11
-	url = https://github.com/henryiii/pybind11/tree/henryiii/fix/cmakemodule
+	url = https://github.com/henryiii/pybind11.git
+    branch = cmakemodule
