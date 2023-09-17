@@ -184,6 +184,7 @@ void MpqManager::Initialize(const fs::path& wowDir)
     AddIfExists(files, BasePath / "lichking.MPQ");
     AddIfExists(files, BasePath / "common.MPQ");
     AddIfExists(files, BasePath / "common-2.MPQ");
+    AddIfExists(files, BasePath / "terrain.MPQ");
     AddIfExists(files, BasePath / locale / ("locale-" + locale + ".MPQ"));
     AddIfExists(files, BasePath / locale / ("speech-" + locale + ".MPQ"));
     AddIfExists(files, BasePath / locale /
