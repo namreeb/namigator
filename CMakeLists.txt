@@ -27,6 +27,7 @@ option(NAMIGATOR_BUILD_C_API "Build the C API." TRUE)
 option(NAMIGATOR_BUILD_EXECUTABLES "Build the MapViewer executable. Windows only." TRUE)
 
 if(NAMIGATOR_BUILD_PYTHON)
+    set(PYBIND11_FINDPYTHON ON)
     add_subdirectory(pybind11)
 else()
     message(WARNING "Python bindings for ${CMAKE_PROJECT_NAME} will not be compiled")
