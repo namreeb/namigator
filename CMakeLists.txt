@@ -29,6 +29,7 @@ option(NAMIGATOR_BUILD_EXECUTABLES "Build the MapViewer executable. Windows only
 if(NAMIGATOR_BUILD_PYTHON)
     if(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
         set(PYBIND11_FINDPYTHON ON)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
     endif()
     add_subdirectory(pybind11)
 else()
