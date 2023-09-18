@@ -220,8 +220,9 @@ Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
         constexpr float tileSize = MeshSettings::AdtSize / 128.f;
         auto const liquidChunk = groupFiles[g]->LiquidChunk.get();
 
-        const math::Vector3 baseVector3(
-            liquidChunk->Base[0], liquidChunk->Base[1], liquidChunk->Base[2]);
+        const math::Vector3 baseVertex(liquidChunk->Corner[0],
+                                       liquidChunk->Corner[1],
+                                       liquidChunk->Corner[2]);
 
         // process liquid chunk for the current group file
         // XXX - for some reason, this works best when you ignore the height map
@@ -229,18 +230,18 @@ Wmo::Wmo(const std::string& path) : MpqPath(utility::lower(path))
         for (unsigned int y = 0; y < liquidChunk->Height; ++y)
             for (unsigned int x = 0; x < liquidChunk->Width; ++x)
             {
-                const math::Vector3 v1({(x + 0) * tileSize + baseVector3.X,
-                                        (y + 0) * tileSize + baseVector3.Y,
-                                        baseVector3.Z});
-                const math::Vector3 v2({(x + 1) * tileSize + baseVector3.X,
-                                        (y + 0) * tileSize + baseVector3.Y,
-                                        baseVector3.Z});
-                const math::Vector3 v3({(x + 0) * tileSize + baseVector3.X,
-                                        (y + 1) * tileSize + baseVector3.Y,
-                                        baseVector3.Z});
-                const math::Vector3 v4({(x + 1) * tileSize + baseVector3.X,
-                                        (y + 1) * tileSize + baseVector3.Y,
-                                        baseVector3.Z});
+                const math::Vector3 v1({baseVertex.X + tileSize * (x + 0),
+                                        baseVertex.Y + tileSize * (y + 0),
+                                        baseVertex.Z});
+                const math::Vector3 v2({baseVertex.X + tileSize * (x + 1),
+                                        baseVertex.Y + tileSize * (y + 0),
+                                        baseVertex.Z});
+                const math::Vector3 v3({baseVertex.X + tileSize * (x + 0),
+                                        baseVertex.Y + tileSize * (y + 1),
+                                        baseVertex.Z});
+                const math::Vector3 v4({baseVertex.X + tileSize * (x + 1),
+                                        baseVertex.Y + tileSize * (y + 1),
+                                        baseVertex.Z});
 
                 LiquidVertices.push_back(v1);
                 LiquidVertices.push_back(v2);

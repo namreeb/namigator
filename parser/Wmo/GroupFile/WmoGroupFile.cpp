@@ -55,7 +55,7 @@ void ReadWmoGroupFile(parser::input::WmoGroupFile *groupFile,
     size_t mliqLocation;
     groupFile->LiquidChunk.reset(
         reader->GetChunkLocation("MLIQ", movtLocation, mliqLocation) ?
-            new parser::input::MLIQ(mliqLocation, reader) :
+            new parser::input::MLIQ(mliqLocation, reader, version) :
             nullptr);
 
     // we jump the reader ahead here.  in the case of the alpha data, this will

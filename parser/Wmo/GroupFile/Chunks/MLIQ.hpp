@@ -15,10 +15,11 @@ public:
     unsigned int Width;
     unsigned int Height;
 
-    float Base[3];
+    float Corner[3];
     std::unique_ptr<utility::Array2d<float>> Heights;
 
-    MLIQ(size_t position, utility::BinaryStream* groupFileStream);
+    MLIQ(size_t position, utility::BinaryStream* groupFileStream,
+         unsigned int version);
 };
 } // namespace input
 } // namespace parser
