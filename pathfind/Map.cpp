@@ -245,7 +245,7 @@ Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
         auto const result = m_navMesh.init(&params);
         assert(result == DT_SUCCESS);
 
-        auto const nav_path = m_dataPath / "Nav" / "Map.nav";
+        auto const nav_path = m_dataPath / "Nav" / m_mapName / "Map.nav";
 
         utility::BinaryStream navIn(nav_path);
 
