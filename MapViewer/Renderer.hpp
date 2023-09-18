@@ -48,7 +48,7 @@ private:
     static constexpr float LiquidColor[] = {0.25f, 0.28f, 0.9f, 0.5f};
     static constexpr float WmoColor[] = {1.f, 0.95f, 0.f, 1.f};
     static constexpr float DoodadColor[] = {1.f, 0.f, 0.f, 1.f};
-    static constexpr float BackgroundColor[] = {0.f, 0.2f, 0.4f, 1.f};
+    static constexpr float BackgroundColor[] = {0.6f, 0.55f, 0.55f, 1.f};
     static constexpr float SphereColor[] = {1.f, 0.5f, 0.25f, 0.75f};
     static constexpr float LineColor[] = {0.5f, 0.25f, 0.0f, 1.f};
     static constexpr float ArrowColor[] = {0.5f, 0.25f, 0.0f, 1.f};
