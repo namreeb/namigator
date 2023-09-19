@@ -871,25 +871,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
     gControls->AddLabel("Select Map:", 10, 12);
 
     std::vector<std::string> maps;
-    maps.push_back("000 Azeroth");
-    maps.push_back("001 Kalimdor");
-    maps.push_back("013 Test");
-    maps.push_back("025 Scott Test");
-    maps.push_back("029 Test");
-    maps.push_back("030 PVPZone01 (Alterac Valley)");
-    maps.push_back("033 Shadowfang");
-    maps.push_back("034 StormwindJail (Stockades)");
-    maps.push_back("036 DeadminesInstance");
-    maps.push_back("037 PVPZone02 (Azshara Crater)");
-    maps.push_back("043 WailingCaverns");
-    maps.push_back("429 DireMaul");
-    maps.push_back("451 Development");
-    maps.push_back("489 PVPzone03 (Warsong Gulch)");
-    maps.push_back("529 PVPzone04 (Arathi Basin)");
-    maps.push_back("530 Expansion01 (Outland)");
-    maps.push_back("562 bladesedgearena");
-    maps.push_back("571 Northrend");
-    maps.push_back("603 UlduarRaid");
+    maps.emplace_back("000 Azeroth");
+    maps.emplace_back("001 Kalimdor");
+    maps.emplace_back("013 Test");
+    maps.emplace_back("025 Scott Test");
+    maps.emplace_back("029 Test");
+    maps.emplace_back("030 PVPZone01 (Alterac Valley)");
+    maps.emplace_back("033 Shadowfang");
+    maps.emplace_back("034 StormwindJail (Stockades)");
+    maps.emplace_back("036 DeadminesInstance");
+    maps.emplace_back("037 PVPZone02 (Azshara Crater)");
+    maps.emplace_back("043 WailingCaverns");
+    maps.emplace_back("090 GnomeragonInstance");
+    maps.emplace_back("429 DireMaul");
+    maps.emplace_back("451 Development");
+    maps.emplace_back("489 PVPzone03 (Warsong Gulch)");
+    maps.emplace_back("529 PVPzone04 (Arathi Basin)");
+    maps.emplace_back("530 Expansion01 (Outland)");
+    maps.emplace_back("562 bladesedgearena");
+    maps.emplace_back("571 Northrend");
+    maps.emplace_back("603 UlduarRaid");
 
     gControls->AddComboBox(Controls::MapsCombo, maps, 115, 10, ChangeMap);
 
