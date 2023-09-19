@@ -19,24 +19,15 @@ bool map_files_exist(const std::string& outputPath, const std::string& mapName) 
 namespace files {
 
 void create_bvh_output_directory(const std::filesystem::path& outputPath) {
-    if (!fs::is_directory(outputPath)) {
-        fs::create_directory(outputPath);
-    }
-
-    if (!fs::is_directory(outputPath / "BVH")) {
-        fs::create_directory(outputPath / "BVH");
-    }
+    fs::create_directories(outputPath / "BVH");
 }
 
 void create_nav_output_directory(const std::filesystem::path& outputPath) {
-    if (!fs::is_directory(outputPath / "Nav")) {
-        fs::create_directory(outputPath / "Nav");
-    }
+    fs::create_directories(outputPath / "Nav");
 }
 
 void create_nav_output_directory_for_map(const std::filesystem::path& outputPath, const std::string& mapName) {
-    if (!fs::is_directory(outputPath / "Nav" / mapName))
-        fs::create_directory(outputPath / "Nav" / mapName);
+    fs::create_directories(outputPath / "Nav" / mapName);
 }
 
 } // namespace files
