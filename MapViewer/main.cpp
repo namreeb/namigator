@@ -883,6 +883,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
     maps.emplace_back("037 PVPZone02 (Azshara Crater)");
     maps.emplace_back("043 WailingCaverns");
     maps.emplace_back("090 GnomeragonInstance");
+    maps.emplace_back("229 BlackrockSpire");
     maps.emplace_back("429 DireMaul");
     maps.emplace_back("451 Development");
     maps.emplace_back("489 PVPzone03 (Warsong Gulch)");
