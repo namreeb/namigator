@@ -5,6 +5,7 @@
 #include "parser/MpqManager.hpp"
 #include "parser/Wmo/WmoInstance.hpp"
 #include "utility/String.hpp"
+#include "FileExist.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -135,11 +136,7 @@ int main(int argc, char* argv[])
 
     try
     {
-        if (!std::filesystem::is_directory(outputPath))
-            std::filesystem::create_directory(outputPath);
-
-        if (!std::filesystem::is_directory(outputPath + "/BVH"))
-            std::filesystem::create_directory(outputPath + "/BVH");
+        files::create_bvh_output_directory(outputPath);
 
         if (bvh)
         {
@@ -200,8 +197,7 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
-        if (!std::filesystem::is_directory(outputPath + "/Nav"))
-            std::filesystem::create_directory(outputPath + "/Nav");
+        files::create_nav_output_directory(outputPath);
 
         // nav mesh generation requires that the MPQ manager be initialized for
         // the main thread, whereas BVH generation above does not.

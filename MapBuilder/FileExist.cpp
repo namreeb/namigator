@@ -1,17 +1,42 @@
 #include "FileExist.hpp"
 
-#include <filesystem>
+namespace fs = std::filesystem;
 
 namespace file_exist {
 
 bool bvh_files_exist(const std::string& outputPath) {
     // bvh.idx is created at the very end of building game objects
-    return std::filesystem::exists(outputPath + "/BVH/bvh.idx");
+    return fs::exists(outputPath + "/BVH/bvh.idx");
 }
 
 bool map_files_exist(const std::string& outputPath, const std::string& mapName) {
     // mapName.map is created in MeshBuilder::SaveMap which should be after successful creation
-    return std::filesystem::exists(outputPath + "/" + mapName + ".map");
+    return fs::exists(outputPath + "/" + mapName + ".map");
 }
 
 } // namespace file_exist
+
+namespace files {
+
+void create_bvh_output_directory(const std::filesystem::path& outputPath) {
+    if (!fs::is_directory(outputPath)) {
+        fs::create_directory(outputPath);
+    }
+
+    if (!fs::is_directory(outputPath / "BVH")) {
+        fs::create_directory(outputPath / "BVH");
+    }
+}
+
+void create_nav_output_directory(const std::filesystem::path& outputPath) {
+    if (!fs::is_directory(outputPath / "Nav")) {
+        fs::create_directory(outputPath / "Nav");
+    }
+}
+
+void create_nav_output_directory_for_map(const std::filesystem::path& outputPath, const std::string& mapName) {
+    if (!fs::is_directory(outputPath / "Nav" / mapName))
+        fs::create_directory(outputPath / "Nav" / mapName);
+}
+
+} // namespace files

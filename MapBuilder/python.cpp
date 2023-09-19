@@ -19,11 +19,7 @@ int BuildBVH(const std::string& dataPath, const std::string& outputPath,
 {
     parser::sMpqManager.Initialize(dataPath);
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
-
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
+    files::create_bvh_output_directory(outputPath);
 
     parser::GameObjectBVHBuilder goBuilder(dataPath, outputPath, workers);
 
@@ -46,14 +42,8 @@ bool BuildMap(const std::string& dataPath, const std::string& outputPath,
 
     parser::sMpqManager.Initialize(dataPath);
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
-
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
-
-    if (!fs::is_directory(outputPath + "/Nav"))
-        fs::create_directory(outputPath + "/Nav");
+    files::create_bvh_output_directory(outputPath);
+    files::create_nav_output_directory(outputPath);
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
@@ -103,14 +93,8 @@ bool BuildADT(const std::string& dataPath, const std::string& outputPath,
     if (x < 0 || y < 0)
         return false;
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
-
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
-
-    if (!fs::is_directory(outputPath + "/Nav"))
-        fs::create_directory(outputPath + "/Nav");
+    files::create_bvh_output_directory(outputPath);
+    files::create_nav_output_directory(outputPath);
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;

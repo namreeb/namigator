@@ -19,11 +19,7 @@ MapBuildResultType mapbuild_build_bvh(const char* const data_path,
     try {
         parser::sMpqManager.Initialize(data_path);
 
-        if (!fs::is_directory(outputPath))
-            fs::create_directory(outputPath);
-
-        if (!fs::is_directory(outputPath + "/BVH"))
-            fs::create_directory(outputPath + "/BVH");
+        files::create_bvh_output_directory(outputPath);
 
         parser::GameObjectBVHBuilder goBuilder(data_path, outputPath, threads);
 
@@ -61,17 +57,9 @@ MapBuildResultType mapbuild_build_map(const char* const data_path,
     try {
         parser::sMpqManager.Initialize(data_path);
 
-        if (!fs::is_directory(outputPath)) {
-            fs::create_directory(outputPath);
-        }
+        files::create_bvh_output_directory(outputPath);
 
-        if (!fs::is_directory(outputPath / "BVH")) {
-            fs::create_directory(outputPath / "BVH");
-        }
-
-        if (!fs::is_directory(outputPath / "Nav")) {
-            fs::create_directory(outputPath / "Nav");
-        }
+        files::create_nav_output_directory(outputPath);
     }
     catch (utility::exception& e) {
         return static_cast<MapBuildResultType >(e.ResultCode());

@@ -2,6 +2,7 @@
 
 #include "BVHConstructor.hpp"
 #include "Common.hpp"
+#include "FileExist.hpp"
 #include "RecastContext.hpp"
 #include "parser/Adt/Adt.hpp"
 #include "parser/Adt/AdtChunk.hpp"
@@ -538,8 +539,7 @@ MeshBuilder::MeshBuilder(const std::filesystem::path& outputPath,
 
     m_totalTiles = m_pendingTiles.size();
 
-    if (!fs::is_directory(m_outputPath / "Nav" / mapName))
-        fs::create_directory(m_outputPath / "Nav" / mapName);
+    files::create_nav_output_directory_for_map(m_outputPath, mapName);
 }
 
 MeshBuilder::MeshBuilder(const std::filesystem::path& outputPath,
@@ -569,8 +569,8 @@ MeshBuilder::MeshBuilder(const std::filesystem::path& outputPath,
 
     m_totalTiles = m_pendingTiles.size();
 
-    if (!fs::is_directory(m_outputPath / "Nav" / mapName))
-        fs::create_directory(m_outputPath / "Nav" / mapName);
+
+    files::create_nav_output_directory_for_map(m_outputPath, mapName);
 }
 
 void MeshBuilder::LoadGameObjects(const std::string& path)
