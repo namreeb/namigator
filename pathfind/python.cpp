@@ -122,16 +122,96 @@ py::object find_random_point_around_circle(pathfind::Map& map, float x, float y,
 PYBIND11_MODULE(pathfind, m)
 {
     py::class_<pathfind::Map>(m, "Map")
-        .def(py::init<const std::string&, const std::string&>())
-        .def("load_all_adts", &pathfind::Map::LoadAllADTs)
-        .def("load_adt_at", &load_adt_at)
-        .def("load_adt", &load_adt)
-        .def("find_path", &python_find_path)
-        .def("query_heights", &python_query_heights)
-        .def("query_z", &python_query_z)
-        .def("get_zone_and_area", &get_zone_and_area)
-        .def("find_random_point_around_circle", &find_random_point_around_circle)
-        .def("adt_loaded", &adt_loaded)
-        .def("unload_adt", &unload_adt)
-        .def("line_of_sight", &los);
+        .def(py::init<const std::string&, const std::string&>(),
+            py::arg("data_path"),
+            py::arg("map_name")
+        )
+        .def("load_all_adts",
+            &pathfind::Map::LoadAllADTs,
+            R"del(Loads all ADTs for the map in order for pathfinding to be immediately available everywhere on the map.
+
+This may take a while depending on the map size.)del"
+        )
+        .def("load_adt_at",
+            &load_adt_at,
+            "Load ADT at specific map coordinate.",
+            py::arg("x"),
+            py::arg("y")
+        )
+        .def("load_adt",
+            &load_adt,
+            "Load specific ADT.",
+            py::arg("adt_x"),
+            py::arg("adt_y")
+        )
+        .def(
+            "find_path",
+           &python_find_path,
+           R"del(Attempts to find a path between `start` and `stop`.
+
+Returns a list of points if a path was found, otherwise an empty list.)del",
+           py::arg("start_x"),
+           py::arg("start_y"),
+           py::arg("start_z"),
+           py::arg("stop_x"),
+           py::arg("stop_y"),
+           py::arg("stop_z")
+        )
+        .def("query_heights",
+            &python_query_heights,
+            "Finds all Z values for a given `x`, `y` coordinate.",
+            py::arg("x"),
+            py::arg("y")
+        )
+        .def("query_z",
+            &python_query_z,
+            R"del(Returns the `stop_z` value for a given `start_x`, `start_y`, `start_z` and `stop_x`, `stop_y`.
+
+This is the value that would be achieved by walking from start to stop.)del",
+            py::arg("start_x"),
+            py::arg("start_y"),
+            py::arg("start_z"),
+            py::arg("stop_x"),
+            py::arg("stop_y")
+        )
+        .def("get_zone_and_area",
+            &get_zone_and_area,
+            "Returns the zone and area values for a specific coordinate.",
+            py::arg("x"),
+            py::arg("y"),
+            py::arg("z")
+        )
+        .def("find_random_point_around_circle",
+            &find_random_point_around_circle,
+            "Returns a random point from a circle within or slightly outside of the given radius.",
+            py::arg("x"),
+            py::arg("y"),
+            py::arg("z"),
+            py::arg("radius")
+        )
+        .def("adt_loaded",
+            &adt_loaded,
+            "Checks if a specific ADT is loaded.",
+            py::arg("adt_x"),
+            py::arg("adt_y")
+        )
+        .def("unload_adt",
+            &unload_adt,
+            "Unloads a specific ADT.",
+            py::arg("adt_x"),
+            py::arg("adt_y")
+        )
+        .def("line_of_sight",
+            &los,
+            R"del(Checks for line of sight from `start` to `stop`.
+
+If `doodads` is `False` doodads will not be considered during calculations.)del",
+            py::arg("start_x"),
+            py::arg("start_y"),
+            py::arg("start_z"),
+            py::arg("stop_x"),
+            py::arg("stop_y"),
+            py::arg("stop_z"),
+            py::arg("doodads")
+        );
 }
