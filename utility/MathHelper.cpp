@@ -86,7 +86,10 @@ float Convert::ToRadians(float degrees)
 
 void Convert::WorldToAdt(const Vector3& vertex, int& adtX, int& adtY)
 {
-    auto constexpr mid = 32.0 * MeshSettings::AdtSize;
+    // FIXME: We can't use MeshSettings::AdtSize here because of floating point
+    // imprecision.  Should consider changing MeshSettings:: values to double.
+    auto constexpr mid = 32.0 * (533.0 + (1.0 / 3.0));
+
     adtX = static_cast<int>((mid - vertex.Y) / MeshSettings::AdtSize);
     adtY = static_cast<int>((mid - vertex.X) / MeshSettings::AdtSize);
 }
