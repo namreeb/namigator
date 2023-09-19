@@ -84,11 +84,11 @@ float Convert::ToRadians(float degrees)
     return degrees * conversion;
 }
 
-void Convert::WorldToAdt(const Vector3& Vector3, int& adtX, int& adtY)
+void Convert::WorldToAdt(const Vector3& vertex, int& adtX, int& adtY)
 {
-    auto constexpr mid = 32.f * MeshSettings::AdtSize;
-    adtX = static_cast<int>((mid - Vector3.Y) / MeshSettings::AdtSize);
-    adtY = static_cast<int>((mid - Vector3.X) / MeshSettings::AdtSize);
+    auto constexpr mid = 32.0 * MeshSettings::AdtSize;
+    adtX = static_cast<int>((mid - vertex.Y) / MeshSettings::AdtSize);
+    adtY = static_cast<int>((mid - vertex.X) / MeshSettings::AdtSize);
 }
 
 // chunk (0, 0) is at the top left (northwest) corner.  east = x+, south = y+
@@ -109,11 +109,11 @@ void Convert::WorldToAdt(const Vector3& vertex, int& adtX, int& adtY,
            chunkY < MeshSettings::ChunksPerAdt);
 }
 
-void Convert::WorldToTile(const Vector3& Vector3, int& tileX, int& tileY)
+void Convert::WorldToTile(const Vector3& vertex, int& tileX, int& tileY)
 {
-    auto constexpr start = (MeshSettings::Adts / 2.f) * MeshSettings::AdtSize;
-    tileX = static_cast<int>((start - Vector3.Y) / MeshSettings::TileSize);
-    tileY = static_cast<int>((start - Vector3.X) / MeshSettings::TileSize);
+    auto constexpr start = (MeshSettings::Adts / 2.0) * MeshSettings::AdtSize;
+    tileX = static_cast<int>((start - vertex.Y) / MeshSettings::TileSize);
+    tileY = static_cast<int>((start - vertex.X) / MeshSettings::TileSize);
 }
 
 void Convert::ADTToWorldNorthwestCorner(int adtX, int adtY, float& worldX,
@@ -126,9 +126,9 @@ void Convert::ADTToWorldNorthwestCorner(int adtX, int adtY, float& worldX,
 void Convert::TileToWorldNorthwestCorner(int tileX, int tileY, float& worldX,
                                          float& worldY)
 {
-    auto constexpr start = (MeshSettings::Adts / 2.f) * MeshSettings::AdtSize;
-    worldX = start - tileY * MeshSettings::TileSize;
-    worldY = start - tileX * MeshSettings::TileSize;
+    auto constexpr start = (MeshSettings::Adts / 2.0) * MeshSettings::AdtSize;
+    worldX = static_cast<float>(start - tileY * MeshSettings::TileSize);
+    worldY = static_cast<float>(start - tileX * MeshSettings::TileSize);
 }
 
 void Convert::VertexToRecast(const Vector3& input, Vector3& output)
