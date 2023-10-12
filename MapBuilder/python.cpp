@@ -12,17 +12,14 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+namespace py = pybind11;
 
 int BuildBVH(const std::string& dataPath, const std::string& outputPath,
              size_t workers)
 {
     parser::sMpqManager.Initialize(dataPath);
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
-
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
+    files::create_bvh_output_directory(outputPath);
 
     parser::GameObjectBVHBuilder goBuilder(dataPath, outputPath, workers);
 
@@ -45,14 +42,8 @@ bool BuildMap(const std::string& dataPath, const std::string& outputPath,
 
     parser::sMpqManager.Initialize(dataPath);
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
-
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
-
-    if (!fs::is_directory(outputPath + "/Nav"))
-        fs::create_directory(outputPath + "/Nav");
+    files::create_bvh_output_directory(outputPath);
+    files::create_nav_output_directory(outputPath);
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
@@ -102,14 +93,8 @@ bool BuildADT(const std::string& dataPath, const std::string& outputPath,
     if (x < 0 || y < 0)
         return false;
 
-    if (!fs::is_directory(outputPath))
-        fs::create_directory(outputPath);
-
-    if (!fs::is_directory(outputPath + "/BVH"))
-        fs::create_directory(outputPath + "/BVH");
-
-    if (!fs::is_directory(outputPath + "/Nav"))
-        fs::create_directory(outputPath + "/Nav");
+    files::create_bvh_output_directory(outputPath);
+    files::create_nav_output_directory(outputPath);
 
     std::unique_ptr<MeshBuilder> builder;
     std::vector<std::unique_ptr<Worker>> workers;
@@ -153,9 +138,41 @@ bool MapFilesExist(const std::string& outputPath, const std::string& mapName) {
 
 PYBIND11_MODULE(mapbuild, m)
 {
-    m.def("build_bvh", &BuildBVH);
-    m.def("build_map", &BuildMap);
-    m.def("build_adt", &BuildADT);
-    m.def("map_files_exist", &MapFilesExist);
-    m.def("bvh_files_exist", &BVHFilesExist);
+    m.def("build_bvh",
+        BuildBVH,
+        "Builds all gameobjects. Must be called before `build_map`.",
+        py::arg("data_path"),
+        py::arg("output_path"),
+        py::arg("workers")
+    );
+    m.def("build_map",
+        &BuildMap,
+        "Builds a specific map. `build_bvh` must be called before this function.",
+        py::arg("data_path"),
+        py::arg("output_path"),
+        py::arg("map_name"),
+        py::arg("threads"),
+        py::arg("go_csv")
+    );
+    m.def("build_adt",
+         &BuildADT,
+         "Build a specific ADT.",
+         py::arg("data_path"),
+         py::arg("output_path"),
+         py::arg("map_name"),
+         py::arg("x"),
+         py::arg("y"),
+         py::arg("go_csv")
+    );
+    m.def("map_files_exist",
+         &MapFilesExist,
+         "Checks if map files exist. If `True` the map will not need to be built.",
+         py::arg("output_path"),
+         py::arg("map_name")
+    );
+    m.def("bvh_files_exist",
+         &BVHFilesExist,
+         "Checks if gameobjects exist. If `True` the gameobjects will not need to be built.",
+         py::arg("output_path")
+    );
 }
