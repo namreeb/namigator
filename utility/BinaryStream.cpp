@@ -193,6 +193,12 @@ bool BinaryStream::GetChunkLocation(const std::string& chunkName,
     return false;
 }
 
+bool BinaryStream::IsEOF()
+{
+    auto const buff = buffer();
+    return m_rpos == buff->size();
+}
+
 void BinaryStream::Compress()
 {
     std::vector<std::uint8_t> buff(
