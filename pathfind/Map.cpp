@@ -749,18 +749,15 @@ bool Map::FindPointInBetweenVectors(const math::Vertex& start, const math::Verte
     const math::Vertex v1 {dx, dy, start.Z};
     const math::Vertex v2 {dx, dy, end.Z};
 
-
     float recastMiddle[3];
     math::Convert::VertexToRecast(v1, recastMiddle);
 
     dtPolyRef polyRef;
     if (m_navQuery.findNearestPoly(recastMiddle, extents, &m_queryFilter,
-                                   &polyRef, nullptr) != DT_SUCCESS)
-    {
+                                   &polyRef, nullptr) != DT_SUCCESS) {
         math::Convert::VertexToRecast(v2, recastMiddle);
         if (m_navQuery.findNearestPoly(recastMiddle, extents, &m_queryFilter,
-                                       &polyRef, nullptr) != DT_SUCCESS)
-        {
+                                       &polyRef, nullptr) != DT_SUCCESS) {
             return false;
         }
     }
@@ -772,7 +769,6 @@ bool Map::FindPointInBetweenVectors(const math::Vertex& start, const math::Verte
     }
 
     math::Convert::VertexToWow(outputPoint, inBetweenPoint);
-
     return true;
 }
 

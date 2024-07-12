@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <cmath>
 
 #ifndef PI
 #    define PI 3.14159264f
@@ -26,10 +25,7 @@ struct Vector3
     static Vector3 CrossProduct(const Vector3& a, const Vector3& b);
     static Vector3 Normalize(const Vector3& a);
     static Vector3 Transform(const Vector3& position, const Matrix& matrix);
-    static float GetDistance(const Vector3& a, const Vector3& b)
-    {
-        return ::sqrt(pow((a.X - b.X), 2) + ::pow((a.Y - b.Y), 2) + ::pow((a.Z - b.Z), 2));
-    }
+    static float GetDistance(const Vector3& a, const Vector3& b);
 
     float X;
     float Y;
