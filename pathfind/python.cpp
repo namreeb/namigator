@@ -66,6 +66,10 @@ bool adt_loaded(pathfind::Map& map, int adt_x, int adt_y) {
     return map.IsADTLoaded(adt_x, adt_y);
 }
 
+bool has_adts(pathfind::Map& map) {
+    return map.HasADTs();
+}
+
 py::list python_query_heights(const pathfind::Map& map, float x, float y)
 {
     py::list result;
@@ -104,6 +108,18 @@ py::object get_zone_and_area(pathfind::Map& map, float x, float y, float z)
     if (!map.ZoneAndArea(p, zone, area))
         return py::none();
     return py::make_tuple(zone, area);
+}
+
+py::object find_point_in_between_vectors(pathfind::Map& map, float distance, float x1, float y1, float z1, float x2, float y2, float z2)
+{
+    const math::Vertex start {x1, y1, z1};
+    const math::Vertex end {x2, y2, z2};
+    math::Vertex in_between_point {};
+    if (!map.FindPointInBetweenVectors(start, end, distance, in_between_point)) {
+        return py::none();
+    }
+
+    return py::make_tuple(in_between_point.X, in_between_point.Y, in_between_point.Z);
 }
 
 py::object find_random_point_around_circle(pathfind::Map& map, float x, float y, float z, float radius) {
@@ -181,6 +197,17 @@ This is the value that would be achieved by walking from start to stop.)del",
             py::arg("y"),
             py::arg("z")
         )
+        .def("find_point_in_between_vectors",
+            &find_point_in_between_vectors,
+            "Returns a point in between two vectors given a distance.",
+            py::arg("distance"),
+            py::arg("x1"),
+            py::arg("y1"),
+            py::arg("z1"),
+            py::arg("x2"),
+            py::arg("y2"),
+            py::arg("z2")
+        )
         .def("find_random_point_around_circle",
             &find_random_point_around_circle,
             "Returns a random point from a circle within or slightly outside of the given radius.",
@@ -188,6 +215,10 @@ This is the value that would be achieved by walking from start to stop.)del",
             py::arg("y"),
             py::arg("z"),
             py::arg("radius")
+        )
+        .def("has_adts",
+            &has_adts,
+            "Checks if the map has any ADT."
         )
         .def("adt_loaded",
             &adt_loaded,
