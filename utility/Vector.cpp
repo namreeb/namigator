@@ -17,10 +17,10 @@ Vector3 Vector3::CrossProduct(const Vector3& a, const Vector3& b)
                    a.X * b.Y - a.Y * b.X);
 }
 
-float Vector3::GetDistance(const Vector3& a, const Vector3& b)
+float Vector3::GetDistance(const Vector3& other) const
 {
-    return sqrtf(powf((a.X - b.X), 2) + powf((a.Y - b.Y), 2) +
-                 powf((a.Z - b.Z), 2));
+    return sqrtf(powf((X - other.X), 2) + powf((Y - other.Y), 2) +
+                 powf((Z - other.Z), 2));
 }
 
 Vector3 Vector3::Normalize(const Vector3& a)

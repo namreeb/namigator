@@ -25,7 +25,7 @@ struct Vector3
     static Vector3 CrossProduct(const Vector3& a, const Vector3& b);
     static Vector3 Normalize(const Vector3& a);
     static Vector3 Transform(const Vector3& position, const Matrix& matrix);
-    static float GetDistance(const Vector3& a, const Vector3& b);
+    float GetDistance(const Vector3& other) const;
 
     float X;
     float Y;

@@ -736,7 +736,7 @@ bool Map::FindPointInBetweenVectors(const math::Vertex& start, const math::Verte
                                     const float distance,
                                     math::Vertex& inBetweenPoint) const
 {
-    const float generalDistance = math::Vector3::GetDistance(start, end);
+    const float generalDistance = start.GetDistance(end);
     if (generalDistance < distance) {
         return false;
     }
