@@ -407,6 +407,18 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
     return model;
 }
 
+bool Map::HasADTs() const
+{
+    for (int y = 0; y < MeshSettings::Adts; ++y)
+        for (int x = 0; x < MeshSettings::Adts; ++x) {
+            if (m_hasADT[x][y]) {
+                return true;
+            }
+        }
+
+    return false;
+}
+
 bool Map::HasADT(int x, int y) const
 {
     return m_hasADT[x][y];
@@ -717,6 +729,46 @@ bool Map::FindNextZ(const Tile* tile, float x, float y, float zHint,
     if (adtError < rayError)
         result = adtHeight;
 
+    return true;
+}
+
+bool Map::FindPointInBetweenVectors(const math::Vertex& start, const math::Vertex& end, 
+                                    const float distance,
+                                    math::Vertex& inBetweenPoint) const
+{
+    const float generalDistance = start.GetDistance(end);
+    if (generalDistance < distance) {
+        return false;
+    }
+
+    const float factor = distance / generalDistance;
+    const float dx = start.X + factor * (end.X - start.X);
+    const float dy = start.Y + factor * (end.Y - start.Y);
+    constexpr float extents[] = {1.f, 1.f, 1.f};
+
+    const math::Vertex v1 {dx, dy, start.Z};
+    const math::Vertex v2 {dx, dy, end.Z};
+
+    float recastMiddle[3];
+    math::Convert::VertexToRecast(v1, recastMiddle);
+
+    dtPolyRef polyRef;
+    if (m_navQuery.findNearestPoly(recastMiddle, extents, &m_queryFilter,
+                                   &polyRef, nullptr) != DT_SUCCESS) {
+        math::Convert::VertexToRecast(v2, recastMiddle);
+        if (m_navQuery.findNearestPoly(recastMiddle, extents, &m_queryFilter,
+                                       &polyRef, nullptr) != DT_SUCCESS) {
+            return false;
+        }
+    }
+
+    float outputPoint[3];
+    if (m_navQuery.closestPointOnPoly(polyRef, recastMiddle, outputPoint, NULL) !=
+        DT_SUCCESS) {
+        return false;
+    }
+
+    math::Convert::VertexToWow(outputPoint, inBetweenPoint);
     return true;
 }
 

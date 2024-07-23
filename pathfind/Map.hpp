@@ -110,6 +110,7 @@ public:
     Map(const std::filesystem::path& dataPath, const std::string& mapName);
 
     bool HasADT(int x, int y) const;
+    bool HasADTs() const;
     bool IsADTLoaded(int x, int y) const;
     bool LoadADT(int x, int y);
     void UnloadADT(int x, int y);
@@ -158,6 +159,11 @@ public:
     bool FindRandomPointAroundCircle(const math::Vertex& centerPosition,
                                      float radius,
                                      math::Vertex& randomPoint) const;
+
+    bool FindPointInBetweenVectors(const math::Vertex& start,
+                                   const math::Vertex& end,
+                                   const float distance,
+                                   math::Vertex& inBetweenPoint) const;
 
     const dtNavMesh& GetNavMesh() const { return m_navMesh; }
     const dtNavMeshQuery& GetNavMeshQuery() const { return m_navQuery; }

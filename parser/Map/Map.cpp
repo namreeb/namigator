@@ -98,22 +98,26 @@ Map::Map(const std::string& name)
 
         reader->rpos(mdnmLocation + 4);
         auto const mdnmSize = reader->Read<std::uint32_t>();
-        std::vector<char> doodadNameBuffer(mdnmSize);
-        reader->ReadBytes(&doodadNameBuffer[0], doodadNameBuffer.size());
-
         char* p;
-
-        for (p = &doodadNameBuffer[0]; *p == '\0'; ++p)
-            ;
-
-        do
+        // Can be 0.
+        if (mdnmSize > 0)
         {
-            m_doodadNames.emplace_back(p);
-            p = strchr(p, '\0');
-            if (!p)
-                break;
-            ++p;
-        } while (p <= &doodadNameBuffer[doodadNameBuffer.size() - 1]);
+
+            std::vector<char> doodadNameBuffer(mdnmSize);
+            reader->ReadBytes(&doodadNameBuffer[0], doodadNameBuffer.size());
+
+            for (p = &doodadNameBuffer[0]; *p == '\0'; ++p)
+                ;
+
+            do
+            {
+                m_doodadNames.emplace_back(p);
+                p = strchr(p, '\0');
+                if (!p)
+                    break;
+                ++p;
+            } while (p <= &doodadNameBuffer[doodadNameBuffer.size() - 1]);
+        }
 
         size_t monmLocation;
         if (!reader->GetChunkLocation("MONM", wmoNameOffset, monmLocation))
@@ -121,6 +125,11 @@ Map::Map(const std::string& name)
 
         reader->rpos(monmLocation + 4);
         auto const monmSize = reader->Read<std::uint32_t>();
+
+        // Truncated files, i.e. UnderMine.
+        if (monmSize == 0 || reader->IsEOF())
+            THROW(Result::BUFFER_TOO_SMALL);
+
         std::vector<char> wmoNameBuffer(monmSize);
         reader->ReadBytes(&wmoNameBuffer[0], wmoNameBuffer.size());
 

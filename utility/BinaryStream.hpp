@@ -102,6 +102,7 @@ public:
     bool GetChunkLocation(const std::string& chunkName, size_t& result) const;
     bool GetChunkLocation(const std::string& chunkName, size_t startLoc,
                           size_t& result) const;
+    bool IsEOF();
 
     void Compress();
     void Decompress();
