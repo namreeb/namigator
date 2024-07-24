@@ -7,9 +7,7 @@
 /utility/Debug/*.pdb
 /utility/Debug/*.obj
 /utility/Debug
-/ipch/ANTTWEAKBAR-5f4de96b/*.ipch
 /*.sdf
-/ipch/STORMLIB-4af47af8/*.ipch
 /utility/*.user
 /.vs/maps/v14/*.suo
 /MapViewer/x64/Debug/*.pdb
@@ -40,7 +38,6 @@
 /pathfind/x64/Debug
 /utility/x64/Debug
 /maps.VC.db
-/ipch/STORMLIB_VS15-5647bf9b/*.ipch
 /MapBuilder/x64/Release
 /MapViewer/x64/Release
 /RecastDetourBuild/x64/Release
@@ -50,12 +47,13 @@
 /pathfind/*.user
 /gos.csv
 /.vs
-/ipch/STORMLIB_VS15-933783c6/*.ipch
+/.vscode
 /MapViewer/Include/pixelShader.hpp
 /MapViewer/Include/vertexShader.hpp
 /CMakeSettings.json
 /out
 /build
 /*.idea
+/*.ipch
 /cmake-build-debug
 /cmake-build-release
