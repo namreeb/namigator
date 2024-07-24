@@ -1325,11 +1325,11 @@ void GlobalWMO::Serialize(const fs::path& filename) const
         outBuffer << static_cast<std::uint32_t>(0)
                   << static_cast<std::uint32_t>(0);
 
-        // height field and finalized tile buffer
-        outBuffer.Append(tile.second);
-
         // the '0' indicates that there is no quad height data for this tile
         outBuffer << static_cast<std::uint8_t>(0);
+
+        // height field and finalized tile buffer
+        outBuffer.Append(tile.second);
     }
 
     // temporary just to make sure our calculation still works.  if it doesnt,
