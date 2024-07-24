@@ -245,9 +245,9 @@ Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
         auto const result = m_navMesh.init(&params);
         assert(result == DT_SUCCESS);
 
-        auto const nav_path = m_dataPath / "Nav" / m_mapName / "Map.nav";
+        auto const navPath = m_dataPath / "Nav" / m_mapName / "Map.nav";
 
-        utility::BinaryStream navIn(nav_path);
+        utility::BinaryStream navIn(navPath);
 
         navIn.Decompress();
 
@@ -262,7 +262,7 @@ Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
 
         for (auto i = 0u; i < header.tileCount; ++i)
         {
-            auto tile = std::make_unique<Tile>(this, navIn, nav_path);
+            auto tile = std::make_unique<Tile>(this, navIn, navPath);
 
             // for a global wmo, all tiles are guarunteed to contain the model
             tile->m_staticWmos.push_back(GlobalWmoId);
