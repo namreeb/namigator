@@ -123,6 +123,19 @@ PathfindResultType pathfind_is_adt_loaded(pathfind::Map* const map, int x, int y
     return static_cast<PathfindResultType>(Result::SUCCESS);
 }
 
+PathfindResultType pathfind_has_adts(pathfind::Map* const map, bool* has_adts) {
+    try {
+        *has_adts = map->HasADTs();
+        return static_cast<PathfindResultType>(Result::SUCCESS);
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
+
 PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map,
                        float x,
                        float y,
@@ -145,6 +158,37 @@ PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map,
         } else {
             return static_cast<PathfindResultType>(Result::UNKNOWN_ZONE_AND_AREA);
         }
+    }
+    catch (utility::exception& e) {
+        return static_cast<PathfindResultType>(e.ResultCode());
+    }
+    catch (...) {
+        return static_cast<PathfindResultType>(Result::UNKNOWN_EXCEPTION);
+    }
+}
+
+PathfindResultType pathfind_find_point_in_between_vectors(pathfind::Map* const map,
+                                                          float distance,
+                                                          float x1,
+                                                          float y1,
+                                                          float z1,
+                                                          float x2,
+                                                          float y2,
+                                                          float z2,
+                                                          Vertex* out_vertex) {
+    try {
+        const math::Vertex start {x1, y1, z1};
+        const math::Vertex end {x2, y2, z2};
+        math::Vertex in_between_point {};
+        if (!map->FindPointInBetweenVectors(start, end, distance, in_between_point)) {
+            return static_cast<PathfindResultType>(Result::FAILED_TO_FIND_POINT_BETWEEN_VECTORS);
+        }
+
+        out_vertex->x = in_between_point.X;
+        out_vertex->y = in_between_point.Y;
+        out_vertex->z = in_between_point.Z;
+
+        return static_cast<PathfindResultType>(Result::SUCCESS);
     }
     catch (utility::exception& e) {
         return static_cast<PathfindResultType>(e.ResultCode());

@@ -59,6 +59,12 @@ PathfindResultType pathfind_unload_adt(pathfind::Map* const map, int x, int y);
 */
 PathfindResultType pathfind_is_adt_loaded(pathfind::Map* const map, int x, int y, uint8_t* const loaded);
 
+
+/*
+    Returns `true` if the map has any ADTs.
+*/
+PathfindResultType pathfind_has_adts(pathfind::Map* const map, bool* has_adts);
+
 /*
     Returns the zone and area of a particular x, y, z.
 */
@@ -66,6 +72,19 @@ PathfindResultType pathfind_get_zone_and_area(pathfind::Map* const map, float x,
                                               float y, float z,
                                               unsigned int* const out_zone,
                                               unsigned int* const out_area);
+
+/*
+    Finds a point between the two vectors with a given distance.
+*/
+PathfindResultType pathfind_find_point_in_between_vectors(pathfind::Map* const map,
+                                                          float distance,
+                                                          float x1,
+                                                          float y1,
+                                                          float z1,
+                                                          float x2,
+                                                          float y2,
+                                                          float z2,
+                                                          Vertex* out_vertex);
 
 /*
     Calculates a path from `start_x`, `start_y`, and `start_z` to
