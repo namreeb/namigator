@@ -276,7 +276,12 @@ MpqManager::OpenFile(const std::string& file)
 
     for (auto const& i : MpqHandles)
     {
-        if (i.first != file_lower)
+        // if we are on Linux, the mpq filenames will use forward slashes
+        // instead of backslashes.  this code could be cleaner.
+        std::string mpqPath = i.first;
+        std::replace(mpqPath.begin(), mpqPath.end(), '/', '\\');
+
+        if (mpqPath != file_lower)
             continue;
 
         // if we have found a match, there should be exactly two files in this
