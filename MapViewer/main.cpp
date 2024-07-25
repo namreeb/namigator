@@ -292,8 +292,11 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam,
                         if (gNavMesh->FindPath(gStart, hit, path, false))
                             gRenderer->AddPath(path);
                         else
+                        {
                             MessageBox(nullptr, "FindPath failed", "Path Find",
                                        0);
+                            return TRUE;
+                        }
 
                         auto const& prev_hop = path[path.size() - 2];
                         float height;
