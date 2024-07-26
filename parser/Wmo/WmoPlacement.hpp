@@ -53,13 +53,18 @@ struct WmoPlacement
     {
         auto constexpr mid = 32.f * MeshSettings::AdtSize;
 
+        // rotation around x (north/south)
         auto const rotX = math::Convert::ToRadians(Orientation.Z);
+
+        // rotation around y (east/west)
         auto const rotY = math::Convert::ToRadians(Orientation.X);
+
+        // rotation around z (vertical)
         auto const rotZ = math::Convert::ToRadians(Orientation.Y + 180.f);
 
         // 0xFFFFFFFF is the unique id used for a global WMO (a map which has no
         // ADTs but instead spawns a single WMO)
-        auto const translationMatrix =
+        const math::Matrix translationMatrix =
             UniqueId == 0xFFFFFFFF ?
                 math::Matrix::CreateTranslationMatrix(
                     {BasePosition.Z, BasePosition.X, BasePosition.Y}) :
@@ -67,9 +72,9 @@ struct WmoPlacement
                                                        mid - BasePosition.X,
                                                        BasePosition.Y});
 
-        matrix = translationMatrix * math::Matrix::CreateRotationX(rotX) *
+        matrix = translationMatrix * math::Matrix::CreateRotationZ(rotZ) *
                  math::Matrix::CreateRotationY(rotY) *
-                 math::Matrix::CreateRotationZ(rotZ);
+                 math::Matrix::CreateRotationX(rotX);
     }
 };
 #pragma pack(pop)
