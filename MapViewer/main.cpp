@@ -621,6 +621,10 @@ void ChangeMap(const std::string& cn)
         //        300.f); gRenderer->m_camera.LookAt(avgX, avgY, avgZ);
     }
 
+    // enable these buttons even for a global WMO map to allow for Z queries
+    gControls->Enable(Controls::PositionX, true);
+    gControls->Enable(Controls::PositionY, true);
+
     // if the loaded map has no ADTs, but instead a global WMO, load it now,
     // including all mesh tiles
     if (auto const wmo = gMap->GetGlobalWmoInstance())
@@ -647,8 +651,6 @@ void ChangeMap(const std::string& cn)
         gRenderer->m_camera.Move(cx + 300.f, cy + 300.f, cz + 300.f);
         gRenderer->m_camera.LookAt(cx, cy, cz);
 
-        gControls->Enable(Controls::PositionX, false);
-        gControls->Enable(Controls::PositionY, false);
         gControls->Enable(Controls::Load, false);
 
         if (gNavMesh)
@@ -663,11 +665,7 @@ void ChangeMap(const std::string& cn)
         }
     }
     else
-    {
-        gControls->Enable(Controls::PositionX, true);
-        gControls->Enable(Controls::PositionY, true);
         gControls->Enable(Controls::Load, true);
-    }
 }
 
 void LoadPositionFromGUI()
@@ -794,7 +792,7 @@ void SearchZValues()
     for (auto const h : output)
     {
         result << h << "\n";
-        gRenderer->AddSphere({posX, posY, h}, 0.25f);
+        gRenderer->AddSphere({posX, posY, h}, 0.75f);
     }
 
     MessageBoxA(nullptr, result.str().c_str(), "Z Search Results", 0);

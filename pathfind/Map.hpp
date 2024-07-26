@@ -41,6 +41,12 @@ private:
 
     BVH m_bvhLoader;
 
+    // this is false when the map is based on a global wmo
+    bool m_hasADTs;
+
+    float m_globalWmoOriginX;
+    float m_globalWmoOriginY;
+
     bool m_hasADT[MeshSettings::Adts][MeshSettings::Adts];
     bool m_loadedADT[MeshSettings::Adts][MeshSettings::Adts];
 
