@@ -61,9 +61,8 @@ for this.
 
 ### Production Testing
 
-To my knowledge, namigator has not yet been integrated into any emulation
-software.  It has therefore not been tested in actual production.  There may be
-unforeseen accuracy or performance issues. 
+namigator has been integrated into [The Alpha Project](https://github.com/The-Alpha-Project/alpha-core)
+and several robustness issues have been addressed as a result.  Thanks to them!
 
 ### Thread Safety
 
