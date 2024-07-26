@@ -95,7 +95,8 @@ float random_between_0_and_1() {
 namespace pathfind
 {
 Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
-    : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName)
+    : m_dataPath(dataPath), m_bvhLoader(dataPath), m_mapName(mapName),
+      m_globalWmoOriginX(0.f), m_globalWmoOriginY(0.f)
 {
     utility::BinaryStream in(m_dataPath / (mapName + ".map"));
 
@@ -114,6 +115,8 @@ Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
 
     if (hasTerrain)
     {
+        m_hasADTs = true;
+
         std::uint8_t has_adt[MeshSettings::Adts * MeshSettings::Adts / 8];
 
         in.ReadBytes(has_adt, sizeof(has_adt));
@@ -204,6 +207,7 @@ Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
     else
     {
         // no ADTs in this map
+        m_hasADTs = false;
         ::memset(m_hasADT, 0, sizeof(m_hasADT));
 
         WmoFileInstance globalWmo;
@@ -238,6 +242,9 @@ Map::Map(const std::filesystem::path& dataPath, const std::string& mapName)
         auto const tileHeight = static_cast<int>(::ceilf(
             (globalWmo.m_bounds.MaxCorner.Y - globalWmo.m_bounds.MinCorner.Y) /
             MeshSettings::TileSize));
+
+        m_globalWmoOriginX = globalWmo.m_bounds.MaxCorner.X;
+        m_globalWmoOriginY = globalWmo.m_bounds.MaxCorner.Y;
 
         params.maxTiles = tileWidth * tileHeight;
         params.maxPolys = 1 << DT_POLY_BITS;
@@ -409,14 +416,7 @@ std::shared_ptr<WmoModel> Map::EnsureWmoModelLoaded(const std::string& mpq_path)
 
 bool Map::HasADTs() const
 {
-    for (int y = 0; y < MeshSettings::Adts; ++y)
-        for (int x = 0; x < MeshSettings::Adts; ++x) {
-            if (m_hasADT[x][y]) {
-                return true;
-            }
-        }
-
-    return false;
+    return m_hasADTs;
 }
 
 bool Map::HasADT(int x, int y) const
@@ -588,7 +588,15 @@ const Tile* Map::GetTile(float x, float y) const
 {
     // find the tile corresponding to this (x, y)
     int tileX, tileY;
-    math::Convert::WorldToTile({x, y, 0.f}, tileX, tileY);
+
+    // maps based on a global WMO have their tiles positioned differently
+    if (HasADTs())
+        math::Convert::WorldToTile({x, y, 0.f}, tileX, tileY);
+    else
+    {
+        tileX = (m_globalWmoOriginY - y) / MeshSettings::TileSize;
+        tileY = (m_globalWmoOriginX - x) / MeshSettings::TileSize;
+    }
 
     auto const tile = m_tiles.find({tileX, tileY});
 
@@ -900,19 +908,16 @@ bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone,
                       unsigned int& area) const
 {
     // find the tile corresponding to this (x, y)
-    int tileX, tileY;
-    math::Convert::WorldToTile({position.X, position.Y, 0.f}, tileX, tileY);
+    auto const tile = GetTile(position.X, position.Y);
 
-    auto const tile = m_tiles.find({tileX, tileY});
-
-    if (tile == m_tiles.end())
+    if (!tile)
         return false;
 
-    std::vector<const Tile*> tiles {tile->second.get()};
+    std::vector<const Tile*> tiles {tile};
 
     math::Ray ray {
         {position.X, position.Y, position.Z},
-        {position.X, position.Y, tile->second->m_bounds.getMinimum().Z}};
+        {position.X, position.Y, tile->m_bounds.getMinimum().Z}};
 
     unsigned int localZone, localArea;
     auto const rayResult = RayCast(ray, tiles, false, &localZone, &localArea);
@@ -924,9 +929,8 @@ bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone,
 
     float adtHeight;
     unsigned int adtZone, adtArea;
-    auto const adtResult =
-        GetADTHeight(tile->second.get(), position.X, position.Y, adtHeight,
-                     &adtZone, &adtArea);
+    auto const adtResult = GetADTHeight(tile, position.X, position.Y, adtHeight,
+                                        &adtZone, &adtArea);
 
     if (adtResult && adtHeight > ray.GetHitPoint().Z)
     {
