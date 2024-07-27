@@ -13,13 +13,13 @@ bool wow_exist_at_root(const std::string& rootPath);
 
 namespace dir_exist {
 
-bool output_dir_exist();
+bool output_dir_exist(const std::string& rootPath);
 
 } // namespace dir_exist
 
 namespace files {
 
-void create_output_directory();
+void create_output_directory(const std::string& rootPath);
 
 void create_bvh_output_directory(const std::filesystem::path& outputPath);
 

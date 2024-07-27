@@ -210,7 +210,7 @@ int ExtractMap(const std::string& map, const std::string& dataPath,
 int main(int argc, char* argv[])
 {
     std::string dataPath, map, outputPath, goCSVPath;
-    int adtX = -1, adtY = -1, threads = 1, logLevel;
+    int adtX = -1, adtY = -1, threads = 1, logLevel = 1;
     bool bvh = false;
     bool alpha = true;
 
@@ -282,14 +282,17 @@ int main(int argc, char* argv[])
             outputPath = "./Output";
 
         const std::filesystem::path root(dataPath);
-        if (!file_exist::wow_exist_at_root(root.parent_path().string()))
+        const std::string rootStr = root.parent_path().string();
+        if (!file_exist::wow_exist_at_root(rootStr))
         {
             std::cerr << "ERROR: MapBuilder must be placed inside the game root folder" << std::endl;
             return EXIT_FAILURE;
         }
 
-        if (!dir_exist::output_dir_exist())
-            files::create_output_directory();
+        const std::filesystem::path rootOutputPath(outputPath);
+        const std::string rootOutputPathStr = rootOutputPath.string();
+        if (!dir_exist::output_dir_exist(rootOutputPathStr))
+            files::create_output_directory(rootOutputPathStr);
 
         if (ExtractBVH(goCSVPath, dataPath, outputPath, threads) == EXIT_FAILURE)
             return EXIT_FAILURE;

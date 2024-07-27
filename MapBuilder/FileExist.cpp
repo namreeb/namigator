@@ -14,8 +14,7 @@ bool map_files_exist(const std::string& outputPath, const std::string& mapName) 
     return fs::exists(outputPath + "/" + mapName + ".map");
 }
 
-bool wow_exist_at_root(const std::string& rootPath)
-{
+bool wow_exist_at_root(const std::string& rootPath) {
     return fs::exists(rootPath + "/" + "WoW.exe");
 }
 
@@ -23,16 +22,16 @@ bool wow_exist_at_root(const std::string& rootPath)
 
 namespace dir_exist {
 
-bool output_dir_exist() {
-    return fs::exists("./Output");
+bool output_dir_exist(const std::string& outputPath) {
+    return fs::exists(outputPath);
 }
 
 } // namespace dir_exist
 
 namespace files {
 
-void create_output_directory() {
-    fs::create_directory("./Output");
+void create_output_directory(const std::string& outputPath) {
+    fs::create_directory(outputPath);
 }
 
 void create_bvh_output_directory(const std::filesystem::path& outputPath) {
