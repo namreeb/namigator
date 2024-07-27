@@ -205,6 +205,62 @@ int ExtractMap(const std::string& map, const std::string& dataPath,
     return EXIT_SUCCESS;
 }
 
+int ExtractAlphaData(std::string& dataPath, std::string& outputPath,
+                     const std::string& goCSVPath, int threads, int logLevel)
+{
+    if (dataPath.empty())
+        dataPath = "./Data";
+
+    if (outputPath.empty())
+        outputPath = "./Output";
+
+    const std::filesystem::path root(dataPath);
+    const std::string rootStr = root.parent_path().string();
+    if (!file_exist::wow_exist_at_root(rootStr))
+    {
+        std::cerr
+            << "ERROR: MapBuilder must be placed inside the game root folder"
+            << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    const std::filesystem::path rootOutputPath(outputPath);
+    const std::string rootOutputPathStr = rootOutputPath.string();
+    if (!dir_exist::output_dir_exist(rootOutputPathStr))
+        files::create_output_directory(rootOutputPathStr);
+
+    if (ExtractBVH(goCSVPath, dataPath, outputPath, threads) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+
+    files::create_nav_output_directory(outputPath);
+
+    // nav mesh generation requires that the MPQ manager be initialized for
+    // the main thread, whereas BVH generation does not.
+    parser::sMpqManager.Initialize(dataPath);
+
+    std::string map;
+    std::vector<std::string> availableMaps = files::get_directories(dataPath + "/World/Maps/");
+    for (auto& element : availableMaps)
+    {
+        try
+        {
+            std::filesystem::path path(element);
+            map = path.filename().string();
+            std::cout << "Building navs for map: " << map << "\n";
+            std::cout.flush();
+            ExtractMap(path.filename().string(), dataPath, outputPath,
+                       goCSVPath, threads, -1, -1, logLevel);
+        }
+        catch (std::exception const& e)
+        {
+            std::cerr << "Map: " << map << ", extraction failed : " << e.what()
+                      << std::endl;
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
 } // namespace
 
 int main(int argc, char* argv[])
@@ -272,57 +328,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // Extract BVH and everything inside World/Maps.
-    if (alpha)
+    // Alpha: Extract BVH and everything inside World/Maps.
+    if (alpha) 
     {
-        if (dataPath.empty())
-            dataPath = "./Data";
-
-        if (outputPath.empty())
-            outputPath = "./Output";
-
-        const std::filesystem::path root(dataPath);
-        const std::string rootStr = root.parent_path().string();
-        if (!file_exist::wow_exist_at_root(rootStr))
-        {
-            std::cerr << "ERROR: MapBuilder must be placed inside the game root folder" << std::endl;
-            return EXIT_FAILURE;
-        }
-
-        const std::filesystem::path rootOutputPath(outputPath);
-        const std::string rootOutputPathStr = rootOutputPath.string();
-        if (!dir_exist::output_dir_exist(rootOutputPathStr))
-            files::create_output_directory(rootOutputPathStr);
-
-        if (ExtractBVH(goCSVPath, dataPath, outputPath, threads) == EXIT_FAILURE)
-            return EXIT_FAILURE;
-
-        files::create_nav_output_directory(outputPath);
-        
-        // nav mesh generation requires that the MPQ manager be initialized for
-        // the main thread, whereas BVH generation does not.
-        parser::sMpqManager.Initialize(dataPath);
-
-        std::vector<std::string> availableMaps = files::get_directories(dataPath + "/World/Maps/");
-        for (auto& element : availableMaps)
-        {
-            try
-            {
-                std::filesystem::path path(element);
-                map = path.filename().string();
-                std::cout << "Building navigation for map: " << map << "\n";
-                std::cout.flush();
-                ExtractMap(path.filename().string(), dataPath, outputPath,
-                           goCSVPath, threads, adtX, adtY, logLevel);
-            }
-            catch (std::exception const& e)
-            {
-                std::cerr << "Map " << map << ", extraction failed : " << e.what()
-                          << std::endl;
-            }
-        }
-
-        return EXIT_SUCCESS;
+        return ExtractAlphaData(dataPath, outputPath, goCSVPath, threads, logLevel);
     }
 
     if (outputPath.empty())
