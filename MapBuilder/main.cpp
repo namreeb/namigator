@@ -37,7 +37,7 @@ void DisplayUsage(std::ostream& o)
     o << "  -t/--threads <thread count>    -- How many worker threads to use\n";
     o << "  -l/--logLevel <log level>      -- Log level (0 = none, 1 = "
          "progress, 2 = warning, 3 = error)\n";
-    o << "  -alpha/--alpha                 -- Automatically extract everything available for alpha client.\n";
+    o << "  -a/--alpha                     -- Automatically extract everything available for alpha client.\n";
 #ifdef _DEBUG
     o << "  -x/--adtX <x>                  -- X coordinate of individual ADT "
          "to process\n";
@@ -50,8 +50,17 @@ void DisplayUsage(std::ostream& o)
 int ExtractBVH(const std::string& goCSVPath, const std::string& dataPath,
                const std::string& outputPath, int threads)
 {
+    try
+    {
+        files::create_bvh_output_directory(outputPath);
+    }
+    catch (std::exception const& e) // Access denied.
+    {
+        std::cerr << "ERROR:" << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
     auto lastStatus = static_cast<time_t>(0);
-    files::create_bvh_output_directory(outputPath);
 
     if (!goCSVPath.empty())
     {
@@ -226,8 +235,16 @@ int ExtractAlphaData(std::string& dataPath, std::string& outputPath,
 
     const std::filesystem::path rootOutputPath(outputPath);
     const std::string rootOutputPathStr = rootOutputPath.string();
-    if (!dir_exist::output_dir_exist(rootOutputPathStr))
-        files::create_output_directory(rootOutputPathStr);
+    try
+    {
+        if (!dir_exist::output_dir_exist(rootOutputPathStr))
+            files::create_output_directory(rootOutputPathStr);
+    }
+    catch (std::exception const& e) // Access denied.
+    {
+        std::cerr << "ERROR:" << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
     if (ExtractBVH(goCSVPath, dataPath, outputPath, threads) == EXIT_FAILURE)
         return EXIT_FAILURE;
@@ -283,7 +300,7 @@ int main(int argc, char* argv[])
                 DisplayUsage(std::cout);
                 return EXIT_SUCCESS;
             }
-            else if (arg == "-alpha" || arg == "--alpha")
+            else if (arg == "-a" || arg == "--alpha")
             {
                 alpha = true;
                 continue;
@@ -361,7 +378,16 @@ int main(int argc, char* argv[])
     if (bvh)
         return ExtractBVH(goCSVPath, dataPath, outputPath, threads);
 
-    files::create_nav_output_directory(outputPath);
+    try
+    {
+         files::create_nav_output_directory(outputPath);
+    }
+    catch (std::exception const& e) // Access denied.
+    {
+        std::cerr << "ERROR:" << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    
     // nav mesh generation requires that the MPQ manager be initialized for
     // the main thread, whereas BVH generation does not.
     parser::sMpqManager.Initialize(dataPath);
