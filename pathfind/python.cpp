@@ -83,14 +83,6 @@ py::list python_query_heights(const pathfind::Map& map, float x, float y)
     return result;
 }
 
-std::optional<float> python_query_z(const pathfind::Map& map, float start_x, float start_y, float start_z,
-    float stop_x, float stop_y)
-{
-    float result;
-    if (!map.FindHeight({start_x, start_y, start_z}, stop_x, stop_y, result))
-        return {};
-    return result;
-}
 
 bool los(const pathfind::Map& map, float start_x, float start_y, float start_z,
          float stop_x, float stop_y, float stop_z, bool doodads)
@@ -178,17 +170,6 @@ Returns a list of points if a path was found, otherwise an empty list.)del",
             "Finds all Z values for a given `x`, `y` coordinate.",
             py::arg("x"),
             py::arg("y")
-        )
-        .def("query_z",
-            &python_query_z,
-            R"del(Returns the `stop_z` value for a given `start_x`, `start_y`, `start_z` and `stop_x`, `stop_y`.
-
-This is the value that would be achieved by walking from start to stop.)del",
-            py::arg("start_x"),
-            py::arg("start_y"),
-            py::arg("start_z"),
-            py::arg("stop_x"),
-            py::arg("stop_y")
         )
         .def("get_zone_and_area",
             &get_zone_and_area,

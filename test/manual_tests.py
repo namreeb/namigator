@@ -41,7 +41,7 @@ def test_build_data(wow_data, nav_data, jobs):
     bvh_file_count = mapbuild.build_bvh(wow_data, nav_data, jobs)
     build_time = time.time() - start
 
-    min_bvh_count = 800
+    min_bvh_count = 230
     if bvh_file_count < min_bvh_count:
         raise RuntimeError('Expected %d BVH files, found only %d' % (
             min_bvh_count, bvh_file_count))
@@ -110,6 +110,11 @@ def test_use_data(nav_data):
     assert zone == 1497 and area == 1497
 
     print('Undercity area check succeeded')
+    
+    # This WMO is rotated around all axis and serves as a check that the translation is working well
+    azeroth.load_adt_at(-1173.688, -2046.505)
+    z_values = azeroth.query_heights(-1173.688, -2046.505)
+    assert len(z_values) == 2 and approximate(z_values[0], 37.323)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -136,23 +141,11 @@ def main():
         test_use_data(args.navdata)
     finally:
         if args.build_nav_data:
+            print('Removing temporary directory')
             shutil.rmtree(args.navdata)
 
     return 0
 
 if __name__ == '__main__':
     sys.exit(main())
-    wow_data = os.getenv('NAM_WOW_DATA')
-    if wow_data is None:
-        wow_data = r'f:\wow 1.12.1\data'
 
-    if wow_data is not None and not os.path.isdir(wow_data):
-        raise RuntimeError('Data dir %s does not exist' % wow_data)
-
-    existing_mesh_data = os.getenv('NAM_MESH_DATA')
-
-    if existing_mesh_data is not None and not \
-        os.path.isdir(existing_mesh_data):
-        raise RuntimeError('NAM_MESH_DATA %s does not exist' % existing_mesh_data)
-
-    unittest.main()

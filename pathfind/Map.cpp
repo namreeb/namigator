@@ -581,7 +581,25 @@ bool Map::FindPath(const math::Vertex& start, const math::Vertex& end,
     for (auto i = 0; i < pathLength; ++i)
         math::Convert::VertexToWow(&pathBuffer[i * 3], output[i]);
 
-    return true;
+    // for the last point, let us refine the z.  we know that the value
+    // returned from Detour will be within MeshSettings::DetailSampleMaxError
+    // yards above or below.  to begin with, we shift that error range upwards
+    // so we know that we are above the true value.
+    output[pathLength - 1].Z += MeshSettings::DetailSampleMaxError;
+
+    // nudge it up by the smallest possible amount to make sure we are OVER
+    // the correct value and not exactly at it
+    output[pathLength - 1].Z = std::nextafter(output[pathLength - 1].Z,
+                                              output[pathLength - 1].Z + 1.f);
+
+    auto const endTile =
+        GetTile(output[pathLength - 1].X, output[pathLength - 1].Y);
+
+    // if for some reason we fail, fail hard!
+    return !!endTile &&
+           FindNextZ(endTile, output[pathLength - 1].X,
+                     output[pathLength - 1].Y, output[pathLength - 1].Z, true,
+                     output[pathLength - 1].Z);
 }
 
 const Tile* Map::GetTile(float x, float y) const
@@ -594,8 +612,8 @@ const Tile* Map::GetTile(float x, float y) const
         math::Convert::WorldToTile({x, y, 0.f}, tileX, tileY);
     else
     {
-        tileX = (m_globalWmoOriginY - y) / MeshSettings::TileSize;
-        tileY = (m_globalWmoOriginX - x) / MeshSettings::TileSize;
+        tileX = static_cast<int>((m_globalWmoOriginY - y) / MeshSettings::TileSize);
+        tileY = static_cast<int>((m_globalWmoOriginX - x) / MeshSettings::TileSize);
     }
 
     auto const tile = m_tiles.find({tileX, tileY});
@@ -813,55 +831,6 @@ bool Map::FindRandomPointAroundCircle(const math::Vertex& centerPosition,
     return true;
 }
 
-
-bool Map::FindHeight(const math::Vertex& source, float x, float y, float& z) const
-{
-    // ray cast along navmesh from source to target
-    float recastSource[3];
-    math::Convert::VertexToRecast(source, recastSource);
-
-    constexpr float extents[] = {1.f, 1.f, 1.f};
-
-    dtPolyRef startRef;
-    if (m_navQuery.findNearestPoly(recastSource, extents, &m_queryFilter,
-                                   &startRef, nullptr) != DT_SUCCESS)
-        return false;
-
-    float recastTarget[3];
-    // use the source Z as an initial guess
-    math::Convert::VertexToRecast({x, y, source.Z}, recastTarget);
-
-    dtPolyRef hit_path[100];
-    dtRaycastHit hit;
-    hit.path = hit_path;
-    hit.maxPath = sizeof(hit_path) / sizeof(hit_path[0]);
-
-    if (m_navQuery.raycast(startRef, recastSource, recastTarget, &m_queryFilter,
-                           0, &hit) != DT_SUCCESS)
-        return false;
-
-    if (!hit.pathCount)
-        return false;
-
-    // if we reach here, it means we have a path and know the poly ref for
-    // the poly where the ray hit.  so let's use that reference and query
-    // the height at the requested x,y.
-    if (m_navQuery.getPolyHeight(hit.path[hit.pathCount - 1], recastTarget,
-                                 &z) != DT_SUCCESS)
-        return false;
-
-    auto const tile = GetTile(x, y);
-
-    if (!tile)
-        return false;
-
-    // take the imprecise z value from the mesh, and return the precise value
-    if (!FindNextZ(tile, x, y, z, true, z))
-        return false;
-
-    return true;
-}
-
 bool Map::FindHeights(float x, float y, std::vector<float>& output) const
 {
     auto const tile = GetTile(x, y);
@@ -936,6 +905,23 @@ bool Map::ZoneAndArea(const math::Vertex& position, unsigned int& zone,
     {
         zone = adtZone;
         area = adtArea;
+    }
+
+    // if both queries failed, try a ray facing up instead
+    if (!rayResult && !adtResult)
+    {
+        math::Ray upRay {
+            {position.X, position.Y, position.Z},
+            {position.X, position.Y, tile->m_bounds.getMaximum().Z}};
+
+        if (RayCast(upRay, tiles, false, &localZone, &localArea))
+        {
+            zone = localZone;
+            area = localArea;
+            return true;
+        }
+
+        // if it fails, fall through to below
     }
 
     assert(rayResult || adtResult);

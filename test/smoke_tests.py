@@ -148,15 +148,16 @@ dist: {distance}"
 
 	print("Should-pass doodad LoS check succeeded")
 
-	query_z = map_data.query_z(16232.7373, 16828.2734, 37.1330833, 16208.6, 16830.7)
+	path = map_data.find_path(16232.7373, 16828.2734, 37.1330833, 16208.6, 16830.7, 37)
 
-	if query_z is None:
-		raise Exception("Query Z failed with None")
+	if path is None:
+		raise Exception("Z correction in find_path failed")
 
-	if not approximate(query_z, 36.86227):
-		raise Exception("Query Z failed with {}".format(query_z))
+	final_z = path[-1][2]
+	if not approximate(final_z, 36.86227):
+		raise Exception("Z correction test failed with {}".format(final_z))
 
-	print("Query Z succeeded")
+	print("Z correction succeeded")
 
 	map_data = pathfind.Map(temp_dir, "bladesedgearena")
 	map_data.load_adt_at(6225, 250)

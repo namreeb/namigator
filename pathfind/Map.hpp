@@ -139,19 +139,9 @@ public:
                   std::vector<math::Vertex>& output,
                   bool allowPartial = false) const;
 
-    // for finding height(s) at a given (x, y), there are two scenarios:
-    // 1: we want to find exactly one z for a given path which has this (x, y)
-    // as a hop.  in this case, there should only be one correct value,
-    //    and it is the value that would be achieved by walking either from the
-    //    previous hop to this one, or from this hop to the next one.
-    // 2: for a given (x, y), we want to find all possible z values
-    //
-    // NOTE: if your usage is outside of both of these scenarios, you are
-    // probably doing something wrong
-    bool FindHeight(const math::Vertex& source, float x, float y,
-                    float& z) const; // scenario one
-    bool FindHeights(float x, float y,
-                     std::vector<float>& output) const; // scenario two
+    // WARNING: I'm not sure why you need this function, and therefore may
+    // remove it.  If someone needs it, could you please let me know?
+    bool FindHeights(float x, float y, std::vector<float>& output) const;
 
     bool ZoneAndArea(const math::Vertex& position, unsigned int& zone,
                      unsigned int& area) const;

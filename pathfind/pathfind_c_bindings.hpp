@@ -106,16 +106,6 @@ PathfindResultType pathfind_find_heights(pathfind::Map* const map, float x, floa
                                          unsigned int* const amount_of_heights);
 
 /*
-    Returns the `stop_z` for the path between `start_x`, `start_y`, `start_z`
-    and `stop_x`, `stop_y`.
-    This is the value that would be achieved by walking from start to stop.
-*/
-PathfindResultType pathfind_find_height(pathfind::Map* const map, float start_x,
-                                        float start_y, float start_z,
-                                        float stop_x, float stop_y,
-                                        float* const stop_z);
-
-/*
     Calculates whether there is line of sight between `start_x`, `start_y`, `start_z`
     and `stop_x`, `stop_y`, `stop_z`.
 

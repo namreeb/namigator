@@ -299,23 +299,16 @@ LRESULT CALLBACK GuiWindowProc(HWND hWnd, UINT message, WPARAM wParam,
                         }
 
                         auto const& prev_hop = path[path.size() - 2];
-                        float height;
-                        if (gNavMesh->FindHeight(prev_hop, hit.X, hit.Y, height))
-                        {
-                            std::stringstream ss;
-                            ss << "Destination: " << hit.X << ", " << hit.Y
-                               << ", " << hit.Z
-                               << " FindHeight returns: " << height << "\n";
+                        std::stringstream ss;
+                        ss << "Destination: " << hit.X << ", " << hit.Y
+                            << ", " << hit.Z << "\n";
 
-                            std::vector<float> heights;
-                            if (gNavMesh->FindHeights(hit.X, hit.Y, heights))
-                                for (auto const& h : heights)
-                                    ss << "Possible correct values: " << h << "\n";
+                        std::vector<float> heights;
+                        if (gNavMesh->FindHeights(hit.X, hit.Y, heights))
+                            for (auto const& h : heights)
+                                ss << "Possible correct values: " << h << "\n";
 
-                            OutputDebugStringA(ss.str().c_str());
-                        }
-                        else
-                            OutputDebugStringA("No height found");
+                        OutputDebugStringA(ss.str().c_str());
                     }
                     else
                     {
@@ -791,8 +784,18 @@ void SearchZValues()
     result << "Heights at (" << posX << ", " << posY << "):\n";
     for (auto const h : output)
     {
-        result << h << "\n";
-        gRenderer->AddSphere({posX, posY, h}, 0.75f);
+        const math::Vertex pos {posX, posY, h};
+        unsigned int zone, area;
+
+        result << h;
+
+        if (gNavMesh->ZoneAndArea(pos, zone, area))
+            result << " Zone: " << zone << " Area: " << area;
+        else
+            result << " ZoneAndArea failed";
+        result << "\n";
+
+        gRenderer->AddSphere(pos, 0.75f);
     }
 
     MessageBoxA(nullptr, result.str().c_str(), "Z Search Results", 0);
